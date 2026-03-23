@@ -1,4 +1,25 @@
 /* ═══════════════════════════════════════════════════════
+   VERSION
+═══════════════════════════════════════════════════════ */
+const APP_VERSION = '2026.mar.23-2';
+document.querySelectorAll('.app-version').forEach(el => el.textContent = APP_VERSION);
+
+/* ═══════════════════════════════════════════════════════
+   NUMERIC INPUTS — vider au focus, restaurer si vide
+═══════════════════════════════════════════════════════ */
+document.addEventListener('focusin', e => {
+  if (e.target.type === 'number') {
+    e.target.dataset.prev = e.target.value;
+    e.target.value = '';
+  }
+});
+document.addEventListener('focusout', e => {
+  if (e.target.type === 'number' && e.target.value === '') {
+    e.target.value = e.target.dataset.prev ?? '';
+  }
+});
+
+/* ═══════════════════════════════════════════════════════
    STORAGE
 ═══════════════════════════════════════════════════════ */
 const SESSIONS_KEY = 'gym_sessions';
@@ -320,6 +341,7 @@ function startSession(programme) {
       const rest   = ex.rest   ?? ex.series?.[0]?.rest   ?? 0;
       return {
         name: ex.name,
+        muscle: ex.muscle || '',
         series: Array.from({ length: count }, () => ({ reps, weight, rest, state: 'pending' })),
       };
     }),
@@ -348,6 +370,13 @@ function renderLiveSession(tab) {
     exName.textContent = ex.name;
     exDiv.appendChild(exName);
 
+    if (ex.muscle) {
+      const exMuscle = document.createElement('div');
+      exMuscle.className = 'live-exercise-muscle';
+      exMuscle.textContent = ex.muscle;
+      exDiv.appendChild(exMuscle);
+    }
+
     const labels = document.createElement('div');
     labels.className = 'live-series-labels';
     labels.innerHTML = '<span></span><span></span><span>reps</span><span></span><span>kg</span><span></span><span></span>';
@@ -374,13 +403,15 @@ function buildLiveSeriesRow(exIdx, sIdx, s) {
     <span class="live-x">×</span>
     <input type="number" inputmode="decimal" class="live-weight" value="${s.weight}" min="0" step="0.5" />
     <span class="live-kg">kg</span>
-    <span class="live-rest-badge">${s.rest}s</span>
+    <input type="number" inputmode="numeric" class="live-rest" value="${s.rest}" min="0" />
   `;
 
   row.querySelector('.series-state-btn').addEventListener('click', () =>
     advanceSeriesState(exIdx, sIdx, row)
   );
 
+  row.dataset.ex = exIdx;
+  row.dataset.s  = sIdx;
   row.querySelector('.live-reps').setAttribute('data-ex', exIdx);
   row.querySelector('.live-reps').setAttribute('data-s', sIdx);
   row.querySelector('.live-weight').setAttribute('data-ex', exIdx);
@@ -396,6 +427,11 @@ function buildLiveSeriesRow(exIdx, sIdx, s) {
     propagateLiveValue(exIdx, sIdx, 'weight', val);
   });
 
+  row.querySelector('.live-rest').addEventListener('change', e => {
+    const val = parseInt(e.target.value) || 0;
+    liveSession.exercises[exIdx].series[sIdx].rest = val;
+  });
+
   return row;
 }
 
@@ -407,7 +443,8 @@ function advanceSeriesState(exIdx, sIdx, row) {
     s.state = 'active';
   } else {
     s.state = 'done';
-    startCountdown(s.rest);
+    const isLast = sIdx === liveSession.exercises[exIdx].series.length - 1;
+    if (!isLast) startCountdown(s.rest, exIdx, sIdx);
   }
 
   row.className = `live-series-row ${s.state}`;
@@ -473,41 +510,126 @@ function finishSession() {
 /* ═══════════════════════════════════════════════════════
    COUNTDOWN
 ═══════════════════════════════════════════════════════ */
-let countdownTimer = null;
-let countdownSecs = 0;
+const GO_MESSAGES = [
+  "C'est parti ! 🔥",
+  'Let\'s go ! 🚀',
+  'Tu gères ! ⚡',
+  'En forme ! 💥',
+  'Allez, encore ! 🏋️',
+  'Dans ta tête d\'abord ! 🧠',
+  'Focus total ! 🎯',
+  'T\'as vu ce que t\'as fait ? 🔥',
+  'Inarrêtable ! ⚡',
+  'Vas-y, envoie ! 💥',
+];
 
-function startCountdown(seconds) {
+function randomFrom(arr) {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+let audioCtx = null;
+
+function beep(freq = 880, duration = 120, volume = 0.4) {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  const osc  = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  osc.frequency.value = freq;
+  osc.type = 'sine';
+  gain.gain.setValueAtTime(volume, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration / 1000);
+  osc.start(audioCtx.currentTime);
+  osc.stop(audioCtx.currentTime + duration / 1000);
+}
+
+function beepSequence(count, interval = 1000) {
+  for (let i = 0; i < count; i++) setTimeout(() => beep(), i * interval);
+}
+
+let countdownTimer = null;
+let countdownSecs  = 0;
+let countdownTotal = 0;
+let countdownNext  = null; // { exIdx, sIdx }
+const RING_CIRCUMFERENCE = 2 * Math.PI * 85; // ≈ 534
+
+function updateCountdownUI() {
+  const display = document.getElementById('countdown-display');
+  const ring    = document.getElementById('ring-progress');
+  const bar     = document.getElementById('countdown-bar');
+
+  display.textContent = formatSeconds(countdownSecs);
+
+  const progress = countdownTotal > 0 ? countdownSecs / countdownTotal : 0;
+  ring.style.strokeDashoffset = RING_CIRCUMFERENCE * (1 - progress);
+
+  // Pulse — remove then re-add to retrigger animation
+  display.classList.remove('pulse');
+  void display.offsetWidth;
+  display.classList.add('pulse');
+
+  bar.classList.toggle('urgent', countdownSecs <= 5);
+}
+
+function startCountdown(seconds, exIdx, sIdx) {
   stopCountdown();
   if (!seconds || seconds <= 0) return;
-  countdownSecs = seconds;
+  countdownSecs  = seconds;
+  countdownTotal = seconds;
+  countdownNext  = { exIdx, sIdx };
+
   document.getElementById('countdown-bar').classList.remove('hidden');
-  document.getElementById('countdown-display').textContent = formatSeconds(countdownSecs);
+  document.getElementById('ring-progress').style.strokeDashoffset = 0;
+  updateCountdownUI();
 
   countdownTimer = setInterval(() => {
     countdownSecs--;
     if (countdownSecs <= 0) {
-      stopCountdown();
-      if (navigator.vibrate) navigator.vibrate([400, 100, 400, 100, 400]);
+      if (IS_IOS) beepSequence(5);
+      else if (navigator.vibrate) navigator.vibrate([400, 100, 400, 100, 400]);
+      finishCountdown();
     } else {
-      document.getElementById('countdown-display').textContent = formatSeconds(countdownSecs);
-      const bar = document.getElementById('countdown-bar');
       if (countdownSecs <= 5) {
-        bar.classList.add('urgent');
-        if (navigator.vibrate) navigator.vibrate(80);
+        if (IS_IOS) beep(660, 80, 0.2);
+        else if (navigator.vibrate) navigator.vibrate(80);
       }
+      updateCountdownUI();
     }
   }, 1000);
+}
+
+function showToast(msg) {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.classList.remove('hidden', 'toast-hide');
+  toast.classList.add('toast-show');
+  setTimeout(() => {
+    toast.classList.replace('toast-show', 'toast-hide');
+    setTimeout(() => toast.classList.add('hidden'), 400);
+  }, 2000);
+}
+
+function finishCountdown() {
+  const next = countdownNext; // lire AVANT stopCountdown qui efface countdownNext
+  stopCountdown();
+  showToast(randomFrom(GO_MESSAGES));
+  if (next) {
+    const nextRow = document.querySelector(`.live-series-row[data-ex="${next.exIdx}"][data-s="${next.sIdx + 1}"]`);
+    if (nextRow) advanceSeriesState(next.exIdx, next.sIdx + 1, nextRow);
+  }
 }
 
 function stopCountdown() {
   clearInterval(countdownTimer);
   countdownTimer = null;
+  countdownNext  = null;
   const bar = document.getElementById('countdown-bar');
   bar.classList.add('hidden');
   bar.classList.remove('urgent');
 }
 
-document.getElementById('countdown-skip').addEventListener('click', stopCountdown);
+document.getElementById('countdown-skip').addEventListener('click', finishCountdown);
 
 /* ═══════════════════════════════════════════════════════
    HISTORIQUE
@@ -748,7 +870,7 @@ function openProgrammeEditor(programme = null) {
       const weight = ex.weight ?? ex.series?.[0]?.weight ?? '';
       const rest   = ex.rest   ?? ex.series?.[0]?.rest   ?? '';
       const count  = ex.count  ?? ex.series?.length      ?? 3;
-      exercisesList.appendChild(makeExerciseCard({ name: ex.name, reps, weight, rest, count }));
+      exercisesList.appendChild(makeExerciseCard({ name: ex.name, muscle: ex.muscle || '', reps, weight, rest, count }));
     });
   } else {
     exercisesList.appendChild(makeExerciseCard());
@@ -776,6 +898,7 @@ function saveProgrammeFromEditor(existingId) {
 
   const exercises = Array.from(cards).map(card => ({
     name:   card.querySelector('.exercise-name').value.trim() || 'Sans nom',
+    muscle: card.querySelector('.exercise-muscle').value.trim(),
     reps:   parseFloat(card.querySelector('.series-reps').value)   || 0,
     weight: parseFloat(card.querySelector('.series-weight').value) || 0,
     rest:   parseFloat(card.querySelector('.series-rest').value)   || 0,
@@ -797,19 +920,38 @@ function saveProgrammeFromEditor(existingId) {
 /* ═══════════════════════════════════════════════════════
    EXERCISE CARD BUILDER (éditeur de programme)
 ═══════════════════════════════════════════════════════ */
-function makeExerciseCard({ name = '', reps = '', weight = '', rest = '', count = 3 } = {}) {
+function makeExerciseCard({ name = '', muscle = '', reps = '', weight = '', rest = '', count = 3 } = {}) {
   const card = document.createElement('div');
   card.className = 'exercise-card';
 
   const header = document.createElement('div');
   header.className = 'exercise-header';
-  header.innerHTML = `<input type="text" class="exercise-name" placeholder="Machine / exercice" maxlength="60" value="${name}" />`;
+
+  const nameRow = document.createElement('div');
+  nameRow.className = 'exercise-name-row';
+  const nameInput = document.createElement('input');
+  nameInput.type = 'text';
+  nameInput.className = 'exercise-name';
+  nameInput.placeholder = 'Machine / exercice';
+  nameInput.maxLength = 60;
+  nameInput.value = name;
+  nameRow.appendChild(nameInput);
 
   const removeExBtn = document.createElement('button');
   removeExBtn.className = 'btn-danger';
   removeExBtn.textContent = 'Suppr.';
   removeExBtn.addEventListener('click', () => card.remove());
-  header.appendChild(removeExBtn);
+  nameRow.appendChild(removeExBtn);
+
+  const muscleInput = document.createElement('input');
+  muscleInput.type = 'text';
+  muscleInput.className = 'exercise-muscle';
+  muscleInput.placeholder = 'Muscle ciblé';
+  muscleInput.maxLength = 40;
+  muscleInput.value = muscle;
+
+  header.appendChild(nameRow);
+  header.appendChild(muscleInput);
 
   const labels = document.createElement('div');
   labels.className = 'series-labels';

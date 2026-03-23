@@ -8,47 +8,17 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Coach Mike" />
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
-  <!-- iPhone 16 Pro Max -->
-  <link rel="apple-touch-startup-image" href="icons/splash/splash-1320x2868.png" media="(device-width: 440px) and (device-height: 956px) and (-webkit-device-pixel-ratio: 3)" />
-  <!-- iPhone 16 Pro -->
-  <link rel="apple-touch-startup-image" href="icons/splash/splash-1206x2622.png" media="(device-width: 402px) and (device-height: 874px) and (-webkit-device-pixel-ratio: 3)" />
-  <!-- iPhone 16 Plus / 15 Plus / 14 Plus / 14 Pro Max / 15 Pro Max -->
-  <link rel="apple-touch-startup-image" href="icons/splash/splash-1290x2796.png" media="(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3)" />
-  <!-- iPhone 16 / 15 / 14 -->
-  <link rel="apple-touch-startup-image" href="icons/splash/splash-1170x2532.png" media="(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3)" />
-  <!-- iPhone 15 Pro / 14 Pro -->
-  <link rel="apple-touch-startup-image" href="icons/splash/splash-1179x2556.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3)" />
-  <!-- iPhone 13 mini / 12 mini -->
-  <link rel="apple-touch-startup-image" href="icons/splash/splash-1125x2436.png" media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3)" />
-  <!-- iPhone 11 Pro Max / XS Max -->
-  <link rel="apple-touch-startup-image" href="icons/splash/splash-1242x2688.png" media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 3)" />
-  <!-- iPhone 11 / XR -->
-  <link rel="apple-touch-startup-image" href="icons/splash/splash-828x1792.png"  media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2)" />
-  <!-- iPhone SE / 8 / 7 / 6s -->
-  <link rel="apple-touch-startup-image" href="icons/splash/splash-750x1334.png"  media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2)" />
-  <!-- iPhone SE 1st / 5s -->
-  <link rel="apple-touch-startup-image" href="icons/splash/splash-640x1136.png"  media="(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2)" />
-  <!-- iPad Pro 12.9" -->
-  <link rel="apple-touch-startup-image" href="icons/splash/splash-2048x2732.png" media="(device-width: 1024px) and (device-height: 1366px) and (-webkit-device-pixel-ratio: 2)" />
-  <!-- iPad Pro 11" / Air 10.9" -->
-  <link rel="apple-touch-startup-image" href="icons/splash/splash-1668x2388.png" media="(device-width: 834px) and (device-height: 1194px) and (-webkit-device-pixel-ratio: 2)" />
-  <!-- iPad 10th gen -->
-  <link rel="apple-touch-startup-image" href="icons/splash/splash-1640x2360.png" media="(device-width: 820px) and (device-height: 1180px) and (-webkit-device-pixel-ratio: 2)" />
-  <!-- iPad mini 6 -->
-  <link rel="apple-touch-startup-image" href="icons/splash/splash-1488x2266.png" media="(device-width: 744px) and (device-height: 1133px) and (-webkit-device-pixel-ratio: 2)" />
-  <!-- iPad 9th gen -->
-  <link rel="apple-touch-startup-image" href="icons/splash/splash-1536x2048.png" media="(device-width: 768px) and (device-height: 1024px) and (-webkit-device-pixel-ratio: 2)" />
   <link rel="manifest" href="manifest.json" />
   <link rel="stylesheet" href="style.css" />
-  <title>Gym Tracker</title>
+  <title>Coach Mike</title>
 </head>
 <body>
 
   <!-- LOADING SCREEN -->
   <div id="loading-screen">
     <canvas id="loading-canvas"></canvas>
-    <p id="loading-title">Gym Tracker</p>
-    <p id="loading-sub">Coach Mike</p>
+    <p id="loading-title">Coach Mike</p>
+    <p id="loading-sub" class="app-version"></p>
   </div>
 
   <div id="app">
@@ -57,8 +27,8 @@
     <div id="screen-home" class="screen active">
       <div class="home-header">
         <canvas id="home-canvas"></canvas>
-        <h1 class="home-title">Gym Tracker</h1>
-        <p class="home-sub">Coach Mike</p>
+        <h1 class="home-title">Coach Mike</h1>
+        <p class="home-sub app-version"></p>
       </div>
       <div class="home-main" id="home-main"></div>
       <div class="home-footer">
@@ -101,9 +71,18 @@
   <!-- COUNTDOWN FULLSCREEN -->
   <div id="countdown-bar" class="hidden">
     <span class="countdown-label">Temps de repos</span>
-    <span id="countdown-display">00:00</span>
+    <div class="countdown-ring-wrap">
+      <svg class="countdown-ring" viewBox="0 0 200 200">
+        <circle class="ring-bg" cx="100" cy="100" r="85" />
+        <circle id="ring-progress" class="ring-progress" cx="100" cy="100" r="85" />
+      </svg>
+      <span id="countdown-display">00:00</span>
+    </div>
     <button id="countdown-skip">Passer</button>
   </div>
+
+  <!-- TOAST -->
+  <div id="toast" class="hidden"></div>
 
   <!-- DIALOG CUSTOM -->
   <div id="dialog" class="dialog hidden">

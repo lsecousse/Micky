@@ -57,7 +57,7 @@ function generateIcon(size) {
   ctx.font = `bold ${Math.round(size * 0.20)}px "Courier New", monospace`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'top';
-  ctx.fillText('GT', cx, barbellY + barbellSize * 0.26);
+  ctx.fillText('MC', cx, barbellY + barbellSize * 0.26);
 
   return canvas.toBuffer('image/png');
 }
@@ -81,12 +81,12 @@ function generateSplash(w, h) {
   ctx.font = `bold ${Math.round(Math.min(w, h) * 0.065)}px "Courier New", monospace`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'top';
-  ctx.fillText('Gym Tracker', cx, cy + barbellSize * 0.36);
+  ctx.fillText('Coach Mike', cx, cy + barbellSize * 0.36);
 
-  // "Coach Mike"
+  // version
   ctx.fillStyle = '#888';
   ctx.font = `${Math.round(Math.min(w, h) * 0.035)}px "Courier New", monospace`;
-  ctx.fillText('Coach Mike', cx, cy + barbellSize * 0.36 + Math.min(w, h) * 0.082);
+  ctx.fillText('v1.0', cx, cy + barbellSize * 0.36 + Math.min(w, h) * 0.082);
 
   return canvas.toBuffer('image/png');
 }

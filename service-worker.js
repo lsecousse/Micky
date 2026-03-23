@@ -1,4 +1,4 @@
-const CACHE_NAME = 'gym-tracker-v4';
+const CACHE_NAME = 'coachmike-v2';
 const SHELL = [
   '/',
   '/index.html',
