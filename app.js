@@ -342,6 +342,7 @@ function startSession(programme) {
       return {
         name: ex.name,
         muscle: ex.muscle || '',
+        comment: ex.comment || '',
         series: Array.from({ length: count }, () => ({ reps, weight, rest, state: 'pending' })),
       };
     }),
@@ -375,6 +376,13 @@ function renderLiveSession(tab) {
       exMuscle.className = 'live-exercise-muscle';
       exMuscle.textContent = ex.muscle;
       exDiv.appendChild(exMuscle);
+    }
+
+    if (ex.comment) {
+      const exComment = document.createElement('div');
+      exComment.className = 'live-exercise-comment';
+      exComment.textContent = ex.comment;
+      exDiv.appendChild(exComment);
     }
 
     const labels = document.createElement('div');
@@ -866,11 +874,12 @@ function openProgrammeEditor(programme = null) {
 
   if (programme) {
     programme.exercises.forEach(ex => {
-      const reps   = ex.reps   ?? ex.series?.[0]?.reps   ?? '';
-      const weight = ex.weight ?? ex.series?.[0]?.weight ?? '';
-      const rest   = ex.rest   ?? ex.series?.[0]?.rest   ?? '';
-      const count  = ex.count  ?? ex.series?.length      ?? 3;
-      exercisesList.appendChild(makeExerciseCard({ name: ex.name, muscle: ex.muscle || '', reps, weight, rest, count }));
+      const reps    = ex.reps   ?? ex.series?.[0]?.reps   ?? '';
+      const weight  = ex.weight ?? ex.series?.[0]?.weight ?? '';
+      const rest    = ex.rest   ?? ex.series?.[0]?.rest   ?? '';
+      const count   = ex.count  ?? ex.series?.length      ?? 3;
+      const comment = ex.comment ?? '';
+      exercisesList.appendChild(makeExerciseCard({ name: ex.name, muscle: ex.muscle || '', reps, weight, rest, count, comment }));
     });
   } else {
     exercisesList.appendChild(makeExerciseCard());
@@ -897,12 +906,13 @@ function saveProgrammeFromEditor(existingId) {
   if (!cards.length) { showAlert('Ajoute au moins un exercice.'); return; }
 
   const exercises = Array.from(cards).map(card => ({
-    name:   card.querySelector('.exercise-name').value.trim() || 'Sans nom',
-    muscle: card.querySelector('.exercise-muscle').value.trim(),
-    reps:   parseFloat(card.querySelector('.series-reps').value)   || 0,
-    weight: parseFloat(card.querySelector('.series-weight').value) || 0,
-    rest:   parseFloat(card.querySelector('.series-rest').value)   || 0,
-    count:  parseInt(card.querySelector('.series-count').value)    || 1,
+    name:    card.querySelector('.exercise-name').value.trim() || 'Sans nom',
+    muscle:  card.querySelector('.exercise-muscle').value.trim(),
+    reps:    parseFloat(card.querySelector('.series-reps').value)   || 0,
+    weight:  parseFloat(card.querySelector('.series-weight').value) || 0,
+    rest:    parseFloat(card.querySelector('.series-rest').value)   || 0,
+    count:   parseInt(card.querySelector('.series-count').value)    || 1,
+    comment: card.querySelector('.exercise-comment').value.trim(),
   }));
 
   const programmes = loadProgrammes();
@@ -920,7 +930,7 @@ function saveProgrammeFromEditor(existingId) {
 /* ═══════════════════════════════════════════════════════
    EXERCISE CARD BUILDER (éditeur de programme)
 ═══════════════════════════════════════════════════════ */
-function makeExerciseCard({ name = '', muscle = '', reps = '', weight = '', rest = '', count = 3 } = {}) {
+function makeExerciseCard({ name = '', muscle = '', reps = '', weight = '', rest = '', count = 3, comment = '' } = {}) {
   const card = document.createElement('div');
   card.className = 'exercise-card';
 
@@ -956,24 +966,31 @@ function makeExerciseCard({ name = '', muscle = '', reps = '', weight = '', rest
   const labels = document.createElement('div');
   labels.className = 'series-labels';
   labels.innerHTML = `
+    <span class="series-label">séries</span>
     <span class="series-label">reps</span>
     <span class="series-label">kg</span>
     <span class="series-label">repos (s)</span>
-    <span class="series-label">séries</span>
   `;
 
   const row = document.createElement('div');
   row.className = 'series-row';
   row.innerHTML = `
+    <input type="number" inputmode="numeric" class="series-count" placeholder="nb" min="1" value="${count}" />
     <input type="number" inputmode="decimal" class="series-reps" placeholder="reps" min="1" value="${reps}" />
     <input type="number" inputmode="decimal" class="series-weight" placeholder="kg" min="0" step="0.5" value="${weight}" />
     <input type="number" inputmode="decimal" class="series-rest" placeholder="sec" min="0" value="${rest}" />
-    <input type="number" inputmode="numeric" class="series-count" placeholder="nb" min="1" value="${count}" />
   `;
+
+  const commentInput = document.createElement('textarea');
+  commentInput.className = 'exercise-comment';
+  commentInput.placeholder = 'Commentaire (visible à la salle)';
+  commentInput.rows = 2;
+  commentInput.value = comment;
 
   card.appendChild(header);
   card.appendChild(labels);
   card.appendChild(row);
+  card.appendChild(commentInput);
 
   return card;
 }
@@ -982,8 +999,11 @@ function makeExerciseCard({ name = '', muscle = '', reps = '', weight = '', rest
    DONNÉES
 ═══════════════════════════════════════════════════════ */
 function exportData() {
-  const sessions = loadSessions();
-  const blob = new Blob([JSON.stringify(sessions, null, 2)], { type: 'application/json' });
+  const data = {
+    programmes: loadProgrammes(),
+    sessions:   loadSessions(),
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
@@ -998,15 +1018,24 @@ document.getElementById('import-file').addEventListener('change', e => {
   const reader = new FileReader();
   reader.onload = evt => {
     try {
-      const imported = JSON.parse(evt.target.result);
-      if (!Array.isArray(imported)) throw new Error();
-      const existing = loadSessions();
-      const ids = new Set(existing.map(s => s.id));
-      const merged = [...existing, ...imported.filter(s => !ids.has(s.id))];
-      saveSessions(merged);
-      const added = merged.length - existing.length;
+      const raw = JSON.parse(evt.target.result);
+      const importedSessions   = raw.sessions   || [];
+      const importedProgrammes = raw.programmes || [];
+
+      const existingSessions = loadSessions();
+      const sessionIds = new Set(existingSessions.map(s => s.id));
+      const mergedSessions = [...existingSessions, ...importedSessions.filter(s => !sessionIds.has(s.id))];
+      saveSessions(mergedSessions);
+
+      const existingProgrammes = loadProgrammes();
+      const progIds = new Set(existingProgrammes.map(p => p.id));
+      const mergedProgrammes = [...existingProgrammes, ...importedProgrammes.filter(p => !progIds.has(p.id))];
+      saveProgrammes(mergedProgrammes);
+
+      const addedS = mergedSessions.length - existingSessions.length;
+      const addedP = mergedProgrammes.length - existingProgrammes.length;
       const fb = document.getElementById('data-feedback');
-      if (fb) fb.textContent = `${added} séance${added > 1 ? 's' : ''} importée${added > 1 ? 's' : ''}.`;
+      if (fb) fb.textContent = `${addedS} séance${addedS !== 1 ? 's' : ''} et ${addedP} programme${addedP !== 1 ? 's' : ''} importé${addedP !== 1 ? 's' : ''}.`;
     } catch {
       const fb = document.getElementById('data-feedback');
       if (fb) fb.textContent = 'Erreur : fichier JSON invalide.';

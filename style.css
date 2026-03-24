@@ -28,6 +28,25 @@ html, body {
   -webkit-tap-highlight-color: transparent;
 }
 
+@media screen and (orientation: landscape) {
+  body::before {
+    content: 'Veuillez tourner votre téléphone en portrait';
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 32px;
+  }
+  #app { visibility: hidden; }
+}
+
 #app {
   height: 100%;
   width: 100%;
@@ -372,6 +391,7 @@ input:focus { border-color: var(--accent); }
 .live-exercise-name { font-size: 14px; font-weight: 600; transition: opacity 0.2s; }
 .live-exercise-name--done { text-decoration: line-through; opacity: 0.4; }
 .live-exercise-muscle { font-size: 12px; color: var(--accent); margin-top: 1px; }
+.live-exercise-comment { font-size: 12px; color: var(--text-muted); margin-top: 4px; font-style: italic; padding: 4px 6px; background: rgba(255,255,255,0.04); border-left: 2px solid var(--accent); border-radius: 2px; }
 
 .live-series-labels {
   display: grid;
@@ -616,6 +636,20 @@ input:focus { border-color: var(--accent); }
 }
 
 .series-label { font-size: 11px; color: var(--text-muted); text-align: center; }
+
+.exercise-comment {
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  padding: 8px;
+  resize: vertical;
+}
 
 .btn-remove-series {
   background: none;
