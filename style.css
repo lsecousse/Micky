@@ -179,6 +179,7 @@ html, body {
   color: var(--accent);
 }
 
+.home-next-muscles { font-size: 13px; color: var(--accent); }
 .home-next-meta { font-size: 13px; color: var(--text-muted); }
 
 .home-next-cta {
@@ -726,3 +727,111 @@ input:focus { border-color: var(--accent); }
 
 /* ── Données ──────────────────────────────────────────── */
 .data-feedback { font-size: 13px; color: var(--accent); min-height: 20px; }
+
+/* ── Stats ────────────────────────────────────────────── */
+.stats-section { margin-bottom: 28px; }
+.stats-section-title { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 12px; }
+
+/* Résumé */
+.stats-summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.stats-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 12px; display: flex; flex-direction: column; gap: 3px; }
+.stats-card-value { font-size: 22px; font-weight: 700; color: var(--accent); }
+.stats-card-label { font-size: 11px; color: var(--text-muted); }
+.stats-card-sub { font-size: 11px; color: var(--text-muted); opacity: 0.7; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* Fréquence */
+.stats-bar-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 120px;
+  padding-bottom: 0;
+}
+.stats-bar-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  height: 100%;
+  gap: 3px;
+}
+.stats-bar-count { font-size: 11px; color: var(--accent); min-height: 14px; }
+.stats-bar { width: 100%; background: var(--accent); border-radius: 3px 3px 0 0; min-height: 3px; transition: height 0.3s; }
+.stats-bar--empty { background: #222; }
+.stats-bar-label { font-size: 10px; color: var(--text-muted); white-space: nowrap; }
+
+/* Carousel machines */
+.stats-carousel { overflow: hidden; position: relative; }
+.stats-carousel-track {
+  display: flex;
+  transition: transform 0.3s ease;
+  will-change: transform;
+}
+.stats-machine-card {
+  min-width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  box-sizing: border-box;
+}
+.stats-machine-name { font-size: 16px; font-weight: 600; margin-bottom: 2px; }
+.stats-machine-muscle { font-size: 11px; color: var(--accent); margin-bottom: 12px; }
+.stats-machine-weights {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+.stats-machine-weight-item { display: flex; flex-direction: column; gap: 2px; }
+.stats-weight-lbl { font-size: 10px; color: var(--text-muted); }
+.stats-weight-val { font-size: 18px; font-weight: 600; }
+.stats-weight-val--current { color: var(--accent); }
+.stats-machine-arrow { color: var(--text-muted); font-size: 16px; }
+.stats-delta { font-size: 13px; margin-left: auto; }
+.stats-delta.up      { color: #4caf50; }
+.stats-delta.down    { color: #f44336; }
+.stats-delta.neutral { color: var(--text-muted); }
+
+.stats-carousel-dots {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 12px;
+}
+.stats-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: #333;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.stats-dot.active { background: var(--accent); }
+
+.stats-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+.stats-pill {
+  padding: 5px 12px;
+  border-radius: 20px;
+  border: 1px solid #333;
+  background: none;
+  color: var(--text-muted);
+  font-family: var(--font);
+  font-size: 12px;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+.stats-pill.active {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: rgba(255, 107, 0, 0.1);
+}
+
+.stats-svg { width: 100%; height: auto; display: block; }
+.stats-no-data { font-size: 13px; color: var(--text-muted); text-align: center; padding: 20px 0; }

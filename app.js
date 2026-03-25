@@ -1,7 +1,7 @@
 /* ═══════════════════════════════════════════════════════
    VERSION
 ═══════════════════════════════════════════════════════ */
-const APP_VERSION = '2026.mars.24';
+const APP_VERSION = '2026.mars.25';
 document.querySelectorAll('.app-version').forEach(el => el.textContent = APP_VERSION);
 
 /* ═══════════════════════════════════════════════════════
@@ -137,12 +137,15 @@ function showScreen(name) {
   if (name === 'home')    renderHome();
   if (name === 'seance')  renderSeanceScreen();
   if (name === 'history') renderHistory();
+  if (name === 'stats')   renderStats();
   if (name === 'params')  renderParams();
 }
 
 document.getElementById('go-history').addEventListener('click', () => showScreen('history'));
+document.getElementById('go-stats').addEventListener('click',   () => showScreen('stats'));
 document.getElementById('go-params').addEventListener('click',  () => showScreen('params'));
 document.getElementById('back-history').addEventListener('click', () => showScreen('home'));
+document.getElementById('back-stats').addEventListener('click',   () => showScreen('home'));
 document.getElementById('back-params').addEventListener('click',  () => showScreen('home'));
 document.getElementById('back-seance').addEventListener('click', () => {
   if (liveSession) {
@@ -215,12 +218,14 @@ function renderHome() {
   const { ordered, lastSession } = cyclicProgrammes(programmes);
   const next = ordered[0];
   const seriesCount = next.exercises.reduce((s, e) => s + (e.count ?? e.series?.length ?? 0), 0);
+  const muscles = [...new Set(next.exercises.map(e => e.muscle).filter(Boolean))];
 
   const card = document.createElement('div');
   card.className = 'home-next-card';
   card.innerHTML = `
     <span class="home-next-label">Prochain entraînement</span>
     <span class="home-next-name">${next.name}</span>
+    ${muscles.length ? `<span class="home-next-muscles">${muscles.join(' · ')}</span>` : ''}
     <span class="home-next-meta">${next.exercises.length} exercice${next.exercises.length > 1 ? 's' : ''} · ${seriesCount} séries</span>
     <button class="home-next-cta">C'est parti →</button>
   `;
@@ -499,7 +504,8 @@ function finishSession() {
       startedAt: liveSession.startedAt,
       duration: durationSecs,
       exercises: liveSession.exercises.map(ex => ({
-        name: ex.name,
+        name:   ex.name,
+        muscle: ex.muscle || '',
         series: ex.series.map(s => ({
           reps: s.reps,
           weight: s.weight,
@@ -538,8 +544,18 @@ function randomFrom(arr) {
 const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
 let audioCtx = null;
 
+// Initialise l'AudioContext au premier geste utilisateur (requis par les navigateurs)
+document.addEventListener('touchstart', () => {
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  } else if (audioCtx.state === 'suspended') {
+    audioCtx.resume();
+  }
+}, { once: false, passive: true });
+
 function beep(freq = 880, duration = 120, volume = 0.4) {
   if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
   const osc  = audioCtx.createOscillator();
   const gain = audioCtx.createGain();
   osc.connect(gain);
@@ -594,13 +610,14 @@ function startCountdown(seconds, exIdx, sIdx) {
   countdownTimer = setInterval(() => {
     countdownSecs--;
     if (countdownSecs <= 0) {
-      if (IS_IOS) beepSequence(5);
-      else if (navigator.vibrate) navigator.vibrate([400, 100, 400, 100, 400]);
+      beepSequence(5);
+      if (navigator.vibrate) navigator.vibrate([400, 100, 400, 100, 400]);
       finishCountdown();
     } else {
       if (countdownSecs <= 5) {
-        if (IS_IOS) beep(660, 80, 0.2);
-        else if (navigator.vibrate) navigator.vibrate(80);
+        beep(660, 80, 0.2);
+        if (navigator.vibrate) navigator.vibrate(80);
+        if (countdownSecs === 5) showToast('Prenez place !');
       }
       updateCountdownUI();
     }
@@ -741,6 +758,289 @@ document.getElementById('modal-close').addEventListener('click', closeModal);
 document.getElementById('modal').addEventListener('click', e => {
   if (e.target === e.currentTarget) closeModal();
 });
+
+/* ═══════════════════════════════════════════════════════
+   STATS
+═══════════════════════════════════════════════════════ */
+function renderStats() {
+  const body = document.getElementById('screen-stats-body');
+  body.innerHTML = '';
+  const sessions = loadSessions().slice().sort((a, b) => a.date.localeCompare(b.date));
+
+  if (!sessions.length) {
+    body.innerHTML = '<p class="empty-msg">Aucune séance enregistrée.</p>';
+    return;
+  }
+
+  body.appendChild(buildStatsSummary(sessions));
+  body.appendChild(buildStatsFrequency(sessions));
+  body.appendChild(buildStatsProgression(sessions));
+}
+
+function statsSection(title) {
+  const section = document.createElement('div');
+  section.className = 'stats-section';
+  const h = document.createElement('h3');
+  h.className = 'stats-section-title';
+  h.textContent = title;
+  section.appendChild(h);
+  return section;
+}
+
+function sessionVolume(session) {
+  return session.exercises.reduce((sum, ex) =>
+    sum + ex.series.filter(s => s.done !== false).reduce((s, se) => s + (se.reps || 0) * (se.weight || 0), 0)
+  , 0);
+}
+
+function buildStatsSummary(sessions) {
+  const section = statsSection('Résumé');
+
+  const totalVol = sessions.reduce((s, se) => s + sessionVolume(se), 0);
+  const totalDur = sessions.reduce((s, se) => s + (se.duration || 0), 0);
+  const best = sessions.reduce((b, s) => {
+    const v = sessionVolume(s);
+    return v > b.vol ? { vol: v, name: s.programmeName } : b;
+  }, { vol: 0, name: '' });
+
+  const grid = document.createElement('div');
+  grid.className = 'stats-summary-grid';
+
+  [
+    { value: sessions.length,                      label: 'Séances' },
+    { value: `${(totalVol / 1000).toFixed(1)} t`,  label: 'Volume total' },
+    { value: `${Math.round(totalDur / 3600)} h`,   label: 'Temps total' },
+    { value: `${(best.vol / 1000).toFixed(1)} t`,  label: 'Meilleure séance', sub: best.name },
+  ].forEach(({ value, label, sub }) => {
+    const card = document.createElement('div');
+    card.className = 'stats-card';
+    card.innerHTML = `
+      <span class="stats-card-value">${value}</span>
+      <span class="stats-card-label">${label}</span>
+      ${sub ? `<span class="stats-card-sub">${sub}</span>` : ''}
+    `;
+    grid.appendChild(card);
+  });
+
+  section.appendChild(grid);
+  return section;
+}
+
+function isoWeekKey(dateStr) {
+  const d = new Date(dateStr);
+  const day = (d.getDay() + 6) % 7; // lundi = 0
+  const monday = new Date(d);
+  monday.setDate(d.getDate() - day);
+  return monday.toISOString().slice(0, 10);
+}
+
+function buildStatsFrequency(sessions) {
+  const section = statsSection('Fréquence');
+
+  const weekMap = {};
+  sessions.forEach(s => {
+    const k = isoWeekKey(s.date);
+    weekMap[k] = (weekMap[k] || 0) + 1;
+  });
+
+  const weeks = [];
+  for (let i = 7; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i * 7);
+    const monday = new Date(d);
+    monday.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+    const k = isoWeekKey(d.toISOString().slice(0, 10));
+    const label = `${String(monday.getDate()).padStart(2,'0')}/${String(monday.getMonth()+1).padStart(2,'0')}`;
+    weeks.push({ key: k, count: weekMap[k] || 0, label });
+  }
+
+  const maxCount = Math.max(...weeks.map(w => w.count), 1);
+
+  const chart = document.createElement('div');
+  chart.className = 'stats-bar-chart';
+
+  weeks.forEach(({ count, label }) => {
+    const col = document.createElement('div');
+    col.className = 'stats-bar-col';
+
+    const countLbl = document.createElement('span');
+    countLbl.className = 'stats-bar-count';
+    countLbl.textContent = count || '';
+
+    const bar = document.createElement('div');
+    bar.className = 'stats-bar' + (count === 0 ? ' stats-bar--empty' : '');
+    bar.style.height = `${Math.round((count / maxCount) * 100)}%`;
+
+    const dateLbl = document.createElement('span');
+    dateLbl.className = 'stats-bar-label';
+    dateLbl.textContent = label;
+
+    col.appendChild(countLbl);
+    col.appendChild(bar);
+    col.appendChild(dateLbl);
+    chart.appendChild(col);
+  });
+
+  section.appendChild(chart);
+  return section;
+}
+
+function buildStatsProgression(sessions) {
+  const section = statsSection('Machines');
+
+  // Lookup muscle : priorité session, fallback programmes
+  const muscleByName = {};
+  loadProgrammes().forEach(p => p.exercises.forEach(e => { if (e.muscle) muscleByName[e.name] = e.muscle; }));
+  sessions.forEach(s => s.exercises.forEach(e => { if (e.muscle) muscleByName[e.name] = e.muscle; }));
+
+  const names = [...new Set(sessions.flatMap(s => s.exercises.map(e => e.name)))].sort();
+  if (!names.length) return section;
+
+  // Calcul des données par machine
+  const machineData = names.map(name => {
+    const points = sessions.map(s => {
+      const ex = s.exercises.find(e => e.name === name);
+      if (!ex) return null;
+      const done = ex.series.filter(se => se.done !== false && se.weight > 0);
+      if (!done.length) return null;
+      return { date: s.date, weight: Math.max(...done.map(se => se.weight)) };
+    }).filter(Boolean);
+    return { name, muscle: muscleByName[name] || '', points };
+  }).filter(d => d.points.length >= 1);
+
+  if (!machineData.length) return section;
+
+  // Muscles uniques triés, avec "Tous" en premier
+  const muscles = ['Tous', ...[...new Set(machineData.map(d => d.muscle).filter(Boolean))].sort()];
+
+  // Sélecteur muscle — pills
+  const pills = document.createElement('div');
+  pills.className = 'stats-pills';
+  let activeMuscle = 'Tous';
+  muscles.forEach(m => {
+    const pill = document.createElement('button');
+    pill.className = 'stats-pill' + (m === 'Tous' ? ' active' : '');
+    pill.textContent = m;
+    pill.dataset.muscle = m;
+    pills.appendChild(pill);
+  });
+  section.appendChild(pills);
+
+  // Shim select pour réutiliser le listener existant
+  const select = { value: 'Tous', addEventListener: (ev, fn) => { select._fn = fn; } };
+
+  let current = 0;
+  let filtered = machineData;
+
+  // Conteneur carousel
+  const carousel = document.createElement('div');
+  carousel.className = 'stats-carousel';
+
+  const track = document.createElement('div');
+  track.className = 'stats-carousel-track';
+
+  const buildCards = (data) => {
+    track.innerHTML = '';
+    data.forEach(({ name, muscle, points }) => {
+      const card = document.createElement('div');
+      card.className = 'stats-machine-card';
+
+      const startW  = points[0].weight;
+    const currentW = points[points.length - 1].weight;
+    const delta   = currentW - startW;
+    const deltaStr = delta === 0 ? '=' : `${delta > 0 ? '+' : ''}${delta.toFixed(1)} kg`;
+    const deltaClass = delta > 0 ? 'up' : delta < 0 ? 'down' : 'neutral';
+
+    let svgHtml = '';
+    if (points.length >= 2) {
+      const W = 280, H = 90;
+      const minW = Math.min(...points.map(p => p.weight));
+      const maxW = Math.max(...points.map(p => p.weight));
+      const range = maxW - minW || 1;
+      const pad = { t: 10, b: 22, l: 34, r: 8 };
+      const x = i => pad.l + (i / (points.length - 1)) * (W - pad.l - pad.r);
+      const y = w => pad.t + (1 - (w - minW) / range) * (H - pad.t - pad.b);
+      const path = points.map((p, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(p.weight).toFixed(1)}`).join(' ');
+      svgHtml = `
+        <svg viewBox="0 0 ${W} ${H}" class="stats-svg">
+          <line x1="${pad.l}" y1="${pad.t}" x2="${pad.l}" y2="${H-pad.b}" stroke="#2a2a2a" stroke-width="1"/>
+          <line x1="${pad.l}" y1="${H-pad.b}" x2="${W-pad.r}" y2="${H-pad.b}" stroke="#2a2a2a" stroke-width="1"/>
+          <text x="${pad.l-4}" y="${y(maxW)+4}" text-anchor="end" font-size="9" fill="#555">${maxW}kg</text>
+          <text x="${pad.l-4}" y="${y(minW)+4}" text-anchor="end" font-size="9" fill="#555">${minW}kg</text>
+          <path d="${path}" fill="none" stroke="#FF6B00" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+          ${points.map((p,i) => `<circle cx="${x(i).toFixed(1)}" cy="${y(p.weight).toFixed(1)}" r="2.5" fill="#FF6B00"/>`).join('')}
+          <text x="${x(0)}" y="${H}" text-anchor="middle" font-size="9" fill="#555">${points[0].date.slice(5)}</text>
+          <text x="${x(points.length-1)}" y="${H}" text-anchor="middle" font-size="9" fill="#555">${points[points.length-1].date.slice(5)}</text>
+        </svg>`;
+    }
+
+      card.innerHTML = `
+        <div class="stats-machine-name">${name}</div>
+        ${muscle ? `<div class="stats-machine-muscle">${muscle}</div>` : ''}
+        <div class="stats-machine-weights">
+          <span class="stats-machine-weight-item"><span class="stats-weight-lbl">Départ</span><span class="stats-weight-val">${startW} kg</span></span>
+          <span class="stats-machine-arrow">→</span>
+          <span class="stats-machine-weight-item"><span class="stats-weight-lbl">Actuel</span><span class="stats-weight-val stats-weight-val--current">${currentW} kg</span></span>
+          <span class="stats-delta ${deltaClass}">${deltaStr}</span>
+        </div>
+        ${svgHtml}
+      `;
+      track.appendChild(card);
+    });
+  };
+
+  buildCards(machineData);
+
+  // Dots
+  const dots = document.createElement('div');
+  dots.className = 'stats-carousel-dots';
+
+  const rebuildDots = (count) => {
+    dots.innerHTML = '';
+    for (let i = 0; i < count; i++) {
+      const dot = document.createElement('span');
+      dot.className = 'stats-dot' + (i === 0 ? ' active' : '');
+      dot.addEventListener('click', () => goTo(i));
+      dots.appendChild(dot);
+    }
+  };
+
+  const goTo = (idx) => {
+    current = Math.max(0, Math.min(idx, filtered.length - 1));
+    track.style.transform = `translateX(calc(-${current} * 100%))`;
+    dots.querySelectorAll('.stats-dot').forEach((d, i) => d.classList.toggle('active', i === current));
+  };
+
+  rebuildDots(machineData.length);
+
+  pills.addEventListener('click', e => {
+    const pill = e.target.closest('.stats-pill');
+    if (!pill) return;
+    pills.querySelectorAll('.stats-pill').forEach(p => p.classList.remove('active'));
+    pill.classList.add('active');
+    const muscle = pill.dataset.muscle;
+    filtered = muscle === 'Tous' ? machineData : machineData.filter(d => d.muscle === muscle);
+    current = 0;
+    track.style.transition = 'none';
+    track.style.transform = 'translateX(0)';
+    buildCards(filtered);
+    rebuildDots(filtered.length);
+    setTimeout(() => { track.style.transition = ''; }, 50);
+  });
+
+  // Swipe touch
+  let touchStartX = 0;
+  carousel.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; }, { passive: true });
+  carousel.addEventListener('touchend', e => {
+    const delta = touchStartX - e.changedTouches[0].clientX;
+    if (Math.abs(delta) > 40) goTo(current + (delta > 0 ? 1 : -1));
+  });
+
+  carousel.appendChild(track);
+  carousel.appendChild(dots);
+  section.appendChild(carousel);
+  return section;
+}
 
 /* ═══════════════════════════════════════════════════════
    PARAMÈTRES — liste des programmes
