@@ -1449,6 +1449,8 @@ function renderLogin() {
     const { data, error } = await db.auth.signInWithPassword({ email, password });
     if (error) { errEl.textContent = error.message; errEl.classList.remove('hidden'); return; }
     currentUser = data.user;
+    const profile = await getMyProfile();
+    if (profile?.role === 'coach') { window.location.href = 'backoffice.html'; return; }
     await syncProgrammes().catch(() => {});
     showScreen('home');
   });
@@ -1549,6 +1551,11 @@ document.getElementById('import-file').addEventListener('change', e => {
 (async function init() {
   const { data: { session } } = await db.auth.getSession();
   currentUser = session?.user || null;
+
+  if (currentUser) {
+    const profile = await getMyProfile();
+    if (profile?.role === 'coach') { window.location.href = 'backoffice.html'; return; }
+  }
 
   await Promise.all([
     currentUser ? syncProgrammes().catch(() => {}) : Promise.resolve(),
