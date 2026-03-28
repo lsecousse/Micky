@@ -1441,15 +1441,6 @@ function renderLogin() {
     ctx.fillRect(cx + barW/2 - plateW - collarW, cy - collarH/2, collarW, collarH);
   }
 
-  document.getElementById('toggle-to-signup').addEventListener('click', () => {
-    document.getElementById('login-form').classList.add('hidden');
-    document.getElementById('signup-form').classList.remove('hidden');
-  });
-  document.getElementById('toggle-to-login').addEventListener('click', () => {
-    document.getElementById('signup-form').classList.add('hidden');
-    document.getElementById('login-form').classList.remove('hidden');
-  });
-
   document.getElementById('btn-login').addEventListener('click', async () => {
     const email    = document.getElementById('login-email').value.trim();
     const password = document.getElementById('login-password').value;
@@ -1462,21 +1453,6 @@ function renderLogin() {
     showScreen('home');
   });
 
-  document.getElementById('btn-signup').addEventListener('click', async () => {
-    const prenom   = document.getElementById('signup-prenom').value.trim();
-    const nom      = document.getElementById('signup-nom').value.trim();
-    const email    = document.getElementById('signup-email').value.trim();
-    const password = document.getElementById('signup-password').value;
-    const errEl    = document.getElementById('signup-error');
-    errEl.classList.add('hidden');
-    const { data, error } = await db.auth.signUp({ email, password });
-    if (error) { errEl.textContent = error.message; errEl.classList.remove('hidden'); return; }
-    if (!data.user) { errEl.textContent = 'Confirmez votre email puis connectez-vous.'; errEl.classList.remove('hidden'); return; }
-    currentUser = data.user;
-    await db.from('profiles').update({ nom, prenom }).eq('id', data.user.id);
-    await syncProgrammes().catch(() => {});
-    showScreen('home');
-  });
 }
 
 /* ═══════════════════════════════════════════════════════
