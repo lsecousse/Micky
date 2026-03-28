@@ -348,13 +348,12 @@ function showAddClientModal() {
   overlay.innerHTML = `
     <div class="modal">
       <h2>Nouveau client</h2>
-      <input type="text"     id="m-prenom"  placeholder="Prénom" />
-      <input type="text"     id="m-nom"     placeholder="Nom" />
-      <input type="email"    id="m-email"   placeholder="Email" />
-      <input type="password" id="m-pass"    placeholder="Mot de passe temporaire" autocomplete="new-password" />
+      <input type="text"  id="m-prenom" placeholder="Prénom" />
+      <input type="text"  id="m-nom"    placeholder="Nom" />
+      <input type="email" id="m-email"  placeholder="Email" />
       <p class="error-msg hidden" id="m-err"></p>
       <div class="flex-row">
-        <button class="btn-primary" id="m-create">Créer le compte</button>
+        <button class="btn-primary" id="m-create">Créer et envoyer l'invitation</button>
         <button class="btn-secondary" id="m-cancel">Annuler</button>
       </div>
     </div>`;
@@ -365,36 +364,49 @@ function showAddClientModal() {
     const prenom = document.getElementById('m-prenom').value.trim();
     const nom    = document.getElementById('m-nom').value.trim();
     const email  = document.getElementById('m-email').value.trim();
-    const pass   = document.getElementById('m-pass').value;
     const errEl  = document.getElementById('m-err');
+    const btn    = document.getElementById('m-create');
     errEl.classList.add('hidden');
 
-    if (!email || !pass || pass.length < 6) {
-      errEl.textContent = 'Email et mot de passe (min. 6 car.) requis.';
+    if (!email) {
+      errEl.textContent = 'L\'email est requis.';
       errEl.classList.remove('hidden');
       return;
     }
+
+    btn.disabled = true;
+    btn.textContent = 'Création en cours…';
+
     try {
-      const newUserId = await createClientAccount(email, pass);
+      // Mot de passe temporaire aléatoire (le client le remplacera via le lien)
+      const tempPass = crypto.randomUUID().replace(/-/g, '').slice(0, 12) + 'Aa1!';
+      const newUserId = await createClientAccount(email, tempPass);
 
       // Attendre que le trigger Supabase crée le profil
       await new Promise(r => setTimeout(r, 800));
 
-      const { error: updateError } = await db.rpc('link_client_to_coach', {
+      const { error: linkError } = await db.rpc('link_client_to_coach', {
         p_client_id: newUserId,
         p_coach_id:  coachId,
       });
-      if (updateError) throw new Error(`Liaison échouée : ${updateError.message}`);
+      if (linkError) throw new Error(`Liaison échouée : ${linkError.message}`);
 
-      // Met à jour nom/prénom séparément (son propre profil, pas de RLS)
       await db.from('profiles').update({ nom, prenom, email }).eq('id', newUserId);
+
+      // Envoyer le mail d'invitation avec lien pour définir le mot de passe
+      const redirectTo = window.location.origin + '/set-password.html';
+      const { error: mailError } = await db.auth.resetPasswordForEmail(email, { redirectTo });
+      if (mailError) throw new Error(`Mail non envoyé : ${mailError.message}`);
 
       overlay.remove();
       await loadClients();
       renderClientList();
+      alert(`Compte créé !\nUn email a été envoyé à ${email} pour définir son mot de passe.`);
     } catch (err) {
       errEl.textContent = err.message;
       errEl.classList.remove('hidden');
+      btn.disabled = false;
+      btn.textContent = 'Créer et envoyer l\'invitation';
     }
   });
 }
