@@ -1,0 +1,4884 @@
+{
+  "programmes": [
+    {
+      "id": "mn4tv8jzvsc0g",
+      "name": "Séance N°3",
+      "exercises": [
+        {
+          "name": "Seated row",
+          "muscle": "Dos",
+          "reps": 20,
+          "weight": 13.3,
+          "rest": 75,
+          "count": 4,
+          "comment": ""
+        },
+        {
+          "name": "Convergente",
+          "muscle": "Dos",
+          "reps": 20,
+          "weight": 30,
+          "rest": 75,
+          "count": 4,
+          "comment": ""
+        },
+        {
+          "name": "Shoulder press",
+          "muscle": "Epaules",
+          "reps": 16,
+          "weight": 4.5,
+          "rest": 75,
+          "count": 4,
+          "comment": ""
+        },
+        {
+          "name": "Latéral raise",
+          "muscle": "Epaules",
+          "reps": 20,
+          "weight": 4.5,
+          "rest": 75,
+          "count": 4,
+          "comment": ""
+        },
+        {
+          "name": "Rear delt",
+          "muscle": "Epaules",
+          "reps": 20,
+          "weight": 11,
+          "rest": 75,
+          "count": 4,
+          "comment": "Réglage 1"
+        }
+      ]
+    },
+    {
+      "id": "mn4tz5hqw49fb",
+      "name": "Séance N°1",
+      "exercises": [
+        {
+          "name": "Chest press",
+          "muscle": "Pectoraux",
+          "reps": 20,
+          "weight": 6.8,
+          "rest": 75,
+          "count": 4,
+          "comment": ""
+        },
+        {
+          "name": "Pec fly",
+          "muscle": "Pectoraux",
+          "reps": 20,
+          "weight": 18,
+          "rest": 75,
+          "count": 4,
+          "comment": ""
+        },
+        {
+          "name": "Curl barre",
+          "muscle": "Biceps",
+          "reps": 12,
+          "weight": 10,
+          "rest": 75,
+          "count": 4,
+          "comment": ""
+        },
+        {
+          "name": "Arm Curl",
+          "muscle": "Biceps",
+          "reps": 12,
+          "weight": 4.5,
+          "rest": 75,
+          "count": 4,
+          "comment": ""
+        },
+        {
+          "name": "Seated dip",
+          "muscle": "Biceps",
+          "reps": 20,
+          "weight": 18,
+          "rest": 75,
+          "count": 4,
+          "comment": ""
+        },
+        {
+          "name": "Triceps à la poulie haute corde",
+          "muscle": "Triceps",
+          "reps": 20,
+          "weight": 4.5,
+          "rest": 75,
+          "count": 4,
+          "comment": ""
+        }
+      ]
+    },
+    {
+      "id": "mn4u26r7324yu",
+      "name": "Séance N°2",
+      "exercises": [
+        {
+          "name": "Climb box",
+          "muscle": "Cuisses",
+          "reps": 12,
+          "weight": 0,
+          "rest": 75,
+          "count": 4,
+          "comment": ""
+        },
+        {
+          "name": "Leg extension",
+          "muscle": "Cuisses",
+          "reps": 20,
+          "weight": 18,
+          "rest": 75,
+          "count": 4,
+          "comment": "Réglage dossier 6"
+        },
+        {
+          "name": "Hip abduction",
+          "muscle": "Cuisses",
+          "reps": 20,
+          "weight": 18,
+          "rest": 75,
+          "count": 4,
+          "comment": ""
+        },
+        {
+          "name": "Hip adduction",
+          "muscle": "Cuisses",
+          "reps": 20,
+          "weight": 11,
+          "rest": 75,
+          "count": 4,
+          "comment": ""
+        },
+        {
+          "name": "Rotary hip",
+          "muscle": "Cuisses",
+          "reps": 20,
+          "weight": 39,
+          "rest": 75,
+          "count": 4,
+          "comment": ""
+        },
+        {
+          "name": "Press",
+          "muscle": "Cuisses",
+          "reps": 20,
+          "weight": 32,
+          "rest": 75,
+          "count": 4,
+          "comment": ""
+        }
+      ]
+    }
+  ],
+  "sessions": [
+    {
+      "id": "f09d82addf865e",
+      "programmeId": "mn4tv8jzvsc0g",
+      "programmeName": "Séance N°3",
+      "date": "2026-01-19",
+      "startedAt": "2026-01-19T09:15:00.000Z",
+      "duration": 3300,
+      "exercises": [
+        {
+          "name": "Seated row",
+          "series": [
+            {
+              "reps": 19,
+              "weight": 13.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 13.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 13.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 13.5,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Convergente",
+          "series": [
+            {
+              "reps": 20,
+              "weight": 30,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 30,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 30,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 30,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Shoulder press",
+          "series": [
+            {
+              "reps": 17,
+              "weight": 4.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 15,
+              "weight": 4.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 16,
+              "weight": 4.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 17,
+              "weight": 4.5,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Latéral raise",
+          "series": [
+            {
+              "reps": 19,
+              "weight": 4.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 4.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 4.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 4.5,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Rear delt",
+          "series": [
+            {
+              "reps": 20,
+              "weight": 11,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 11,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 11,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 11,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ac01c5f9455042",
+      "programmeId": "mn4tz5hqw49fb",
+      "programmeName": "Séance N°1",
+      "date": "2026-01-21",
+      "startedAt": "2026-01-21T09:16:00.000Z",
+      "duration": 3420,
+      "exercises": [
+        {
+          "name": "Chest press",
+          "series": [
+            {
+              "reps": 20,
+              "weight": 7,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 7,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 7,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 7,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Pec fly",
+          "series": [
+            {
+              "reps": 21,
+              "weight": 18,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 18,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 18,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 18,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Curl barre",
+          "series": [
+            {
+              "reps": 11,
+              "weight": 10,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 12,
+              "weight": 10,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 13,
+              "weight": 10,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 11,
+              "weight": 10,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Arm Curl",
+          "series": [
+            {
+              "reps": 12,
+              "weight": 4.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 13,
+              "weight": 4.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 11,
+              "weight": 4.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 12,
+              "weight": 4.5,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Seated dip",
+          "series": [
+            {
+              "reps": 21,
+              "weight": 18,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 18,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 18,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 18,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Triceps à la poulie haute corde",
+          "series": [
+            {
+              "reps": 19,
+              "weight": 4.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 4.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 4.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 4.5,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dc4977b08ed773",
+      "programmeId": "mn4u26r7324yu",
+      "programmeName": "Séance N°2",
+      "date": "2026-01-23",
+      "startedAt": "2026-01-23T09:17:00.000Z",
+      "duration": 3540,
+      "exercises": [
+        {
+          "name": "Climb box",
+          "series": [
+            {
+              "reps": 13,
+              "weight": 0,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 11,
+              "weight": 0,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 12,
+              "weight": 0,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 13,
+              "weight": 0,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Leg extension",
+          "series": [
+            {
+              "reps": 19,
+              "weight": 18,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 18,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 18,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 18,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Hip abduction",
+          "series": [
+            {
+              "reps": 20,
+              "weight": 18,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 18,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 18,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 18,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Hip adduction",
+          "series": [
+            {
+              "reps": 21,
+              "weight": 11,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 11,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 11,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 11,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Rotary hip",
+          "series": [
+            {
+              "reps": 19,
+              "weight": 39,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 39,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 39,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 39,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Press",
+          "series": [
+            {
+              "reps": 20,
+              "weight": 32,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 32,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 32,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 32,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f076a589ea862a",
+      "programmeId": "mn4tv8jzvsc0g",
+      "programmeName": "Séance N°3",
+      "date": "2026-01-26",
+      "startedAt": "2026-01-26T09:18:00.000Z",
+      "duration": 3660,
+      "exercises": [
+        {
+          "name": "Seated row",
+          "series": [
+            {
+              "reps": 19,
+              "weight": 13.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 13.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 13.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 13.5,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Convergente",
+          "series": [
+            {
+              "reps": 20,
+              "weight": 30,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 30,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 30,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 30,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Shoulder press",
+          "series": [
+            {
+              "reps": 17,
+              "weight": 4.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 15,
+              "weight": 4.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 16,
+              "weight": 4.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 17,
+              "weight": 4.5,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Latéral raise",
+          "series": [
+            {
+              "reps": 19,
+              "weight": 4.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 4.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 4.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 4.5,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Rear delt",
+          "series": [
+            {
+              "reps": 20,
+              "weight": 11,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 11,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 11,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 11,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "3a5074ea299125",
+      "programmeId": "mn4tz5hqw49fb",
+      "programmeName": "Séance N°1",
+      "date": "2026-01-28",
+      "startedAt": "2026-01-28T09:19:00.000Z",
+      "duration": 3780,
+      "exercises": [
+        {
+          "name": "Chest press",
+          "series": [
+            {
+              "reps": 20,
+              "weight": 7,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 7,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 7,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 7,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Pec fly",
+          "series": [
+            {
+              "reps": 21,
+              "weight": 18,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 18,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 18,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 18,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Curl barre",
+          "series": [
+            {
+              "reps": 11,
+              "weight": 10,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 12,
+              "weight": 10,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 13,
+              "weight": 10,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 11,
+              "weight": 10,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Arm Curl",
+          "series": [
+            {
+              "reps": 12,
+              "weight": 4.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 13,
+              "weight": 4.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 11,
+              "weight": 4.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 12,
+              "weight": 4.5,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Seated dip",
+          "series": [
+            {
+              "reps": 21,
+              "weight": 18,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 18,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 18,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 18,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Triceps à la poulie haute corde",
+          "series": [
+            {
+              "reps": 19,
+              "weight": 4.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 4.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 4.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 4.5,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "d905b041758b55",
+      "programmeId": "mn4u26r7324yu",
+      "programmeName": "Séance N°2",
+      "date": "2026-01-30",
+      "startedAt": "2026-01-30T09:20:00.000Z",
+      "duration": 3900,
+      "exercises": [
+        {
+          "name": "Climb box",
+          "series": [
+            {
+              "reps": 13,
+              "weight": 0,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 11,
+              "weight": 0,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 12,
+              "weight": 0,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 13,
+              "weight": 0,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Leg extension",
+          "series": [
+            {
+              "reps": 19,
+              "weight": 18,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 18,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 18,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 18,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Hip abduction",
+          "series": [
+            {
+              "reps": 20,
+              "weight": 18,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 18,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 18,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 18,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Hip adduction",
+          "series": [
+            {
+              "reps": 21,
+              "weight": 11,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 11,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 11,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 11,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Rotary hip",
+          "series": [
+            {
+              "reps": 19,
+              "weight": 39,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 39,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 39,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 39,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Press",
+          "series": [
+            {
+              "reps": 20,
+              "weight": 32,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 32,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 32,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 32,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "8e0bc5f8ff934e",
+      "programmeId": "mn4tv8jzvsc0g",
+      "programmeName": "Séance N°3",
+      "date": "2026-02-02",
+      "startedAt": "2026-02-02T09:21:00.000Z",
+      "duration": 4020,
+      "exercises": [
+        {
+          "name": "Seated row",
+          "series": [
+            {
+              "reps": 19,
+              "weight": 14,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 14,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 14,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 14,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Convergente",
+          "series": [
+            {
+              "reps": 20,
+              "weight": 31.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 31.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 31.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 31.5,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Shoulder press",
+          "series": [
+            {
+              "reps": 17,
+              "weight": 4.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 15,
+              "weight": 4.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 16,
+              "weight": 4.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 17,
+              "weight": 4.5,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Latéral raise",
+          "series": [
+            {
+              "reps": 19,
+              "weight": 4.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 4.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 4.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 4.5,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Rear delt",
+          "series": [
+            {
+              "reps": 20,
+              "weight": 11.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 11.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 11.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 11.5,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "5cfb4b83cef30d",
+      "programmeId": "mn4tz5hqw49fb",
+      "programmeName": "Séance N°1",
+      "date": "2026-02-04",
+      "startedAt": "2026-02-04T09:22:00.000Z",
+      "duration": 3300,
+      "exercises": [
+        {
+          "name": "Chest press",
+          "series": [
+            {
+              "reps": 20,
+              "weight": 7,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 7,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 7,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 7,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Pec fly",
+          "series": [
+            {
+              "reps": 21,
+              "weight": 19,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 19,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 19,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 19,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Curl barre",
+          "series": [
+            {
+              "reps": 11,
+              "weight": 10.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 12,
+              "weight": 10.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 13,
+              "weight": 10.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 11,
+              "weight": 10.5,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Arm Curl",
+          "series": [
+            {
+              "reps": 12,
+              "weight": 4.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 13,
+              "weight": 4.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 11,
+              "weight": 4.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 12,
+              "weight": 4.5,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Seated dip",
+          "series": [
+            {
+              "reps": 21,
+              "weight": 19,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 19,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 19,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 19,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Triceps à la poulie haute corde",
+          "series": [
+            {
+              "reps": 19,
+              "weight": 4.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 4.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 4.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 4.5,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f9c5da8dd18a1c",
+      "programmeId": "mn4u26r7324yu",
+      "programmeName": "Séance N°2",
+      "date": "2026-02-06",
+      "startedAt": "2026-02-06T09:23:00.000Z",
+      "duration": 3420,
+      "exercises": [
+        {
+          "name": "Climb box",
+          "series": [
+            {
+              "reps": 13,
+              "weight": 0,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 11,
+              "weight": 0,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 12,
+              "weight": 0,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 13,
+              "weight": 0,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Leg extension",
+          "series": [
+            {
+              "reps": 19,
+              "weight": 19,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 19,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 19,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 19,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Hip abduction",
+          "series": [
+            {
+              "reps": 20,
+              "weight": 19,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 19,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 19,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 19,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Hip adduction",
+          "series": [
+            {
+              "reps": 21,
+              "weight": 11.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 11.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 11.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 11.5,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Rotary hip",
+          "series": [
+            {
+              "reps": 19,
+              "weight": 41,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 41,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 41,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 41,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Press",
+          "series": [
+            {
+              "reps": 20,
+              "weight": 33.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 33.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 33.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 33.5,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "46e0bc6440e611",
+      "programmeId": "mn4tv8jzvsc0g",
+      "programmeName": "Séance N°3",
+      "date": "2026-02-09",
+      "startedAt": "2026-02-09T09:24:00.000Z",
+      "duration": 3540,
+      "exercises": [
+        {
+          "name": "Seated row",
+          "series": [
+            {
+              "reps": 19,
+              "weight": 14,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 14,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 14,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 14,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Convergente",
+          "series": [
+            {
+              "reps": 20,
+              "weight": 31.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 31.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 31.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 31.5,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Shoulder press",
+          "series": [
+            {
+              "reps": 17,
+              "weight": 4.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 15,
+              "weight": 4.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 16,
+              "weight": 4.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 17,
+              "weight": 4.5,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Latéral raise",
+          "series": [
+            {
+              "reps": 19,
+              "weight": 4.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 4.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 4.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 4.5,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Rear delt",
+          "series": [
+            {
+              "reps": 20,
+              "weight": 11.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 11.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 11.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 11.5,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "633e62422245dc",
+      "programmeId": "mn4tz5hqw49fb",
+      "programmeName": "Séance N°1",
+      "date": "2026-02-11",
+      "startedAt": "2026-02-11T09:15:00.000Z",
+      "duration": 3660,
+      "exercises": [
+        {
+          "name": "Chest press",
+          "series": [
+            {
+              "reps": 20,
+              "weight": 7,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 7,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 7,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 7,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Pec fly",
+          "series": [
+            {
+              "reps": 21,
+              "weight": 19,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 19,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 19,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 19,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Curl barre",
+          "series": [
+            {
+              "reps": 11,
+              "weight": 10.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 12,
+              "weight": 10.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 13,
+              "weight": 10.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 11,
+              "weight": 10.5,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Arm Curl",
+          "series": [
+            {
+              "reps": 12,
+              "weight": 4.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 13,
+              "weight": 4.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 11,
+              "weight": 4.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 12,
+              "weight": 4.5,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Seated dip",
+          "series": [
+            {
+              "reps": 21,
+              "weight": 19,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 19,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 19,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 19,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Triceps à la poulie haute corde",
+          "series": [
+            {
+              "reps": 19,
+              "weight": 4.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 4.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 4.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 4.5,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "18d17dcf8a5784",
+      "programmeId": "mn4u26r7324yu",
+      "programmeName": "Séance N°2",
+      "date": "2026-02-13",
+      "startedAt": "2026-02-13T09:16:00.000Z",
+      "duration": 3780,
+      "exercises": [
+        {
+          "name": "Climb box",
+          "series": [
+            {
+              "reps": 13,
+              "weight": 0,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 11,
+              "weight": 0,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 12,
+              "weight": 0,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 13,
+              "weight": 0,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Leg extension",
+          "series": [
+            {
+              "reps": 19,
+              "weight": 19,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 19,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 19,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 19,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Hip abduction",
+          "series": [
+            {
+              "reps": 20,
+              "weight": 19,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 19,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 19,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 19,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Hip adduction",
+          "series": [
+            {
+              "reps": 21,
+              "weight": 11.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 11.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 11.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 11.5,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Rotary hip",
+          "series": [
+            {
+              "reps": 19,
+              "weight": 41,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 41,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 41,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 41,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Press",
+          "series": [
+            {
+              "reps": 20,
+              "weight": 33.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 33.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 33.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 33.5,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "2de982c38d514a",
+      "programmeId": "mn4tv8jzvsc0g",
+      "programmeName": "Séance N°3",
+      "date": "2026-02-16",
+      "startedAt": "2026-02-16T09:17:00.000Z",
+      "duration": 3900,
+      "exercises": [
+        {
+          "name": "Seated row",
+          "series": [
+            {
+              "reps": 19,
+              "weight": 14.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 14.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 14.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 14.5,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Convergente",
+          "series": [
+            {
+              "reps": 20,
+              "weight": 32.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 32.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 32.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 32.5,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Shoulder press",
+          "series": [
+            {
+              "reps": 17,
+              "weight": 5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 15,
+              "weight": 5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 16,
+              "weight": 5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 17,
+              "weight": 5,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Latéral raise",
+          "series": [
+            {
+              "reps": 19,
+              "weight": 5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 5,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Rear delt",
+          "series": [
+            {
+              "reps": 20,
+              "weight": 12,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 12,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 12,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 12,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f41846b397ebb5",
+      "programmeId": "mn4tz5hqw49fb",
+      "programmeName": "Séance N°1",
+      "date": "2026-02-18",
+      "startedAt": "2026-02-18T09:18:00.000Z",
+      "duration": 4020,
+      "exercises": [
+        {
+          "name": "Chest press",
+          "series": [
+            {
+              "reps": 20,
+              "weight": 7.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 7.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 7.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 7.5,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Pec fly",
+          "series": [
+            {
+              "reps": 21,
+              "weight": 19.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 19.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 19.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 19.5,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Curl barre",
+          "series": [
+            {
+              "reps": 11,
+              "weight": 11,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 12,
+              "weight": 11,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 13,
+              "weight": 11,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 11,
+              "weight": 11,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Arm Curl",
+          "series": [
+            {
+              "reps": 12,
+              "weight": 5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 13,
+              "weight": 5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 11,
+              "weight": 5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 12,
+              "weight": 5,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Seated dip",
+          "series": [
+            {
+              "reps": 21,
+              "weight": 19.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 19.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 19.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 19.5,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Triceps à la poulie haute corde",
+          "series": [
+            {
+              "reps": 19,
+              "weight": 5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 5,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "69ccebc84a4e86",
+      "programmeId": "mn4u26r7324yu",
+      "programmeName": "Séance N°2",
+      "date": "2026-02-20",
+      "startedAt": "2026-02-20T09:19:00.000Z",
+      "duration": 3300,
+      "exercises": [
+        {
+          "name": "Climb box",
+          "series": [
+            {
+              "reps": 13,
+              "weight": 0,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 11,
+              "weight": 0,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 12,
+              "weight": 0,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 13,
+              "weight": 0,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Leg extension",
+          "series": [
+            {
+              "reps": 19,
+              "weight": 19.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 19.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 19.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 19.5,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Hip abduction",
+          "series": [
+            {
+              "reps": 20,
+              "weight": 19.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 19.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 19.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 19.5,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Hip adduction",
+          "series": [
+            {
+              "reps": 21,
+              "weight": 12,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 12,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 12,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 12,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Rotary hip",
+          "series": [
+            {
+              "reps": 19,
+              "weight": 42,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 42,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 42,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 42,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Press",
+          "series": [
+            {
+              "reps": 20,
+              "weight": 34.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 34.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 34.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 34.5,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "5720bc90ea099b",
+      "programmeId": "mn4tv8jzvsc0g",
+      "programmeName": "Séance N°3",
+      "date": "2026-02-23",
+      "startedAt": "2026-02-23T09:20:00.000Z",
+      "duration": 3420,
+      "exercises": [
+        {
+          "name": "Seated row",
+          "series": [
+            {
+              "reps": 19,
+              "weight": 14.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 14.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 14.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 14.5,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Convergente",
+          "series": [
+            {
+              "reps": 20,
+              "weight": 32.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 32.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 32.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 32.5,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Shoulder press",
+          "series": [
+            {
+              "reps": 17,
+              "weight": 5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 15,
+              "weight": 5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 16,
+              "weight": 5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 17,
+              "weight": 5,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Latéral raise",
+          "series": [
+            {
+              "reps": 19,
+              "weight": 5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 5,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Rear delt",
+          "series": [
+            {
+              "reps": 20,
+              "weight": 12,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 12,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 12,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 12,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "9737e0f983d9af",
+      "programmeId": "mn4tz5hqw49fb",
+      "programmeName": "Séance N°1",
+      "date": "2026-02-25",
+      "startedAt": "2026-02-25T09:21:00.000Z",
+      "duration": 3540,
+      "exercises": [
+        {
+          "name": "Chest press",
+          "series": [
+            {
+              "reps": 20,
+              "weight": 7.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 7.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 7.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 7.5,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Pec fly",
+          "series": [
+            {
+              "reps": 21,
+              "weight": 19.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 19.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 19.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 19.5,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Curl barre",
+          "series": [
+            {
+              "reps": 11,
+              "weight": 11,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 12,
+              "weight": 11,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 13,
+              "weight": 11,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 11,
+              "weight": 11,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Arm Curl",
+          "series": [
+            {
+              "reps": 12,
+              "weight": 5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 13,
+              "weight": 5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 11,
+              "weight": 5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 12,
+              "weight": 5,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Seated dip",
+          "series": [
+            {
+              "reps": 21,
+              "weight": 19.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 19.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 19.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 19.5,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Triceps à la poulie haute corde",
+          "series": [
+            {
+              "reps": 19,
+              "weight": 5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 5,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "7a9f3edc53241e",
+      "programmeId": "mn4u26r7324yu",
+      "programmeName": "Séance N°2",
+      "date": "2026-02-27",
+      "startedAt": "2026-02-27T09:22:00.000Z",
+      "duration": 3660,
+      "exercises": [
+        {
+          "name": "Climb box",
+          "series": [
+            {
+              "reps": 13,
+              "weight": 0,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 11,
+              "weight": 0,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 12,
+              "weight": 0,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 13,
+              "weight": 0,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Leg extension",
+          "series": [
+            {
+              "reps": 19,
+              "weight": 19.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 19.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 19.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 19.5,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Hip abduction",
+          "series": [
+            {
+              "reps": 20,
+              "weight": 19.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 19.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 19.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 19.5,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Hip adduction",
+          "series": [
+            {
+              "reps": 21,
+              "weight": 12,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 12,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 12,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 12,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Rotary hip",
+          "series": [
+            {
+              "reps": 19,
+              "weight": 42,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 42,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 42,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 42,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Press",
+          "series": [
+            {
+              "reps": 20,
+              "weight": 34.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 34.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 34.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 34.5,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "b0c58d77d6d8a5",
+      "programmeId": "mn4tv8jzvsc0g",
+      "programmeName": "Séance N°3",
+      "date": "2026-03-02",
+      "startedAt": "2026-03-02T09:23:00.000Z",
+      "duration": 3780,
+      "exercises": [
+        {
+          "name": "Seated row",
+          "series": [
+            {
+              "reps": 19,
+              "weight": 15,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 15,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 15,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 15,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Convergente",
+          "series": [
+            {
+              "reps": 20,
+              "weight": 33.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 33.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 33.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 33.5,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Shoulder press",
+          "series": [
+            {
+              "reps": 17,
+              "weight": 5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 15,
+              "weight": 5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 16,
+              "weight": 5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 17,
+              "weight": 5,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Latéral raise",
+          "series": [
+            {
+              "reps": 19,
+              "weight": 5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 5,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Rear delt",
+          "series": [
+            {
+              "reps": 20,
+              "weight": 12.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 12.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 12.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 12.5,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "8e165b167bc1fe",
+      "programmeId": "mn4tz5hqw49fb",
+      "programmeName": "Séance N°1",
+      "date": "2026-03-04",
+      "startedAt": "2026-03-04T09:24:00.000Z",
+      "duration": 3900,
+      "exercises": [
+        {
+          "name": "Chest press",
+          "series": [
+            {
+              "reps": 20,
+              "weight": 7.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 7.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 7.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 7.5,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Pec fly",
+          "series": [
+            {
+              "reps": 21,
+              "weight": 20,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 20,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 20,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 20,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Curl barre",
+          "series": [
+            {
+              "reps": 11,
+              "weight": 11,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 12,
+              "weight": 11,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 13,
+              "weight": 11,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 11,
+              "weight": 11,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Arm Curl",
+          "series": [
+            {
+              "reps": 12,
+              "weight": 5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 13,
+              "weight": 5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 11,
+              "weight": 5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 12,
+              "weight": 5,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Seated dip",
+          "series": [
+            {
+              "reps": 21,
+              "weight": 20,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 20,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 20,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 20,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Triceps à la poulie haute corde",
+          "series": [
+            {
+              "reps": 19,
+              "weight": 5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 5,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "3859503791872f",
+      "programmeId": "mn4u26r7324yu",
+      "programmeName": "Séance N°2",
+      "date": "2026-03-06",
+      "startedAt": "2026-03-06T09:15:00.000Z",
+      "duration": 4020,
+      "exercises": [
+        {
+          "name": "Climb box",
+          "series": [
+            {
+              "reps": 13,
+              "weight": 0,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 11,
+              "weight": 0,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 12,
+              "weight": 0,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 13,
+              "weight": 0,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Leg extension",
+          "series": [
+            {
+              "reps": 19,
+              "weight": 20,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 20,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 20,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 20,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Hip abduction",
+          "series": [
+            {
+              "reps": 20,
+              "weight": 20,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 20,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 20,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 20,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Hip adduction",
+          "series": [
+            {
+              "reps": 21,
+              "weight": 12.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 12.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 12.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 12.5,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Rotary hip",
+          "series": [
+            {
+              "reps": 19,
+              "weight": 43.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 43.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 43.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 43.5,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Press",
+          "series": [
+            {
+              "reps": 20,
+              "weight": 36,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 36,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 36,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 36,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "30729707c17a19",
+      "programmeId": "mn4tv8jzvsc0g",
+      "programmeName": "Séance N°3",
+      "date": "2026-03-09",
+      "startedAt": "2026-03-09T09:16:00.000Z",
+      "duration": 3300,
+      "exercises": [
+        {
+          "name": "Seated row",
+          "series": [
+            {
+              "reps": 19,
+              "weight": 15,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 15,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 15,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 15,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Convergente",
+          "series": [
+            {
+              "reps": 20,
+              "weight": 33.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 33.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 33.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 33.5,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Shoulder press",
+          "series": [
+            {
+              "reps": 17,
+              "weight": 5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 15,
+              "weight": 5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 16,
+              "weight": 5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 17,
+              "weight": 5,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Latéral raise",
+          "series": [
+            {
+              "reps": 19,
+              "weight": 5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 5,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Rear delt",
+          "series": [
+            {
+              "reps": 20,
+              "weight": 12.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 12.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 12.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 12.5,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "db4bc73ff4d774",
+      "programmeId": "mn4tz5hqw49fb",
+      "programmeName": "Séance N°1",
+      "date": "2026-03-11",
+      "startedAt": "2026-03-11T09:17:00.000Z",
+      "duration": 3420,
+      "exercises": [
+        {
+          "name": "Chest press",
+          "series": [
+            {
+              "reps": 20,
+              "weight": 7.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 7.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 7.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 7.5,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Pec fly",
+          "series": [
+            {
+              "reps": 21,
+              "weight": 20,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 20,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 20,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 20,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Curl barre",
+          "series": [
+            {
+              "reps": 11,
+              "weight": 11,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 12,
+              "weight": 11,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 13,
+              "weight": 11,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 11,
+              "weight": 11,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Arm Curl",
+          "series": [
+            {
+              "reps": 12,
+              "weight": 5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 13,
+              "weight": 5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 11,
+              "weight": 5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 12,
+              "weight": 5,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Seated dip",
+          "series": [
+            {
+              "reps": 21,
+              "weight": 20,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 20,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 20,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 20,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Triceps à la poulie haute corde",
+          "series": [
+            {
+              "reps": 19,
+              "weight": 5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 5,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "22dfd6b4edbc91",
+      "programmeId": "mn4u26r7324yu",
+      "programmeName": "Séance N°2",
+      "date": "2026-03-13",
+      "startedAt": "2026-03-13T09:18:00.000Z",
+      "duration": 3540,
+      "exercises": [
+        {
+          "name": "Climb box",
+          "series": [
+            {
+              "reps": 13,
+              "weight": 0,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 11,
+              "weight": 0,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 12,
+              "weight": 0,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 13,
+              "weight": 0,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Leg extension",
+          "series": [
+            {
+              "reps": 19,
+              "weight": 20,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 20,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 20,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 20,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Hip abduction",
+          "series": [
+            {
+              "reps": 20,
+              "weight": 20,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 20,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 20,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 20,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Hip adduction",
+          "series": [
+            {
+              "reps": 21,
+              "weight": 12.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 12.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 12.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 12.5,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Rotary hip",
+          "series": [
+            {
+              "reps": 19,
+              "weight": 43.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 43.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 43.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 43.5,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Press",
+          "series": [
+            {
+              "reps": 20,
+              "weight": 36,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 36,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 36,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 36,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f640dea2bb41b4",
+      "programmeId": "mn4tv8jzvsc0g",
+      "programmeName": "Séance N°3",
+      "date": "2026-03-16",
+      "startedAt": "2026-03-16T09:19:00.000Z",
+      "duration": 3660,
+      "exercises": [
+        {
+          "name": "Seated row",
+          "series": [
+            {
+              "reps": 19,
+              "weight": 15.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 15.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 15.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 15.5,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Convergente",
+          "series": [
+            {
+              "reps": 20,
+              "weight": 34.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 34.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 34.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 34.5,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Shoulder press",
+          "series": [
+            {
+              "reps": 17,
+              "weight": 5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 15,
+              "weight": 5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 16,
+              "weight": 5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 17,
+              "weight": 5,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Latéral raise",
+          "series": [
+            {
+              "reps": 19,
+              "weight": 5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 5,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Rear delt",
+          "series": [
+            {
+              "reps": 20,
+              "weight": 12.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 12.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 12.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 12.5,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "c5556ab9d8c361",
+      "programmeId": "mn4tz5hqw49fb",
+      "programmeName": "Séance N°1",
+      "date": "2026-03-18",
+      "startedAt": "2026-03-18T09:20:00.000Z",
+      "duration": 3780,
+      "exercises": [
+        {
+          "name": "Chest press",
+          "series": [
+            {
+              "reps": 20,
+              "weight": 8,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 8,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 8,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 8,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Pec fly",
+          "series": [
+            {
+              "reps": 21,
+              "weight": 20.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 20.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 20.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 20.5,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Curl barre",
+          "series": [
+            {
+              "reps": 11,
+              "weight": 11.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 12,
+              "weight": 11.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 13,
+              "weight": 11.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 11,
+              "weight": 11.5,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Arm Curl",
+          "series": [
+            {
+              "reps": 12,
+              "weight": 5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 13,
+              "weight": 5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 11,
+              "weight": 5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 12,
+              "weight": 5,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Seated dip",
+          "series": [
+            {
+              "reps": 21,
+              "weight": 20.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 20.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 20.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 20.5,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Triceps à la poulie haute corde",
+          "series": [
+            {
+              "reps": 19,
+              "weight": 5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 5,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cc3716ca49b5cc",
+      "programmeId": "mn4u26r7324yu",
+      "programmeName": "Séance N°2",
+      "date": "2026-03-20",
+      "startedAt": "2026-03-20T09:21:00.000Z",
+      "duration": 3900,
+      "exercises": [
+        {
+          "name": "Climb box",
+          "series": [
+            {
+              "reps": 13,
+              "weight": 0,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 11,
+              "weight": 0,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 12,
+              "weight": 0,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 13,
+              "weight": 0,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Leg extension",
+          "series": [
+            {
+              "reps": 19,
+              "weight": 20.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 20.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 20.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 20.5,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Hip abduction",
+          "series": [
+            {
+              "reps": 20,
+              "weight": 20.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 20.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 20.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 20.5,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Hip adduction",
+          "series": [
+            {
+              "reps": 21,
+              "weight": 12.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 12.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 12.5,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 12.5,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Rotary hip",
+          "series": [
+            {
+              "reps": 19,
+              "weight": 45,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 45,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 45,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 45,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        },
+        {
+          "name": "Press",
+          "series": [
+            {
+              "reps": 20,
+              "weight": 37,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 21,
+              "weight": 37,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 19,
+              "weight": 37,
+              "rest": 75,
+              "done": true
+            },
+            {
+              "reps": 20,
+              "weight": 37,
+              "rest": 75,
+              "done": true
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
