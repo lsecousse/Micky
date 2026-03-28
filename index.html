@@ -76,6 +76,32 @@
       <div class="screen-body" id="screen-params-body"></div>
     </div>
 
+    <!-- LOGIN -->
+    <div id="screen-login" class="screen">
+      <div class="login-wrap">
+        <canvas id="login-canvas"></canvas>
+        <h1 class="login-title">Coach Mike</h1>
+
+        <div id="login-form">
+          <input type="email"    id="login-email"    placeholder="Email"        autocomplete="email"            inputmode="email" />
+          <input type="password" id="login-password" placeholder="Mot de passe" autocomplete="current-password" />
+          <button class="btn-primary btn-full" id="btn-login">Se connecter</button>
+          <p class="auth-error hidden" id="login-error"></p>
+          <button class="btn-ghost btn-full" id="toggle-to-signup">Pas de compte ? S'inscrire</button>
+        </div>
+
+        <div id="signup-form" class="hidden">
+          <input type="text"     id="signup-prenom"   placeholder="Prénom"                    autocomplete="given-name"  />
+          <input type="text"     id="signup-nom"      placeholder="Nom"                       autocomplete="family-name" />
+          <input type="email"    id="signup-email"    placeholder="Email"                     autocomplete="email"       inputmode="email" />
+          <input type="password" id="signup-password" placeholder="Mot de passe (min. 6 car.)" autocomplete="new-password" />
+          <button class="btn-primary btn-full" id="btn-signup">Créer mon compte</button>
+          <p class="auth-error hidden" id="signup-error"></p>
+          <button class="btn-ghost btn-full" id="toggle-to-login">J'ai déjà un compte</button>
+        </div>
+      </div>
+    </div>
+
   </div>
 
   <!-- COUNTDOWN FULLSCREEN -->
@@ -116,6 +142,8 @@
   <!-- import file input (global) -->
   <input type="file" id="import-file" accept=".json" hidden />
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase.js"></script>
   <script src="app.js"></script>
   <script>
     if ('serviceWorker' in navigator) {

@@ -24,6 +24,7 @@ document.addEventListener('focusout', e => {
 ═══════════════════════════════════════════════════════ */
 const SESSIONS_KEY = 'gym_sessions';
 const PROGRAMMES_KEY = 'gym_programmes';
+let currentUser = null;
 
 function loadSessions() {
   try { return JSON.parse(localStorage.getItem(SESSIONS_KEY)) || []; } catch { return []; }
@@ -139,6 +140,7 @@ function showScreen(name) {
   if (name === 'history') renderHistory();
   if (name === 'stats')   renderStats();
   if (name === 'params')  renderParams();
+  if (name === 'login')   renderLogin();
 }
 
 document.getElementById('go-history').addEventListener('click', () => showScreen('history'));
@@ -496,7 +498,7 @@ function finishSession() {
   showConfirm('Terminer et enregistrer la séance ?', () => {
     const sessions = loadSessions();
     const durationSecs = Math.round((Date.now() - new Date(liveSession.startedAt).getTime()) / 1000);
-    sessions.push({
+    const savedSession = {
       id: liveSession.id,
       programmeId: liveSession.programmeId,
       programmeName: liveSession.programmeName,
@@ -513,8 +515,10 @@ function finishSession() {
           done: s.state === 'done',
         })),
       })),
-    });
+    };
+    sessions.push(savedSession);
     saveSessions(sessions);
+    pushSession(savedSession).catch(() => {});
     liveSession = null;
     stopCountdown();
     showScreen('home');
@@ -1049,6 +1053,58 @@ function renderParams() {
   const tab = document.getElementById('screen-params-body');
   tab.innerHTML = '';
 
+  // Section compte
+  const accountSection = document.createElement('div');
+  accountSection.style.display = 'flex';
+  accountSection.style.flexDirection = 'column';
+  accountSection.style.gap = '8px';
+
+  const accountTitle = document.createElement('p');
+  accountTitle.className = 'section-title';
+  accountTitle.textContent = 'Compte';
+  accountSection.appendChild(accountTitle);
+
+  if (currentUser) {
+    const emailLine = document.createElement('p');
+    emailLine.style.cssText = 'font-size:13px;color:var(--text-muted);padding:4px 0';
+    emailLine.textContent = currentUser.email;
+    accountSection.appendChild(emailLine);
+
+    const syncBtn = document.createElement('button');
+    syncBtn.className = 'btn-secondary btn-full';
+    syncBtn.textContent = 'Synchroniser les programmes';
+    syncBtn.addEventListener('click', async () => {
+      syncBtn.disabled = true;
+      syncBtn.textContent = 'Synchronisation…';
+      const ok = await syncProgrammes().catch(() => false);
+      syncBtn.disabled = false;
+      syncBtn.textContent = 'Synchroniser les programmes';
+      if (ok) showToast('Programmes mis à jour ✓');
+    });
+    accountSection.appendChild(syncBtn);
+
+    const logoutBtn = document.createElement('button');
+    logoutBtn.className = 'btn-secondary btn-full';
+    logoutBtn.textContent = 'Se déconnecter';
+    logoutBtn.addEventListener('click', async () => {
+      showConfirm('Se déconnecter ?', async () => {
+        await db.auth.signOut();
+        currentUser = null;
+        loginReady = false;
+        showScreen('login');
+      });
+    });
+    accountSection.appendChild(logoutBtn);
+  } else {
+    const loginBtn = document.createElement('button');
+    loginBtn.className = 'btn-primary btn-full';
+    loginBtn.textContent = 'Se connecter';
+    loginBtn.addEventListener('click', () => { loginReady = false; showScreen('login'); });
+    accountSection.appendChild(loginBtn);
+  }
+
+  tab.appendChild(accountSection);
+
   // Section programmes
   const progSection = document.createElement('div');
   progSection.style.display = 'flex';
@@ -1296,6 +1352,74 @@ function makeExerciseCard({ name = '', muscle = '', reps = '', weight = '', rest
 }
 
 /* ═══════════════════════════════════════════════════════
+   LOGIN / AUTH
+═══════════════════════════════════════════════════════ */
+let loginReady = false;
+
+function renderLogin() {
+  if (loginReady) return;
+  loginReady = true;
+
+  // Dessine le logo sur le canvas de login
+  const canvas = document.getElementById('login-canvas');
+  if (canvas) {
+    const dpr = window.devicePixelRatio || 1;
+    const size = 80;
+    canvas.width = size * dpr; canvas.height = size * dpr;
+    const ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+    const ACCENT = '#FF6B00';
+    const cx = size / 2, cy = size * 0.48;
+    const s = size * 0.72;
+    const barW = s * 0.72, barH = s * 0.09, plateW = s * 0.13, plateH = s * 0.42;
+    const collarW = s * 0.06, collarH = s * 0.30;
+    ctx.fillStyle = ACCENT;
+    ctx.fillRect(cx - barW/2, cy - barH/2, barW, barH);
+    ctx.fillRect(cx - barW/2, cy - plateH/2, plateW, plateH);
+    ctx.fillRect(cx - barW/2 + plateW, cy - collarH/2, collarW, collarH);
+    ctx.fillRect(cx + barW/2 - plateW, cy - plateH/2, plateW, plateH);
+    ctx.fillRect(cx + barW/2 - plateW - collarW, cy - collarH/2, collarW, collarH);
+  }
+
+  document.getElementById('toggle-to-signup').addEventListener('click', () => {
+    document.getElementById('login-form').classList.add('hidden');
+    document.getElementById('signup-form').classList.remove('hidden');
+  });
+  document.getElementById('toggle-to-login').addEventListener('click', () => {
+    document.getElementById('signup-form').classList.add('hidden');
+    document.getElementById('login-form').classList.remove('hidden');
+  });
+
+  document.getElementById('btn-login').addEventListener('click', async () => {
+    const email    = document.getElementById('login-email').value.trim();
+    const password = document.getElementById('login-password').value;
+    const errEl    = document.getElementById('login-error');
+    errEl.classList.add('hidden');
+    const { data, error } = await db.auth.signInWithPassword({ email, password });
+    if (error) { errEl.textContent = error.message; errEl.classList.remove('hidden'); return; }
+    currentUser = data.user;
+    await syncProgrammes().catch(() => {});
+    showScreen('home');
+  });
+
+  document.getElementById('btn-signup').addEventListener('click', async () => {
+    const prenom   = document.getElementById('signup-prenom').value.trim();
+    const nom      = document.getElementById('signup-nom').value.trim();
+    const email    = document.getElementById('signup-email').value.trim();
+    const password = document.getElementById('signup-password').value;
+    const errEl    = document.getElementById('signup-error');
+    errEl.classList.add('hidden');
+    const { data, error } = await db.auth.signUp({ email, password });
+    if (error) { errEl.textContent = error.message; errEl.classList.remove('hidden'); return; }
+    if (!data.user) { errEl.textContent = 'Confirmez votre email puis connectez-vous.'; errEl.classList.remove('hidden'); return; }
+    currentUser = data.user;
+    await db.from('profiles').update({ nom, prenom }).eq('id', data.user.id);
+    await syncProgrammes().catch(() => {});
+    showScreen('home');
+  });
+}
+
+/* ═══════════════════════════════════════════════════════
    DONNÉES
 ═══════════════════════════════════════════════════════ */
 function exportData() {
@@ -1386,4 +1510,14 @@ document.getElementById('import-file').addEventListener('change', e => {
 /* ═══════════════════════════════════════════════════════
    INIT
 ═══════════════════════════════════════════════════════ */
-showScreen('home');
+(async function init() {
+  const { data: { session } } = await db.auth.getSession();
+  currentUser = session?.user || null;
+
+  await Promise.all([
+    currentUser ? syncProgrammes().catch(() => {}) : Promise.resolve(),
+    new Promise(r => setTimeout(r, 2200)),
+  ]);
+
+  showScreen(currentUser ? 'home' : 'login');
+})();
