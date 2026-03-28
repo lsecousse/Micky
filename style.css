@@ -880,3 +880,21 @@ input:focus { border-color: var(--accent); }
   transition: color 0.15s;
 }
 .btn-ghost:hover { color: var(--text); }
+
+/* ── Exercise type toggle ──────────────────────────── */
+.exercise-type-btn {
+  font-size: 11px;
+  padding: 3px 10px;
+  background: var(--surface2);
+  border: 1px solid var(--border, #333);
+  color: var(--text-muted);
+  border-radius: 20px;
+  cursor: pointer;
+  font-family: var(--font);
+  margin-bottom: 4px;
+  transition: border-color 0.15s, color 0.15s;
+}
+.exercise-type-btn.calisthenics {
+  border-color: var(--accent);
+  color: var(--accent);
+}

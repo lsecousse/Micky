@@ -49,17 +49,19 @@ function todayIso() {
 }
 
 function totalVolume(exercises) {
-  return exercises.reduce((sum, ex) =>
-    sum + ex.series
+  return exercises.reduce((sum, ex) => {
+    if (ex.type === 'calisthenics') return sum;
+    return sum + ex.series
       .filter(s => s.done !== false)
-      .reduce((s, se) => s + (se.reps || 0) * (se.weight || 0), 0)
-  , 0);
+      .reduce((s, se) => s + (se.reps || 0) * (se.weight || 0), 0);
+  }, 0);
 }
 
 function plannedVolume(exercises) {
-  return exercises.reduce((sum, ex) =>
-    sum + ex.series.reduce((s, se) => s + (se.reps || 0) * (se.weight || 0), 0)
-  , 0);
+  return exercises.reduce((sum, ex) => {
+    if (ex.type === 'calisthenics') return sum;
+    return sum + ex.series.reduce((s, se) => s + (se.reps || 0) * (se.weight || 0), 0);
+  }, 0);
 }
 
 function generateId() {
@@ -342,15 +344,18 @@ function startSession(programme) {
     date: todayIso(),
     startedAt: new Date().toISOString(),
     exercises: programme.exercises.map(ex => {
-      const count = ex.count ?? ex.series?.length ?? 1;
-      const reps   = ex.reps   ?? ex.series?.[0]?.reps   ?? 0;
-      const weight = ex.weight ?? ex.series?.[0]?.weight ?? 0;
-      const rest   = ex.rest   ?? ex.series?.[0]?.rest   ?? 0;
+      const count    = ex.count    ?? ex.series?.length         ?? 1;
+      const type     = ex.type     || 'weighted';
+      const reps     = ex.reps     ?? ex.series?.[0]?.reps     ?? 0;
+      const weight   = ex.weight   ?? ex.series?.[0]?.weight   ?? 0;
+      const duration = ex.duration ?? ex.series?.[0]?.duration ?? 0;
+      const rest     = ex.rest     ?? ex.series?.[0]?.rest     ?? 0;
       return {
         name: ex.name,
         muscle: ex.muscle || '',
         comment: ex.comment || '',
-        series: Array.from({ length: count }, () => ({ reps, weight, rest, state: 'pending' })),
+        type,
+        series: Array.from({ length: count }, () => ({ reps, weight, duration, rest, state: 'pending' })),
       };
     }),
   };
@@ -394,7 +399,9 @@ function renderLiveSession(tab) {
 
     const labels = document.createElement('div');
     labels.className = 'live-series-labels';
-    labels.innerHTML = '<span></span><span></span><span>reps</span><span></span><span>kg</span><span></span><span></span>';
+    labels.innerHTML = ex.type === 'calisthenics'
+      ? '<span></span><span></span><span>durée (s)</span><span></span><span></span><span></span><span></span>'
+      : '<span></span><span></span><span>reps</span><span></span><span>kg</span><span></span><span></span>';
     exDiv.appendChild(labels);
 
     ex.series.forEach((s, sIdx) => {
@@ -408,44 +415,54 @@ function renderLiveSession(tab) {
 }
 
 function buildLiveSeriesRow(exIdx, sIdx, s) {
+  const exType = liveSession.exercises[exIdx].type || 'weighted';
   const row = document.createElement('div');
   row.className = `live-series-row ${s.state}`;
-
-  row.innerHTML = `
-    <button class="series-state-btn">${stateIcon(s.state)}</button>
-    <span class="series-num">${sIdx + 1}</span>
-    <input type="number" inputmode="decimal" class="live-reps" value="${s.reps}" min="1" />
-    <span class="live-x">×</span>
-    <input type="number" inputmode="decimal" class="live-weight" value="${s.weight}" min="0" step="0.5" />
-    <span class="live-kg">kg</span>
-    <input type="number" inputmode="numeric" class="live-rest" value="${s.rest}" min="0" />
-  `;
-
-  row.querySelector('.series-state-btn').addEventListener('click', () =>
-    advanceSeriesState(exIdx, sIdx, row)
-  );
-
   row.dataset.ex = exIdx;
   row.dataset.s  = sIdx;
-  row.querySelector('.live-reps').setAttribute('data-ex', exIdx);
-  row.querySelector('.live-reps').setAttribute('data-s', sIdx);
-  row.querySelector('.live-weight').setAttribute('data-ex', exIdx);
-  row.querySelector('.live-weight').setAttribute('data-s', sIdx);
 
-  row.querySelector('.live-reps').addEventListener('input', e => {
-    const val = parseFloat(e.target.value) || 0;
-    propagateLiveValue(exIdx, sIdx, 'reps', val);
-  });
-
-  row.querySelector('.live-weight').addEventListener('input', e => {
-    const val = parseFloat(e.target.value) || 0;
-    propagateLiveValue(exIdx, sIdx, 'weight', val);
-  });
-
-  row.querySelector('.live-rest').addEventListener('change', e => {
-    const val = parseInt(e.target.value) || 0;
-    liveSession.exercises[exIdx].series[sIdx].rest = val;
-  });
+  if (exType === 'calisthenics') {
+    row.innerHTML = `
+      <button class="series-state-btn">${stateIcon(s.state)}</button>
+      <span class="series-num">${sIdx + 1}</span>
+      <input type="number" inputmode="numeric" class="live-duration" value="${s.duration || 0}" min="1" />
+      <span class="live-x">s</span>
+      <span></span>
+      <span></span>
+      <input type="number" inputmode="numeric" class="live-rest" value="${s.rest}" min="0" />
+    `;
+    row.querySelector('.series-state-btn').addEventListener('click', () => advanceSeriesState(exIdx, sIdx, row));
+    row.querySelector('.live-duration').addEventListener('change', e => {
+      liveSession.exercises[exIdx].series[sIdx].duration = parseInt(e.target.value) || 0;
+    });
+    row.querySelector('.live-rest').addEventListener('change', e => {
+      liveSession.exercises[exIdx].series[sIdx].rest = parseInt(e.target.value) || 0;
+    });
+  } else {
+    row.innerHTML = `
+      <button class="series-state-btn">${stateIcon(s.state)}</button>
+      <span class="series-num">${sIdx + 1}</span>
+      <input type="number" inputmode="decimal" class="live-reps" value="${s.reps}" min="1" />
+      <span class="live-x">×</span>
+      <input type="number" inputmode="decimal" class="live-weight" value="${s.weight}" min="0" step="0.5" />
+      <span class="live-kg">kg</span>
+      <input type="number" inputmode="numeric" class="live-rest" value="${s.rest}" min="0" />
+    `;
+    row.querySelector('.series-state-btn').addEventListener('click', () => advanceSeriesState(exIdx, sIdx, row));
+    row.querySelector('.live-reps').setAttribute('data-ex', exIdx);
+    row.querySelector('.live-reps').setAttribute('data-s', sIdx);
+    row.querySelector('.live-weight').setAttribute('data-ex', exIdx);
+    row.querySelector('.live-weight').setAttribute('data-s', sIdx);
+    row.querySelector('.live-reps').addEventListener('input', e => {
+      propagateLiveValue(exIdx, sIdx, 'reps', parseFloat(e.target.value) || 0);
+    });
+    row.querySelector('.live-weight').addEventListener('input', e => {
+      propagateLiveValue(exIdx, sIdx, 'weight', parseFloat(e.target.value) || 0);
+    });
+    row.querySelector('.live-rest').addEventListener('change', e => {
+      liveSession.exercises[exIdx].series[sIdx].rest = parseInt(e.target.value) || 0;
+    });
+  }
 
   return row;
 }
@@ -508,11 +525,13 @@ function finishSession() {
       exercises: liveSession.exercises.map(ex => ({
         name:   ex.name,
         muscle: ex.muscle || '',
+        type:   ex.type || 'weighted',
         series: ex.series.map(s => ({
-          reps: s.reps,
-          weight: s.weight,
-          rest: s.rest,
-          done: s.state === 'done',
+          reps:     s.reps,
+          weight:   s.weight,
+          duration: s.duration,
+          rest:     s.rest,
+          done:     s.state === 'done',
         })),
       })),
     };
@@ -719,16 +738,16 @@ function openModal(session) {
   `;
 
   session.exercises.forEach(ex => {
+    const isCal = ex.type === 'calisthenics';
     html += `<div class="modal-exercise">
       <div class="modal-exercise-name">${ex.name}</div>
       <table class="modal-series-table">
-        <thead><tr><th>#</th><th>Reps</th><th>Poids (kg)</th><th>Repos (s)</th><th></th></tr></thead>
+        <thead><tr><th>#</th>${isCal ? '<th>Durée (s)</th>' : '<th>Reps</th><th>Poids (kg)</th>'}<th>Repos (s)</th><th></th></tr></thead>
         <tbody>
           ${ex.series.map((s, i) => `
             <tr class="${s.done === false ? 'series-not-done' : ''}">
               <td>${i + 1}</td>
-              <td>${s.reps}</td>
-              <td>${s.weight}</td>
+              ${isCal ? `<td>${s.duration ?? '—'}</td>` : `<td>${s.reps}</td><td>${s.weight}</td>`}
               <td>${s.rest}</td>
               <td>${s.done === false ? '—' : '✓'}</td>
             </tr>
@@ -1230,12 +1249,14 @@ function openProgrammeEditor(programme = null) {
 
   if (programme) {
     programme.exercises.forEach(ex => {
-      const reps    = ex.reps   ?? ex.series?.[0]?.reps   ?? '';
-      const weight  = ex.weight ?? ex.series?.[0]?.weight ?? '';
-      const rest    = ex.rest   ?? ex.series?.[0]?.rest   ?? '';
-      const count   = ex.count  ?? ex.series?.length      ?? 3;
-      const comment = ex.comment ?? '';
-      exercisesList.appendChild(makeExerciseCard({ name: ex.name, muscle: ex.muscle || '', reps, weight, rest, count, comment }));
+      const type     = ex.type     || 'weighted';
+      const reps     = ex.reps     ?? ex.series?.[0]?.reps     ?? '';
+      const weight   = ex.weight   ?? ex.series?.[0]?.weight   ?? '';
+      const duration = ex.duration ?? ex.series?.[0]?.duration ?? '';
+      const rest     = ex.rest     ?? ex.series?.[0]?.rest     ?? '';
+      const count    = ex.count    ?? ex.series?.length        ?? 3;
+      const comment  = ex.comment  ?? '';
+      exercisesList.appendChild(makeExerciseCard({ name: ex.name, muscle: ex.muscle || '', type, reps, weight, duration, rest, count, comment }));
     });
   } else {
     exercisesList.appendChild(makeExerciseCard());
@@ -1261,15 +1282,21 @@ function saveProgrammeFromEditor(existingId) {
   const cards = document.querySelectorAll('#prog-exercises-list .exercise-card');
   if (!cards.length) { showAlert('Ajoute au moins un exercice.'); return; }
 
-  const exercises = Array.from(cards).map(card => ({
-    name:    card.querySelector('.exercise-name').value.trim() || 'Sans nom',
-    muscle:  card.querySelector('.exercise-muscle').value.trim(),
-    reps:    parseFloat(card.querySelector('.series-reps').value)   || 0,
-    weight:  parseFloat(card.querySelector('.series-weight').value) || 0,
-    rest:    parseFloat(card.querySelector('.series-rest').value)   || 0,
-    count:   parseInt(card.querySelector('.series-count').value)    || 1,
-    comment: card.querySelector('.exercise-comment').value.trim(),
-  }));
+  const exercises = Array.from(cards).map(card => {
+    const typeBtn = card.querySelector('.exercise-type-btn');
+    const type = typeBtn?.dataset.type || 'weighted';
+    return {
+      name:     card.querySelector('.exercise-name').value.trim()         || 'Sans nom',
+      muscle:   card.querySelector('.exercise-muscle').value.trim(),
+      type,
+      reps:     parseFloat(card.querySelector('.series-reps')?.value)     || 0,
+      weight:   parseFloat(card.querySelector('.series-weight')?.value)   || 0,
+      duration: parseFloat(card.querySelector('.series-duration')?.value) || 0,
+      rest:     parseFloat(card.querySelector('.series-rest')?.value)     || 0,
+      count:    parseInt(card.querySelector('.series-count').value)       || 1,
+      comment:  card.querySelector('.exercise-comment').value.trim(),
+    };
+  });
 
   const programmes = loadProgrammes();
   if (existingId) {
@@ -1286,7 +1313,7 @@ function saveProgrammeFromEditor(existingId) {
 /* ═══════════════════════════════════════════════════════
    EXERCISE CARD BUILDER (éditeur de programme)
 ═══════════════════════════════════════════════════════ */
-function makeExerciseCard({ name = '', muscle = '', reps = '', weight = '', rest = '', count = 3, comment = '' } = {}) {
+function makeExerciseCard({ name = '', muscle = '', type = 'weighted', reps = '', weight = '', duration = '', rest = '', count = 3, comment = '' } = {}) {
   const card = document.createElement('div');
   card.className = 'exercise-card';
 
@@ -1319,23 +1346,55 @@ function makeExerciseCard({ name = '', muscle = '', reps = '', weight = '', rest
   header.appendChild(nameRow);
   header.appendChild(muscleInput);
 
+  // Type toggle
+  const typeBtn = document.createElement('button');
+  typeBtn.type = 'button';
+  typeBtn.className = `exercise-type-btn ${type}`;
+  typeBtn.dataset.type = type;
+  typeBtn.textContent = type === 'calisthenics' ? '⏱ Callisthénie' : '🏋️ Avec poids';
+
   const labels = document.createElement('div');
   labels.className = 'series-labels';
-  labels.innerHTML = `
-    <span class="series-label">séries</span>
-    <span class="series-label">reps</span>
-    <span class="series-label">kg</span>
-    <span class="series-label">repos (s)</span>
-  `;
-
   const row = document.createElement('div');
   row.className = 'series-row';
-  row.innerHTML = `
-    <input type="number" inputmode="numeric" class="series-count" placeholder="nb" min="1" value="${count}" />
-    <input type="number" inputmode="decimal" class="series-reps" placeholder="reps" min="1" value="${reps}" />
-    <input type="number" inputmode="decimal" class="series-weight" placeholder="kg" min="0" step="0.5" value="${weight}" />
-    <input type="number" inputmode="decimal" class="series-rest" placeholder="sec" min="0" value="${rest}" />
-  `;
+
+  function buildFields(t) {
+    if (t === 'calisthenics') {
+      const curCount = row.querySelector('.series-count')?.value    ?? count;
+      const curDur   = row.querySelector('.series-duration')?.value ?? (duration || 30);
+      const curRest  = row.querySelector('.series-rest')?.value     ?? rest ?? 0;
+      labels.innerHTML = `<span class="series-label">séries</span><span class="series-label">durée (s)</span><span class="series-label">repos (s)</span>`;
+      labels.style.gridTemplateColumns = '1fr 1fr 1fr';
+      row.style.gridTemplateColumns    = '1fr 1fr 1fr';
+      row.innerHTML = `
+        <input type="number" inputmode="numeric" class="series-count"    placeholder="nb"  min="1" value="${curCount}" />
+        <input type="number" inputmode="numeric" class="series-duration" placeholder="sec" min="1" value="${curDur}" />
+        <input type="number" inputmode="numeric" class="series-rest"     placeholder="sec" min="0" value="${curRest}" />`;
+    } else {
+      const curCount  = row.querySelector('.series-count')?.value  ?? count;
+      const curReps   = row.querySelector('.series-reps')?.value   ?? reps   ?? 0;
+      const curWeight = row.querySelector('.series-weight')?.value ?? weight ?? 0;
+      const curRest   = row.querySelector('.series-rest')?.value   ?? rest   ?? 0;
+      labels.innerHTML = `<span class="series-label">séries</span><span class="series-label">reps</span><span class="series-label">kg</span><span class="series-label">repos (s)</span>`;
+      labels.style.gridTemplateColumns = '';
+      row.style.gridTemplateColumns    = '';
+      row.innerHTML = `
+        <input type="number" inputmode="numeric" class="series-count"  placeholder="nb"  min="1"          value="${curCount}" />
+        <input type="number" inputmode="decimal" class="series-reps"   placeholder="reps" min="1"          value="${curReps}" />
+        <input type="number" inputmode="decimal" class="series-weight" placeholder="kg"   min="0" step="0.5" value="${curWeight}" />
+        <input type="number" inputmode="numeric" class="series-rest"   placeholder="sec"  min="0"          value="${curRest}" />`;
+    }
+  }
+
+  buildFields(type);
+
+  typeBtn.addEventListener('click', () => {
+    const newType = typeBtn.dataset.type === 'weighted' ? 'calisthenics' : 'weighted';
+    typeBtn.dataset.type = newType;
+    typeBtn.className    = `exercise-type-btn ${newType}`;
+    typeBtn.textContent  = newType === 'calisthenics' ? '⏱ Callisthénie' : '🏋️ Avec poids';
+    buildFields(newType);
+  });
 
   const commentInput = document.createElement('textarea');
   commentInput.className = 'exercise-comment';
@@ -1344,6 +1403,7 @@ function makeExerciseCard({ name = '', muscle = '', reps = '', weight = '', rest
   commentInput.value = comment;
 
   card.appendChild(header);
+  card.appendChild(typeBtn);
   card.appendChild(labels);
   card.appendChild(row);
   card.appendChild(commentInput);

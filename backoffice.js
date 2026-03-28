@@ -223,23 +223,33 @@ function renderProgrammeEditor(existingProg) {
     const idx = container.children.length;
     container.insertAdjacentHTML('beforeend', exerciseBlockHTML({}, idx));
     bindRemoveButtons();
+    bindTypeButtons();
   });
   bindRemoveButtons();
+  bindTypeButtons();
   document.getElementById('ed-save').addEventListener('click', () => saveProgramme(existingProg?.id || null));
 }
 
 function exerciseBlockHTML(ex, idx) {
+  const type  = ex.type || 'weighted';
+  const isCal = type === 'calisthenics';
   return `
-    <div class="exercise-block" data-idx="${idx}">
+    <div class="exercise-block" data-idx="${idx}" data-type="${type}">
       <div class="exercise-block-header">
-        <input type="text" class="ex-name" placeholder="Machine / exercice" value="${ex.name || ''}" />
-        <input type="text" class="ex-muscle" placeholder="Muscle ciblé" value="${ex.muscle || ''}" />
-        <button class="btn-danger btn-sm ex-remove">×</button>
+        <input type="text" class="ex-name"   placeholder="Machine / exercice" value="${ex.name   || ''}" />
+        <input type="text" class="ex-muscle" placeholder="Muscle ciblé"       value="${ex.muscle || ''}" />
+        <button type="button" class="btn-danger btn-sm ex-remove">×</button>
+      </div>
+      <div style="margin:4px 0">
+        <button type="button" class="btn-secondary btn-sm ex-type-btn" data-type="${type}">
+          ${isCal ? '⏱ Callisthénie' : '🏋️ Poids'}
+        </button>
       </div>
       <div class="exercise-block-fields">
         <label>Séries<input type="number" class="ex-count" min="1" value="${ex.count ?? 3}" /></label>
-        <label>Reps<input type="number" class="ex-reps" min="1" value="${ex.reps ?? 12}" /></label>
-        <label>kg<input type="number" class="ex-weight" min="0" step="0.5" value="${ex.weight ?? 0}" /></label>
+        <label class="ex-field-reps"     ${isCal ? 'style="display:none"' : ''}>Reps<input type="number" class="ex-reps" min="1" value="${ex.reps ?? 12}" /></label>
+        <label class="ex-field-weight"   ${isCal ? 'style="display:none"' : ''}>kg<input type="number" class="ex-weight" min="0" step="0.5" value="${ex.weight ?? 0}" /></label>
+        <label class="ex-field-duration" ${!isCal ? 'style="display:none"' : ''}>Durée (s)<input type="number" class="ex-duration" min="1" value="${ex.duration || 30}" /></label>
         <label>Repos (s)<input type="number" class="ex-rest" min="0" value="${ex.rest ?? 90}" /></label>
       </div>
       <textarea class="ex-comment" placeholder="Commentaire (visible dans l'app)">${ex.comment || ''}</textarea>
@@ -252,6 +262,22 @@ function bindRemoveButtons() {
   });
 }
 
+function bindTypeButtons() {
+  document.querySelectorAll('.ex-type-btn').forEach(btn => {
+    btn.onclick = () => {
+      const block  = btn.closest('.exercise-block');
+      const newType = btn.dataset.type === 'weighted' ? 'calisthenics' : 'weighted';
+      btn.dataset.type   = newType;
+      btn.textContent    = newType === 'calisthenics' ? '⏱ Callisthénie' : '🏋️ Poids';
+      block.dataset.type = newType;
+      const isCal = newType === 'calisthenics';
+      block.querySelector('.ex-field-reps').style.display     = isCal ? 'none' : '';
+      block.querySelector('.ex-field-weight').style.display   = isCal ? 'none' : '';
+      block.querySelector('.ex-field-duration').style.display = isCal ? ''     : 'none';
+    };
+  });
+}
+
 async function saveProgramme(existingId) {
   const name  = document.getElementById('ed-name').value.trim();
   const errEl = document.getElementById('ed-err');
@@ -259,15 +285,20 @@ async function saveProgramme(existingId) {
   if (!name) { errEl.textContent = 'Donne un nom au programme.'; errEl.classList.remove('hidden'); return; }
 
   const blocks    = document.querySelectorAll('#ed-exos .exercise-block');
-  const exercises = Array.from(blocks).map(b => ({
-    name:    b.querySelector('.ex-name').value.trim()   || 'Sans nom',
-    muscle:  b.querySelector('.ex-muscle').value.trim(),
-    count:   parseInt(b.querySelector('.ex-count').value)   || 1,
-    reps:    parseFloat(b.querySelector('.ex-reps').value)  || 0,
-    weight:  parseFloat(b.querySelector('.ex-weight').value)|| 0,
-    rest:    parseFloat(b.querySelector('.ex-rest').value)  || 0,
-    comment: b.querySelector('.ex-comment').value.trim(),
-  }));
+  const exercises = Array.from(blocks).map(b => {
+    const type = b.dataset.type || 'weighted';
+    return {
+      name:     b.querySelector('.ex-name').value.trim()           || 'Sans nom',
+      muscle:   b.querySelector('.ex-muscle').value.trim(),
+      type,
+      count:    parseInt(b.querySelector('.ex-count').value)       || 1,
+      reps:     parseFloat(b.querySelector('.ex-reps')?.value)     || 0,
+      weight:   parseFloat(b.querySelector('.ex-weight')?.value)   || 0,
+      duration: parseFloat(b.querySelector('.ex-duration')?.value) || 0,
+      rest:     parseFloat(b.querySelector('.ex-rest').value)      || 0,
+      comment:  b.querySelector('.ex-comment').value.trim(),
+    };
+  });
 
   const payload = { name, exercises, client_id: selClient.id, coach_id: coachId };
 
@@ -345,7 +376,19 @@ function showAddClientModal() {
     }
     try {
       const newUserId = await createClientAccount(email, pass);
-      await db.from('profiles').update({ nom, prenom, email, coach_id: coachId }).eq('id', newUserId);
+
+      // Attendre que le trigger Supabase crée le profil
+      await new Promise(r => setTimeout(r, 800));
+
+      const { error: updateError } = await db.rpc('link_client_to_coach', {
+        p_client_id: newUserId,
+        p_coach_id:  coachId,
+      });
+      if (updateError) throw new Error(`Liaison échouée : ${updateError.message}`);
+
+      // Met à jour nom/prénom séparément (son propre profil, pas de RLS)
+      await db.from('profiles').update({ nom, prenom, email }).eq('id', newUserId);
+
       overlay.remove();
       await loadClients();
       renderClientList();
