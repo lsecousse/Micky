@@ -6,12 +6,62 @@
 DO $$
 DECLARE
   v_client_id uuid;
+  v_coach_id  uuid;
 BEGIN
   SELECT id INTO v_client_id FROM public.profiles WHERE email = 'lionel@secousse.net';
+  SELECT id INTO v_coach_id  FROM public.profiles WHERE email = 'lsecousse@linkeat.io';
 
   IF v_client_id IS NULL THEN
     RAISE EXCEPTION 'Utilisateur lionel@secousse.net introuvable dans profiles';
   END IF;
+  IF v_coach_id IS NULL THEN
+    RAISE EXCEPTION 'Coach lsecousse@linkeat.io introuvable dans profiles';
+  END IF;
+
+  -- ── PROGRAMMES ──────────────────────────────────────
+
+  -- Séance N°1
+  INSERT INTO public.programmes (coach_id, client_id, name, ordre, exercises)
+  VALUES (
+    v_coach_id, v_client_id, 'Séance N°1', 0,
+    '[
+      {"name":"Chest press","muscle":"Pectoraux","type":"weighted","count":4,"reps":20,"weight":6.8,"rest":75,"comment":""},
+      {"name":"Pec fly","muscle":"Pectoraux","type":"weighted","count":4,"reps":20,"weight":25,"rest":75,"comment":""},
+      {"name":"Curl barre","muscle":"Biceps","type":"weighted","count":4,"reps":12,"weight":15,"rest":75,"comment":""},
+      {"name":"Arm Curl","muscle":"Biceps","type":"weighted","count":4,"reps":12,"weight":6.7,"rest":75,"comment":""},
+      {"name":"Seated dip","muscle":"Biceps","type":"weighted","count":4,"reps":20,"weight":18,"rest":75,"comment":""},
+      {"name":"Triceps à la poulie haute corde","muscle":"Triceps","type":"weighted","count":4,"reps":20,"weight":9,"rest":75,"comment":""}
+    ]'::jsonb
+  );
+
+  -- Séance N°2
+  INSERT INTO public.programmes (coach_id, client_id, name, ordre, exercises)
+  VALUES (
+    v_coach_id, v_client_id, 'Séance N°2', 1,
+    '[
+      {"name":"Climb box","muscle":"Cuisses","type":"weighted","count":4,"reps":12,"weight":0,"rest":75,"comment":""},
+      {"name":"Leg extension","muscle":"Cuisses","type":"weighted","count":4,"reps":20,"weight":18,"rest":75,"comment":"Réglage dossier 6"},
+      {"name":"Hip abduction","muscle":"Cuisses","type":"weighted","count":4,"reps":20,"weight":20.2,"rest":75,"comment":""},
+      {"name":"Hip adduction","muscle":"Cuisses","type":"weighted","count":4,"reps":20,"weight":18,"rest":75,"comment":""},
+      {"name":"Rotary hip","muscle":"Cuisses","type":"weighted","count":4,"reps":20,"weight":52,"rest":75,"comment":""},
+      {"name":"Press","muscle":"Cuisses","type":"weighted","count":4,"reps":20,"weight":34,"rest":75,"comment":""}
+    ]'::jsonb
+  );
+
+  -- Séance N°3
+  INSERT INTO public.programmes (coach_id, client_id, name, ordre, exercises)
+  VALUES (
+    v_coach_id, v_client_id, 'Séance N°3', 2,
+    '[
+      {"name":"Seated row","muscle":"Dos","type":"weighted","count":4,"reps":20,"weight":15.5,"rest":75,"comment":""},
+      {"name":"Convergente","muscle":"Dos","type":"weighted","count":4,"reps":20,"weight":35,"rest":75,"comment":""},
+      {"name":"Shoulder press","muscle":"Epaules","type":"weighted","count":4,"reps":16,"weight":5.6,"rest":75,"comment":""},
+      {"name":"Latéral raise","muscle":"Epaules","type":"weighted","count":4,"reps":20,"weight":4.5,"rest":75,"comment":""},
+      {"name":"Rear delt","muscle":"Epaules","type":"weighted","count":4,"reps":20,"weight":18,"rest":75,"comment":"Réglage 1"}
+    ]'::jsonb
+  );
+
+  -- ── SESSIONS ────────────────────────────────────────
 
   -- Séance N°3 — 2026-03-25
   INSERT INTO public.sessions (id, client_id, programme_name, date, started_at, duration, exercises)
@@ -87,6 +137,6 @@ BEGIN
     ]'::jsonb
   ) ON CONFLICT (id) DO NOTHING;
 
-  RAISE NOTICE '✅ 4 séances importées pour %', v_client_id;
+  RAISE NOTICE '✅ 3 programmes et 4 séances importés pour %', v_client_id;
 END;
 $$;
