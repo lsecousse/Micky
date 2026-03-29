@@ -1,7 +1,7 @@
 /* ═══════════════════════════════════════════════════════
    VERSION
 ═══════════════════════════════════════════════════════ */
-const APP_VERSION = '2026.mars.28';
+const APP_VERSION = '2026.mars.29';
 document.querySelectorAll('.app-version').forEach(el => el.textContent = APP_VERSION);
 
 /* ═══════════════════════════════════════════════════════
@@ -1095,10 +1095,13 @@ function renderParams() {
     syncBtn.addEventListener('click', async () => {
       syncBtn.disabled = true;
       syncBtn.textContent = 'Synchronisation…';
-      const ok = await syncProgrammes().catch(() => false);
+      const ok = await Promise.all([
+        syncProgrammes().catch(() => false),
+        syncSessions().catch(() => false),
+      ]).then(([a]) => a);
       syncBtn.disabled = false;
       syncBtn.textContent = 'Synchroniser les programmes';
-      if (ok) showToast('Programmes mis à jour ✓');
+      if (ok) showToast('Programmes et séances mis à jour ✓');
     });
     accountSection.appendChild(syncBtn);
 
@@ -1451,7 +1454,7 @@ function renderLogin() {
     currentUser = data.user;
     const profile = await getMyProfile();
     if (profile?.role === 'coach') { window.location.href = 'backoffice.html'; return; }
-    await syncProgrammes().catch(() => {});
+    await Promise.all([syncProgrammes().catch(() => {}), syncSessions().catch(() => {})]);
     showScreen('home');
   });
 
@@ -1558,7 +1561,7 @@ document.getElementById('import-file').addEventListener('change', e => {
   }
 
   await Promise.all([
-    currentUser ? syncProgrammes().catch(() => {}) : Promise.resolve(),
+    currentUser ? Promise.all([syncProgrammes().catch(() => {}), syncSessions().catch(() => {})]) : Promise.resolve(),
     new Promise(r => setTimeout(r, 2200)),
   ]);
 

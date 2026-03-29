@@ -34,6 +34,29 @@ async function syncProgrammes() {
   return true;
 }
 
+/* Sync Supabase → localStorage : fusionne les sessions distantes */
+async function syncSessions() {
+  const { data: { user } } = await db.auth.getUser();
+  if (!user) return false;
+  const { data, error } = await db
+    .from('sessions')
+    .select('*')
+    .eq('client_id', user.id)
+    .order('date', { ascending: false });
+  if (error || !data) return false;
+
+  const sessions = data.map(row => ({
+    id:            row.id,
+    programmeName: row.programme_name,
+    date:          row.date,
+    startedAt:     row.started_at,
+    duration:      row.duration,
+    exercises:     row.exercises || [],
+  }));
+  localStorage.setItem('gym_sessions', JSON.stringify(sessions));
+  return true;
+}
+
 /* Envoie une séance terminée vers Supabase */
 async function pushSession(session) {
   const { data: { user } } = await db.auth.getUser();
