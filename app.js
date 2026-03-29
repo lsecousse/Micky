@@ -157,33 +157,8 @@ document.getElementById('back-seance').addEventListener('click', () => {
 /* ═══════════════════════════════════════════════════════
    HOME
 ═══════════════════════════════════════════════════════ */
-function drawHomeBarbell() {
-  const canvas = document.getElementById('home-canvas');
-  const dpr = window.devicePixelRatio || 1;
-  const size = 80;
-  canvas.width = size * dpr;
-  canvas.height = size * dpr;
-  const ctx = canvas.getContext('2d');
-  ctx.scale(dpr, dpr);
-
-  const ACCENT = '#FF6B00';
-  const cx = size / 2, cy = size / 2;
-  const bS = size * 0.72;
-  const barW = bS * 0.72, barH = bS * 0.09;
-  const plateW = bS * 0.13, plateH = bS * 0.42;
-  const collarW = bS * 0.06, collarH = bS * 0.30;
-
-  ctx.fillStyle = ACCENT;
-  ctx.fillRect(cx - barW/2, cy - barH/2, barW, barH);
-  ctx.fillRect(cx - barW/2, cy - plateH/2, plateW, plateH);
-  ctx.fillRect(cx - barW/2 + plateW, cy - collarH/2, collarW, collarH);
-  ctx.fillRect(cx + barW/2 - plateW, cy - plateH/2, plateW, plateH);
-  ctx.fillRect(cx + barW/2 - plateW - collarW, cy - collarH/2, collarW, collarH);
-}
 
 async function renderHome() {
-  drawHomeBarbell();
-
   const main = document.getElementById('home-main');
   main.innerHTML = '';
 
@@ -978,8 +953,8 @@ async function buildStatsProgression(sessions) {
           <line x1="${pad.l}" y1="${H-pad.b}" x2="${W-pad.r}" y2="${H-pad.b}" stroke="#2a2a2a" stroke-width="1"/>
           <text x="${pad.l-4}" y="${y(maxW)+4}" text-anchor="end" font-size="9" fill="#555">${maxW}kg</text>
           <text x="${pad.l-4}" y="${y(minW)+4}" text-anchor="end" font-size="9" fill="#555">${minW}kg</text>
-          <path d="${path}" fill="none" stroke="#FF6B00" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
-          ${points.map((p,i) => `<circle cx="${x(i).toFixed(1)}" cy="${y(p.weight).toFixed(1)}" r="2.5" fill="#FF6B00"/>`).join('')}
+          <path d="${path}" fill="none" stroke="#9A7A30" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+          ${points.map((p,i) => `<circle cx="${x(i).toFixed(1)}" cy="${y(p.weight).toFixed(1)}" r="2.5" fill="#9A7A30"/>`).join('')}
           <text x="${x(0)}" y="${H}" text-anchor="middle" font-size="9" fill="#555">${points[0].date.slice(5)}</text>
           <text x="${x(points.length-1)}" y="${H}" text-anchor="middle" font-size="9" fill="#555">${points[points.length-1].date.slice(5)}</text>
         </svg>`;
@@ -1392,27 +1367,6 @@ function renderLogin() {
   if (loginReady) return;
   loginReady = true;
 
-  // Dessine le logo sur le canvas de login
-  const canvas = document.getElementById('login-canvas');
-  if (canvas) {
-    const dpr = window.devicePixelRatio || 1;
-    const size = 80;
-    canvas.width = size * dpr; canvas.height = size * dpr;
-    const ctx = canvas.getContext('2d');
-    ctx.scale(dpr, dpr);
-    const ACCENT = '#FF6B00';
-    const cx = size / 2, cy = size * 0.48;
-    const s = size * 0.72;
-    const barW = s * 0.72, barH = s * 0.09, plateW = s * 0.13, plateH = s * 0.42;
-    const collarW = s * 0.06, collarH = s * 0.30;
-    ctx.fillStyle = ACCENT;
-    ctx.fillRect(cx - barW/2, cy - barH/2, barW, barH);
-    ctx.fillRect(cx - barW/2, cy - plateH/2, plateW, plateH);
-    ctx.fillRect(cx - barW/2 + plateW, cy - collarH/2, collarW, collarH);
-    ctx.fillRect(cx + barW/2 - plateW, cy - plateH/2, plateW, plateH);
-    ctx.fillRect(cx + barW/2 - plateW - collarW, cy - collarH/2, collarW, collarH);
-  }
-
   document.getElementById('btn-login').addEventListener('click', async () => {
     const email    = document.getElementById('login-email').value.trim();
     const password = document.getElementById('login-password').value;
@@ -1455,33 +1409,6 @@ document.getElementById('import-file').addEventListener('change', e => {
    LOADING SCREEN
 ═══════════════════════════════════════════════════════ */
 (function initLoadingScreen() {
-  const canvas = document.getElementById('loading-canvas');
-  const dpr = window.devicePixelRatio || 1;
-  const size = Math.min(window.innerWidth * 0.4, 200);
-  canvas.width = size * dpr;
-  canvas.height = size * dpr;
-  const ctx = canvas.getContext('2d');
-  ctx.scale(dpr, dpr);
-
-  const ACCENT = '#FF6B00';
-  const cx = size / 2;
-  const barbellSize = size * 0.72;
-  const cy = size * 0.48;
-
-  const barW = barbellSize * 0.72;
-  const barH = barbellSize * 0.09;
-  const plateW = barbellSize * 0.13;
-  const plateH = barbellSize * 0.42;
-  const collarW = barbellSize * 0.06;
-  const collarH = barbellSize * 0.30;
-
-  ctx.fillStyle = ACCENT;
-  ctx.fillRect(cx - barW / 2, cy - barH / 2, barW, barH);
-  ctx.fillRect(cx - barW / 2, cy - plateH / 2, plateW, plateH);
-  ctx.fillRect(cx - barW / 2 + plateW, cy - collarH / 2, collarW, collarH);
-  ctx.fillRect(cx + barW / 2 - plateW, cy - plateH / 2, plateW, plateH);
-  ctx.fillRect(cx + barW / 2 - plateW - collarW, cy - collarH / 2, collarW, collarH);
-
   const screen = document.getElementById('loading-screen');
   setTimeout(() => {
     screen.classList.add('fade-out');

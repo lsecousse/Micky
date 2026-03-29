@@ -2,14 +2,14 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --bg: #0f0f0f;
+  --bg: #131313;
   --surface: #1c1c1c;
-  --surface2: #272727;
-  --accent: #FF6B00;
-  --accent-dim: #cc5500;
-  --accent-bg: rgba(255, 107, 0, 0.1);
+  --surface2: #252525;
+  --accent: #9A7A30;
+  --accent-dim: #7d6226;
+  --accent-bg: rgba(154, 122, 48, 0.12);
   --text: #f0f0f0;
-  --text-muted: #777;
+  --text-muted: #6a6a6a;
   --danger: #ff5c5c;
   --radius: 12px;
   --font: 'DM Mono', 'Courier New', monospace;
@@ -53,7 +53,7 @@ html, body {
 #loading-screen.fade-out { opacity: 0; pointer-events: none; }
 #loading-screen.hidden { display: none; }
 
-#loading-canvas { width: 40vw; height: 40vw; max-width: 200px; max-height: 200px; }
+#loading-logo { width: 40vw; height: 40vw; max-width: 200px; max-height: 200px; border-radius: 20px; object-fit: cover; }
 
 #loading-title {
   font-size: clamp(18px, 5vw, 26px);
@@ -130,7 +130,7 @@ html, body {
   gap: 8px;
 }
 
-#home-canvas { width: 80px; height: 80px; }
+.home-logo { width: 80px; height: 80px; border-radius: 14px; object-fit: cover; }
 
 .home-title {
   font-size: 24px;
@@ -846,7 +846,7 @@ input:focus { border-color: var(--accent); }
   padding: max(env(safe-area-inset-top), 40px) 24px max(env(safe-area-inset-bottom), 32px);
   gap: 10px;
 }
-#login-canvas { display: block; margin-bottom: 4px; }
+.login-logo { width: 80px; height: 80px; border-radius: 14px; object-fit: cover; display: block; margin-bottom: 4px; }
 .login-title {
   font-size: 26px;
   font-weight: bold;
