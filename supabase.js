@@ -14,47 +14,61 @@ async function getMyProfile() {
   return data;
 }
 
-/* Sync Supabase → localStorage : remplace les programmes locaux */
-async function syncProgrammes() {
+/* Charge les programmes depuis Supabase */
+async function loadProgrammesDB() {
   const { data: { user } } = await db.auth.getUser();
-  if (!user) return false;
-  const { data, error } = await db
-    .from('programmes')
-    .select('*')
-    .eq('client_id', user.id)
-    .order('ordre');
-  if (error || !data) return false;
-
-  const programmes = data.map(row => ({
-    id:        row.id,
-    name:      row.name,
-    exercises: row.exercises || [],
-  }));
-  localStorage.setItem('gym_programmes', JSON.stringify(programmes));
-  return true;
+  if (!user) return [];
+  const { data } = await db.from('programmes').select('*').eq('client_id', user.id).order('ordre');
+  return (data || []).map(row => ({ id: row.id, name: row.name, exercises: row.exercises || [] }));
 }
 
-/* Sync Supabase → localStorage : fusionne les sessions distantes */
-async function syncSessions() {
+/* Charge les séances depuis Supabase */
+async function loadSessionsDB() {
   const { data: { user } } = await db.auth.getUser();
-  if (!user) return false;
-  const { data, error } = await db
-    .from('sessions')
-    .select('*')
-    .eq('client_id', user.id)
-    .order('date', { ascending: false });
-  if (error || !data) return false;
-
-  const sessions = data.map(row => ({
+  if (!user) return [];
+  const { data } = await db.from('sessions').select('*').eq('client_id', user.id).order('date', { ascending: false });
+  return (data || []).map(row => ({
     id:            row.id,
     programmeName: row.programme_name,
+    programmeId:   row.programme_id || null,
     date:          row.date,
     startedAt:     row.started_at,
     duration:      row.duration,
     exercises:     row.exercises || [],
   }));
-  localStorage.setItem('gym_sessions', JSON.stringify(sessions));
-  return true;
+}
+
+/* Upsert un programme (créé ou modifié par le client) */
+async function upsertProgrammeDB(programme) {
+  const { data: { user } } = await db.auth.getUser();
+  if (!user) return;
+  const profile = await getMyProfile();
+  const payload = {
+    id:        programme.id,
+    client_id: user.id,
+    coach_id:  profile?.coach_id || user.id,
+    name:      programme.name,
+    exercises: programme.exercises,
+    ordre:     programme.ordre ?? 0,
+  };
+  await db.from('programmes').upsert(payload);
+}
+
+/* Supprime un programme */
+async function deleteProgrammeDB(id) {
+  await db.from('programmes').delete().eq('id', id);
+}
+
+/* Supprime une séance */
+async function deleteSessionDB(id) {
+  await db.from('sessions').delete().eq('id', id);
+}
+
+/* Met à jour l'ordre de tous les programmes */
+async function reorderProgrammesDB(programmes) {
+  await Promise.all(programmes.map((p, i) =>
+    db.from('programmes').update({ ordre: i }).eq('id', p.id)
+  ));
 }
 
 /* Envoie une séance terminée vers Supabase */

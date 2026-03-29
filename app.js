@@ -22,19 +22,10 @@ document.addEventListener('focusout', e => {
 /* ═══════════════════════════════════════════════════════
    STORAGE
 ═══════════════════════════════════════════════════════ */
-const SESSIONS_KEY = 'gym_sessions';
-const PROGRAMMES_KEY = 'gym_programmes';
 let currentUser = null;
 
-function loadSessions() {
-  try { return JSON.parse(localStorage.getItem(SESSIONS_KEY)) || []; } catch { return []; }
-}
-function saveSessions(s) { localStorage.setItem(SESSIONS_KEY, JSON.stringify(s)); }
-
-function loadProgrammes() {
-  try { return JSON.parse(localStorage.getItem(PROGRAMMES_KEY)) || []; } catch { return []; }
-}
-function saveProgrammes(p) { localStorage.setItem(PROGRAMMES_KEY, JSON.stringify(p)); }
+async function loadSessions()   { return loadSessionsDB();   }
+async function loadProgrammes() { return loadProgrammesDB(); }
 
 /* ═══════════════════════════════════════════════════════
    HELPERS
@@ -190,13 +181,13 @@ function drawHomeBarbell() {
   ctx.fillRect(cx + barW/2 - plateW - collarW, cy - collarH/2, collarW, collarH);
 }
 
-function renderHome() {
+async function renderHome() {
   drawHomeBarbell();
 
   const main = document.getElementById('home-main');
   main.innerHTML = '';
 
-  const programmes = loadProgrammes();
+  const programmes = await loadProgrammes();
 
   if (!programmes.length) {
     const msg = document.createElement('p');
@@ -219,7 +210,7 @@ function renderHome() {
     return;
   }
 
-  const { ordered, lastSession } = cyclicProgrammes(programmes);
+  const { ordered, lastSession } = await cyclicProgrammes(programmes);
   const next = ordered[0];
   const seriesCount = next.exercises.reduce((s, e) => s + (e.count ?? e.series?.length ?? 0), 0);
   const muscles = [...new Set(next.exercises.map(e => e.muscle).filter(Boolean))];
@@ -253,16 +244,16 @@ function renderHome() {
 ═══════════════════════════════════════════════════════ */
 let liveSession = null;
 
-function renderSeanceScreen() {
+async function renderSeanceScreen() {
   const body = document.getElementById('screen-seance-body');
   body.innerHTML = '';
-  liveSession ? renderLiveSession(body) : renderProgrammeSelection(body);
+  liveSession ? renderLiveSession(body) : await renderProgrammeSelection(body);
 }
 
-function cyclicProgrammes(programmes) {
+async function cyclicProgrammes(programmes) {
   if (!programmes.length) return { ordered: programmes, lastDoneId: null, lastDoneDate: null };
 
-  const sessions = loadSessions();
+  const sessions = await loadSessions();
   if (!sessions.length) return { ordered: programmes, lastDoneId: null, lastDoneDate: null };
 
   const last = sessions.slice().sort((a, b) => {
@@ -278,8 +269,8 @@ function cyclicProgrammes(programmes) {
   return { ordered, lastDoneId: last.programmeId, lastSession: last };
 }
 
-function renderProgrammeSelection(tab) {
-  const programmes = loadProgrammes();
+async function renderProgrammeSelection(tab) {
+  const programmes = await loadProgrammes();
 
   if (!programmes.length) {
     const msg = document.createElement('p');
@@ -299,7 +290,7 @@ function renderProgrammeSelection(tab) {
   title.textContent = 'Choisir un programme';
   tab.appendChild(title);
 
-  const { ordered, lastDoneId, lastSession } = cyclicProgrammes(programmes);
+  const { ordered, lastDoneId, lastSession } = await cyclicProgrammes(programmes);
   const total = ordered.length;
 
   ordered.forEach((prog, displayIdx) => {
@@ -502,18 +493,17 @@ function propagateLiveValue(exIdx, sIdx, field, val) {
   updateProgrammeTemplate(exIdx, field, val);
 }
 
-function updateProgrammeTemplate(exIdx, field, val) {
+async function updateProgrammeTemplate(exIdx, field, val) {
   if (!liveSession.programmeId) return;
-  const programmes = loadProgrammes();
+  const programmes = await loadProgrammes();
   const prog = programmes.find(p => p.id === liveSession.programmeId);
   if (!prog || !prog.exercises[exIdx]) return;
   prog.exercises[exIdx][field] = val;
-  saveProgrammes(programmes);
+  await upsertProgrammeDB(prog);
 }
 
 function finishSession() {
   showConfirm('Terminer et enregistrer la séance ?', () => {
-    const sessions = loadSessions();
     const durationSecs = Math.round((Date.now() - new Date(liveSession.startedAt).getTime()) / 1000);
     const savedSession = {
       id: liveSession.id,
@@ -535,8 +525,6 @@ function finishSession() {
         })),
       })),
     };
-    sessions.push(savedSession);
-    saveSessions(sessions);
     pushSession(savedSession).catch(() => {});
     liveSession = null;
     stopCountdown();
@@ -682,9 +670,9 @@ document.getElementById('countdown-skip').addEventListener('click', finishCountd
 /* ═══════════════════════════════════════════════════════
    HISTORIQUE
 ═══════════════════════════════════════════════════════ */
-function renderHistory() {
+async function renderHistory() {
   const list = document.getElementById('history-list');
-  const sessions = loadSessions().slice().sort((a, b) => b.date.localeCompare(a.date));
+  const sessions = (await loadSessions()).slice().sort((a, b) => b.date.localeCompare(a.date));
 
   if (!sessions.length) {
     list.innerHTML = '<p class="empty-msg">Aucune séance enregistrée.</p>';
@@ -763,10 +751,10 @@ function openModal(session) {
 
   body.innerHTML = html;
   document.getElementById('delete-session').addEventListener('click', () => {
-    showConfirm('Supprimer cette séance ?', () => {
-      saveSessions(loadSessions().filter(s => s.id !== session.id));
+    showConfirm('Supprimer cette séance ?', async () => {
+      await deleteSessionDB(session.id);
       closeModal();
-      renderHistory();
+      await renderHistory();
     });
   });
 
@@ -785,10 +773,10 @@ document.getElementById('modal').addEventListener('click', e => {
 /* ═══════════════════════════════════════════════════════
    STATS
 ═══════════════════════════════════════════════════════ */
-function renderStats() {
+async function renderStats() {
   const body = document.getElementById('screen-stats-body');
   body.innerHTML = '';
-  const sessions = loadSessions().slice().sort((a, b) => a.date.localeCompare(b.date));
+  const sessions = (await loadSessions()).slice().sort((a, b) => a.date.localeCompare(b.date));
 
   if (!sessions.length) {
     body.innerHTML = '<p class="empty-msg">Aucune séance enregistrée.</p>';
@@ -797,7 +785,7 @@ function renderStats() {
 
   body.appendChild(buildStatsSummary(sessions));
   body.appendChild(buildStatsFrequency(sessions));
-  body.appendChild(buildStatsProgression(sessions));
+  body.appendChild(await buildStatsProgression(sessions));
 }
 
 function statsSection(title) {
@@ -908,12 +896,12 @@ function buildStatsFrequency(sessions) {
   return section;
 }
 
-function buildStatsProgression(sessions) {
+async function buildStatsProgression(sessions) {
   const section = statsSection('Machines');
 
   // Lookup muscle : priorité session, fallback programmes
   const muscleByName = {};
-  loadProgrammes().forEach(p => p.exercises.forEach(e => { if (e.muscle) muscleByName[e.name] = e.muscle; }));
+  (await loadProgrammes()).forEach(p => p.exercises.forEach(e => { if (e.muscle) muscleByName[e.name] = e.muscle; }));
   sessions.forEach(s => s.exercises.forEach(e => { if (e.muscle) muscleByName[e.name] = e.muscle; }));
 
   const names = [...new Set(sessions.flatMap(s => s.exercises.map(e => e.name)))].sort();
@@ -1068,7 +1056,7 @@ function buildStatsProgression(sessions) {
 /* ═══════════════════════════════════════════════════════
    PARAMÈTRES — liste des programmes
 ═══════════════════════════════════════════════════════ */
-function renderParams() {
+async function renderParams() {
   const tab = document.getElementById('screen-params-body');
   tab.innerHTML = '';
 
@@ -1088,22 +1076,6 @@ function renderParams() {
     emailLine.style.cssText = 'font-size:13px;color:var(--text-muted);padding:4px 0';
     emailLine.textContent = currentUser.email;
     accountSection.appendChild(emailLine);
-
-    const syncBtn = document.createElement('button');
-    syncBtn.className = 'btn-secondary btn-full';
-    syncBtn.textContent = 'Synchroniser les programmes';
-    syncBtn.addEventListener('click', async () => {
-      syncBtn.disabled = true;
-      syncBtn.textContent = 'Synchronisation…';
-      const ok = await Promise.all([
-        syncProgrammes().catch(() => false),
-        syncSessions().catch(() => false),
-      ]).then(([a]) => a);
-      syncBtn.disabled = false;
-      syncBtn.textContent = 'Synchroniser les programmes';
-      if (ok) showToast('Programmes et séances mis à jour ✓');
-    });
-    accountSection.appendChild(syncBtn);
 
     const logoutBtn = document.createElement('button');
     logoutBtn.className = 'btn-secondary btn-full';
@@ -1138,7 +1110,7 @@ function renderParams() {
   progTitle.textContent = 'Programmes';
   progSection.appendChild(progTitle);
 
-  const programmes = loadProgrammes();
+  const programmes = await loadProgrammes();
   if (!programmes.length) {
     const msg = document.createElement('p');
     msg.className = 'empty-msg';
@@ -1159,23 +1131,23 @@ function renderParams() {
           <button class="btn-danger btn-sm">Suppr.</button>
         </div>
       `;
-      row.querySelector('[data-dir="up"]').addEventListener('click', () => {
-        const progs = loadProgrammes();
+      row.querySelector('[data-dir="up"]').addEventListener('click', async () => {
+        const progs = await loadProgrammes();
         [progs[idx - 1], progs[idx]] = [progs[idx], progs[idx - 1]];
-        saveProgrammes(progs);
-        renderParams();
+        await reorderProgrammesDB(progs);
+        await renderParams();
       });
-      row.querySelector('[data-dir="down"]').addEventListener('click', () => {
-        const progs = loadProgrammes();
+      row.querySelector('[data-dir="down"]').addEventListener('click', async () => {
+        const progs = await loadProgrammes();
         [progs[idx], progs[idx + 1]] = [progs[idx + 1], progs[idx]];
-        saveProgrammes(progs);
-        renderParams();
+        await reorderProgrammesDB(progs);
+        await renderParams();
       });
       row.querySelector('.btn-secondary').addEventListener('click', () => openProgrammeEditor(prog));
       row.querySelector('.btn-danger').addEventListener('click', () => {
-        showConfirm(`Supprimer "${prog.name}" ?`, () => {
-          saveProgrammes(loadProgrammes().filter(p => p.id !== prog.id));
-          renderParams();
+        showConfirm(`Supprimer "${prog.name}" ?`, async () => {
+          await deleteProgrammeDB(prog.id);
+          await renderParams();
         });
       });
       progSection.appendChild(row);
@@ -1278,7 +1250,7 @@ function openProgrammeEditor(programme = null) {
   tab.appendChild(saveBtn);
 }
 
-function saveProgrammeFromEditor(existingId) {
+async function saveProgrammeFromEditor(existingId) {
   const name = document.getElementById('prog-name-input').value.trim();
   if (!name) { showAlert('Donne un nom au programme.'); return; }
 
@@ -1301,16 +1273,13 @@ function saveProgrammeFromEditor(existingId) {
     };
   });
 
-  const programmes = loadProgrammes();
+  const programmes = await loadProgrammes();
   if (existingId) {
-    const idx = programmes.findIndex(p => p.id === existingId);
-    if (idx >= 0) programmes[idx] = { id: existingId, name, exercises };
-    else programmes.push({ id: existingId, name, exercises });
+    await upsertProgrammeDB({ id: existingId, name, exercises, ordre: programmes.findIndex(p => p.id === existingId) });
   } else {
-    programmes.push({ id: generateId(), name, exercises });
+    await upsertProgrammeDB({ id: generateId(), name, exercises, ordre: programmes.length });
   }
-  saveProgrammes(programmes);
-  renderParams();
+  await renderParams();
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -1454,7 +1423,6 @@ function renderLogin() {
     currentUser = data.user;
     const profile = await getMyProfile();
     if (profile?.role === 'coach') { window.location.href = 'backoffice.html'; return; }
-    await Promise.all([syncProgrammes().catch(() => {}), syncSessions().catch(() => {})]);
     showScreen('home');
   });
 
@@ -1463,10 +1431,10 @@ function renderLogin() {
 /* ═══════════════════════════════════════════════════════
    DONNÉES
 ═══════════════════════════════════════════════════════ */
-function exportData() {
+async function exportData() {
   const data = {
-    programmes: loadProgrammes(),
-    sessions:   loadSessions(),
+    programmes: await loadProgrammes(),
+    sessions:   await loadSessions(),
   };
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
@@ -1478,36 +1446,9 @@ function exportData() {
 }
 
 document.getElementById('import-file').addEventListener('change', e => {
-  const file = e.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = evt => {
-    try {
-      const raw = JSON.parse(evt.target.result);
-      const importedSessions   = raw.sessions   || [];
-      const importedProgrammes = raw.programmes || [];
-
-      const existingSessions = loadSessions();
-      const sessionIds = new Set(existingSessions.map(s => s.id));
-      const mergedSessions = [...existingSessions, ...importedSessions.filter(s => !sessionIds.has(s.id))];
-      saveSessions(mergedSessions);
-
-      const existingProgrammes = loadProgrammes();
-      const progIds = new Set(existingProgrammes.map(p => p.id));
-      const mergedProgrammes = [...existingProgrammes, ...importedProgrammes.filter(p => !progIds.has(p.id))];
-      saveProgrammes(mergedProgrammes);
-
-      const addedS = mergedSessions.length - existingSessions.length;
-      const addedP = mergedProgrammes.length - existingProgrammes.length;
-      const fb = document.getElementById('data-feedback');
-      if (fb) fb.textContent = `${addedS} séance${addedS !== 1 ? 's' : ''} et ${addedP} programme${addedP !== 1 ? 's' : ''} importé${addedP !== 1 ? 's' : ''}.`;
-    } catch {
-      const fb = document.getElementById('data-feedback');
-      if (fb) fb.textContent = 'Erreur : fichier JSON invalide.';
-    }
-  };
-  reader.readAsText(file);
   e.target.value = '';
+  const fb = document.getElementById('data-feedback');
+  if (fb) fb.textContent = 'Import non disponible — gérez vos données via le backoffice.';
 });
 
 /* ═══════════════════════════════════════════════════════
@@ -1561,7 +1502,7 @@ document.getElementById('import-file').addEventListener('change', e => {
   }
 
   await Promise.all([
-    currentUser ? Promise.all([syncProgrammes().catch(() => {}), syncSessions().catch(() => {})]) : Promise.resolve(),
+    Promise.resolve(), // les données sont chargées à la demande
     new Promise(r => setTimeout(r, 2200)),
   ]);
 
