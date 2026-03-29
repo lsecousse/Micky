@@ -315,9 +315,10 @@ async function saveProgramme(existingId) {
 }
 
 async function deleteProgramme(id) {
-  if (!confirm('Supprimer ce programme ?')) return;
-  await db.from('programmes').delete().eq('id', id);
-  await renderDetailBody();
+  showConfirmModal('Supprimer ce programme ?', async () => {
+    await db.from('programmes').delete().eq('id', id);
+    await renderDetailBody();
+  });
 }
 
 /* ─── SESSIONS ──────────────────────────────────────── */
@@ -339,6 +340,23 @@ async function renderSessionList(body) {
         <div class="session-meta">${exCount} exercice(s)${dur ? ' · ' + dur : ''}</div>
       </div>`;
   }).join('');
+}
+
+/* ─── CONFIRM MODAL ─────────────────────────────────── */
+function showConfirmModal(message, onConfirm) {
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = `
+    <div class="modal">
+      <p style="font-size:14px;line-height:1.6">${message}</p>
+      <div class="flex-row" style="justify-content:flex-end">
+        <button class="btn-secondary" id="cm-cancel">Annuler</button>
+        <button class="btn-danger"    id="cm-ok">Supprimer</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  overlay.querySelector('#cm-cancel').addEventListener('click', () => overlay.remove());
+  overlay.querySelector('#cm-ok').addEventListener('click', () => { overlay.remove(); onConfirm(); });
 }
 
 /* ─── ADD CLIENT MODAL ──────────────────────────────── */
@@ -413,10 +431,12 @@ function showAddClientModal() {
 
 /* ─── DELETE CLIENT ─────────────────────────────────── */
 async function deleteClient(id) {
-  if (!confirm('Supprimer ce client et toutes ses données ?')) return;
-  await db.from('profiles').update({ coach_id: null }).eq('id', id);
-  selClient = null;
-  await loadClients();
-  renderClientList();
-  document.getElementById('bo-main').innerHTML = '<div class="bo-main-placeholder">← Sélectionnez un client</div>';
+  showConfirmModal('Supprimer ce client et toutes ses données ?<br><span style="color:var(--danger);font-size:12px">Programmes et séances seront définitivement supprimés.</span>', async () => {
+    const { error } = await db.rpc('delete_client', { p_client_id: id, p_coach_id: coachId });
+    if (error) { alert('Erreur : ' + error.message); return; }
+    selClient = null;
+    await loadClients();
+    renderClientList();
+    document.getElementById('bo-main').innerHTML = '<div class="bo-main-placeholder">← Sélectionnez un client</div>';
+  });
 }
