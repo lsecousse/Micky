@@ -359,6 +359,24 @@ function showConfirmModal(message, onConfirm) {
   overlay.querySelector('#cm-ok').addEventListener('click', () => { overlay.remove(); onConfirm(); });
 }
 
+function showSuccessModal(email) {
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = `
+    <div class="modal" style="text-align:center;gap:16px">
+      <div style="font-size:40px">✓</div>
+      <h2>Compte créé !</h2>
+      <p style="color:var(--muted);font-size:13px;line-height:1.6">
+        Un email d'invitation a été envoyé à<br>
+        <strong style="color:var(--text)">${email}</strong><br>
+        pour que le client définisse son mot de passe.
+      </p>
+      <button class="btn-primary btn-full" id="sm-ok">Fermer</button>
+    </div>`;
+  document.body.appendChild(overlay);
+  overlay.querySelector('#sm-ok').addEventListener('click', () => overlay.remove());
+}
+
 /* ─── ADD CLIENT MODAL ──────────────────────────────── */
 function showAddClientModal() {
   const overlay = document.createElement('div');
@@ -419,7 +437,7 @@ function showAddClientModal() {
       overlay.remove();
       await loadClients();
       renderClientList();
-      alert(`Compte créé !\nUn email a été envoyé à ${email} pour définir son mot de passe.`);
+      showSuccessModal(email);
     } catch (err) {
       errEl.textContent = err.message;
       errEl.classList.remove('hidden');
