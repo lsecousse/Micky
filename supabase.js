@@ -79,6 +79,7 @@ async function pushSession(session) {
     id:             session.id,
     client_id:      user.id,
     programme_name: session.programmeName,
+    programme_id:   session.programmeId || null,
     date:           session.date,
     started_at:     session.startedAt,
     duration:       session.duration,
