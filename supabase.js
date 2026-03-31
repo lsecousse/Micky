@@ -66,9 +66,13 @@ async function deleteSessionDB(id) {
 
 /* Met à jour l'ordre de tous les programmes */
 async function reorderProgrammesDB(programmes) {
-  await Promise.all(programmes.map((p, i) =>
-    db.from('programmes').update({ ordre: i }).eq('id', p.id)
+  const { data: { user } } = await db.auth.getUser();
+  if (!user) return;
+  const results = await Promise.all(programmes.map((p, i) =>
+    db.from('programmes').update({ ordre: i }).eq('id', p.id).eq('client_id', user.id)
   ));
+  const err = results.find(r => r.error);
+  if (err) console.error('reorderProgrammesDB error:', err.error);
 }
 
 /* Envoie une séance terminée vers Supabase */
