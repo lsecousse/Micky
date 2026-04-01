@@ -1030,8 +1030,9 @@ input:focus { border-color: var(--accent); }
 .activity-type-btn:active { border-color: var(--accent); color: var(--accent); }
 
 .activity-name {
-  flex: 1;
-  min-width: 0;
+  flex: 1 !important;
+  min-width: 0 !important;
+  width: auto !important;
   font-size: 13px;
 }
 
@@ -1041,11 +1042,11 @@ input:focus { border-color: var(--accent); }
   gap: 4px;
 }
 
-.activity-fields input { width: 52px; text-align: center; }
+.activity-fields input { width: 52px !important; text-align: center; }
 .activity-sep { font-size: 11px; color: var(--text-muted); }
 
 .activity-rest {
-  width: 44px;
+  width: 44px !important;
   text-align: center;
   font-size: 12px;
 }
