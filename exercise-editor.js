@@ -73,7 +73,7 @@ function makeActivityRow({ type = 'weight', name = '', reps = '', weight = '', d
   const nameInput = document.createElement('input');
   nameInput.type = 'text';
   nameInput.className = 'activity-name';
-  nameInput.placeholder = 'Activité';
+  nameInput.placeholder = 'Muscle sollicité';
   nameInput.maxLength = 60;
   nameInput.value = name;
 
