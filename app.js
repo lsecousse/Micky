@@ -398,9 +398,10 @@ let chronoInterval  = null;
 let currentChronoCtx = null; // { exIdx, sIdx, actIndices, startTime, row }
 
 function openChronoOverlay(exIdx, sIdx, actIndices, row) {
-  const overlay  = document.getElementById('chrono-overlay');
-  const display  = document.getElementById('chrono-display');
-  const stopBtn  = document.getElementById('chrono-stop');
+  const overlay = document.getElementById('chrono-overlay');
+  const display = document.getElementById('chrono-display');
+  let   stopBtn = document.getElementById('chrono-stop');
+  if (!overlay || !display || !stopBtn) return;
 
   const startTime = Date.now();
   display.textContent = '00:00';
@@ -409,7 +410,8 @@ function openChronoOverlay(exIdx, sIdx, actIndices, row) {
   currentChronoCtx = { exIdx, sIdx, actIndices, startTime, row };
 
   chronoInterval = setInterval(() => {
-    display.textContent = formatSeconds(Math.floor((Date.now() - startTime) / 1000));
+    const el = document.getElementById('chrono-display');
+    if (el) el.textContent = formatSeconds(Math.floor((Date.now() - startTime) / 1000));
   }, 500);
 
   // Remplacement du bouton pour éviter les doubles listeners
