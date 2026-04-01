@@ -393,50 +393,56 @@ function renderLiveSession(tab) {
   document.getElementById('finish-session').addEventListener('click', finishSession);
 }
 
-/* ── Chronos actifs : clé = "exIdx-sIdx-actIdx" ─────── */
-const activeChronos = new Map();
+/* ── Chrono overlay ─────────────────────────────────── */
+let chronoInterval  = null;
+let currentChronoCtx = null; // { exIdx, sIdx, actIndices, startTime, row }
 
-function buildChronoWidget(exIdx, sIdx, actIdx, savedSeconds) {
-  const widget = document.createElement('div');
-  widget.className = 'live-chrono-widget';
+function openChronoOverlay(exIdx, sIdx, actIndices, row) {
+  const overlay  = document.getElementById('chrono-overlay');
+  const display  = document.getElementById('chrono-display');
+  const stopBtn  = document.getElementById('chrono-stop');
 
-  const display = document.createElement('span');
-  display.className = 'live-chrono-display';
-  display.textContent = formatSeconds(savedSeconds);
+  const startTime = Date.now();
+  display.textContent = '00:00';
+  overlay.classList.remove('hidden');
 
-  const btn = document.createElement('button');
-  btn.className = 'live-chrono-btn';
-  btn.textContent = savedSeconds > 0 ? '↺' : '▶';
+  currentChronoCtx = { exIdx, sIdx, actIndices, startTime, row };
 
-  const key = `${exIdx}-${sIdx}-${actIdx}`;
+  chronoInterval = setInterval(() => {
+    display.textContent = formatSeconds(Math.floor((Date.now() - startTime) / 1000));
+  }, 500);
 
-  btn.addEventListener('click', () => {
-    if (activeChronos.has(key)) {
-      // Arrêter
-      const { interval, start, base } = activeChronos.get(key);
-      clearInterval(interval);
-      activeChronos.delete(key);
-      const elapsed = base + Math.floor((Date.now() - start) / 1000);
-      liveSession.exercises[exIdx].series[sIdx].values[actIdx].duration = elapsed;
-      display.textContent = formatSeconds(elapsed);
-      btn.textContent = '↺';
-      btn.classList.remove('running');
-    } else {
-      // Démarrer
-      const base = liveSession.exercises[exIdx].series[sIdx].values[actIdx].duration || 0;
-      const start = Date.now();
-      const interval = setInterval(() => {
-        const elapsed = base + Math.floor((Date.now() - start) / 1000);
-        display.textContent = formatSeconds(elapsed);
-      }, 500);
-      activeChronos.set(key, { interval, start, base });
-      btn.textContent = '■';
-      btn.classList.add('running');
-    }
+  // Remplacement du bouton pour éviter les doubles listeners
+  const newStop = stopBtn.cloneNode(true);
+  stopBtn.parentNode.replaceChild(newStop, stopBtn);
+  newStop.addEventListener('click', () => stopChronoOverlay());
+}
+
+function stopChronoOverlay() {
+  if (!currentChronoCtx) return;
+  clearInterval(chronoInterval);
+  chronoInterval = null;
+
+  const { exIdx, sIdx, actIndices, startTime, row } = currentChronoCtx;
+  currentChronoCtx = null;
+
+  const elapsed = Math.floor((Date.now() - startTime) / 1000);
+  actIndices.forEach(actIdx => {
+    if (!liveSession.exercises[exIdx].series[sIdx].values[actIdx])
+      liveSession.exercises[exIdx].series[sIdx].values[actIdx] = {};
+    liveSession.exercises[exIdx].series[sIdx].values[actIdx].duration = elapsed;
   });
 
-  widget.append(btn, display);
-  return widget;
+  // Mettre à jour l'affichage du résultat dans la row
+  actIndices.forEach(actIdx => {
+    const span = row.querySelector(`.live-chrono-result[data-act="${actIdx}"]`);
+    if (span) span.textContent = formatSeconds(elapsed);
+  });
+
+  document.getElementById('chrono-overlay').classList.add('hidden');
+
+  // Avancer directement à "done" (état déjà "active")
+  advanceSeriesState(exIdx, sIdx, row);
 }
 
 function buildLiveSetRow(exIdx, sIdx, set) {
@@ -525,8 +531,12 @@ function buildLiveSetRow(exIdx, sIdx, set) {
       sSpan.textContent = 's';
       actRow.append(durInput, sSpan);
     } else {
-      // stopwatch : widget chrono
-      actRow.appendChild(buildChronoWidget(exIdx, sIdx, actIdx, v.duration || 0));
+      // stopwatch : affiche le temps enregistré (ou placeholder)
+      const resultSpan = document.createElement('span');
+      resultSpan.className = 'live-chrono-result';
+      resultSpan.dataset.act = actIdx;
+      resultSpan.textContent = v.duration ? formatSeconds(v.duration) : '⏱';
+      actRow.appendChild(resultSpan);
     }
 
     if (act.rest > 0) {
@@ -550,6 +560,15 @@ function advanceSeriesState(exIdx, sIdx, row) {
 
   if (set.state === 'pending') {
     set.state = 'active';
+    const stopwatchIndices = ex.activities
+      .map((act, i) => act.type === 'stopwatch' ? i : -1)
+      .filter(i => i >= 0);
+    if (stopwatchIndices.length > 0) {
+      row.className = `live-series-row ${set.state}`;
+      row.querySelector('.series-state-btn').textContent = stateIcon(set.state);
+      openChronoOverlay(exIdx, sIdx, stopwatchIndices, row);
+      return; // l'overlay prend la main, advanceSeriesState sera rappelé au Stop
+    }
   } else {
     set.state = 'done';
     pushSession(liveSessionSnapshot()).catch(() => {});
@@ -592,13 +611,19 @@ async function updateProgrammeTemplate(exIdx, actIdx, field, val) {
 }
 
 function stopAllChronos() {
-  activeChronos.forEach(({ interval, start, base }, key) => {
-    clearInterval(interval);
-    const [exIdx, sIdx, actIdx] = key.split('-').map(Number);
-    const elapsed = base + Math.floor((Date.now() - start) / 1000);
-    liveSession.exercises[exIdx].series[sIdx].values[actIdx].duration = elapsed;
-  });
-  activeChronos.clear();
+  if (chronoInterval && currentChronoCtx) {
+    clearInterval(chronoInterval);
+    chronoInterval = null;
+    const { exIdx, sIdx, actIndices, startTime } = currentChronoCtx;
+    currentChronoCtx = null;
+    const elapsed = Math.floor((Date.now() - startTime) / 1000);
+    actIndices.forEach(actIdx => {
+      if (!liveSession.exercises[exIdx].series[sIdx].values[actIdx])
+        liveSession.exercises[exIdx].series[sIdx].values[actIdx] = {};
+      liveSession.exercises[exIdx].series[sIdx].values[actIdx].duration = elapsed;
+    });
+    document.getElementById('chrono-overlay').classList.add('hidden');
+  }
 }
 
 function finishSession() {

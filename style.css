@@ -413,40 +413,48 @@ input:focus { border-color: var(--accent); }
   white-space: nowrap;
 }
 
-.live-chrono-widget {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.live-chrono-btn {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  border: 2px solid var(--text-muted);
-  background: none;
-  color: var(--text-muted);
-  font-size: 13px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: border-color 0.15s, color 0.15s;
-  flex-shrink: 0;
-}
-.live-chrono-btn.running { border-color: var(--accent); color: var(--accent); }
-
-.live-chrono-display {
-  font-size: 20px;
+.live-chrono-result {
+  font-size: 18px;
   font-weight: 600;
   letter-spacing: 0.04em;
-  color: var(--text);
-  min-width: 56px;
+  color: var(--text-muted);
 }
 
 .activity-chrono-hint {
   font-style: italic;
   color: var(--text-muted);
+}
+
+/* ── Chrono overlay (fullscreen, comme countdown) ─────── */
+#chrono-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 32px;
+  z-index: 200;
+}
+#chrono-overlay.hidden { display: none; }
+
+#chrono-display {
+  font-size: 72px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--accent);
+}
+
+#chrono-stop {
+  background: none;
+  border: 2px solid var(--danger);
+  color: var(--danger);
+  font-size: 18px;
+  font-weight: bold;
+  padding: 14px 48px;
+  border-radius: 40px;
+  letter-spacing: 0.05em;
 }
 
 .live-series-row.active { background: var(--accent-bg); }

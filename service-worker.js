@@ -1,4 +1,4 @@
-const CACHE_NAME = 'coachmike-20260401144718';
+const CACHE_NAME = 'coachmike-20260401145338';
 const SHELL = [
   '/',
   '/index.html',
