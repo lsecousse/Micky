@@ -372,26 +372,45 @@ input:focus { border-color: var(--accent); }
 
 .live-exercise-name { font-size: 14px; font-weight: 600; transition: opacity 0.2s; }
 .live-exercise-name--done { text-decoration: line-through; opacity: 0.4; }
-.live-exercise-muscle { font-size: 12px; color: var(--accent); margin-top: 1px; }
 .live-exercise-comment { font-size: 12px; color: var(--text-muted); margin-top: 4px; font-style: italic; padding: 4px 6px; background: rgba(255,255,255,0.04); border-left: 2px solid var(--accent); border-radius: 2px; }
 
-.live-series-labels {
-  display: grid;
-  grid-template-columns: 32px 18px 1fr auto 1fr auto 48px;
-  gap: 4px;
-  font-size: 10px;
-  color: var(--text-muted);
-  text-align: center;
+/* set row = état + num + activités */
+.live-series-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  border-radius: 8px;
+  padding: 6px 4px;
+  transition: background 0.15s;
 }
 
-.live-series-row {
-  display: grid;
-  grid-template-columns: 32px 18px 1fr auto 1fr auto 48px;
+/* activités empilées dans le set */
+.live-set-activities {
+  display: flex;
+  flex-direction: column;
   gap: 4px;
+  flex: 1;
+}
+
+.live-act-row {
+  display: flex;
   align-items: center;
-  border-radius: 8px;
-  padding: 4px 2px;
-  transition: background 0.15s;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.live-act-name {
+  font-size: 11px;
+  color: var(--text-muted);
+  min-width: 50px;
+  flex-shrink: 0;
+}
+
+.live-act-rest {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-left: auto;
+  white-space: nowrap;
 }
 
 .live-series-row.active { background: var(--accent-bg); }
@@ -549,11 +568,25 @@ input:focus { border-color: var(--accent); }
 }
 
 .session-card:active { background: var(--surface2); }
+.session-card--inprogress { border: 1px solid var(--accent); }
 
 .session-card-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
 .session-name  { font-size: 15px; font-weight: 600; color: var(--accent); }
 .session-date  { font-size: 12px; color: var(--text-muted); white-space: nowrap; }
 .session-meta  { font-size: 12px; color: var(--text-muted); }
+
+.session-badge-inprogress {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  padding: 1px 5px;
+  vertical-align: middle;
+  margin-left: 6px;
+}
 
 /* ── Paramètres ───────────────────────────────────────── */
 .param-row {
@@ -692,9 +725,11 @@ input:focus { border-color: var(--accent); }
 .modal-exercise-name { font-size: 14px; font-weight: 600; margin-bottom: 6px; }
 .modal-series-table { width: 100%; border-collapse: collapse; font-size: 13px; }
 .modal-series-table th { color: var(--text-muted); font-weight: 400; padding: 4px 6px; text-align: center; border-bottom: 1px solid #333; }
+.modal-act-label { font-size: 10px; color: var(--text-muted); display: block; }
 .modal-series-table td { padding: 5px 6px; text-align: center; }
 .series-not-done td { color: var(--text-muted); }
 .modal-footer { margin-top: 20px; display: flex; justify-content: flex-end; }
+.modal-footer--two { justify-content: space-between; }
 
 /* ── Dialog ───────────────────────────────────────────── */
 .dialog {
@@ -881,20 +916,87 @@ input:focus { border-color: var(--accent); }
 }
 .btn-ghost:hover { color: var(--text); }
 
-/* ── Exercise type toggle ──────────────────────────── */
-.exercise-type-btn {
+/* ── Exercise sets row ──────────────────────────────── */
+.exercise-sets-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+.exercise-sets-row label { flex-shrink: 0; }
+.exercise-sets { width: 56px; text-align: center; }
+
+/* ── Activities list ────────────────────────────────── */
+.activities-list-label {
   font-size: 11px;
-  padding: 3px 10px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-top: 4px;
+}
+
+.activities-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 4px 0;
+}
+
+.activity-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
   background: var(--surface2);
+  border-radius: 8px;
+  padding: 8px;
+}
+
+.activity-type-btn {
+  font-size: 10px;
+  padding: 3px 8px;
+  background: none;
   border: 1px solid var(--border, #333);
   color: var(--text-muted);
   border-radius: 20px;
   cursor: pointer;
   font-family: var(--font);
-  margin-bottom: 4px;
+  white-space: nowrap;
+  flex-shrink: 0;
   transition: border-color 0.15s, color 0.15s;
 }
-.exercise-type-btn.calisthenics {
-  border-color: var(--accent);
-  color: var(--accent);
+.activity-type-btn:active { border-color: var(--accent); color: var(--accent); }
+
+.activity-name {
+  flex: 1;
+  min-width: 90px;
+  font-size: 13px;
 }
+
+.activity-fields {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.activity-fields input { width: 52px; text-align: center; }
+.activity-sep { font-size: 11px; color: var(--text-muted); }
+
+.activity-rest {
+  width: 48px;
+  text-align: center;
+  font-size: 12px;
+}
+
+.activity-remove-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 18px;
+  cursor: pointer;
+  line-height: 1;
+  padding: 0 2px;
+  flex-shrink: 0;
+}
+.activity-remove-btn:active { color: var(--danger); }

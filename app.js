@@ -39,19 +39,50 @@ function todayIso() {
   return new Date().toISOString().slice(0, 10);
 }
 
+function migrateExercise(ex) {
+  if (ex.activities) return ex;
+  const type = ex.type === 'calisthenics' ? 'countdown' : 'weight';
+  const s0 = ex.series?.[0] || {};
+  const activity = {
+    type,
+    name:     ex.muscle   || '',
+    reps:     type === 'weight' ? (ex.reps     ?? s0.reps     ?? 0) : 0,
+    weight:   type === 'weight' ? (ex.weight   ?? s0.weight   ?? 0) : 0,
+    duration: type !== 'weight' ? (ex.duration ?? s0.duration ?? 0) : 0,
+    rest:     ex.rest ?? s0.rest ?? 0,
+  };
+  const series = ex.series
+    ? ex.series.map(s => ({
+        done:   s.done ?? (s.state === 'done'),
+        state:  s.state || (s.done ? 'done' : 'pending'),
+        values: [type === 'weight' ? { reps: s.reps || 0, weight: s.weight || 0 } : { duration: s.duration || 0 }],
+      }))
+    : Array.from({ length: ex.count ?? 3 }, () => ({
+        done: false, state: 'pending',
+        values: [type === 'weight' ? { reps: activity.reps, weight: activity.weight } : { duration: activity.duration }],
+      }));
+  return { name: ex.name, comment: ex.comment || '', sets: ex.count ?? ex.series?.length ?? 3, activities: [activity], series };
+}
+
 function totalVolume(exercises) {
   return exercises.reduce((sum, ex) => {
-    if (ex.type === 'calisthenics') return sum;
-    return sum + ex.series
+    const e = migrateExercise(ex);
+    return sum + e.series
       .filter(s => s.done !== false)
-      .reduce((s, se) => s + (se.reps || 0) * (se.weight || 0), 0);
+      .reduce((sv, set) => sv + e.activities.reduce((sa, act, i) => {
+        if (act.type !== 'weight') return sa;
+        const v = set.values?.[i] || {};
+        return sa + (v.reps || 0) * (v.weight || 0);
+      }, 0), 0);
   }, 0);
 }
 
 function plannedVolume(exercises) {
   return exercises.reduce((sum, ex) => {
-    if (ex.type === 'calisthenics') return sum;
-    return sum + ex.series.reduce((s, se) => s + (se.reps || 0) * (se.weight || 0), 0);
+    const e = migrateExercise(ex);
+    const actVol = e.activities.reduce((sa, act) =>
+      act.type === 'weight' ? sa + (act.reps || 0) * (act.weight || 0) : sa, 0);
+    return sum + e.series.length * actVol;
   }, 0);
 }
 
@@ -188,7 +219,7 @@ async function renderHome() {
   const { ordered, lastSession } = await cyclicProgrammes(programmes);
   const next = ordered[0];
   const seriesCount = next.exercises.reduce((s, e) => s + (e.count ?? e.series?.length ?? 0), 0);
-  const muscles = [...new Set(next.exercises.map(e => e.muscle).filter(Boolean))];
+  const muscles = [...new Set(next.exercises.flatMap(e => migrateExercise(e).activities.map(a => a.name).filter(Boolean)))];
 
   const card = document.createElement('div');
   card.className = 'home-next-card';
@@ -277,9 +308,7 @@ async function renderProgrammeSelection(tab) {
     if (isNext) card.classList.add('programme-card--next');
     if (isDone) card.classList.add('programme-card--done');
 
-    const seriesCount = prog.exercises.reduce((s, e) => {
-      return s + (e.count ?? e.series?.length ?? 0);
-    }, 0);
+    const seriesCount = prog.exercises.reduce((s, e) => s + (e.sets || e.count || e.series?.length || 3), 0);
 
     let meta;
     if (isDone && lastSession) {
@@ -311,10 +340,10 @@ function liveSessionSnapshot(durationSecs = 0) {
     startedAt:     liveSession.startedAt,
     duration:      durationSecs,
     exercises:     liveSession.exercises.map(ex => ({
-      name:   ex.name,
-      muscle: ex.muscle || '',
-      type:   ex.type || 'weighted',
-      series: ex.series.map(s => ({ reps: s.reps, weight: s.weight, duration: s.duration, rest: s.rest, done: s.state === 'done' })),
+      name:       ex.name,
+      comment:    ex.comment || '',
+      activities: ex.activities,
+      series:     ex.series.map(s => ({ done: s.state === 'done', values: s.values })),
     })),
   };
 }
@@ -327,18 +356,20 @@ function startSession(programme) {
     date: todayIso(),
     startedAt: new Date().toISOString(),
     exercises: programme.exercises.map(ex => {
-      const count    = ex.count    ?? ex.series?.length         ?? 1;
-      const type     = ex.type     || 'weighted';
-      const reps     = ex.reps     ?? ex.series?.[0]?.reps     ?? 0;
-      const weight   = ex.weight   ?? ex.series?.[0]?.weight   ?? 0;
-      const duration = ex.duration ?? ex.series?.[0]?.duration ?? 0;
-      const rest     = ex.rest     ?? ex.series?.[0]?.rest     ?? 0;
+      const m    = migrateExercise(ex);
+      const sets = ex.sets ?? m.series.length ?? (ex.count ?? 3);
       return {
-        name: ex.name,
-        muscle: ex.muscle || '',
-        comment: ex.comment || '',
-        type,
-        series: Array.from({ length: count }, () => ({ reps, weight, duration, rest, state: 'pending' })),
+        name:       ex.name,
+        comment:    ex.comment || '',
+        activities: m.activities,
+        series: Array.from({ length: sets }, () => ({
+          state: 'pending',
+          values: m.activities.map(act =>
+            act.type === 'weight'
+              ? { reps: act.reps || 0, weight: act.weight || 0 }
+              : { duration: act.duration || 0 }
+          ),
+        })),
       };
     }),
   };
@@ -367,13 +398,6 @@ function renderLiveSession(tab) {
     exName.textContent = ex.name;
     exDiv.appendChild(exName);
 
-    if (ex.muscle) {
-      const exMuscle = document.createElement('div');
-      exMuscle.className = 'live-exercise-muscle';
-      exMuscle.textContent = ex.muscle;
-      exDiv.appendChild(exMuscle);
-    }
-
     if (ex.comment) {
       const exComment = document.createElement('div');
       exComment.className = 'live-exercise-comment';
@@ -381,15 +405,8 @@ function renderLiveSession(tab) {
       exDiv.appendChild(exComment);
     }
 
-    const labels = document.createElement('div');
-    labels.className = 'live-series-labels';
-    labels.innerHTML = ex.type === 'calisthenics'
-      ? '<span></span><span></span><span>durée (s)</span><span></span><span></span><span></span><span></span>'
-      : '<span></span><span></span><span>reps</span><span></span><span>kg</span><span></span><span></span>';
-    exDiv.appendChild(labels);
-
     ex.series.forEach((s, sIdx) => {
-      exDiv.appendChild(buildLiveSeriesRow(exIdx, sIdx, s));
+      exDiv.appendChild(buildLiveSetRow(exIdx, sIdx, s));
     });
 
     tab.appendChild(exDiv);
@@ -398,101 +415,154 @@ function renderLiveSession(tab) {
   document.getElementById('finish-session').addEventListener('click', finishSession);
 }
 
-function buildLiveSeriesRow(exIdx, sIdx, s) {
-  const exType = liveSession.exercises[exIdx].type || 'weighted';
+function buildLiveSetRow(exIdx, sIdx, set) {
+  const ex  = liveSession.exercises[exIdx];
   const row = document.createElement('div');
-  row.className = `live-series-row ${s.state}`;
+  row.className = `live-series-row ${set.state}`;
   row.dataset.ex = exIdx;
   row.dataset.s  = sIdx;
 
-  if (exType === 'calisthenics') {
-    row.innerHTML = `
-      <button class="series-state-btn">${stateIcon(s.state)}</button>
-      <span class="series-num">${sIdx + 1}</span>
-      <input type="number" inputmode="numeric" class="live-duration" value="${s.duration || 0}" min="1" />
-      <span class="live-x">s</span>
-      <span></span>
-      <span></span>
-      <input type="number" inputmode="numeric" class="live-rest" value="${s.rest}" min="0" />
-    `;
-    row.querySelector('.series-state-btn').addEventListener('click', () => advanceSeriesState(exIdx, sIdx, row));
-    row.querySelector('.live-duration').addEventListener('change', e => {
-      liveSession.exercises[exIdx].series[sIdx].duration = parseInt(e.target.value) || 0;
-    });
-    row.querySelector('.live-rest').addEventListener('change', e => {
-      liveSession.exercises[exIdx].series[sIdx].rest = parseInt(e.target.value) || 0;
-    });
-  } else {
-    row.innerHTML = `
-      <button class="series-state-btn">${stateIcon(s.state)}</button>
-      <span class="series-num">${sIdx + 1}</span>
-      <input type="number" inputmode="decimal" class="live-reps" value="${s.reps}" min="1" />
-      <span class="live-x">×</span>
-      <input type="number" inputmode="decimal" class="live-weight" value="${s.weight}" min="0" step="0.5" />
-      <span class="live-kg">kg</span>
-      <input type="number" inputmode="numeric" class="live-rest" value="${s.rest}" min="0" />
-    `;
-    row.querySelector('.series-state-btn').addEventListener('click', () => advanceSeriesState(exIdx, sIdx, row));
-    row.querySelector('.live-reps').setAttribute('data-ex', exIdx);
-    row.querySelector('.live-reps').setAttribute('data-s', sIdx);
-    row.querySelector('.live-weight').setAttribute('data-ex', exIdx);
-    row.querySelector('.live-weight').setAttribute('data-s', sIdx);
-    row.querySelector('.live-reps').addEventListener('input', e => {
-      propagateLiveValue(exIdx, sIdx, 'reps', parseFloat(e.target.value) || 0);
-    });
-    row.querySelector('.live-weight').addEventListener('input', e => {
-      propagateLiveValue(exIdx, sIdx, 'weight', parseFloat(e.target.value) || 0);
-    });
-    row.querySelector('.live-rest').addEventListener('change', e => {
-      liveSession.exercises[exIdx].series[sIdx].rest = parseInt(e.target.value) || 0;
-    });
-  }
+  const stateBtn = document.createElement('button');
+  stateBtn.className = 'series-state-btn';
+  stateBtn.textContent = stateIcon(set.state);
+  stateBtn.addEventListener('click', () => advanceSeriesState(exIdx, sIdx, row));
+  row.appendChild(stateBtn);
 
+  const numSpan = document.createElement('span');
+  numSpan.className = 'series-num';
+  numSpan.textContent = sIdx + 1;
+  row.appendChild(numSpan);
+
+  const activitiesDiv = document.createElement('div');
+  activitiesDiv.className = 'live-set-activities';
+
+  ex.activities.forEach((act, actIdx) => {
+    const v      = set.values?.[actIdx] || {};
+    const actRow = document.createElement('div');
+    actRow.className = 'live-act-row';
+
+    if (act.name) {
+      const nameSpan = document.createElement('span');
+      nameSpan.className = 'live-act-name';
+      nameSpan.textContent = act.name;
+      actRow.appendChild(nameSpan);
+    }
+
+    if (act.type === 'weight') {
+      const repsInput = document.createElement('input');
+      repsInput.type = 'number';
+      repsInput.inputMode = 'decimal';
+      repsInput.className = 'live-reps';
+      repsInput.value = v.reps ?? act.reps ?? 0;
+      repsInput.min = '1';
+      repsInput.dataset.ex  = exIdx;
+      repsInput.dataset.s   = sIdx;
+      repsInput.dataset.act = actIdx;
+      repsInput.addEventListener('input', e =>
+        propagateLiveValue(exIdx, sIdx, actIdx, 'reps', parseFloat(e.target.value) || 0));
+
+      const xSpan = document.createElement('span');
+      xSpan.className = 'live-x';
+      xSpan.textContent = '×';
+
+      const wInput = document.createElement('input');
+      wInput.type = 'number';
+      wInput.inputMode = 'decimal';
+      wInput.className = 'live-weight';
+      wInput.value = v.weight ?? act.weight ?? 0;
+      wInput.min = '0';
+      wInput.step = '0.5';
+      wInput.dataset.ex  = exIdx;
+      wInput.dataset.s   = sIdx;
+      wInput.dataset.act = actIdx;
+      wInput.addEventListener('input', e =>
+        propagateLiveValue(exIdx, sIdx, actIdx, 'weight', parseFloat(e.target.value) || 0));
+
+      const kgSpan = document.createElement('span');
+      kgSpan.className = 'live-kg';
+      kgSpan.textContent = 'kg';
+
+      actRow.append(repsInput, xSpan, wInput, kgSpan);
+    } else {
+      const durInput = document.createElement('input');
+      durInput.type = 'number';
+      durInput.inputMode = 'numeric';
+      durInput.className = 'live-duration';
+      durInput.value = v.duration ?? act.duration ?? 0;
+      durInput.min = '1';
+      durInput.dataset.ex  = exIdx;
+      durInput.dataset.s   = sIdx;
+      durInput.dataset.act = actIdx;
+      durInput.addEventListener('change', e => {
+        liveSession.exercises[exIdx].series[sIdx].values[actIdx].duration = parseInt(e.target.value) || 0;
+      });
+
+      const sSpan = document.createElement('span');
+      sSpan.className = 'live-x';
+      sSpan.textContent = 's';
+
+      actRow.append(durInput, sSpan);
+    }
+
+    if (act.rest > 0) {
+      const restSpan = document.createElement('span');
+      restSpan.className = 'live-act-rest';
+      restSpan.textContent = `${act.rest}s`;
+      actRow.appendChild(restSpan);
+    }
+
+    activitiesDiv.appendChild(actRow);
+  });
+
+  row.appendChild(activitiesDiv);
   return row;
 }
 
 function advanceSeriesState(exIdx, sIdx, row) {
-  const s = liveSession.exercises[exIdx].series[sIdx];
-  if (s.state === 'done') return;
+  const ex  = liveSession.exercises[exIdx];
+  const set = ex.series[sIdx];
+  if (set.state === 'done') return;
 
-  if (s.state === 'pending') {
-    s.state = 'active';
+  if (set.state === 'pending') {
+    set.state = 'active';
   } else {
-    s.state = 'done';
+    set.state = 'done';
     pushSession(liveSessionSnapshot()).catch(() => {});
-    const isLast = sIdx === liveSession.exercises[exIdx].series.length - 1;
-    if (!isLast) startCountdown(s.rest, exIdx, sIdx);
+    const isLast   = sIdx === ex.series.length - 1;
+    const lastAct  = ex.activities[ex.activities.length - 1];
+    if (!isLast) startCountdown(lastAct?.rest || 0, exIdx, sIdx);
   }
 
-  row.className = `live-series-row ${s.state}`;
-  row.querySelector('.series-state-btn').textContent = stateIcon(s.state);
+  row.className = `live-series-row ${set.state}`;
+  row.querySelector('.series-state-btn').textContent = stateIcon(set.state);
 
-  const allDone = liveSession.exercises[exIdx].series.every(se => se.state === 'done');
+  const allDone = ex.series.every(s => s.state === 'done');
   const exDiv = row.closest('.live-exercise');
   exDiv.querySelector('.live-exercise-name').classList.toggle('live-exercise-name--done', allDone);
   if (allDone) exDiv.parentElement.appendChild(exDiv);
 }
 
-function propagateLiveValue(exIdx, sIdx, field, val) {
+function propagateLiveValue(exIdx, sIdx, actIdx, field, val) {
   const series = liveSession.exercises[exIdx].series;
   series.forEach((s, j) => {
     if (j >= sIdx) {
-      s[field] = val;
+      if (!s.values[actIdx]) s.values[actIdx] = {};
+      s.values[actIdx][field] = val;
       if (j > sIdx) {
-        const input = document.querySelector(`.live-${field}[data-ex="${exIdx}"][data-s="${j}"]`);
+        const input = document.querySelector(`.live-${field}[data-ex="${exIdx}"][data-s="${j}"][data-act="${actIdx}"]`);
         if (input) input.value = val;
       }
     }
   });
-  updateProgrammeTemplate(exIdx, field, val);
+  updateProgrammeTemplate(exIdx, actIdx, field, val);
 }
 
-async function updateProgrammeTemplate(exIdx, field, val) {
+async function updateProgrammeTemplate(exIdx, actIdx, field, val) {
   if (!liveSession.programmeId) return;
   const programmes = await loadProgrammes();
   const prog = programmes.find(p => p.id === liveSession.programmeId);
-  if (!prog || !prog.exercises[exIdx]) return;
-  prog.exercises[exIdx][field] = val;
+  if (!prog?.exercises[exIdx]?.activities?.[actIdx]) return;
+  prog.exercises[exIdx].activities[actIdx][field] = val;
   await upsertProgrammeDB(prog);
 }
 
@@ -656,7 +726,8 @@ async function renderHistory() {
   list.innerHTML = '';
   sessions.forEach(session => {
     const card = document.createElement('div');
-    card.className = 'session-card';
+    const isAbandoned = !session.duration;
+    card.className = 'session-card' + (isAbandoned ? ' session-card--inprogress' : '');
     const done = totalVolume(session.exercises);
     const planned = plannedVolume(session.exercises);
     const name = session.programmeName || session.name || 'Séance';
@@ -665,7 +736,7 @@ async function renderHistory() {
       : `${done.toLocaleString('fr-FR')} kg`;
     card.innerHTML = `
       <div class="session-card-header">
-        <span class="session-name">${name}</span>
+        <span class="session-name">${name}${isAbandoned ? ' <span class="session-badge-inprogress">En cours</span>' : ''}</span>
         <span class="session-date">${formatDate(session.date)}</span>
       </div>
       <div class="session-meta">
@@ -676,6 +747,27 @@ async function renderHistory() {
     card.addEventListener('click', () => openModal(session));
     list.appendChild(card);
   });
+}
+
+function resumeSessionFromHistory(session) {
+  liveSession = {
+    id:            session.id,
+    programmeId:   session.programmeId,
+    programmeName: session.programmeName,
+    date:          session.date,
+    startedAt:     session.startedAt,
+    exercises:     session.exercises.map(ex => {
+      const e = migrateExercise(ex);
+      return {
+        name:       e.name,
+        comment:    e.comment || '',
+        activities: e.activities,
+        series:     e.series.map(s => ({ state: s.state || (s.done ? 'done' : 'pending'), values: s.values })),
+      };
+    }),
+  };
+  closeModal();
+  showScreen('seance');
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -700,17 +792,27 @@ function openModal(session) {
   `;
 
   session.exercises.forEach(ex => {
-    const isCal = ex.type === 'calisthenics';
+    const e = migrateExercise(ex);
+    const actHeaders = e.activities.map(act => {
+      const label = act.name ? `<span class="modal-act-label">${act.name}</span> ` : '';
+      return act.type === 'weight'
+        ? `<th>${label}Reps</th><th>kg</th>`
+        : `<th>${label}Durée (s)</th>`;
+    }).join('');
     html += `<div class="modal-exercise">
-      <div class="modal-exercise-name">${ex.name}</div>
+      <div class="modal-exercise-name">${e.name}</div>
       <table class="modal-series-table">
-        <thead><tr><th>#</th>${isCal ? '<th>Durée (s)</th>' : '<th>Reps</th><th>Poids (kg)</th>'}<th>Repos (s)</th><th></th></tr></thead>
+        <thead><tr><th>#</th>${actHeaders}<th></th></tr></thead>
         <tbody>
-          ${ex.series.map((s, i) => `
+          ${e.series.map((s, i) => `
             <tr class="${s.done === false ? 'series-not-done' : ''}">
               <td>${i + 1}</td>
-              ${isCal ? `<td>${s.duration ?? '—'}</td>` : `<td>${s.reps}</td><td>${s.weight}</td>`}
-              <td>${s.rest}</td>
+              ${e.activities.map((act, j) => {
+                const v = s.values?.[j] || {};
+                return act.type === 'weight'
+                  ? `<td>${v.reps ?? '—'}</td><td>${v.weight ?? '—'}</td>`
+                  : `<td>${v.duration ?? '—'}</td>`;
+              }).join('')}
               <td>${s.done === false ? '—' : '✓'}</td>
             </tr>
           `).join('')}
@@ -719,11 +821,16 @@ function openModal(session) {
     </div>`;
   });
 
-  html += `<div class="modal-footer">
+  const isAbandoned = !session.duration;
+  html += `<div class="modal-footer${isAbandoned ? ' modal-footer--two' : ''}">
+    ${isAbandoned ? '<button class="btn-primary" id="resume-session">Reprendre la séance</button>' : ''}
     <button class="btn-danger" id="delete-session">Supprimer la séance</button>
   </div>`;
 
   body.innerHTML = html;
+  if (isAbandoned) {
+    document.getElementById('resume-session').addEventListener('click', () => resumeSessionFromHistory(session));
+  }
   document.getElementById('delete-session').addEventListener('click', () => {
     showConfirm('Supprimer cette séance ?', async () => {
       await deleteSessionDB(session.id);
@@ -773,9 +880,7 @@ function statsSection(title) {
 }
 
 function sessionVolume(session) {
-  return session.exercises.reduce((sum, ex) =>
-    sum + ex.series.filter(s => s.done !== false).reduce((s, se) => s + (se.reps || 0) * (se.weight || 0), 0)
-  , 0);
+  return totalVolume(session.exercises);
 }
 
 function buildStatsSummary(sessions) {
@@ -873,24 +978,25 @@ function buildStatsFrequency(sessions) {
 async function buildStatsProgression(sessions) {
   const section = statsSection('Machines');
 
-  // Lookup muscle : priorité session, fallback programmes
-  const muscleByName = {};
-  (await loadProgrammes()).forEach(p => p.exercises.forEach(e => { if (e.muscle) muscleByName[e.name] = e.muscle; }));
-  sessions.forEach(s => s.exercises.forEach(e => { if (e.muscle) muscleByName[e.name] = e.muscle; }));
-
   const names = [...new Set(sessions.flatMap(s => s.exercises.map(e => e.name)))].sort();
   if (!names.length) return section;
 
-  // Calcul des données par machine
+  // Calcul des données par exercice (max poids parmi les activités weight)
   const machineData = names.map(name => {
     const points = sessions.map(s => {
       const ex = s.exercises.find(e => e.name === name);
       if (!ex) return null;
-      const done = ex.series.filter(se => se.done !== false && se.weight > 0);
-      if (!done.length) return null;
-      return { date: s.date, weight: Math.max(...done.map(se => se.weight)) };
+      const e = migrateExercise(ex);
+      const weights = e.series
+        .filter(se => se.done !== false)
+        .flatMap(set => e.activities.map((act, i) =>
+          act.type === 'weight' ? (set.values?.[i]?.weight || 0) : 0
+        ))
+        .filter(w => w > 0);
+      if (!weights.length) return null;
+      return { date: s.date, weight: Math.max(...weights) };
     }).filter(Boolean);
-    return { name, muscle: muscleByName[name] || '', points };
+    return { name, muscle: '', points };
   }).filter(d => d.points.length >= 1);
 
   if (!machineData.length) return section;
@@ -1198,14 +1304,21 @@ function openProgrammeEditor(programme = null) {
 
   if (programme) {
     programme.exercises.forEach(ex => {
-      const type     = ex.type     || 'weighted';
-      const reps     = ex.reps     ?? ex.series?.[0]?.reps     ?? '';
-      const weight   = ex.weight   ?? ex.series?.[0]?.weight   ?? '';
-      const duration = ex.duration ?? ex.series?.[0]?.duration ?? '';
-      const rest     = ex.rest     ?? ex.series?.[0]?.rest     ?? '';
-      const count    = ex.count    ?? ex.series?.length        ?? 3;
-      const comment  = ex.comment  ?? '';
-      exercisesList.appendChild(makeExerciseCard({ name: ex.name, muscle: ex.muscle || '', type, reps, weight, duration, rest, count, comment }));
+      const m    = migrateExercise(ex);
+      const acts = m.activities.map(act => ({
+        type:     act.type,
+        name:     act.name     || '',
+        reps:     act.type === 'weight' ? (act.reps     ?? '') : '',
+        weight:   act.type === 'weight' ? (act.weight   ?? '') : '',
+        duration: act.type !== 'weight' ? (act.duration ?? '') : '',
+        rest:     act.rest ?? '',
+      }));
+      exercisesList.appendChild(makeExerciseCard({
+        name:       ex.name || '',
+        sets:       ex.sets || m.series?.length || ex.count || 3,
+        activities: acts,
+        comment:    ex.comment || '',
+      }));
     });
   } else {
     exercisesList.appendChild(makeExerciseCard());
@@ -1232,18 +1345,19 @@ async function saveProgrammeFromEditor(existingId) {
   if (!cards.length) { showAlert('Ajoute au moins un exercice.'); return; }
 
   const exercises = Array.from(cards).map(card => {
-    const typeBtn = card.querySelector('.exercise-type-btn');
-    const type = typeBtn?.dataset.type || 'weighted';
+    const activities = Array.from(card.querySelectorAll('.activity-row')).map(row => ({
+      type:     row.querySelector('.activity-type-btn').dataset.type || 'weight',
+      name:     row.querySelector('.activity-name').value.trim(),
+      reps:     parseFloat(row.querySelector('.activity-reps')?.value)     || 0,
+      weight:   parseFloat(row.querySelector('.activity-weight')?.value)   || 0,
+      duration: parseFloat(row.querySelector('.activity-duration')?.value) || 0,
+      rest:     parseInt(row.querySelector('.activity-rest')?.value)       || 0,
+    }));
     return {
-      name:     card.querySelector('.exercise-name').value.trim()         || 'Sans nom',
-      muscle:   card.querySelector('.exercise-muscle').value.trim(),
-      type,
-      reps:     parseFloat(card.querySelector('.series-reps')?.value)     || 0,
-      weight:   parseFloat(card.querySelector('.series-weight')?.value)   || 0,
-      duration: parseFloat(card.querySelector('.series-duration')?.value) || 0,
-      rest:     parseFloat(card.querySelector('.series-rest')?.value)     || 0,
-      count:    parseInt(card.querySelector('.series-count').value)       || 1,
-      comment:  card.querySelector('.exercise-comment').value.trim(),
+      name:       card.querySelector('.exercise-name').value.trim() || 'Sans nom',
+      sets:       parseInt(card.querySelector('.exercise-sets').value) || 1,
+      activities,
+      comment:    card.querySelector('.exercise-comment').value.trim(),
     };
   });
 
@@ -1259,99 +1373,131 @@ async function saveProgrammeFromEditor(existingId) {
 /* ═══════════════════════════════════════════════════════
    EXERCISE CARD BUILDER (éditeur de programme)
 ═══════════════════════════════════════════════════════ */
-function makeExerciseCard({ name = '', muscle = '', type = 'weighted', reps = '', weight = '', duration = '', rest = '', count = 3, comment = '' } = {}) {
+const ACTIVITY_TYPES    = ['weight', 'countdown', 'stopwatch'];
+const ACTIVITY_LABELS   = { weight: '🏋️ Poids', countdown: '⏱ Rebours', stopwatch: '⏱ Chrono' };
+
+function updateActivityFields(row, type, initial = {}) {
+  const fieldsDiv = row.querySelector('.activity-fields');
+  if (type === 'weight') {
+    fieldsDiv.innerHTML = `
+      <input type="number" inputmode="decimal" class="activity-reps"   placeholder="reps" min="1"           value="${initial.reps   ?? ''}" />
+      <span class="activity-sep">×</span>
+      <input type="number" inputmode="decimal" class="activity-weight" placeholder="kg"   min="0" step="0.5" value="${initial.weight ?? ''}" />
+      <span class="activity-sep">kg</span>`;
+  } else {
+    fieldsDiv.innerHTML = `
+      <input type="number" inputmode="numeric" class="activity-duration" placeholder="sec" min="1" value="${initial.duration ?? ''}" />
+      <span class="activity-sep">s</span>`;
+  }
+}
+
+function makeActivityRow({ type = 'weight', name = '', reps = '', weight = '', duration = '', rest = '' } = {}) {
+  const row = document.createElement('div');
+  row.className = 'activity-row';
+
+  const typeBtn = document.createElement('button');
+  typeBtn.type = 'button';
+  typeBtn.className = 'activity-type-btn';
+  typeBtn.dataset.type = type;
+  typeBtn.textContent = ACTIVITY_LABELS[type] || ACTIVITY_LABELS.weight;
+  typeBtn.addEventListener('click', () => {
+    const next = ACTIVITY_TYPES[(ACTIVITY_TYPES.indexOf(typeBtn.dataset.type) + 1) % ACTIVITY_TYPES.length];
+    typeBtn.dataset.type = next;
+    typeBtn.textContent  = ACTIVITY_LABELS[next];
+    updateActivityFields(row, next);
+  });
+
+  const nameInput = document.createElement('input');
+  nameInput.type = 'text';
+  nameInput.className = 'activity-name';
+  nameInput.placeholder = 'Nom de l\'activité';
+  nameInput.maxLength = 60;
+  nameInput.value = name;
+
+  const fieldsDiv = document.createElement('div');
+  fieldsDiv.className = 'activity-fields';
+
+  const restInput = document.createElement('input');
+  restInput.type = 'number';
+  restInput.inputMode = 'numeric';
+  restInput.className = 'activity-rest';
+  restInput.placeholder = 'repos (s)';
+  restInput.min = '0';
+  restInput.value = rest;
+
+  const removeBtn = document.createElement('button');
+  removeBtn.type = 'button';
+  removeBtn.className = 'activity-remove-btn';
+  removeBtn.textContent = '×';
+  removeBtn.addEventListener('click', () => {
+    const list = row.closest('.activities-list');
+    if (list && list.querySelectorAll('.activity-row').length > 1) row.remove();
+  });
+
+  row.append(typeBtn, nameInput, fieldsDiv, restInput, removeBtn);
+  updateActivityFields(row, type, { reps, weight, duration });
+  return row;
+}
+
+function makeExerciseCard({ name = '', sets = 3, activities = null, comment = '' } = {}) {
   const card = document.createElement('div');
   card.className = 'exercise-card';
 
-  const header = document.createElement('div');
-  header.className = 'exercise-header';
-
+  // Nom + suppression
   const nameRow = document.createElement('div');
   nameRow.className = 'exercise-name-row';
   const nameInput = document.createElement('input');
   nameInput.type = 'text';
   nameInput.className = 'exercise-name';
-  nameInput.placeholder = 'Machine / exercice';
+  nameInput.placeholder = 'Nom de l\'exercice';
   nameInput.maxLength = 60;
   nameInput.value = name;
-  nameRow.appendChild(nameInput);
-
   const removeExBtn = document.createElement('button');
-  removeExBtn.className = 'btn-danger';
+  removeExBtn.className = 'btn-danger btn-sm';
   removeExBtn.textContent = 'Suppr.';
   removeExBtn.addEventListener('click', () => card.remove());
-  nameRow.appendChild(removeExBtn);
+  nameRow.append(nameInput, removeExBtn);
+  card.appendChild(nameRow);
 
-  const muscleInput = document.createElement('input');
-  muscleInput.type = 'text';
-  muscleInput.className = 'exercise-muscle';
-  muscleInput.placeholder = 'Muscle ciblé';
-  muscleInput.maxLength = 40;
-  muscleInput.value = muscle;
+  // Nombre de séries
+  const setsRow = document.createElement('div');
+  setsRow.className = 'exercise-sets-row';
+  const setsLabel = document.createElement('label');
+  setsLabel.textContent = 'Séries';
+  const setsInput = document.createElement('input');
+  setsInput.type = 'number';
+  setsInput.inputMode = 'numeric';
+  setsInput.className = 'exercise-sets';
+  setsInput.min = '1';
+  setsInput.value = sets;
+  setsRow.append(setsLabel, setsInput);
+  card.appendChild(setsRow);
 
-  header.appendChild(nameRow);
-  header.appendChild(muscleInput);
+  // Activités
+  const actLabel = document.createElement('div');
+  actLabel.className = 'activities-list-label';
+  actLabel.textContent = 'Activités';
+  card.appendChild(actLabel);
 
-  // Type toggle
-  const typeBtn = document.createElement('button');
-  typeBtn.type = 'button';
-  typeBtn.className = `exercise-type-btn ${type}`;
-  typeBtn.dataset.type = type;
-  typeBtn.textContent = type === 'calisthenics' ? '⏱ Callisthénie' : '🏋️ Avec poids';
+  const activitiesList = document.createElement('div');
+  activitiesList.className = 'activities-list';
+  const defaultActs = activities || [{ type: 'weight' }];
+  defaultActs.forEach(act => activitiesList.appendChild(makeActivityRow(act)));
+  card.appendChild(activitiesList);
 
-  const labels = document.createElement('div');
-  labels.className = 'series-labels';
-  const row = document.createElement('div');
-  row.className = 'series-row';
+  const addActBtn = document.createElement('button');
+  addActBtn.type = 'button';
+  addActBtn.className = 'btn-secondary btn-sm';
+  addActBtn.textContent = '+ Activité';
+  addActBtn.addEventListener('click', () => activitiesList.appendChild(makeActivityRow()));
+  card.appendChild(addActBtn);
 
-  function buildFields(t) {
-    if (t === 'calisthenics') {
-      const curCount = row.querySelector('.series-count')?.value    ?? count;
-      const curDur   = row.querySelector('.series-duration')?.value ?? (duration || 30);
-      const curRest  = row.querySelector('.series-rest')?.value     ?? rest ?? 0;
-      labels.innerHTML = `<span class="series-label">séries</span><span class="series-label">durée (s)</span><span class="series-label">repos (s)</span>`;
-      labels.style.gridTemplateColumns = '1fr 1fr 1fr';
-      row.style.gridTemplateColumns    = '1fr 1fr 1fr';
-      row.innerHTML = `
-        <input type="number" inputmode="numeric" class="series-count"    placeholder="nb"  min="1" value="${curCount}" />
-        <input type="number" inputmode="numeric" class="series-duration" placeholder="sec" min="1" value="${curDur}" />
-        <input type="number" inputmode="numeric" class="series-rest"     placeholder="sec" min="0" value="${curRest}" />`;
-    } else {
-      const curCount  = row.querySelector('.series-count')?.value  ?? count;
-      const curReps   = row.querySelector('.series-reps')?.value   ?? reps   ?? 0;
-      const curWeight = row.querySelector('.series-weight')?.value ?? weight ?? 0;
-      const curRest   = row.querySelector('.series-rest')?.value   ?? rest   ?? 0;
-      labels.innerHTML = `<span class="series-label">séries</span><span class="series-label">reps</span><span class="series-label">kg</span><span class="series-label">repos (s)</span>`;
-      labels.style.gridTemplateColumns = '';
-      row.style.gridTemplateColumns    = '';
-      row.innerHTML = `
-        <input type="number" inputmode="numeric" class="series-count"  placeholder="nb"  min="1"          value="${curCount}" />
-        <input type="number" inputmode="decimal" class="series-reps"   placeholder="reps" min="1"          value="${curReps}" />
-        <input type="number" inputmode="decimal" class="series-weight" placeholder="kg"   min="0" step="0.5" value="${curWeight}" />
-        <input type="number" inputmode="numeric" class="series-rest"   placeholder="sec"  min="0"          value="${curRest}" />`;
-    }
-  }
-
-  buildFields(type);
-
-  typeBtn.addEventListener('click', () => {
-    const newType = typeBtn.dataset.type === 'weighted' ? 'calisthenics' : 'weighted';
-    typeBtn.dataset.type = newType;
-    typeBtn.className    = `exercise-type-btn ${newType}`;
-    typeBtn.textContent  = newType === 'calisthenics' ? '⏱ Callisthénie' : '🏋️ Avec poids';
-    buildFields(newType);
-  });
-
+  // Commentaire
   const commentInput = document.createElement('textarea');
   commentInput.className = 'exercise-comment';
   commentInput.placeholder = 'Commentaire (visible à la salle)';
   commentInput.rows = 2;
   commentInput.value = comment;
-
-  card.appendChild(header);
-  card.appendChild(typeBtn);
-  card.appendChild(labels);
-  card.appendChild(row);
   card.appendChild(commentInput);
 
   return card;
@@ -1435,13 +1581,15 @@ document.getElementById('import-file').addEventListener('change', e => {
         programmeName: inProgress.programmeName,
         date:          inProgress.date,
         startedAt:     inProgress.startedAt,
-        exercises:     inProgress.exercises.map(ex => ({
-          name:    ex.name,
-          muscle:  ex.muscle || '',
-          comment: '',
-          type:    ex.type || 'weighted',
-          series:  ex.series.map(s => ({ reps: s.reps, weight: s.weight, duration: s.duration, rest: s.rest, state: s.done ? 'done' : 'pending' })),
-        })),
+        exercises:     inProgress.exercises.map(ex => {
+          const e = migrateExercise(ex);
+          return {
+            name:       e.name,
+            comment:    e.comment || '',
+            activities: e.activities,
+            series:     e.series.map(s => ({ state: s.state || (s.done ? 'done' : 'pending'), values: s.values })),
+          };
+        }),
       };
     }
   }
