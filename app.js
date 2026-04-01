@@ -609,7 +609,7 @@ async function updateProgrammeTemplate(exIdx, actIdx, field, val) {
   const prog = programmes.find(p => p.id === liveSession.programmeId);
   if (!prog?.exercises[exIdx]?.activities?.[actIdx]) return;
   prog.exercises[exIdx].activities[actIdx][field] = val;
-  await upsertProgrammeDB(prog);
+  await updateProgrammeDB(prog);
 }
 
 function stopAllChronos() {
@@ -1411,7 +1411,7 @@ async function saveProgrammeFromEditor(existingId) {
 
   const programmes = await loadProgrammes();
   if (existingId) {
-    await upsertProgrammeDB({ id: existingId, name, exercises, ordre: programmes.findIndex(p => p.id === existingId) });
+    await updateProgrammeDB({ id: existingId, name, exercises });
   } else {
     await upsertProgrammeDB({ id: generateId(), name, exercises, ordre: programmes.length });
   }

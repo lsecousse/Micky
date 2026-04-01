@@ -64,6 +64,17 @@ async function deleteSessionDB(id) {
   await db.from('sessions').delete().eq('id', id);
 }
 
+/* Met à jour name + exercises d'un programme existant (client) */
+async function updateProgrammeDB(programme) {
+  const { data: { user } } = await db.auth.getUser();
+  if (!user) return;
+  const { error } = await db.from('programmes')
+    .update({ name: programme.name, exercises: programme.exercises })
+    .eq('id', programme.id)
+    .eq('client_id', user.id);
+  if (error) console.error('updateProgrammeDB error:', error);
+}
+
 /* Met à jour l'ordre de tous les programmes */
 async function reorderProgrammesDB(programmes) {
   const { data: { user } } = await db.auth.getUser();
