@@ -13,6 +13,8 @@ const root = document.getElementById('bo-root');
 (async function init() {
   const { data: { session } } = await db.auth.getSession();
   if (!session) { renderLogin(); return; }
+  const profile = await getMyProfile();
+  if (profile?.role !== 'coach') { window.location.href = 'index.html'; return; }
   coachId = session.user.id;
   await loadClients();
   renderDashboard();
@@ -38,6 +40,8 @@ function renderLogin() {
     errEl.classList.add('hidden');
     const { data, error } = await db.auth.signInWithPassword({ email, password });
     if (error) { errEl.textContent = error.message; errEl.classList.remove('hidden'); return; }
+    const profile = await getMyProfile();
+    if (profile?.role !== 'coach') { window.location.href = 'index.html'; return; }
     coachId = data.user.id;
     await loadClients();
     renderDashboard();
