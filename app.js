@@ -153,6 +153,7 @@ document.getElementById('back-params').addEventListener('click',  () => showScre
 document.getElementById('back-seance').addEventListener('click', () => {
   if (liveSession) {
     showConfirm('Abandonner la séance en cours ?', () => {
+      stopAllChronos();
       liveSession = null;
       stopCountdown();
       showScreen('home');
@@ -392,6 +393,52 @@ function renderLiveSession(tab) {
   document.getElementById('finish-session').addEventListener('click', finishSession);
 }
 
+/* ── Chronos actifs : clé = "exIdx-sIdx-actIdx" ─────── */
+const activeChronos = new Map();
+
+function buildChronoWidget(exIdx, sIdx, actIdx, savedSeconds) {
+  const widget = document.createElement('div');
+  widget.className = 'live-chrono-widget';
+
+  const display = document.createElement('span');
+  display.className = 'live-chrono-display';
+  display.textContent = formatSeconds(savedSeconds);
+
+  const btn = document.createElement('button');
+  btn.className = 'live-chrono-btn';
+  btn.textContent = savedSeconds > 0 ? '↺' : '▶';
+
+  const key = `${exIdx}-${sIdx}-${actIdx}`;
+
+  btn.addEventListener('click', () => {
+    if (activeChronos.has(key)) {
+      // Arrêter
+      const { interval, start, base } = activeChronos.get(key);
+      clearInterval(interval);
+      activeChronos.delete(key);
+      const elapsed = base + Math.floor((Date.now() - start) / 1000);
+      liveSession.exercises[exIdx].series[sIdx].values[actIdx].duration = elapsed;
+      display.textContent = formatSeconds(elapsed);
+      btn.textContent = '↺';
+      btn.classList.remove('running');
+    } else {
+      // Démarrer
+      const base = liveSession.exercises[exIdx].series[sIdx].values[actIdx].duration || 0;
+      const start = Date.now();
+      const interval = setInterval(() => {
+        const elapsed = base + Math.floor((Date.now() - start) / 1000);
+        display.textContent = formatSeconds(elapsed);
+      }, 500);
+      activeChronos.set(key, { interval, start, base });
+      btn.textContent = '■';
+      btn.classList.add('running');
+    }
+  });
+
+  widget.append(btn, display);
+  return widget;
+}
+
 function buildLiveSetRow(exIdx, sIdx, set) {
   const ex  = liveSession.exercises[exIdx];
   const row = document.createElement('div');
@@ -460,7 +507,7 @@ function buildLiveSetRow(exIdx, sIdx, set) {
       kgSpan.textContent = 'kg';
 
       actRow.append(repsInput, xSpan, wInput, kgSpan);
-    } else {
+    } else if (act.type === 'countdown') {
       const durInput = document.createElement('input');
       durInput.type = 'number';
       durInput.inputMode = 'numeric';
@@ -473,12 +520,13 @@ function buildLiveSetRow(exIdx, sIdx, set) {
       durInput.addEventListener('change', e => {
         liveSession.exercises[exIdx].series[sIdx].values[actIdx].duration = parseInt(e.target.value) || 0;
       });
-
       const sSpan = document.createElement('span');
       sSpan.className = 'live-x';
       sSpan.textContent = 's';
-
       actRow.append(durInput, sSpan);
+    } else {
+      // stopwatch : widget chrono
+      actRow.appendChild(buildChronoWidget(exIdx, sIdx, actIdx, v.duration || 0));
     }
 
     if (act.rest > 0) {
@@ -543,8 +591,19 @@ async function updateProgrammeTemplate(exIdx, actIdx, field, val) {
   await upsertProgrammeDB(prog);
 }
 
+function stopAllChronos() {
+  activeChronos.forEach(({ interval, start, base }, key) => {
+    clearInterval(interval);
+    const [exIdx, sIdx, actIdx] = key.split('-').map(Number);
+    const elapsed = base + Math.floor((Date.now() - start) / 1000);
+    liveSession.exercises[exIdx].series[sIdx].values[actIdx].duration = elapsed;
+  });
+  activeChronos.clear();
+}
+
 function finishSession() {
   showConfirm('Terminer et enregistrer la séance ?', () => {
+    stopAllChronos();
     const durationSecs = Math.round((Date.now() - new Date(liveSession.startedAt).getTime()) / 1000);
     pushSession(liveSessionSnapshot(durationSecs)).catch(() => {});
     liveSession = null;

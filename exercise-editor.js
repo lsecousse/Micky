@@ -40,10 +40,13 @@ function updateActivityFields(row, type, initial = {}) {
       <span class="activity-sep">×</span>
       <input type="number" inputmode="decimal" class="activity-weight" placeholder="kg"   min="0" step="0.5" value="${initial.weight ?? ''}" />
       <span class="activity-sep">kg</span>`;
-  } else {
+  } else if (type === 'countdown') {
     fieldsDiv.innerHTML = `
       <input type="number" inputmode="numeric" class="activity-duration" placeholder="sec" min="1" value="${initial.duration ?? ''}" />
       <span class="activity-sep">s</span>`;
+  } else {
+    // stopwatch : pas de durée à saisir, temps enregistré à la séance
+    fieldsDiv.innerHTML = `<span class="activity-sep activity-chrono-hint">temps enregistré au chrono</span>`;
   }
 }
 
