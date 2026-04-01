@@ -1,7 +1,7 @@
 /* ═══════════════════════════════════════════════════════
    VERSION
 ═══════════════════════════════════════════════════════ */
-const APP_VERSION = '2026.mars.31';
+const APP_VERSION = '2026.avril.01';
 document.querySelectorAll('.app-version').forEach(el => el.textContent = APP_VERSION);
 
 /* ═══════════════════════════════════════════════════════
@@ -302,6 +302,23 @@ async function renderProgrammeSelection(tab) {
 /* ═══════════════════════════════════════════════════════
    SÉANCE LIVE
 ═══════════════════════════════════════════════════════ */
+function liveSessionSnapshot(durationSecs = 0) {
+  return {
+    id:            liveSession.id,
+    programmeId:   liveSession.programmeId,
+    programmeName: liveSession.programmeName,
+    date:          liveSession.date,
+    startedAt:     liveSession.startedAt,
+    duration:      durationSecs,
+    exercises:     liveSession.exercises.map(ex => ({
+      name:   ex.name,
+      muscle: ex.muscle || '',
+      type:   ex.type || 'weighted',
+      series: ex.series.map(s => ({ reps: s.reps, weight: s.weight, duration: s.duration, rest: s.rest, done: s.state === 'done' })),
+    })),
+  };
+}
+
 function startSession(programme) {
   liveSession = {
     id: generateId(),
@@ -325,6 +342,7 @@ function startSession(programme) {
       };
     }),
   };
+  pushSession(liveSessionSnapshot()).catch(() => {});
   renderSeanceScreen();
 }
 
@@ -441,6 +459,7 @@ function advanceSeriesState(exIdx, sIdx, row) {
     s.state = 'active';
   } else {
     s.state = 'done';
+    pushSession(liveSessionSnapshot()).catch(() => {});
     const isLast = sIdx === liveSession.exercises[exIdx].series.length - 1;
     if (!isLast) startCountdown(s.rest, exIdx, sIdx);
   }
@@ -480,27 +499,7 @@ async function updateProgrammeTemplate(exIdx, field, val) {
 function finishSession() {
   showConfirm('Terminer et enregistrer la séance ?', () => {
     const durationSecs = Math.round((Date.now() - new Date(liveSession.startedAt).getTime()) / 1000);
-    const savedSession = {
-      id: liveSession.id,
-      programmeId: liveSession.programmeId,
-      programmeName: liveSession.programmeName,
-      date: liveSession.date,
-      startedAt: liveSession.startedAt,
-      duration: durationSecs,
-      exercises: liveSession.exercises.map(ex => ({
-        name:   ex.name,
-        muscle: ex.muscle || '',
-        type:   ex.type || 'weighted',
-        series: ex.series.map(s => ({
-          reps:     s.reps,
-          weight:   s.weight,
-          duration: s.duration,
-          rest:     s.rest,
-          done:     s.state === 'done',
-        })),
-      })),
-    };
-    pushSession(savedSession).catch(() => {});
+    pushSession(liveSessionSnapshot(durationSecs)).catch(() => {});
     liveSession = null;
     stopCountdown();
     showScreen('home');
@@ -1426,10 +1425,29 @@ document.getElementById('import-file').addEventListener('change', e => {
   if (currentUser) {
     const profile = await getMyProfile();
     if (profile?.role === 'coach') { window.location.href = 'backoffice.html'; return; }
+
+    const sessions = await loadSessions();
+    const inProgress = sessions.find(s => s.duration === 0 || s.duration == null);
+    if (inProgress?.exercises?.length) {
+      liveSession = {
+        id:            inProgress.id,
+        programmeId:   inProgress.programmeId,
+        programmeName: inProgress.programmeName,
+        date:          inProgress.date,
+        startedAt:     inProgress.startedAt,
+        exercises:     inProgress.exercises.map(ex => ({
+          name:    ex.name,
+          muscle:  ex.muscle || '',
+          comment: '',
+          type:    ex.type || 'weighted',
+          series:  ex.series.map(s => ({ reps: s.reps, weight: s.weight, duration: s.duration, rest: s.rest, state: s.done ? 'done' : 'pending' })),
+        })),
+      };
+    }
   }
 
   await Promise.all([
-    Promise.resolve(), // les données sont chargées à la demande
+    Promise.resolve(),
     new Promise(r => setTimeout(r, 2200)),
   ]);
 
