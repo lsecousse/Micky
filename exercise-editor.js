@@ -51,6 +51,10 @@ function makeActivityRow({ type = 'weight', name = '', reps = '', weight = '', d
   const row = document.createElement('div');
   row.className = 'activity-row';
 
+  // Ligne 1 : type + nom + supprimer
+  const topRow = document.createElement('div');
+  topRow.className = 'activity-row-top';
+
   const typeBtn = document.createElement('button');
   typeBtn.type = 'button';
   typeBtn.className = 'activity-type-btn';
@@ -66,20 +70,9 @@ function makeActivityRow({ type = 'weight', name = '', reps = '', weight = '', d
   const nameInput = document.createElement('input');
   nameInput.type = 'text';
   nameInput.className = 'activity-name';
-  nameInput.placeholder = 'Nom de l\'activité';
+  nameInput.placeholder = 'Activité';
   nameInput.maxLength = 60;
   nameInput.value = name;
-
-  const fieldsDiv = document.createElement('div');
-  fieldsDiv.className = 'activity-fields';
-
-  const restInput = document.createElement('input');
-  restInput.type = 'number';
-  restInput.inputMode = 'numeric';
-  restInput.className = 'activity-rest';
-  restInput.placeholder = 'repos (s)';
-  restInput.min = '0';
-  restInput.value = rest;
 
   const removeBtn = document.createElement('button');
   removeBtn.type = 'button';
@@ -90,7 +83,34 @@ function makeActivityRow({ type = 'weight', name = '', reps = '', weight = '', d
     if (list && list.querySelectorAll('.activity-row').length > 1) row.remove();
   });
 
-  row.append(typeBtn, nameInput, fieldsDiv, restInput, removeBtn);
+  topRow.append(typeBtn, nameInput, removeBtn);
+
+  // Ligne 2 : valeurs + repos
+  const bottomRow = document.createElement('div');
+  bottomRow.className = 'activity-row-bottom';
+
+  const fieldsDiv = document.createElement('div');
+  fieldsDiv.className = 'activity-fields';
+
+  const restLabel = document.createElement('span');
+  restLabel.className = 'activity-sep';
+  restLabel.textContent = 'repos';
+
+  const restInput = document.createElement('input');
+  restInput.type = 'number';
+  restInput.inputMode = 'numeric';
+  restInput.className = 'activity-rest';
+  restInput.placeholder = '0';
+  restInput.min = '0';
+  restInput.value = rest;
+
+  const restUnit = document.createElement('span');
+  restUnit.className = 'activity-sep';
+  restUnit.textContent = 's';
+
+  bottomRow.append(fieldsDiv, restLabel, restInput, restUnit);
+
+  row.append(topRow, bottomRow);
   updateActivityFields(row, type, { reps, weight, duration });
   return row;
 }
