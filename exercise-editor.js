@@ -30,7 +30,7 @@ function migrateExercise(ex) {
 
 /* ── Éditeur de carte exercice ────────────────────────── */
 const ACTIVITY_TYPES  = ['weight', 'countdown', 'stopwatch'];
-const ACTIVITY_LABELS = { weight: '🏋️ Poids', countdown: '⏱ Rebours', stopwatch: '⏱ Chrono' };
+const ACTIVITY_LABELS = { weight: '🏋️ Poids', countdown: '⏳ Minuterie', stopwatch: '⏱ Chrono' };
 
 function updateActivityFields(row, type, initial = {}) {
   const fieldsDiv = row.querySelector('.activity-fields');
