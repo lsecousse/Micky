@@ -22,7 +22,8 @@ document.addEventListener('focusout', e => {
 /* ═══════════════════════════════════════════════════════
    STORAGE
 ═══════════════════════════════════════════════════════ */
-let currentUser = null;
+let currentUser    = null;
+let currentProfile = null;
 
 async function loadSessions()   { return loadSessionsDB();   }
 async function loadProgrammes() { return loadProgrammesDB(); }
@@ -170,6 +171,14 @@ document.getElementById('back-seance').addEventListener('click', () => {
 async function renderHome() {
   const main = document.getElementById('home-main');
   main.innerHTML = '';
+
+  const prenom = currentProfile?.prenom;
+  if (prenom) {
+    const greeting = document.createElement('p');
+    greeting.className = 'home-greeting';
+    greeting.textContent = `Bonjour ${prenom} 👋`;
+    main.appendChild(greeting);
+  }
 
   const programmes = await loadProgrammes();
 
@@ -748,18 +757,23 @@ function finishSession() {
 /* ═══════════════════════════════════════════════════════
    COUNTDOWN
 ═══════════════════════════════════════════════════════ */
-const GO_MESSAGES = [
-  "C'est parti ! 🔥",
-  'Let\'s go ! 🚀',
-  'Tu gères ! ⚡',
-  'En forme ! 💥',
-  'Allez, encore ! 🏋️',
-  'Dans ta tête d\'abord ! 🧠',
-  'Focus total ! 🎯',
-  'T\'as vu ce que t\'as fait ? 🔥',
-  'Inarrêtable ! ⚡',
-  'Vas-y, envoie ! 💥',
-];
+function goMessages() {
+  const p = currentProfile?.prenom;
+  const msgs = [
+    "C'est parti ! 🔥",
+    'Let\'s go ! 🚀',
+    'Tu gères ! ⚡',
+    'En forme ! 💥',
+    'Allez, encore ! 🏋️',
+    'Dans ta tête d\'abord ! 🧠',
+    'Focus total ! 🎯',
+    'T\'as vu ce que t\'as fait ? 🔥',
+    'Inarrêtable ! ⚡',
+    'Vas-y, envoie ! 💥',
+  ];
+  if (p) msgs.push(`Allez ${p}, tu gères ! 🔥`, `${p}, inarrêtable ! ⚡`, `C'est ton moment ${p} ! 💥`);
+  return msgs;
+}
 
 function randomFrom(arr) {
   return arr[Math.floor(Math.random() * arr.length)];
@@ -867,7 +881,7 @@ function showToast(msg) {
 function finishCountdown() {
   const fn = countdownOnFinish;
   stopCountdown();
-  showToast(randomFrom(GO_MESSAGES));
+  showToast(randomFrom(goMessages()));
   if (fn) fn();
 }
 
@@ -1547,6 +1561,7 @@ function renderLogin() {
     currentUser = data.user;
     const profile = await getMyProfile();
     if (profile?.role === 'coach') { window.location.href = 'backoffice.html'; return; }
+    currentProfile = profile;
     showScreen('home');
   });
 
@@ -1596,6 +1611,7 @@ document.getElementById('import-file').addEventListener('change', e => {
   if (currentUser) {
     const profile = await getMyProfile();
     if (profile?.role === 'coach') { window.location.href = 'backoffice.html'; return; }
+    currentProfile = profile;
 
     const sessions = await loadSessions();
     const inProgress = sessions.find(s => s.duration === 0 || s.duration == null);

@@ -151,6 +151,13 @@ html, body {
   gap: 16px;
 }
 
+.home-greeting {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0 0 16px 0;
+}
+
 .home-next-card {
   width: 100%;
   background: var(--surface);
