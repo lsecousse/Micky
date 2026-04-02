@@ -724,13 +724,15 @@ function doneActivity(exIdx, sIdx, actIdx, row) {
 function propagateLiveValue(exIdx, sIdx, actIdx, field, val) {
   const series = liveSession.exercises[exIdx].series;
   series.forEach((s, j) => {
-    if (j >= sIdx) {
+    if (j < sIdx) return;
+    const isDone = s.activityStates?.[actIdx] === 'done';
+    if (j === sIdx || !isDone) {
       if (!s.values[actIdx]) s.values[actIdx] = {};
       s.values[actIdx][field] = val;
-      if (j > sIdx) {
-        const input = document.querySelector(`.live-${field}[data-ex="${exIdx}"][data-s="${j}"][data-act="${actIdx}"]`);
-        if (input) input.value = val;
-      }
+    }
+    if (j > sIdx && !isDone) {
+      const input = document.querySelector(`.live-${field}[data-ex="${exIdx}"][data-s="${j}"][data-act="${actIdx}"]`);
+      if (input) input.value = val;
     }
   });
   updateProgrammeTemplate(exIdx, actIdx, field, val);
