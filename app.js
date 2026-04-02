@@ -1,7 +1,7 @@
 /* ═══════════════════════════════════════════════════════
    VERSION
 ═══════════════════════════════════════════════════════ */
-const APP_VERSION = '2026.avril.01';
+const APP_VERSION = '2026.avril.02';
 document.querySelectorAll('.app-version').forEach(el => el.textContent = APP_VERSION);
 
 /* ═══════════════════════════════════════════════════════
@@ -321,7 +321,10 @@ function liveSessionSnapshot(durationSecs = 0) {
       name:       ex.name,
       comment:    ex.comment || '',
       activities: ex.activities,
-      series:     ex.series.map(s => ({ done: s.state === 'done', values: s.values })),
+      series:     ex.series.map(s => ({
+        done: ex.activities.every((_, i) => s.activityStates?.[i] === 'done'),
+        values: s.values,
+      })),
     })),
   };
 }
@@ -341,7 +344,7 @@ function startSession(programme) {
         comment:    ex.comment || '',
         activities: m.activities,
         series: Array.from({ length: sets }, () => ({
-          state: 'pending',
+          activityStates: {},
           values: m.activities.map(act =>
             act.type === 'weight'
               ? { reps: act.reps || 0, weight: act.weight || 0 }
@@ -384,7 +387,9 @@ function renderLiveSession(tab) {
     }
 
     ex.series.forEach((s, sIdx) => {
-      exDiv.appendChild(buildLiveSetRow(exIdx, sIdx, s));
+      ex.activities.forEach((_, actIdx) => {
+        exDiv.appendChild(buildActivityRow(exIdx, sIdx, actIdx));
+      });
     });
 
     tab.appendChild(exDiv);
@@ -393,11 +398,19 @@ function renderLiveSession(tab) {
   document.getElementById('finish-session').addEventListener('click', finishSession);
 }
 
-/* ── Chrono overlay ─────────────────────────────────── */
-let chronoInterval  = null;
-let currentChronoCtx = null; // { exIdx, sIdx, actIndices, startTime, row }
+/* ── Chrono / Minuterie overlays ───────────────────── */
+let chronoInterval    = null;
+let currentChronoCtx    = null; // { exIdx, sIdx, actIdx, startTime, row }
+let minuterieInterval   = null;
+let currentMinuterieCtx = null; // { exIdx, sIdx, actIdx, duration, row }
 
-function openChronoOverlay(exIdx, sIdx, actIndices, row) {
+function openActivityOverlay(exIdx, sIdx, actIdx, row) {
+  const type = liveSession.exercises[exIdx]?.activities[actIdx]?.type;
+  if (type === 'stopwatch')      openChronoOverlay(exIdx, sIdx, actIdx, row);
+  else if (type === 'countdown') openMinuterieOverlay(exIdx, sIdx, actIdx, row);
+}
+
+function openChronoOverlay(exIdx, sIdx, actIdx, row) {
   const overlay = document.getElementById('chrono-overlay');
   const display = document.getElementById('chrono-display');
   let   stopBtn = document.getElementById('chrono-stop');
@@ -405,16 +418,21 @@ function openChronoOverlay(exIdx, sIdx, actIndices, row) {
 
   const startTime = Date.now();
   display.textContent = '00:00';
+  const nameEl = document.getElementById('chrono-exercise-name');
+  if (nameEl) {
+    const ex = liveSession.exercises[exIdx];
+    const actName = ex?.activities[actIdx]?.name || '';
+    nameEl.textContent = [ex?.name, actName].filter(Boolean).join(' - ');
+  }
   overlay.classList.remove('hidden');
 
-  currentChronoCtx = { exIdx, sIdx, actIndices, startTime, row };
+  currentChronoCtx = { exIdx, sIdx, actIdx, startTime, row };
 
   chronoInterval = setInterval(() => {
     const el = document.getElementById('chrono-display');
     if (el) el.textContent = formatSeconds(Math.floor((Date.now() - startTime) / 1000));
   }, 500);
 
-  // Remplacement du bouton pour éviter les doubles listeners
   const newStop = stopBtn.cloneNode(true);
   stopBtn.parentNode.replaceChild(newStop, stopBtn);
   newStop.addEventListener('click', () => stopChronoOverlay());
@@ -425,167 +443,251 @@ function stopChronoOverlay() {
   clearInterval(chronoInterval);
   chronoInterval = null;
 
-  const { exIdx, sIdx, actIndices, startTime, row } = currentChronoCtx;
+  const { exIdx, sIdx, actIdx, startTime, row } = currentChronoCtx;
   currentChronoCtx = null;
 
   const elapsed = Math.floor((Date.now() - startTime) / 1000);
-  actIndices.forEach(actIdx => {
-    if (!liveSession.exercises[exIdx].series[sIdx].values[actIdx])
-      liveSession.exercises[exIdx].series[sIdx].values[actIdx] = {};
-    liveSession.exercises[exIdx].series[sIdx].values[actIdx].duration = elapsed;
-  });
+  if (!liveSession.exercises[exIdx].series[sIdx].values[actIdx])
+    liveSession.exercises[exIdx].series[sIdx].values[actIdx] = {};
+  liveSession.exercises[exIdx].series[sIdx].values[actIdx].duration = elapsed;
 
-  // Mettre à jour l'affichage du résultat dans la row
-  actIndices.forEach(actIdx => {
-    const span = row.querySelector(`.live-chrono-result[data-act="${actIdx}"]`);
-    if (span) span.textContent = formatSeconds(elapsed);
-  });
+  const span = row.querySelector(`.live-chrono-result[data-act="${actIdx}"]`);
+  if (span) span.textContent = formatSeconds(elapsed);
 
   document.getElementById('chrono-overlay').classList.add('hidden');
-
-  // Avancer directement à "done" (état déjà "active")
-  advanceSeriesState(exIdx, sIdx, row);
+  doneActivity(exIdx, sIdx, actIdx, row);
 }
 
-function buildLiveSetRow(exIdx, sIdx, set) {
+function openMinuterieOverlay(exIdx, sIdx, actIdx, row) {
+  const overlay = document.getElementById('minuterie-overlay');
+  const display = document.getElementById('minuterie-display');
+  let   stopBtn = document.getElementById('minuterie-stop');
+  if (!overlay || !display || !stopBtn) return;
+
+  const duration = liveSession.exercises[exIdx].series[sIdx].values[actIdx]?.duration || 0;
+  let remaining = duration;
+  display.textContent = formatSeconds(remaining);
+
+  const nameEl = document.getElementById('minuterie-exercise-name');
+  if (nameEl) {
+    const ex = liveSession.exercises[exIdx];
+    nameEl.textContent = [ex?.name, ex?.activities[actIdx]?.name].filter(Boolean).join(' - ');
+  }
+  overlay.classList.remove('hidden');
+
+  currentMinuterieCtx = { exIdx, sIdx, actIdx, duration, row };
+
+  minuterieInterval = setInterval(() => {
+    remaining--;
+    const el = document.getElementById('minuterie-display');
+    if (el) el.textContent = formatSeconds(Math.max(0, remaining));
+    if (remaining <= 0) stopMinuterieOverlay();
+  }, 1000);
+
+  const newStop = stopBtn.cloneNode(true);
+  stopBtn.parentNode.replaceChild(newStop, stopBtn);
+  newStop.addEventListener('click', () => stopMinuterieOverlay());
+}
+
+function stopMinuterieOverlay() {
+  if (!currentMinuterieCtx) return;
+  clearInterval(minuterieInterval);
+  minuterieInterval = null;
+
+  const { exIdx, sIdx, actIdx, row } = currentMinuterieCtx;
+  currentMinuterieCtx = null;
+
+  document.getElementById('minuterie-overlay').classList.add('hidden');
+  doneActivity(exIdx, sIdx, actIdx, row);
+}
+
+function buildActivityRow(exIdx, sIdx, actIdx) {
   const ex  = liveSession.exercises[exIdx];
+  const act = ex.activities[actIdx];
+  const set = ex.series[sIdx];
+  const v   = set.values?.[actIdx] || {};
+
+  if (!set.activityStates) set.activityStates = {};
+  if (set.activityStates[actIdx] === undefined) set.activityStates[actIdx] = 'pending';
+
+  const state = set.activityStates[actIdx];
   const row = document.createElement('div');
-  row.className = `live-series-row ${set.state}`;
-  row.dataset.ex = exIdx;
-  row.dataset.s  = sIdx;
+  row.className = `live-series-row ${state}`;
+  row.dataset.ex  = exIdx;
+  row.dataset.s   = sIdx;
+  row.dataset.act = actIdx;
 
   const stateBtn = document.createElement('button');
   stateBtn.className = 'series-state-btn';
-  stateBtn.textContent = stateIcon(set.state);
-  stateBtn.addEventListener('click', () => advanceSeriesState(exIdx, sIdx, row));
+  stateBtn.textContent = stateIcon(state);
+  stateBtn.addEventListener('click', () => advanceActivityState(exIdx, sIdx, actIdx, row));
   row.appendChild(stateBtn);
 
   const numSpan = document.createElement('span');
   numSpan.className = 'series-num';
-  numSpan.textContent = sIdx + 1;
+  numSpan.textContent = ex.activities.length === 1 ? sIdx + 1 : actIdx + 1;
   row.appendChild(numSpan);
 
-  const activitiesDiv = document.createElement('div');
-  activitiesDiv.className = 'live-set-activities';
+  if (act.name) {
+    const nameSpan = document.createElement('span');
+    nameSpan.className = 'live-act-name';
+    nameSpan.textContent = act.name;
+    row.appendChild(nameSpan);
+  }
 
-  ex.activities.forEach((act, actIdx) => {
-    const v      = set.values?.[actIdx] || {};
-    const actRow = document.createElement('div');
-    actRow.className = 'live-act-row';
+  if (act.type === 'weight') {
+    const repsInput = document.createElement('input');
+    repsInput.type = 'number';
+    repsInput.inputMode = 'decimal';
+    repsInput.className = 'live-reps';
+    repsInput.value = v.reps ?? act.reps ?? 0;
+    repsInput.min = '1';
+    repsInput.dataset.ex  = exIdx;
+    repsInput.dataset.s   = sIdx;
+    repsInput.dataset.act = actIdx;
+    repsInput.addEventListener('input', e =>
+      propagateLiveValue(exIdx, sIdx, actIdx, 'reps', parseFloat(e.target.value) || 0));
 
-    if (act.name) {
-      const nameSpan = document.createElement('span');
-      nameSpan.className = 'live-act-name';
-      nameSpan.textContent = act.name;
-      actRow.appendChild(nameSpan);
-    }
+    const xSpan = document.createElement('span');
+    xSpan.className = 'live-x';
+    xSpan.textContent = '×';
 
-    if (act.type === 'weight') {
-      const repsInput = document.createElement('input');
-      repsInput.type = 'number';
-      repsInput.inputMode = 'decimal';
-      repsInput.className = 'live-reps';
-      repsInput.value = v.reps ?? act.reps ?? 0;
-      repsInput.min = '1';
-      repsInput.dataset.ex  = exIdx;
-      repsInput.dataset.s   = sIdx;
-      repsInput.dataset.act = actIdx;
-      repsInput.addEventListener('input', e =>
-        propagateLiveValue(exIdx, sIdx, actIdx, 'reps', parseFloat(e.target.value) || 0));
+    const wInput = document.createElement('input');
+    wInput.type = 'number';
+    wInput.inputMode = 'decimal';
+    wInput.className = 'live-weight';
+    wInput.value = v.weight ?? act.weight ?? 0;
+    wInput.min = '0';
+    wInput.step = '0.5';
+    wInput.dataset.ex  = exIdx;
+    wInput.dataset.s   = sIdx;
+    wInput.dataset.act = actIdx;
+    wInput.addEventListener('input', e =>
+      propagateLiveValue(exIdx, sIdx, actIdx, 'weight', parseFloat(e.target.value) || 0));
 
-      const xSpan = document.createElement('span');
-      xSpan.className = 'live-x';
-      xSpan.textContent = '×';
+    const kgSpan = document.createElement('span');
+    kgSpan.className = 'live-kg';
+    kgSpan.textContent = 'kg';
 
-      const wInput = document.createElement('input');
-      wInput.type = 'number';
-      wInput.inputMode = 'decimal';
-      wInput.className = 'live-weight';
-      wInput.value = v.weight ?? act.weight ?? 0;
-      wInput.min = '0';
-      wInput.step = '0.5';
-      wInput.dataset.ex  = exIdx;
-      wInput.dataset.s   = sIdx;
-      wInput.dataset.act = actIdx;
-      wInput.addEventListener('input', e =>
-        propagateLiveValue(exIdx, sIdx, actIdx, 'weight', parseFloat(e.target.value) || 0));
+    const reposLabel = document.createElement('span');
+    reposLabel.className = 'live-repos-label';
+    reposLabel.textContent = 'Repos:';
 
-      const kgSpan = document.createElement('span');
-      kgSpan.className = 'live-kg';
-      kgSpan.textContent = 'kg';
+    const restInput = document.createElement('input');
+    restInput.type = 'number';
+    restInput.inputMode = 'numeric';
+    restInput.className = 'live-rest';
+    restInput.value = act.rest ?? 0;
+    restInput.min = '0';
+    restInput.addEventListener('change', e => {
+      const val = parseInt(e.target.value) || 0;
+      liveSession.exercises[exIdx].activities[actIdx].rest = val;
+      document.querySelectorAll(`.live-rest[data-ex="${exIdx}"][data-act="${actIdx}"]`)
+        .forEach(inp => { inp.value = val; });
+    });
+    restInput.dataset.ex  = exIdx;
+    restInput.dataset.act = actIdx;
 
-      actRow.append(repsInput, xSpan, wInput, kgSpan);
-    } else if (act.type === 'countdown') {
-      const durInput = document.createElement('input');
-      durInput.type = 'number';
-      durInput.inputMode = 'numeric';
-      durInput.className = 'live-duration';
-      durInput.value = v.duration ?? act.duration ?? 0;
-      durInput.min = '1';
-      durInput.dataset.ex  = exIdx;
-      durInput.dataset.s   = sIdx;
-      durInput.dataset.act = actIdx;
-      durInput.addEventListener('change', e => {
-        liveSession.exercises[exIdx].series[sIdx].values[actIdx].duration = parseInt(e.target.value) || 0;
-      });
-      const sSpan = document.createElement('span');
-      sSpan.className = 'live-x';
-      sSpan.textContent = 's';
-      actRow.append(durInput, sSpan);
-    } else {
-      // stopwatch : affiche le temps enregistré (ou placeholder)
-      const resultSpan = document.createElement('span');
-      resultSpan.className = 'live-chrono-result';
-      resultSpan.dataset.act = actIdx;
-      resultSpan.textContent = v.duration ? formatSeconds(v.duration) : '⏱';
-      actRow.appendChild(resultSpan);
-    }
+    const sSpan = document.createElement('span');
+    sSpan.className = 'live-x';
+    sSpan.textContent = 's';
 
-    if (act.rest > 0) {
-      const restSpan = document.createElement('span');
-      restSpan.className = 'live-act-rest';
-      restSpan.textContent = `${act.rest}s`;
-      actRow.appendChild(restSpan);
-    }
+    row.append(repsInput, xSpan, wInput, kgSpan, reposLabel, restInput, sSpan);
+  } else if (act.type === 'countdown') {
+    const durInput = document.createElement('input');
+    durInput.type = 'number';
+    durInput.inputMode = 'numeric';
+    durInput.className = 'live-duration';
+    durInput.value = v.duration ?? act.duration ?? 0;
+    durInput.min = '1';
+    durInput.dataset.ex  = exIdx;
+    durInput.dataset.s   = sIdx;
+    durInput.dataset.act = actIdx;
+    durInput.addEventListener('change', e => {
+      liveSession.exercises[exIdx].series[sIdx].values[actIdx].duration = parseInt(e.target.value) || 0;
+    });
+    const sSpan = document.createElement('span');
+    sSpan.className = 'live-x';
+    sSpan.textContent = 's';
+    row.append(durInput, sSpan);
+  } else {
+    // stopwatch
+    const resultSpan = document.createElement('span');
+    resultSpan.className = 'live-chrono-result';
+    resultSpan.dataset.act = actIdx;
+    resultSpan.textContent = v.duration ? formatSeconds(v.duration) : '⏱';
+    row.appendChild(resultSpan);
+  }
 
-    activitiesDiv.appendChild(actRow);
-  });
+  // Badge repos statique pour les activités chrono uniquement (le weight a déjà l'input inline)
+  if (act.type !== 'weight' && act.rest > 0) {
+    const restSpan = document.createElement('span');
+    restSpan.className = 'live-act-rest';
+    restSpan.textContent = `${act.rest}s`;
+    row.appendChild(restSpan);
+  }
 
-  row.appendChild(activitiesDiv);
   return row;
 }
 
-function advanceSeriesState(exIdx, sIdx, row) {
+function advanceActivityState(exIdx, sIdx, actIdx, row) {
   const ex  = liveSession.exercises[exIdx];
   const set = ex.series[sIdx];
-  if (set.state === 'done') return;
+  if (!set.activityStates) set.activityStates = {};
+  const state = set.activityStates[actIdx] ?? 'pending';
 
-  if (set.state === 'pending') {
-    set.state = 'active';
-    const stopwatchIndices = ex.activities
-      .map((act, i) => act.type === 'stopwatch' ? i : -1)
-      .filter(i => i >= 0);
-    if (stopwatchIndices.length > 0) {
-      row.className = `live-series-row ${set.state}`;
-      row.querySelector('.series-state-btn').textContent = stateIcon(set.state);
-      openChronoOverlay(exIdx, sIdx, stopwatchIndices, row);
-      return; // l'overlay prend la main, advanceSeriesState sera rappelé au Stop
+  if (state === 'done') return;
+
+  if (state === 'pending') {
+    set.activityStates[actIdx] = 'active';
+    row.className = 'live-series-row active';
+    row.querySelector('.series-state-btn').textContent = stateIcon('active');
+    const act = ex.activities[actIdx];
+    if (act.type === 'stopwatch' || act.type === 'countdown') {
+      openActivityOverlay(exIdx, sIdx, actIdx, row);
     }
-  } else {
-    set.state = 'done';
-    pushSession(liveSessionSnapshot()).catch(() => {});
-    const isLast   = sIdx === ex.series.length - 1;
-    const lastAct  = ex.activities[ex.activities.length - 1];
-    if (!isLast) startCountdown(lastAct?.rest || 0, exIdx, sIdx);
+    return;
   }
 
-  row.className = `live-series-row ${set.state}`;
-  row.querySelector('.series-state-btn').textContent = stateIcon(set.state);
+  // active → done (weight only; timed overlays call doneActivity directly)
+  doneActivity(exIdx, sIdx, actIdx, row);
+}
 
-  const allDone = ex.series.every(s => s.state === 'done');
+function doneActivity(exIdx, sIdx, actIdx, row) {
+  const ex  = liveSession.exercises[exIdx];
+  const set = ex.series[sIdx];
+  if (!set.activityStates) set.activityStates = {};
+  set.activityStates[actIdx] = 'done';
+  row.className = 'live-series-row done';
+  row.querySelector('.series-state-btn').textContent = stateIcon('done');
+
+  pushSession(liveSessionSnapshot()).catch(() => {});
+
+  const allDone = ex.series.every(s =>
+    ex.activities.every((_, i) => s.activityStates?.[i] === 'done')
+  );
   const exDiv = row.closest('.live-exercise');
   exDiv.querySelector('.live-exercise-name').classList.toggle('live-exercise-name--done', allDone);
   if (allDone) exDiv.parentElement.appendChild(exDiv);
+
+  // Trouver la prochaine activité
+  let nextRow = null;
+  if (actIdx + 1 < ex.activities.length) {
+    nextRow = document.querySelector(`.live-series-row[data-ex="${exIdx}"][data-s="${sIdx}"][data-act="${actIdx + 1}"]`);
+  } else if (sIdx + 1 < ex.series.length) {
+    nextRow = document.querySelector(`.live-series-row[data-ex="${exIdx}"][data-s="${sIdx + 1}"][data-act="0"]`);
+  }
+
+  if (nextRow) {
+    const nex     = +nextRow.dataset.ex;
+    const ns      = +nextRow.dataset.s;
+    const na      = +nextRow.dataset.act;
+    const nextEx  = liveSession.exercises[nex];
+    const nextAct = nextEx?.activities?.[na];
+    const label   = [nextEx?.name, nextAct?.name].filter(Boolean).join(' - ');
+    const rest    = ex.activities[actIdx]?.rest || 0;
+    startCountdown(rest, label, () => advanceActivityState(nex, ns, na, nextRow));
+  }
 }
 
 function propagateLiveValue(exIdx, sIdx, actIdx, field, val) {
@@ -616,15 +718,19 @@ function stopAllChronos() {
   if (chronoInterval && currentChronoCtx) {
     clearInterval(chronoInterval);
     chronoInterval = null;
-    const { exIdx, sIdx, actIndices, startTime } = currentChronoCtx;
+    const { exIdx, sIdx, actIdx, startTime } = currentChronoCtx;
     currentChronoCtx = null;
     const elapsed = Math.floor((Date.now() - startTime) / 1000);
-    actIndices.forEach(actIdx => {
-      if (!liveSession.exercises[exIdx].series[sIdx].values[actIdx])
-        liveSession.exercises[exIdx].series[sIdx].values[actIdx] = {};
-      liveSession.exercises[exIdx].series[sIdx].values[actIdx].duration = elapsed;
-    });
+    if (!liveSession.exercises[exIdx].series[sIdx].values[actIdx])
+      liveSession.exercises[exIdx].series[sIdx].values[actIdx] = {};
+    liveSession.exercises[exIdx].series[sIdx].values[actIdx].duration = elapsed;
     document.getElementById('chrono-overlay').classList.add('hidden');
+  }
+  if (minuterieInterval && currentMinuterieCtx) {
+    clearInterval(minuterieInterval);
+    minuterieInterval = null;
+    currentMinuterieCtx = null;
+    document.getElementById('minuterie-overlay').classList.add('hidden');
   }
 }
 
@@ -690,10 +796,10 @@ function beepSequence(count, interval = 1000) {
   for (let i = 0; i < count; i++) setTimeout(() => beep(), i * interval);
 }
 
-let countdownTimer = null;
-let countdownSecs  = 0;
-let countdownTotal = 0;
-let countdownNext  = null; // { exIdx, sIdx }
+let countdownTimer    = null;
+let countdownSecs     = 0;
+let countdownTotal    = 0;
+let countdownOnFinish = null;
 const RING_CIRCUMFERENCE = 2 * Math.PI * 85; // ≈ 534
 
 function updateCountdownUI() {
@@ -714,15 +820,20 @@ function updateCountdownUI() {
   bar.classList.toggle('urgent', countdownSecs <= 5);
 }
 
-function startCountdown(seconds, exIdx, sIdx) {
+function startCountdown(seconds, nextLabel, onFinish) {
   stopCountdown();
-  if (!seconds || seconds <= 0) return;
-  countdownSecs  = seconds;
-  countdownTotal = seconds;
-  countdownNext  = { exIdx, sIdx };
+  if (!seconds || seconds <= 0) {
+    if (onFinish) onFinish();
+    return;
+  }
+  countdownSecs     = seconds;
+  countdownTotal    = seconds;
+  countdownOnFinish = onFinish;
 
   document.getElementById('countdown-bar').classList.remove('hidden');
   document.getElementById('ring-progress').style.strokeDashoffset = 0;
+  const cdNameEl = document.getElementById('countdown-exercise-name');
+  if (cdNameEl) cdNameEl.textContent = nextLabel ? `À suivre : ${nextLabel}` : '';
   updateCountdownUI();
 
   countdownTimer = setInterval(() => {
@@ -754,19 +865,16 @@ function showToast(msg) {
 }
 
 function finishCountdown() {
-  const next = countdownNext; // lire AVANT stopCountdown qui efface countdownNext
+  const fn = countdownOnFinish;
   stopCountdown();
   showToast(randomFrom(GO_MESSAGES));
-  if (next) {
-    const nextRow = document.querySelector(`.live-series-row[data-ex="${next.exIdx}"][data-s="${next.sIdx + 1}"]`);
-    if (nextRow) advanceSeriesState(next.exIdx, next.sIdx + 1, nextRow);
-  }
+  if (fn) fn();
 }
 
 function stopCountdown() {
   clearInterval(countdownTimer);
-  countdownTimer = null;
-  countdownNext  = null;
+  countdownTimer    = null;
+  countdownOnFinish = null;
   const bar = document.getElementById('countdown-bar');
   bar.classList.add('hidden');
   bar.classList.remove('urgent');

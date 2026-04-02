@@ -96,15 +96,28 @@
   <!-- CHRONO FULLSCREEN -->
   <div id="chrono-overlay" class="hidden">
     <span class="countdown-label">⏱ Chrono en cours</span>
+    <span id="chrono-exercise-name" class="overlay-exercise-name"></span>
     <div class="countdown-ring-wrap">
       <span id="chrono-display">00:00</span>
     </div>
     <button id="chrono-stop">Stop</button>
   </div>
 
+  <!-- MINUTERIE FULLSCREEN -->
+  <div id="minuterie-overlay" class="hidden">
+    <span class="countdown-label">⏳ Minuterie</span>
+    <span id="minuterie-exercise-name" class="overlay-exercise-name"></span>
+    <div class="countdown-ring-wrap">
+      <span id="minuterie-display">00:00</span>
+    </div>
+    <button id="minuterie-stop" class="overlay-stop-btn">Stop</button>
+  </div>
+
+
   <!-- COUNTDOWN FULLSCREEN -->
   <div id="countdown-bar" class="hidden">
-    <span class="countdown-label">Temps de repos</span>
+    <span class="countdown-label">Repos</span>
+    <span id="countdown-exercise-name" class="overlay-exercise-name"></span>
     <div class="countdown-ring-wrap">
       <svg class="countdown-ring" viewBox="0 0 200 200">
         <circle class="ring-bg" cx="100" cy="100" r="85" />

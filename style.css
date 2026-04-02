@@ -374,10 +374,10 @@ input:focus { border-color: var(--accent); }
 .live-exercise-name--done { text-decoration: line-through; opacity: 0.4; }
 .live-exercise-comment { font-size: 12px; color: var(--text-muted); margin-top: 4px; font-style: italic; padding: 4px 6px; background: rgba(255,255,255,0.04); border-left: 2px solid var(--accent); border-radius: 2px; }
 
-/* set row = état + num + activités */
+/* set row = état + num + activité */
 .live-series-row {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 8px;
   border-radius: 8px;
   padding: 6px 4px;
@@ -398,9 +398,17 @@ input:focus { border-color: var(--accent); }
   gap: 4px;
 }
 
-.live-reps, .live-weight, .live-duration {
+.live-reps, .live-weight, .live-duration, .live-rest {
   width: 52px !important;
   text-align: center;
+  flex-shrink: 0;
+}
+
+.live-repos-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-left: 6px;
+  white-space: nowrap;
   flex-shrink: 0;
 }
 
@@ -431,7 +439,8 @@ input:focus { border-color: var(--accent); }
 }
 
 /* ── Chrono overlay (fullscreen, comme countdown) ─────── */
-#chrono-overlay {
+#chrono-overlay,
+#minuterie-overlay {
   position: fixed;
   inset: 0;
   background: var(--bg);
@@ -442,7 +451,8 @@ input:focus { border-color: var(--accent); }
   gap: 32px;
   z-index: 200;
 }
-#chrono-overlay.hidden { display: none; }
+#chrono-overlay.hidden,
+#minuterie-overlay.hidden { display: none; }
 
 #chrono-display {
   font-size: 72px;
@@ -451,7 +461,15 @@ input:focus { border-color: var(--accent); }
   color: var(--accent);
 }
 
-#chrono-stop {
+#minuterie-display {
+  font-size: 72px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--accent);
+}
+
+#chrono-stop,
+.overlay-stop-btn {
   background: none;
   border: 2px solid var(--danger);
   color: var(--danger);
@@ -460,7 +478,10 @@ input:focus { border-color: var(--accent); }
   padding: 14px 48px;
   border-radius: 40px;
   letter-spacing: 0.05em;
+  cursor: pointer;
+  font-family: inherit;
 }
+
 
 .live-series-row.active { background: var(--accent-bg); }
 .live-series-row.done   { opacity: 0.45; }
@@ -513,6 +534,13 @@ input:focus { border-color: var(--accent); }
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.15em;
+}
+
+.overlay-exercise-name {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--accent);
+  margin-top: 4px;
 }
 
 .countdown-ring-wrap {
