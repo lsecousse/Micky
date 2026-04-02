@@ -430,7 +430,8 @@ function openChronoOverlay(exIdx, sIdx, actIdx, row) {
   const nameEl = document.getElementById('chrono-exercise-name');
   if (nameEl) {
     const ex = liveSession.exercises[exIdx];
-    const actName = ex?.activities[actIdx]?.name || '';
+    const act = ex?.activities[actIdx];
+    const actName = act?.label || act?.name || '';
     nameEl.textContent = [ex?.name, actName].filter(Boolean).join(' - ');
   }
   overlay.classList.remove('hidden');
@@ -480,7 +481,8 @@ function openMinuterieOverlay(exIdx, sIdx, actIdx, row) {
   const nameEl = document.getElementById('minuterie-exercise-name');
   if (nameEl) {
     const ex = liveSession.exercises[exIdx];
-    nameEl.textContent = [ex?.name, ex?.activities[actIdx]?.name].filter(Boolean).join(' - ');
+    const mAct = ex?.activities[actIdx];
+    nameEl.textContent = [ex?.name, mAct?.label || mAct?.name].filter(Boolean).join(' - ');
   }
   overlay.classList.remove('hidden');
 
@@ -537,10 +539,11 @@ function buildActivityRow(exIdx, sIdx, actIdx) {
   numSpan.textContent = ex.activities.length === 1 ? sIdx + 1 : actIdx + 1;
   row.appendChild(numSpan);
 
-  if (act.name) {
+  const displayName = act.label || act.name;
+  if (displayName) {
     const nameSpan = document.createElement('span');
     nameSpan.className = 'live-act-name';
-    nameSpan.textContent = act.name;
+    nameSpan.textContent = displayName;
     row.appendChild(nameSpan);
   }
 
@@ -715,7 +718,7 @@ function doneActivity(exIdx, sIdx, actIdx, row) {
     const na      = +nextRow.dataset.act;
     const nextEx  = liveSession.exercises[nex];
     const nextAct = nextEx?.activities?.[na];
-    const label   = [nextEx?.name, nextAct?.name].filter(Boolean).join(' - ');
+    const label   = [nextEx?.name, nextAct?.label || nextAct?.name].filter(Boolean).join(' - ');
     const rest    = ex.activities[actIdx]?.rest || 0;
     startCountdown(rest, label, () => advanceActivityState(nex, ns, na, nextRow));
   }
@@ -1485,6 +1488,7 @@ function openProgrammeEditor(programme = null) {
       const m    = migrateExercise(ex);
       const acts = m.activities.map(act => ({
         type:     act.type,
+        label:    act.label    || '',
         name:     act.name     || '',
         reps:     act.type === 'weight' ? (act.reps     ?? '') : '',
         weight:   act.type === 'weight' ? (act.weight   ?? '') : '',
