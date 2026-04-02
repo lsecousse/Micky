@@ -50,11 +50,33 @@ function updateActivityFields(row, type, initial = {}) {
   }
 }
 
-function makeActivityRow({ type = 'weight', name = '', reps = '', weight = '', duration = '', rest = '' } = {}) {
+function makeActivityRow({ type = 'weight', label = '', name = '', reps = '', weight = '', duration = '', rest = '' } = {}) {
   const row = document.createElement('div');
   row.className = 'activity-row';
 
-  // Ligne 1 : type + nom + supprimer
+  // Ligne 0 : nom de l'activité (pleine largeur)
+  const labelRow = document.createElement('div');
+  labelRow.className = 'activity-row-label';
+
+  const labelInput = document.createElement('input');
+  labelInput.type = 'text';
+  labelInput.className = 'activity-label';
+  labelInput.placeholder = "Nom de l'activité";
+  labelInput.maxLength = 60;
+  labelInput.value = label;
+
+  const removeBtn = document.createElement('button');
+  removeBtn.type = 'button';
+  removeBtn.className = 'activity-remove-btn';
+  removeBtn.textContent = '×';
+  removeBtn.addEventListener('click', () => {
+    const list = row.closest('.activities-list');
+    if (list && list.querySelectorAll('.activity-row').length > 1) row.remove();
+  });
+
+  labelRow.append(labelInput, removeBtn);
+
+  // Ligne 1 : type + muscle
   const topRow = document.createElement('div');
   topRow.className = 'activity-row-top';
 
@@ -77,16 +99,7 @@ function makeActivityRow({ type = 'weight', name = '', reps = '', weight = '', d
   nameInput.maxLength = 60;
   nameInput.value = name;
 
-  const removeBtn = document.createElement('button');
-  removeBtn.type = 'button';
-  removeBtn.className = 'activity-remove-btn';
-  removeBtn.textContent = '×';
-  removeBtn.addEventListener('click', () => {
-    const list = row.closest('.activities-list');
-    if (list && list.querySelectorAll('.activity-row').length > 1) row.remove();
-  });
-
-  topRow.append(typeBtn, nameInput, removeBtn);
+  topRow.append(typeBtn, nameInput);
 
   // Ligne 2 : valeurs + repos
   const bottomRow = document.createElement('div');
@@ -113,7 +126,7 @@ function makeActivityRow({ type = 'weight', name = '', reps = '', weight = '', d
 
   bottomRow.append(fieldsDiv, restLabel, restInput, restUnit);
 
-  row.append(topRow, bottomRow);
+  row.append(labelRow, topRow, bottomRow);
   updateActivityFields(row, type, { reps, weight, duration });
   return row;
 }
@@ -186,6 +199,7 @@ function makeExerciseCard({ name = '', sets = 3, activities = null, comment = ''
 function readExerciseCard(card) {
   const activities = Array.from(card.querySelectorAll('.activity-row')).map(row => ({
     type:     row.querySelector('.activity-type-btn').dataset.type || 'weight',
+    label:    row.querySelector('.activity-label').value.trim(),
     name:     row.querySelector('.activity-name').value.trim(),
     reps:     parseFloat(row.querySelector('.activity-reps')?.value)     || 0,
     weight:   parseFloat(row.querySelector('.activity-weight')?.value)   || 0,
