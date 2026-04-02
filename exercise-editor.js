@@ -50,6 +50,15 @@ function updateActivityFields(row, type, initial = {}) {
   }
 }
 
+function syncActivityLabels(activitiesList) {
+  const rows = activitiesList.querySelectorAll('.activity-row');
+  const multi = rows.length > 1;
+  rows.forEach(r => {
+    const labelRow = r.querySelector('.activity-row-label');
+    if (labelRow) labelRow.style.display = multi ? '' : 'none';
+  });
+}
+
 function makeActivityRow({ type = 'weight', label = '', name = '', reps = '', weight = '', duration = '', rest = '' } = {}) {
   const row = document.createElement('div');
   row.className = 'activity-row';
@@ -71,7 +80,10 @@ function makeActivityRow({ type = 'weight', label = '', name = '', reps = '', we
   removeBtn.textContent = '×';
   removeBtn.addEventListener('click', () => {
     const list = row.closest('.activities-list');
-    if (list && list.querySelectorAll('.activity-row').length > 1) row.remove();
+    if (list && list.querySelectorAll('.activity-row').length > 1) {
+      row.remove();
+      syncActivityLabels(list);
+    }
   });
 
   labelRow.append(labelInput, removeBtn);
@@ -175,13 +187,17 @@ function makeExerciseCard({ name = '', sets = 3, activities = null, comment = ''
   activitiesList.className = 'activities-list';
   const defaultActs = activities || [{ type: 'weight' }];
   defaultActs.forEach(act => activitiesList.appendChild(makeActivityRow(act)));
+  syncActivityLabels(activitiesList);
   card.appendChild(activitiesList);
 
   const addActBtn = document.createElement('button');
   addActBtn.type = 'button';
   addActBtn.className = 'btn-secondary btn-sm';
   addActBtn.textContent = '+ Activité';
-  addActBtn.addEventListener('click', () => activitiesList.appendChild(makeActivityRow()));
+  addActBtn.addEventListener('click', () => {
+    activitiesList.appendChild(makeActivityRow());
+    syncActivityLabels(activitiesList);
+  });
   card.appendChild(addActBtn);
 
   // Commentaire

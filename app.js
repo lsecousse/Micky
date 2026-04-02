@@ -431,7 +431,7 @@ function openChronoOverlay(exIdx, sIdx, actIdx, row) {
   if (nameEl) {
     const ex = liveSession.exercises[exIdx];
     const act = ex?.activities[actIdx];
-    const actName = act?.label || act?.name || '';
+    const actName = ex.activities.length > 1 ? (act?.label || act?.name) : null;
     nameEl.textContent = [ex?.name, actName].filter(Boolean).join(' - ');
   }
   overlay.classList.remove('hidden');
@@ -482,7 +482,8 @@ function openMinuterieOverlay(exIdx, sIdx, actIdx, row) {
   if (nameEl) {
     const ex = liveSession.exercises[exIdx];
     const mAct = ex?.activities[actIdx];
-    nameEl.textContent = [ex?.name, mAct?.label || mAct?.name].filter(Boolean).join(' - ');
+    const mActPart = ex.activities.length > 1 ? (mAct?.label || mAct?.name) : null;
+    nameEl.textContent = [ex?.name, mActPart].filter(Boolean).join(' - ');
   }
   overlay.classList.remove('hidden');
 
@@ -539,7 +540,7 @@ function buildActivityRow(exIdx, sIdx, actIdx) {
   numSpan.textContent = ex.activities.length === 1 ? sIdx + 1 : actIdx + 1;
   row.appendChild(numSpan);
 
-  const displayName = act.label || act.name;
+  const displayName = ex.activities.length > 1 ? (act.label || act.name) : null;
   if (displayName) {
     const nameSpan = document.createElement('span');
     nameSpan.className = 'live-act-name';
@@ -718,7 +719,8 @@ function doneActivity(exIdx, sIdx, actIdx, row) {
     const na      = +nextRow.dataset.act;
     const nextEx  = liveSession.exercises[nex];
     const nextAct = nextEx?.activities?.[na];
-    const label   = [nextEx?.name, nextAct?.label || nextAct?.name].filter(Boolean).join(' - ');
+    const nextActPart = nextEx?.activities?.length > 1 ? (nextAct?.label || nextAct?.name) : null;
+    const label   = [nextEx?.name, nextActPart].filter(Boolean).join(' - ');
     const rest    = ex.activities[actIdx]?.rest || 0;
     startCountdown(rest, label, () => advanceActivityState(nex, ns, na, nextRow));
   }
