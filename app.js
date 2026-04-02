@@ -593,6 +593,7 @@ function buildActivityRow(exIdx, sIdx, actIdx) {
       liveSession.exercises[exIdx].activities[actIdx].rest = val;
       document.querySelectorAll(`.live-rest[data-ex="${exIdx}"][data-act="${actIdx}"]`)
         .forEach(inp => { inp.value = val; });
+      updateProgrammeTemplate(exIdx, actIdx, 'rest', val);
     });
     restInput.dataset.ex  = exIdx;
     restInput.dataset.act = actIdx;
@@ -628,12 +629,33 @@ function buildActivityRow(exIdx, sIdx, actIdx) {
     row.appendChild(resultSpan);
   }
 
-  // Badge repos statique pour les activités chrono uniquement (le weight a déjà l'input inline)
-  if (act.type !== 'weight' && act.rest > 0) {
-    const restSpan = document.createElement('span');
-    restSpan.className = 'live-act-rest';
-    restSpan.textContent = `${act.rest}s`;
-    row.appendChild(restSpan);
+  // Input repos pour les activités chrono (le weight a déjà l'input inline)
+  if (act.type !== 'weight') {
+    const reposLabel = document.createElement('span');
+    reposLabel.className = 'live-repos-label';
+    reposLabel.textContent = 'Repos:';
+
+    const restInput = document.createElement('input');
+    restInput.type = 'number';
+    restInput.inputMode = 'numeric';
+    restInput.className = 'live-rest';
+    restInput.value = act.rest ?? 0;
+    restInput.min = '0';
+    restInput.dataset.ex  = exIdx;
+    restInput.dataset.act = actIdx;
+    restInput.addEventListener('change', e => {
+      const val = parseInt(e.target.value) || 0;
+      liveSession.exercises[exIdx].activities[actIdx].rest = val;
+      document.querySelectorAll(`.live-rest[data-ex="${exIdx}"][data-act="${actIdx}"]`)
+        .forEach(inp => { inp.value = val; });
+      updateProgrammeTemplate(exIdx, actIdx, 'rest', val);
+    });
+
+    const sSpan = document.createElement('span');
+    sSpan.className = 'live-x';
+    sSpan.textContent = 's';
+
+    row.append(reposLabel, restInput, sSpan);
   }
 
   return row;
@@ -1426,37 +1448,6 @@ async function renderParams() {
   progSection.appendChild(addBtn);
 
   tab.appendChild(progSection);
-
-  // Section données
-  const dataSection = document.createElement('div');
-  dataSection.style.display = 'flex';
-  dataSection.style.flexDirection = 'column';
-  dataSection.style.gap = '8px';
-
-  const dataTitle = document.createElement('p');
-  dataTitle.className = 'section-title';
-  dataTitle.textContent = 'Données';
-  dataSection.appendChild(dataTitle);
-
-  const exportBtn = document.createElement('button');
-  exportBtn.className = 'btn-primary btn-full';
-  exportBtn.textContent = 'Exporter les séances (JSON)';
-  exportBtn.addEventListener('click', exportData);
-
-  const importLabel = document.createElement('label');
-  importLabel.className = 'btn-secondary btn-full';
-  importLabel.htmlFor = 'import-file';
-  importLabel.textContent = 'Importer des séances (JSON)';
-
-  const feedback = document.createElement('p');
-  feedback.className = 'data-feedback';
-  feedback.id = 'data-feedback';
-
-  dataSection.appendChild(exportBtn);
-  dataSection.appendChild(importLabel);
-  dataSection.appendChild(feedback);
-
-  tab.appendChild(dataSection);
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -1567,28 +1558,6 @@ function renderLogin() {
 
 }
 
-/* ═══════════════════════════════════════════════════════
-   DONNÉES
-═══════════════════════════════════════════════════════ */
-async function exportData() {
-  const data = {
-    programmes: await loadProgrammes(),
-    sessions:   await loadSessions(),
-  };
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `gym-tracker-${todayIso()}.json`;
-  a.click();
-  URL.revokeObjectURL(url);
-}
-
-document.getElementById('import-file').addEventListener('change', e => {
-  e.target.value = '';
-  const fb = document.getElementById('data-feedback');
-  if (fb) fb.textContent = 'Import non disponible — gérez vos données via le backoffice.';
-});
 
 /* ═══════════════════════════════════════════════════════
    LOADING SCREEN
