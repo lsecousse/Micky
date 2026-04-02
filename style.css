@@ -1009,7 +1009,7 @@ input:focus { border-color: var(--accent); }
   color: var(--text-muted);
 }
 .exercise-sets-row label { flex-shrink: 0; }
-.exercise-sets { width: 56px; text-align: center; }
+.exercise-sets { width: 72px; text-align: center; font-size: 15px; }
 
 /* ── Activities list ────────────────────────────────── */
 .activities-list-label {
@@ -1091,13 +1091,13 @@ input:focus { border-color: var(--accent); }
   gap: 4px;
 }
 
-.activity-fields input { width: 52px !important; text-align: center; }
-.activity-sep { font-size: 11px; color: var(--text-muted); }
+.activity-fields input { width: 72px !important; text-align: center; font-size: 15px; }
+.activity-sep { font-size: 13px; color: var(--text-muted); }
 
 .activity-rest {
-  width: 44px !important;
+  width: 64px !important;
   text-align: center;
-  font-size: 12px;
+  font-size: 15px;
 }
 
 .activity-remove-btn {
