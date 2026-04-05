@@ -140,15 +140,18 @@ function showScreen(name) {
   if (name === 'home')    renderHome();
   if (name === 'seance')  renderSeanceScreen();
   if (name === 'history') renderHistory();
+  if (name === 'corps')   renderCorps();
   if (name === 'stats')   renderStats();
   if (name === 'params')  renderParams();
   if (name === 'login')   renderLogin();
 }
 
 document.getElementById('go-history').addEventListener('click', () => showScreen('history'));
+document.getElementById('go-corps').addEventListener('click',   () => showScreen('corps'));
 document.getElementById('go-stats').addEventListener('click',   () => showScreen('stats'));
 document.getElementById('go-params').addEventListener('click',  () => showScreen('params'));
 document.getElementById('back-history').addEventListener('click', () => showScreen('home'));
+document.getElementById('back-corps').addEventListener('click',   () => showScreen('home'));
 document.getElementById('back-stats').addEventListener('click',   () => showScreen('home'));
 document.getElementById('back-params').addEventListener('click',  () => showScreen('home'));
 document.getElementById('back-seance').addEventListener('click', () => {
@@ -924,6 +927,230 @@ function stopCountdown() {
 }
 
 document.getElementById('countdown-skip').addEventListener('click', finishCountdown);
+
+/* ═══════════════════════════════════════════════════════
+   COMPOSITION CORPORELLE
+═══════════════════════════════════════════════════════ */
+async function renderCorps() {
+  const body = document.getElementById('screen-corps-body');
+  body.innerHTML = '';
+
+  const measurements = await loadBodyMeasurementsDB();
+
+  // ── Formulaire ────────────────────────────────────────
+  const form = document.createElement('div');
+  form.className = 'corps-form';
+
+  const fields = [
+    { key: 'poids',       label: 'Poids',        unit: 'kg',  step: '0.1' },
+    { key: 'masseGrasse', label: 'Masse grasse',  unit: 'kg',  step: '0.1' },
+    { key: 'eau',         label: 'Eau',           unit: '%',   step: '0.1' },
+    { key: 'muscle',      label: 'Muscle',        unit: '%',   step: '0.1' },
+    { key: 'graisse',     label: 'Graisse',       unit: '%',   step: '0.1' },
+    { key: 'os',          label: 'Os',            unit: '%',   step: '0.1' },
+  ];
+
+  const dateInput = document.createElement('input');
+  dateInput.type = 'date';
+  dateInput.className = 'corps-date-input';
+  dateInput.value = todayIso();
+  form.appendChild(dateInput);
+
+  const grid = document.createElement('div');
+  grid.className = 'corps-grid';
+
+  const inputs = {};
+  fields.forEach(({ key, label, unit, step }) => {
+    const cell = document.createElement('div');
+    cell.className = 'corps-field';
+
+    const lbl = document.createElement('span');
+    lbl.className = 'corps-field-label';
+    lbl.textContent = label;
+
+    const row = document.createElement('div');
+    row.className = 'corps-field-row';
+
+    const inp = document.createElement('input');
+    inp.type = 'number';
+    inp.inputMode = 'decimal';
+    inp.step = step;
+    inp.min = '0';
+    inp.className = 'corps-field-input';
+    inp.placeholder = '—';
+    inputs[key] = inp;
+
+    const unitSpan = document.createElement('span');
+    unitSpan.className = 'corps-field-unit';
+    unitSpan.textContent = unit;
+
+    row.append(inp, unitSpan);
+    cell.append(lbl, row);
+    grid.appendChild(cell);
+  });
+
+  form.appendChild(grid);
+
+  const saveBtn = document.createElement('button');
+  saveBtn.className = 'btn-primary btn-full';
+  saveBtn.textContent = 'Enregistrer';
+  saveBtn.addEventListener('click', async () => {
+    const m = {
+      id:          generateId(),
+      date:        dateInput.value || todayIso(),
+      poids:       parseFloat(inputs.poids.value)       || null,
+      masseGrasse: parseFloat(inputs.masseGrasse.value) || null,
+      eau:         parseFloat(inputs.eau.value)         || null,
+      muscle:      parseFloat(inputs.muscle.value)      || null,
+      graisse:     parseFloat(inputs.graisse.value)     || null,
+      os:          parseFloat(inputs.os.value)          || null,
+    };
+    if (!Object.values(m).slice(2).some(v => v !== null)) {
+      showAlert('Renseigne au moins une valeur.'); return;
+    }
+    await pushBodyMeasurementDB(m);
+    showToast('Mesure enregistrée ✓');
+    renderCorps();
+  });
+  form.appendChild(saveBtn);
+  body.appendChild(form);
+
+  if (!measurements.length) {
+    const empty = document.createElement('p');
+    empty.className = 'home-empty';
+    empty.textContent = 'Aucune mesure enregistrée.';
+    body.appendChild(empty);
+    return;
+  }
+
+  // ── Courbe poids ──────────────────────────────────────
+  const weightData = measurements.filter(m => m.poids).slice(0, 20).reverse();
+  if (weightData.length > 1) {
+    const chartWrap = document.createElement('div');
+    chartWrap.className = 'corps-chart-wrap';
+    const title = document.createElement('p');
+    title.className = 'section-title';
+    title.textContent = 'Évolution du poids';
+    chartWrap.appendChild(title);
+
+    const canvas = document.createElement('canvas');
+    canvas.className = 'corps-chart';
+    canvas.width  = 340;
+    canvas.height = 120;
+    chartWrap.appendChild(canvas);
+    body.appendChild(chartWrap);
+
+    requestAnimationFrame(() => drawWeightChart(canvas, weightData));
+  }
+
+  // ── Historique ────────────────────────────────────────
+  const histTitle = document.createElement('p');
+  histTitle.className = 'section-title';
+  histTitle.style.marginTop = '16px';
+  histTitle.textContent = 'Historique';
+  body.appendChild(histTitle);
+
+  measurements.forEach(m => {
+    const card = document.createElement('div');
+    card.className = 'corps-card';
+
+    const header = document.createElement('div');
+    header.className = 'corps-card-header';
+
+    const dateSpan = document.createElement('span');
+    dateSpan.className = 'corps-card-date';
+    dateSpan.textContent = formatDateFr(m.date);
+
+    const delBtn = document.createElement('button');
+    delBtn.className = 'btn-icon-danger';
+    delBtn.textContent = '✕';
+    delBtn.addEventListener('click', () => {
+      showConfirm('Supprimer cette mesure ?', async () => {
+        await deleteBodyMeasurementDB(m.id);
+        renderCorps();
+      });
+    });
+
+    header.append(dateSpan, delBtn);
+    card.appendChild(header);
+
+    const values = document.createElement('div');
+    values.className = 'corps-card-values';
+
+    const entries = [
+      { label: 'Poids',    value: m.poids,        unit: 'kg' },
+      { label: 'Gr. (kg)', value: m.masse_grasse,  unit: 'kg' },
+      { label: 'Eau',      value: m.eau,           unit: '%'  },
+      { label: 'Muscle',   value: m.muscle,        unit: '%'  },
+      { label: 'Graisse',  value: m.graisse,       unit: '%'  },
+      { label: 'Os',       value: m.os,            unit: '%'  },
+    ].filter(e => e.value !== null && e.value !== undefined);
+
+    entries.forEach(({ label, value, unit }) => {
+      const chip = document.createElement('span');
+      chip.className = 'corps-chip';
+      chip.textContent = `${label} ${value}${unit}`;
+      values.appendChild(chip);
+    });
+
+    card.appendChild(values);
+    body.appendChild(card);
+  });
+}
+
+function drawWeightChart(canvas, data) {
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const pad = { top: 10, right: 10, bottom: 24, left: 36 };
+  const iW = W - pad.left - pad.right;
+  const iH = H - pad.top - pad.bottom;
+
+  ctx.clearRect(0, 0, W, H);
+
+  const vals = data.map(m => m.poids);
+  const minV = Math.min(...vals) - 1;
+  const maxV = Math.max(...vals) + 1;
+
+  const xOf = i => pad.left + (i / (data.length - 1)) * iW;
+  const yOf = v => pad.top + iH - ((v - minV) / (maxV - minV)) * iH;
+
+  // Grille
+  ctx.strokeStyle = '#2a2a2a';
+  ctx.lineWidth = 1;
+  [0, 0.5, 1].forEach(t => {
+    const y = pad.top + iH * (1 - t);
+    ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(W - pad.right, y); ctx.stroke();
+    ctx.fillStyle = '#555';
+    ctx.font = '10px monospace';
+    ctx.textAlign = 'right';
+    ctx.fillText((minV + t * (maxV - minV)).toFixed(1), pad.left - 4, y + 4);
+  });
+
+  // Ligne
+  ctx.beginPath();
+  ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#9A7A30';
+  ctx.lineWidth = 2;
+  ctx.lineJoin = 'round';
+  data.forEach((m, i) => {
+    i === 0 ? ctx.moveTo(xOf(i), yOf(m.poids)) : ctx.lineTo(xOf(i), yOf(m.poids));
+  });
+  ctx.stroke();
+
+  // Points + dates
+  data.forEach((m, i) => {
+    ctx.beginPath();
+    ctx.arc(xOf(i), yOf(m.poids), 3, 0, Math.PI * 2);
+    ctx.fillStyle = '#9A7A30';
+    ctx.fill();
+
+    if (i === 0 || i === data.length - 1) {
+      ctx.fillStyle = '#666';
+      ctx.font = '9px monospace';
+      ctx.textAlign = i === 0 ? 'left' : 'right';
+      ctx.fillText(m.date.slice(5), xOf(i), H - 4);
+    }
+  });
+}
 
 /* ═══════════════════════════════════════════════════════
    HISTORIQUE

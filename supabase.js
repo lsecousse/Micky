@@ -102,6 +102,36 @@ async function pushSession(session) {
   });
 }
 
+/* ── Composition corporelle ──────────────────────────────── */
+
+async function loadBodyMeasurementsDB() {
+  const { data: { user } } = await db.auth.getUser();
+  if (!user) return [];
+  const { data } = await db.from('body_measurements')
+    .select('*').eq('client_id', user.id).order('date', { ascending: false });
+  return data || [];
+}
+
+async function pushBodyMeasurementDB(m) {
+  const { data: { user } } = await db.auth.getUser();
+  if (!user) return;
+  await db.from('body_measurements').upsert({
+    id:          m.id,
+    client_id:   user.id,
+    date:        m.date,
+    poids:       m.poids       ?? null,
+    masse_grasse: m.masseGrasse ?? null,
+    eau:         m.eau         ?? null,
+    muscle:      m.muscle      ?? null,
+    graisse:     m.graisse     ?? null,
+    os:          m.os          ?? null,
+  });
+}
+
+async function deleteBodyMeasurementDB(id) {
+  await db.from('body_measurements').delete().eq('id', id);
+}
+
 /* Crée un compte client sans écraser la session du coach */
 async function createClientAccount(email, password) {
   const tempClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON, {

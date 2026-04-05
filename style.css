@@ -1112,3 +1112,122 @@ input:focus { border-color: var(--accent); }
   flex-shrink: 0;
 }
 .activity-remove-btn:active { color: var(--danger); }
+
+/* ── Composition corporelle ──────────────────────────────── */
+.corps-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.corps-date-input {
+  width: 100%;
+  font-size: 15px;
+  text-align: center;
+}
+
+.corps-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.corps-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+}
+
+.corps-field-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.corps-field-row {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.corps-field-input {
+  flex: 1;
+  font-size: 20px;
+  font-weight: 600;
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--surface2);
+  color: var(--text);
+  padding: 2px 0;
+  width: 0;
+}
+.corps-field-input:focus { outline: none; border-color: var(--accent); }
+
+.corps-field-unit {
+  font-size: 13px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.corps-chart-wrap {
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 12px;
+  margin-bottom: 8px;
+}
+
+.corps-chart {
+  width: 100%;
+  height: auto;
+  display: block;
+  margin-top: 8px;
+}
+
+.corps-card {
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  margin-bottom: 8px;
+}
+
+.corps-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.corps-card-date {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.btn-icon-danger {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 13px;
+  cursor: pointer;
+  padding: 2px 6px;
+}
+.btn-icon-danger:active { color: var(--danger); }
+
+.corps-card-values {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.corps-chip {
+  font-size: 12px;
+  background: var(--surface2);
+  border-radius: 20px;
+  padding: 3px 10px;
+  color: var(--text);
+}
