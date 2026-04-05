@@ -1,10 +1,11 @@
-const { createCanvas } = require('canvas');
+const { createCanvas, loadImage } = require('canvas');
 const fs = require('fs');
 const path = require('path');
 
-const ACCENT = '#FF6B00';
-const BG_ICON = '#1a1a1a';
-const BG_SPLASH = '#0f0f0f';
+const GOLD   = '#9A7A30';
+const WHITE  = '#F0F0F0';
+const BG_ICON = '#131313';
+const BG_SPLASH = '#131313';
 
 // ── Directories ──────────────────────────────────────────
 const iconsDir = path.join(__dirname, 'icons');
@@ -12,78 +13,13 @@ const splashDir = path.join(iconsDir, 'splash');
 if (!fs.existsSync(iconsDir)) fs.mkdirSync(iconsDir);
 if (!fs.existsSync(splashDir)) fs.mkdirSync(splashDir, { recursive: true });
 
-// ── Rounded rect helper ───────────────────────────────────
-function roundRect(ctx, x, y, w, h, r) {
-  ctx.beginPath();
-  ctx.moveTo(x + r, y);
-  ctx.lineTo(x + w - r, y);
-  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
-  ctx.lineTo(x + w, y + h - r);
-  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-  ctx.lineTo(x + r, y + h);
-  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
-  ctx.lineTo(x, y + r);
-  ctx.quadraticCurveTo(x, y, x + r, y);
-  ctx.closePath();
-}
-
-// ── Draw barbell (arrondie) ───────────────────────────────
-function drawBarbell(ctx, cx, cy, size) {
-  const barW   = size * 0.74;
-  const barH   = size * 0.09;
-  const barR   = barH / 2;
-  const plateW = size * 0.12;
-  const plateH = size * 0.44;
-  const plateR = size * 0.025;
-  const collarW = size * 0.055;
-  const collarH = size * 0.28;
-  const collarR = size * 0.015;
-
-  ctx.fillStyle = ACCENT;
-
-  // Barre centrale arrondie
-  roundRect(ctx, cx - barW / 2, cy - barH / 2, barW, barH, barR);
-  ctx.fill();
-
-  // Plaques gauche + droite
-  for (const side of [-1, 1]) {
-    const px = side === -1 ? cx - barW / 2 : cx + barW / 2 - plateW;
-    roundRect(ctx, px, cy - plateH / 2, plateW, plateH, plateR);
-    ctx.fill();
-
-    const colX = side === -1
-      ? cx - barW / 2 + plateW
-      : cx + barW / 2 - plateW - collarW;
-    roundRect(ctx, colX, cy - collarH / 2, collarW, collarH, collarR);
-    ctx.fill();
-  }
-}
-
-// ── Generate icon ─────────────────────────────────────────
-function generateIcon(size) {
+// ── Generate icon depuis logo.jpg ─────────────────────────
+async function generateIcon(size, logo) {
   const canvas = createCanvas(size, size);
   const ctx = canvas.getContext('2d');
-
-  // Fond dégradé radial
-  const grad = ctx.createRadialGradient(size * 0.5, size * 0.4, 0, size * 0.5, size * 0.5, size * 0.72);
-  grad.addColorStop(0, '#242424');
-  grad.addColorStop(1, '#0f0f0f');
-  ctx.fillStyle = grad;
+  ctx.fillStyle = BG_ICON;
   ctx.fillRect(0, 0, size, size);
-
-  const cx = size / 2;
-  const barbellSize = size * 0.58;
-  const barbellY = size * 0.42;
-
-  drawBarbell(ctx, cx, barbellY, barbellSize);
-
-  // Lettre "M"
-  ctx.fillStyle = ACCENT;
-  ctx.font = `bold ${Math.round(size * 0.22)}px "Courier New", monospace`;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'top';
-  ctx.fillText('M', cx, barbellY + barbellSize * 0.30);
-
+  ctx.drawImage(logo, 0, 0, size, size);
   return canvas.toBuffer('image/png');
 }
 
@@ -96,34 +32,38 @@ function generateSplash(w, h) {
   ctx.fillRect(0, 0, w, h);
 
   const cx = w / 2;
-  const barbellSize = Math.min(w, h) * 0.40;
-  const cy = h * 0.44;
+  const logoSize = Math.min(w, h) * 0.55;
+  const cy = h * 0.46;
 
-  drawBarbell(ctx, cx, cy, barbellSize);
+  drawMK(ctx, cx, cy, logoSize);
 
-  // "Gym Tracker"
-  ctx.fillStyle = ACCENT;
-  ctx.font = `bold ${Math.round(Math.min(w, h) * 0.065)}px "Courier New", monospace`;
+  // "Coach Mike"
+  ctx.fillStyle = WHITE;
+  ctx.font = `bold ${Math.round(Math.min(w, h) * 0.055)}px "Arial", sans-serif`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'top';
-  ctx.fillText('Coach Mike', cx, cy + barbellSize * 0.36);
+  ctx.fillText('Coach Mike', cx, cy + logoSize * 0.46);
 
-  // version
-  ctx.fillStyle = '#888';
-  ctx.font = `${Math.round(Math.min(w, h) * 0.035)}px "Courier New", monospace`;
-  ctx.fillText('v1.0', cx, cy + barbellSize * 0.36 + Math.min(w, h) * 0.082);
+  // sous-titre
+  ctx.fillStyle = '#666';
+  ctx.font = `${Math.round(Math.min(w, h) * 0.030)}px "Arial", sans-serif`;
+  ctx.fillText('Suivi d\'entraînement', cx, cy + logoSize * 0.46 + Math.min(w, h) * 0.072);
 
   return canvas.toBuffer('image/png');
 }
 
 // ── Icons ─────────────────────────────────────────────────
-[192, 512].forEach(size => {
-  const dest = path.join(iconsDir, `icon-${size}.png`);
-  fs.writeFileSync(dest, generateIcon(size));
-  console.log(`✓ icons/icon-${size}.png`);
-});
+(async () => {
+  const logo = await loadImage(path.join(iconsDir, 'logo.jpg'));
+  for (const size of [192, 512]) {
+    const dest = path.join(iconsDir, `icon-${size}.png`);
+    fs.writeFileSync(dest, await generateIcon(size, logo));
+    console.log(`✓ icons/icon-${size}.png`);
+  }
+})();
 
-// ── Splash screens ────────────────────────────────────────
+// ── Splash screens (ne pas régénérer — déjà en place) ─────
+/*
 const splashes = [
   // iPhone 16 Pro Max
   [1320, 2868],
@@ -162,3 +102,4 @@ splashes.forEach(([w, h]) => {
   fs.writeFileSync(dest, generateSplash(w, h));
   console.log(`✓ icons/splash/splash-${w}x${h}.png`);
 });
+*/
