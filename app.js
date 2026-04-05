@@ -941,10 +941,32 @@ function fatCategory(pct) {
 }
 
 function corpsTrend(data, field) {
-  const vals = data.slice(0, 10).map(m => m[field]).filter(v => v !== null && v !== undefined);
-  if (vals.length < 2) return null;
-  const delta = vals[0] - vals[vals.length - 1]; // newest - oldest
-  return { delta: Math.abs(delta).toFixed(1), up: delta > 0, neutral: Math.abs(delta) < 0.1 };
+  const points = data
+    .slice(0, 10)
+    .filter(m => m[field] !== null && m[field] !== undefined && m.date)
+    .map(m => ({ t: new Date(m.date).getTime(), v: m[field] }))
+    .reverse(); // oldest → newest
+  if (points.length < 2) return null;
+
+  const n   = points.length;
+  const t0  = points[0].t;
+  const xs  = points.map(p => (p.t - t0) / (1000 * 60 * 60 * 24 * 7)); // en semaines
+  const ys  = points.map(p => p.v);
+  const sumX  = xs.reduce((a, b) => a + b, 0);
+  const sumY  = ys.reduce((a, b) => a + b, 0);
+  const sumXY = xs.reduce((s, x, i) => s + x * ys[i], 0);
+  const sumX2 = xs.reduce((s, x) => s + x * x, 0);
+  const denom = n * sumX2 - sumX * sumX;
+  if (!denom) return null;
+
+  const slope = (n * sumXY - sumX * sumY) / denom;
+  if (!isFinite(slope)) return null;
+
+  return {
+    delta:   Math.abs(slope).toFixed(2),
+    up:      slope > 0,
+    neutral: Math.abs(slope) < 0.05,
+  };
 }
 
 async function renderCorps() {
@@ -1059,9 +1081,10 @@ async function renderCorps() {
 
   // ── Tableau de tendance (10 dernières) ────────────────
   const trendItems = [
-    { label: 'Poids',   field: 'poids',   unit: 'kg', lowerIsBetter: true  },
-    { label: 'Graisse', field: 'graisse', unit: '%',  lowerIsBetter: true  },
-    { label: 'Muscle',  field: 'muscle',  unit: '%',  lowerIsBetter: false },
+    { label: 'Poids',  field: 'poids',   unit: 'kg', lowerIsBetter: true  },
+    { label: 'IMG',    field: 'graisse', unit: '%',  lowerIsBetter: true  },
+    { label: 'Eau',    field: 'eau',     unit: '%',  lowerIsBetter: false },
+    { label: 'Muscle', field: 'muscle',  unit: '%',  lowerIsBetter: false },
   ].map(({ label, field, unit, lowerIsBetter }) => {
     const latest = measurements.find(m => m[field] !== null && m[field] !== undefined);
     const trend  = corpsTrend(measurements, field);
@@ -1073,7 +1096,7 @@ async function renderCorps() {
     trendWrap.className = 'corps-trend-wrap';
     const trendTitle = document.createElement('p');
     trendTitle.className = 'section-title';
-    trendTitle.textContent = 'Tendance — 10 dernières mesures';
+    trendTitle.textContent = 'Tendance — 10 dernières mesures (/ semaine)';
     trendWrap.appendChild(trendTitle);
 
     const trendRow = document.createElement('div');
@@ -1095,7 +1118,7 @@ async function renderCorps() {
       let arrowColor = '#666';
       if (trend && !trend.neutral) {
         const positive = lowerIsBetter ? !trend.up : trend.up;
-        arrow = trend.up ? `↑ ${trend.delta}${unit}` : `↓ ${trend.delta}${unit}`;
+        arrow = trend.up ? `↑ ${trend.delta}${unit}/sem` : `↓ ${trend.delta}${unit}/sem`;
         arrowColor = positive ? '#5cb85c' : '#ff5c5c';
       } else if (trend?.neutral) {
         arrow = '→ stable';
