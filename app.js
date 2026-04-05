@@ -931,9 +931,34 @@ document.getElementById('countdown-skip').addEventListener('click', finishCountd
 /* ═══════════════════════════════════════════════════════
    COMPOSITION CORPORELLE
 ═══════════════════════════════════════════════════════ */
+function fatCategory(pct) {
+  if (pct === null || pct === undefined) return null;
+  if (pct < 10) return { label: 'Très maigre', color: '#6ab0f5' };
+  if (pct < 18) return { label: 'Athlétique',  color: '#5cb85c' };
+  if (pct < 25) return { label: 'Normal',       color: '#9A7A30' };
+  if (pct < 30) return { label: 'Élevé',        color: '#f0ad4e' };
+  return           { label: 'Obèse',            color: '#ff5c5c' };
+}
+
+function corpsTrend(data, field) {
+  const vals = data.slice(0, 10).map(m => m[field]).filter(v => v !== null && v !== undefined);
+  if (vals.length < 2) return null;
+  const delta = vals[0] - vals[vals.length - 1]; // newest - oldest
+  return { delta: Math.abs(delta).toFixed(1), up: delta > 0, neutral: Math.abs(delta) < 0.1 };
+}
+
 async function renderCorps() {
   const body = document.getElementById('screen-corps-body');
   body.innerHTML = '';
+
+  // ── Logo ─────────────────────────────────────────────
+  const logoWrap = document.createElement('div');
+  logoWrap.className = 'corps-logo-wrap';
+  const logoImg = document.createElement('img');
+  logoImg.src = 'icons/logo.jpg';
+  logoImg.className = 'corps-logo';
+  logoWrap.appendChild(logoImg);
+  body.appendChild(logoWrap);
 
   const measurements = await loadBodyMeasurementsDB();
 
@@ -942,12 +967,12 @@ async function renderCorps() {
   form.className = 'corps-form';
 
   const fields = [
-    { key: 'poids',       label: 'Poids',        unit: 'kg',  step: '0.1' },
-    { key: 'masseGrasse', label: 'Masse grasse',  unit: 'kg',  step: '0.1' },
-    { key: 'eau',         label: 'Eau',           unit: '%',   step: '0.1' },
-    { key: 'muscle',      label: 'Muscle',        unit: '%',   step: '0.1' },
-    { key: 'graisse',     label: 'Graisse',       unit: '%',   step: '0.1' },
-    { key: 'os',          label: 'Os',            unit: '%',   step: '0.1' },
+    { key: 'poids',       label: 'Poids',        unit: 'kg', step: '0.1' },
+    { key: 'masseGrasse', label: 'Masse grasse',  unit: 'kg', step: '0.1' },
+    { key: 'eau',         label: 'Eau',           unit: '%',  step: '0.1' },
+    { key: 'muscle',      label: 'Muscle',        unit: '%',  step: '0.1' },
+    { key: 'graisse',     label: 'Graisse',       unit: '%',  step: '0.1' },
+    { key: 'os',          label: 'Os',            unit: '%',  step: '0.1' },
   ];
 
   const dateInput = document.createElement('input');
@@ -963,14 +988,11 @@ async function renderCorps() {
   fields.forEach(({ key, label, unit, step }) => {
     const cell = document.createElement('div');
     cell.className = 'corps-field';
-
     const lbl = document.createElement('span');
     lbl.className = 'corps-field-label';
     lbl.textContent = label;
-
     const row = document.createElement('div');
     row.className = 'corps-field-row';
-
     const inp = document.createElement('input');
     inp.type = 'number';
     inp.inputMode = 'decimal';
@@ -979,15 +1001,27 @@ async function renderCorps() {
     inp.className = 'corps-field-input';
     inp.placeholder = '—';
     inputs[key] = inp;
-
     const unitSpan = document.createElement('span');
     unitSpan.className = 'corps-field-unit';
     unitSpan.textContent = unit;
-
     row.append(inp, unitSpan);
     cell.append(lbl, row);
     grid.appendChild(cell);
   });
+
+  // Auto-calcul % graisse ↔ masse grasse
+  const syncGraisse = () => {
+    const p = parseFloat(inputs.poids.value);
+    const mg = parseFloat(inputs.masseGrasse.value);
+    const gp = parseFloat(inputs.graisse.value);
+    if (p && mg && !inputs.graisse.value)
+      inputs.graisse.value = ((mg / p) * 100).toFixed(1);
+    else if (p && gp && !inputs.masseGrasse.value)
+      inputs.masseGrasse.value = ((gp / 100) * p).toFixed(1);
+  };
+  inputs.poids.addEventListener('change', syncGraisse);
+  inputs.masseGrasse.addEventListener('change', syncGraisse);
+  inputs.graisse.addEventListener('change', syncGraisse);
 
   form.appendChild(grid);
 
@@ -1023,6 +1057,78 @@ async function renderCorps() {
     return;
   }
 
+  // ── Tableau de tendance (10 dernières) ────────────────
+  const trendItems = [
+    { label: 'Poids',   field: 'poids',   unit: 'kg', lowerIsBetter: true  },
+    { label: 'Graisse', field: 'graisse', unit: '%',  lowerIsBetter: true  },
+    { label: 'Muscle',  field: 'muscle',  unit: '%',  lowerIsBetter: false },
+  ].map(({ label, field, unit, lowerIsBetter }) => {
+    const latest = measurements.find(m => m[field] !== null && m[field] !== undefined);
+    const trend  = corpsTrend(measurements, field);
+    return { label, field, unit, lowerIsBetter, latest: latest?.[field], trend };
+  }).filter(t => t.latest !== undefined);
+
+  if (trendItems.length) {
+    const trendWrap = document.createElement('div');
+    trendWrap.className = 'corps-trend-wrap';
+    const trendTitle = document.createElement('p');
+    trendTitle.className = 'section-title';
+    trendTitle.textContent = 'Tendance — 10 dernières mesures';
+    trendWrap.appendChild(trendTitle);
+
+    const trendRow = document.createElement('div');
+    trendRow.className = 'corps-trend-row';
+
+    trendItems.forEach(({ label, field, unit, lowerIsBetter, latest, trend }) => {
+      const cell = document.createElement('div');
+      cell.className = 'corps-trend-cell';
+
+      const val = document.createElement('span');
+      val.className = 'corps-trend-val';
+      val.textContent = `${latest}${unit}`;
+
+      const lbl = document.createElement('span');
+      lbl.className = 'corps-trend-label';
+      lbl.textContent = label;
+
+      let arrow = '';
+      let arrowColor = '#666';
+      if (trend && !trend.neutral) {
+        const positive = lowerIsBetter ? !trend.up : trend.up;
+        arrow = trend.up ? `↑ ${trend.delta}${unit}` : `↓ ${trend.delta}${unit}`;
+        arrowColor = positive ? '#5cb85c' : '#ff5c5c';
+      } else if (trend?.neutral) {
+        arrow = '→ stable';
+        arrowColor = '#666';
+      }
+
+      const arrowSpan = document.createElement('span');
+      arrowSpan.className = 'corps-trend-arrow';
+      arrowSpan.style.color = arrowColor;
+      arrowSpan.textContent = arrow;
+
+      // Catégorie graisse
+      if (field === 'graisse') {
+        const cat = fatCategory(latest);
+        if (cat) {
+          const badge = document.createElement('span');
+          badge.className = 'corps-cat-badge';
+          badge.style.color = cat.color;
+          badge.textContent = cat.label;
+          cell.append(val, lbl, arrowSpan, badge);
+          trendRow.appendChild(cell);
+          return;
+        }
+      }
+
+      cell.append(val, lbl, arrowSpan);
+      trendRow.appendChild(cell);
+    });
+
+    trendWrap.appendChild(trendRow);
+    body.appendChild(trendWrap);
+  }
+
   // ── Courbe poids ──────────────────────────────────────
   const weightData = measurements.filter(m => m.poids).slice(0, 20).reverse();
   if (weightData.length > 1) {
@@ -1032,14 +1138,12 @@ async function renderCorps() {
     title.className = 'section-title';
     title.textContent = 'Évolution du poids';
     chartWrap.appendChild(title);
-
     const canvas = document.createElement('canvas');
     canvas.className = 'corps-chart';
     canvas.width  = 340;
     canvas.height = 120;
     chartWrap.appendChild(canvas);
     body.appendChild(chartWrap);
-
     requestAnimationFrame(() => drawWeightChart(canvas, weightData));
   }
 
@@ -1056,11 +1160,9 @@ async function renderCorps() {
 
     const header = document.createElement('div');
     header.className = 'corps-card-header';
-
     const dateSpan = document.createElement('span');
     dateSpan.className = 'corps-card-date';
     dateSpan.textContent = formatDateFr(m.date);
-
     const delBtn = document.createElement('button');
     delBtn.className = 'btn-icon-danger';
     delBtn.textContent = '✕';
@@ -1070,23 +1172,35 @@ async function renderCorps() {
         renderCorps();
       });
     });
-
     header.append(dateSpan, delBtn);
     card.appendChild(header);
 
+    // Indice masse grasse calculé si besoin
+    let grPct = m.graisse;
+    if (!grPct && m.poids && m.masse_grasse)
+      grPct = +((m.masse_grasse / m.poids) * 100).toFixed(1);
+    const cat = fatCategory(grPct);
+    if (cat) {
+      const badge = document.createElement('span');
+      badge.className = 'corps-cat-badge';
+      badge.style.color = cat.color;
+      badge.style.fontSize = '12px';
+      badge.style.marginBottom = '6px';
+      badge.style.display = 'block';
+      badge.textContent = `Graisse ${grPct}% — ${cat.label}`;
+      card.appendChild(badge);
+    }
+
     const values = document.createElement('div');
     values.className = 'corps-card-values';
-
-    const entries = [
+    [
       { label: 'Poids',    value: m.poids,        unit: 'kg' },
       { label: 'Gr. (kg)', value: m.masse_grasse,  unit: 'kg' },
       { label: 'Eau',      value: m.eau,           unit: '%'  },
       { label: 'Muscle',   value: m.muscle,        unit: '%'  },
       { label: 'Graisse',  value: m.graisse,       unit: '%'  },
       { label: 'Os',       value: m.os,            unit: '%'  },
-    ].filter(e => e.value !== null && e.value !== undefined);
-
-    entries.forEach(({ label, value, unit }) => {
+    ].filter(e => e.value !== null && e.value !== undefined).forEach(({ label, value, unit }) => {
       const chip = document.createElement('span');
       chip.className = 'corps-chip';
       chip.textContent = `${label} ${value}${unit}`;

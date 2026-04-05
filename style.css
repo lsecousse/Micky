@@ -1231,3 +1231,14 @@ input:focus { border-color: var(--accent); }
   padding: 3px 10px;
   color: var(--text);
 }
+
+.corps-logo-wrap { display: flex; justify-content: center; padding: 12px 0 4px; }
+.corps-logo { width: 72px; height: 72px; border-radius: 16px; object-fit: cover; }
+
+.corps-trend-wrap { background: var(--surface); border-radius: var(--radius); padding: 12px 14px; margin-bottom: 12px; }
+.corps-trend-row  { display: flex; gap: 8px; margin-top: 10px; }
+.corps-trend-cell { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.corps-trend-val  { font-size: 20px; font-weight: 700; color: var(--accent); }
+.corps-trend-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; }
+.corps-trend-arrow { font-size: 11px; font-weight: 600; }
+.corps-cat-badge  { font-size: 11px; font-weight: 600; text-align: center; }
