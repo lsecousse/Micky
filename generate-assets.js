@@ -12,29 +12,51 @@ const splashDir = path.join(iconsDir, 'splash');
 if (!fs.existsSync(iconsDir)) fs.mkdirSync(iconsDir);
 if (!fs.existsSync(splashDir)) fs.mkdirSync(splashDir, { recursive: true });
 
-// ── Draw barbell ─────────────────────────────────────────
+// ── Rounded rect helper ───────────────────────────────────
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+// ── Draw barbell (arrondie) ───────────────────────────────
 function drawBarbell(ctx, cx, cy, size) {
-  const barW = size * 0.72;
-  const barH = size * 0.09;
-  const plateW = size * 0.13;
-  const plateH = size * 0.42;
-  const collarW = size * 0.06;
-  const collarH = size * 0.30;
+  const barW   = size * 0.74;
+  const barH   = size * 0.09;
+  const barR   = barH / 2;
+  const plateW = size * 0.12;
+  const plateH = size * 0.44;
+  const plateR = size * 0.025;
+  const collarW = size * 0.055;
+  const collarH = size * 0.28;
+  const collarR = size * 0.015;
 
   ctx.fillStyle = ACCENT;
 
-  // Center bar
-  ctx.fillRect(cx - barW / 2, cy - barH / 2, barW, barH);
+  // Barre centrale arrondie
+  roundRect(ctx, cx - barW / 2, cy - barH / 2, barW, barH, barR);
+  ctx.fill();
 
-  // Left plate
-  ctx.fillRect(cx - barW / 2, cy - plateH / 2, plateW, plateH);
-  // Left collar
-  ctx.fillRect(cx - barW / 2 + plateW, cy - collarH / 2, collarW, collarH);
+  // Plaques gauche + droite
+  for (const side of [-1, 1]) {
+    const px = side === -1 ? cx - barW / 2 : cx + barW / 2 - plateW;
+    roundRect(ctx, px, cy - plateH / 2, plateW, plateH, plateR);
+    ctx.fill();
 
-  // Right plate
-  ctx.fillRect(cx + barW / 2 - plateW, cy - plateH / 2, plateW, plateH);
-  // Right collar
-  ctx.fillRect(cx + barW / 2 - plateW - collarW, cy - collarH / 2, collarW, collarH);
+    const colX = side === -1
+      ? cx - barW / 2 + plateW
+      : cx + barW / 2 - plateW - collarW;
+    roundRect(ctx, colX, cy - collarH / 2, collarW, collarH, collarR);
+    ctx.fill();
+  }
 }
 
 // ── Generate icon ─────────────────────────────────────────
@@ -42,22 +64,25 @@ function generateIcon(size) {
   const canvas = createCanvas(size, size);
   const ctx = canvas.getContext('2d');
 
-  // Background
-  ctx.fillStyle = BG_ICON;
+  // Fond dégradé radial
+  const grad = ctx.createRadialGradient(size * 0.5, size * 0.4, 0, size * 0.5, size * 0.5, size * 0.72);
+  grad.addColorStop(0, '#242424');
+  grad.addColorStop(1, '#0f0f0f');
+  ctx.fillStyle = grad;
   ctx.fillRect(0, 0, size, size);
 
   const cx = size / 2;
-  const barbellSize = size * 0.60;
-  const barbellY = size * 0.44;
+  const barbellSize = size * 0.58;
+  const barbellY = size * 0.42;
 
   drawBarbell(ctx, cx, barbellY, barbellSize);
 
-  // "GT" text below
+  // Lettre "M"
   ctx.fillStyle = ACCENT;
-  ctx.font = `bold ${Math.round(size * 0.20)}px "Courier New", monospace`;
+  ctx.font = `bold ${Math.round(size * 0.22)}px "Courier New", monospace`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'top';
-  ctx.fillText('MC', cx, barbellY + barbellSize * 0.26);
+  ctx.fillText('M', cx, barbellY + barbellSize * 0.30);
 
   return canvas.toBuffer('image/png');
 }

@@ -1,7 +1,7 @@
 /* ═══════════════════════════════════════════════════════
    VERSION
 ═══════════════════════════════════════════════════════ */
-const APP_VERSION = '2026.avril.02';
+const APP_VERSION = '2026.avril.05';
 document.querySelectorAll('.app-version').forEach(el => el.textContent = APP_VERSION);
 
 /* ═══════════════════════════════════════════════════════
