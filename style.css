@@ -236,23 +236,32 @@ html, body {
 .home-empty { color: var(--text-muted); font-size: 14px; text-align: center; }
 
 .home-footer {
-  display: flex;
-  gap: 12px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
   padding: 16px 20px;
   border-top: 1px solid #222;
 }
 
 .home-footer-btn {
-  flex: 1;
   background: var(--surface);
   border: 1px solid #333;
   border-radius: var(--radius);
   color: var(--text);
   font-family: var(--font);
-  font-size: 14px;
-  padding: 14px;
+  font-size: 13px;
+  padding: 14px 8px;
   cursor: pointer;
   transition: border-color 0.15s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-icon {
+  font-size: 20px;
+  line-height: 1;
 }
 
 .home-footer-btn:active { border-color: var(--accent); }

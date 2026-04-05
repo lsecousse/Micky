@@ -1152,14 +1152,21 @@ async function renderCorps() {
     body.appendChild(trendWrap);
   }
 
-  // ── Courbe poids ──────────────────────────────────────
-  const weightData = measurements.filter(m => m.poids).slice(0, 20).reverse();
-  if (weightData.length > 1) {
+  // ── Courbes (poids, IMG, eau, muscle) ─────────────────
+  const chartDefs = [
+    { field: 'poids',   label: 'Évolution du poids',   unit: 'kg' },
+    { field: 'graisse', label: 'Évolution de l\'IMG',   unit: '%'  },
+    { field: 'eau',     label: 'Évolution de l\'eau',   unit: '%'  },
+    { field: 'muscle',  label: 'Évolution du muscle',   unit: '%'  },
+  ];
+  chartDefs.forEach(({ field, label, unit }) => {
+    const chartData = measurements.filter(m => m[field] != null).slice(0, 20).reverse();
+    if (chartData.length < 2) return;
     const chartWrap = document.createElement('div');
     chartWrap.className = 'corps-chart-wrap';
     const title = document.createElement('p');
     title.className = 'section-title';
-    title.textContent = 'Évolution du poids';
+    title.textContent = label;
     chartWrap.appendChild(title);
     const canvas = document.createElement('canvas');
     canvas.className = 'corps-chart';
@@ -1167,8 +1174,8 @@ async function renderCorps() {
     canvas.height = 120;
     chartWrap.appendChild(canvas);
     body.appendChild(chartWrap);
-    requestAnimationFrame(() => drawWeightChart(canvas, weightData));
-  }
+    requestAnimationFrame(() => drawCorpsChart(canvas, chartData, field, unit));
+  });
 
   // ── Historique ────────────────────────────────────────
   const histTitle = document.createElement('p');
@@ -1235,18 +1242,20 @@ async function renderCorps() {
   });
 }
 
-function drawWeightChart(canvas, data) {
+function drawCorpsChart(canvas, data, field, unit) {
   const ctx = canvas.getContext('2d');
   const W = canvas.width, H = canvas.height;
-  const pad = { top: 10, right: 10, bottom: 24, left: 36 };
+  const pad = { top: 10, right: 10, bottom: 24, left: 38 };
   const iW = W - pad.left - pad.right;
   const iH = H - pad.top - pad.bottom;
 
   ctx.clearRect(0, 0, W, H);
 
-  const vals = data.map(m => m.poids);
-  const minV = Math.min(...vals) - 1;
-  const maxV = Math.max(...vals) + 1;
+  const vals = data.map(m => m[field]);
+  const spread = Math.max(...vals) - Math.min(...vals);
+  const margin = spread < 0.5 ? 0.5 : spread * 0.1;
+  const minV = Math.min(...vals) - margin;
+  const maxV = Math.max(...vals) + margin;
 
   const xOf = i => pad.left + (i / (data.length - 1)) * iW;
   const yOf = v => pad.top + iH - ((v - minV) / (maxV - minV)) * iH;
@@ -1269,14 +1278,14 @@ function drawWeightChart(canvas, data) {
   ctx.lineWidth = 2;
   ctx.lineJoin = 'round';
   data.forEach((m, i) => {
-    i === 0 ? ctx.moveTo(xOf(i), yOf(m.poids)) : ctx.lineTo(xOf(i), yOf(m.poids));
+    i === 0 ? ctx.moveTo(xOf(i), yOf(m[field])) : ctx.lineTo(xOf(i), yOf(m[field]));
   });
   ctx.stroke();
 
   // Points + dates
   data.forEach((m, i) => {
     ctx.beginPath();
-    ctx.arc(xOf(i), yOf(m.poids), 3, 0, Math.PI * 2);
+    ctx.arc(xOf(i), yOf(m[field]), 3, 0, Math.PI * 2);
     ctx.fillStyle = '#9A7A30';
     ctx.fill();
 
