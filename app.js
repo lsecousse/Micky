@@ -1606,10 +1606,12 @@ async function buildStatsProgression(sessions) {
 
   // Calcul des données par exercice (max poids parmi les activités weight)
   const machineData = names.map(name => {
+    let muscle = '';
     const points = sessions.map(s => {
       const ex = s.exercises.find(e => e.name === name);
       if (!ex) return null;
       const e = migrateExercise(ex);
+      if (!muscle && e.activities?.[0]?.name) muscle = e.activities[0].name;
       const weights = e.series
         .filter(se => se.done !== false)
         .flatMap(set => e.activities.map((act, i) =>
@@ -1619,7 +1621,7 @@ async function buildStatsProgression(sessions) {
       if (!weights.length) return null;
       return { date: s.date, weight: Math.max(...weights) };
     }).filter(Boolean);
-    return { name, muscle: '', points };
+    return { name, muscle, points };
   }).filter(d => d.points.length >= 1);
 
   if (!machineData.length) return section;
