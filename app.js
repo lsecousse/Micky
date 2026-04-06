@@ -1,7 +1,7 @@
 /* ═══════════════════════════════════════════════════════
    VERSION
 ═══════════════════════════════════════════════════════ */
-const APP_VERSION = '2026.avril.05';
+const APP_VERSION = '2026.avril.06';
 document.querySelectorAll('.app-version').forEach(el => el.textContent = APP_VERSION);
 
 /* ═══════════════════════════════════════════════════════
@@ -1080,6 +1080,9 @@ async function renderCorps() {
   }
 
   // ── Tableau de tendance (10 dernières) ────────────────
+  const trendPoids   = corpsTrend(measurements, 'poids');
+  const trendGraisse = corpsTrend(measurements, 'graisse');
+
   const trendItems = [
     { label: 'Poids',  field: 'poids',   unit: 'kg', lowerIsBetter: true  },
     { label: 'IMG',    field: 'graisse', unit: '%',  lowerIsBetter: true  },
@@ -1117,8 +1120,14 @@ async function renderCorps() {
       let arrow = '';
       let arrowColor = '#666';
       if (trend && !trend.neutral) {
-        const positive = lowerIsBetter ? !trend.up : trend.up;
         arrow = trend.up ? `↑ ${trend.delta}${unit}/sem` : `↓ ${trend.delta}${unit}/sem`;
+        let positive;
+        if (field === 'poids' && trend.up && trendGraisse && !trendGraisse.neutral && !trendGraisse.up) {
+          // Poids ↑ mais IMG ↓ → prise de muscle → vert
+          positive = true;
+        } else {
+          positive = lowerIsBetter ? !trend.up : trend.up;
+        }
         arrowColor = positive ? '#5cb85c' : '#ff5c5c';
       } else if (trend?.neutral) {
         arrow = '→ stable';
