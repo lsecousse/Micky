@@ -239,6 +239,16 @@ async function renderHome() {
    SÉANCE SCREEN
 ═══════════════════════════════════════════════════════ */
 let liveSession = null;
+let wakeLock    = null;
+
+async function requestWakeLock() {
+  if (!('wakeLock' in navigator)) return;
+  try { wakeLock = await navigator.wakeLock.request('screen'); } catch (_) {}
+}
+function releaseWakeLock() { wakeLock?.release(); wakeLock = null; }
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && liveSession) requestWakeLock();
+});
 
 async function renderSeanceScreen() {
   const body = document.getElementById('screen-seance-body');
@@ -341,7 +351,13 @@ function liveSessionSnapshot(durationSecs = 0) {
   };
 }
 
-function startSession(programme) {
+async function startSession(programme) {
+  requestWakeLock();
+  const sessions   = await loadSessions();
+  const prevSession = sessions
+    .filter(s => s.programmeId === programme.id)
+    .sort((a, b) => (b.startedAt || b.date).localeCompare(a.startedAt || a.date))[0] || null;
+
   liveSession = {
     id: generateId(),
     programmeId: programme.id,
@@ -349,12 +365,14 @@ function startSession(programme) {
     date: todayIso(),
     startedAt: new Date().toISOString(),
     exercises: programme.exercises.map(ex => {
-      const m    = migrateExercise(ex);
-      const sets = ex.sets ?? m.series.length ?? (ex.count ?? 3);
+      const m      = migrateExercise(ex);
+      const sets   = ex.sets ?? m.series.length ?? (ex.count ?? 3);
+      const prevEx = prevSession?.exercises?.find(e => e.name === ex.name) || null;
       return {
         name:       ex.name,
         comment:    ex.comment || '',
         activities: m.activities,
+        prevSeries: prevEx?.series || null,
         series: Array.from({ length: sets }, () => ({
           activityStates: {},
           values: m.activities.map(act =>
@@ -609,7 +627,15 @@ function buildActivityRow(exIdx, sIdx, actIdx) {
     sSpan.className = 'live-x';
     sSpan.textContent = 's';
 
-    row.append(repsInput, xSpan, wInput, kgSpan, reposLabel, restInput, sSpan);
+    const prevVal = ex.prevSeries?.[sIdx]?.values?.[actIdx];
+    if (prevVal?.reps || prevVal?.weight) {
+      const prevSpan = document.createElement('span');
+      prevSpan.className = 'live-prev';
+      prevSpan.textContent = `${prevVal.reps ?? '—'}×${prevVal.weight ?? '—'}`;
+      row.append(repsInput, xSpan, wInput, kgSpan, prevSpan, reposLabel, restInput, sSpan);
+    } else {
+      row.append(repsInput, xSpan, wInput, kgSpan, reposLabel, restInput, sSpan);
+    }
   } else if (act.type === 'countdown') {
     const durInput = document.createElement('input');
     durInput.type = 'number';
@@ -781,6 +807,7 @@ function finishSession() {
     const durationSecs = Math.round((Date.now() - new Date(liveSession.startedAt).getTime()) / 1000);
     pushSession(liveSessionSnapshot(durationSecs)).catch(() => {});
     liveSession = null;
+    releaseWakeLock();
     stopCountdown();
     showScreen('home');
   });
