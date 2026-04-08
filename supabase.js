@@ -19,7 +19,7 @@ async function loadProgrammesDB() {
   const { data: { user } } = await db.auth.getUser();
   if (!user) return [];
   const { data } = await db.from('programmes').select('*').eq('client_id', user.id).order('ordre');
-  return (data || []).map(row => ({ id: row.id, name: row.name, exercises: row.exercises || [] }));
+  return (data || []).map(row => ({ id: row.id, name: row.name, category: row.category || 'fonte', exercises: row.exercises || [] }));
 }
 
 /* Charge les séances depuis Supabase */
@@ -48,10 +48,12 @@ async function upsertProgrammeDB(programme) {
     client_id: user.id,
     coach_id:  profile?.coach_id || user.id,
     name:      programme.name,
+    category:  programme.category || 'fonte',
     exercises: programme.exercises,
     ordre:     programme.ordre ?? 0,
   };
-  await db.from('programmes').upsert(payload);
+  const { error } = await db.from('programmes').upsert(payload);
+  if (error) console.error('upsertProgrammeDB error:', error);
 }
 
 /* Supprime un programme */
@@ -69,7 +71,7 @@ async function updateProgrammeDB(programme) {
   const { data: { user } } = await db.auth.getUser();
   if (!user) return;
   const { error } = await db.from('programmes')
-    .update({ name: programme.name, exercises: programme.exercises })
+    .update({ name: programme.name, category: programme.category || 'fonte', exercises: programme.exercises })
     .eq('id', programme.id)
     .eq('client_id', user.id);
   if (error) console.error('updateProgrammeDB error:', error);

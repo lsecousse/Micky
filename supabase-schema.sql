@@ -42,6 +42,7 @@ create table if not exists public.programmes (
   coach_id   uuid references public.profiles(id) on delete cascade,
   client_id  uuid references public.profiles(id) on delete cascade,
   name       text not null,
+  category   text not null default 'fonte' check (category in ('fonte', 'cardio')),
   ordre      int default 0,
   exercises  jsonb default '[]'::jsonb,
   created_at timestamptz default now()
@@ -52,8 +53,9 @@ alter table public.programmes enable row level security;
 create policy "Coach gère ses programmes" on public.programmes
   for all using (auth.uid() = coach_id);
 
-create policy "Client lit ses programmes" on public.programmes
-  for select using (auth.uid() = client_id);
+create policy "Client gère ses programmes" on public.programmes
+  for all using (auth.uid() = client_id)
+  with check (auth.uid() = client_id);
 
 -- 3. Table sessions
 create table if not exists public.sessions (

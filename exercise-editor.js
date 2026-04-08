@@ -229,3 +229,86 @@ function readExerciseCard(card) {
     comment:    card.querySelector('.exercise-comment').value.trim(),
   };
 }
+
+/* ═══════════════════════════════════════════════════════
+   CARDIO EXERCISE EDITOR
+═══════════════════════════════════════════════════════ */
+
+function makeCardioExerciseCard({ name = '', duration = '', power = '', comment = '' } = {}) {
+  const card = document.createElement('div');
+  card.className = 'exercise-card cardio-card';
+
+  const nameRow = document.createElement('div');
+  nameRow.className = 'exercise-name-row';
+  const nameInput = document.createElement('input');
+  nameInput.type = 'text';
+  nameInput.className = 'exercise-name';
+  nameInput.placeholder = 'Nom de la machine';
+  nameInput.maxLength = 60;
+  nameInput.value = name;
+  const removeBtn = document.createElement('button');
+  removeBtn.className = 'btn-danger btn-sm';
+  removeBtn.textContent = 'Suppr.';
+  removeBtn.addEventListener('click', () => card.remove());
+  nameRow.append(nameInput, removeBtn);
+  card.appendChild(nameRow);
+
+  const fieldsRow = document.createElement('div');
+  fieldsRow.className = 'cardio-fields';
+
+  const durWrap = document.createElement('div');
+  durWrap.className = 'cardio-field';
+  const durLabel = document.createElement('span');
+  durLabel.className = 'cardio-field-label';
+  durLabel.textContent = 'Temps';
+  const durInput = document.createElement('input');
+  durInput.type = 'number';
+  durInput.inputMode = 'numeric';
+  durInput.className = 'cardio-duration';
+  durInput.placeholder = '0';
+  durInput.min = '1';
+  durInput.value = duration;
+  const durUnit = document.createElement('span');
+  durUnit.className = 'cardio-field-unit';
+  durUnit.textContent = 'min';
+  durWrap.append(durLabel, durInput, durUnit);
+
+  const powWrap = document.createElement('div');
+  powWrap.className = 'cardio-field';
+  const powLabel = document.createElement('span');
+  powLabel.className = 'cardio-field-label';
+  powLabel.textContent = 'Puissance';
+  const powInput = document.createElement('input');
+  powInput.type = 'number';
+  powInput.inputMode = 'numeric';
+  powInput.className = 'cardio-power';
+  powInput.placeholder = '0';
+  powInput.min = '0';
+  powInput.value = power;
+  const powUnit = document.createElement('span');
+  powUnit.className = 'cardio-field-unit';
+  powUnit.textContent = 'W';
+  powWrap.append(powLabel, powInput, powUnit);
+
+  fieldsRow.append(durWrap, powWrap);
+  card.appendChild(fieldsRow);
+
+  const commentInput = document.createElement('textarea');
+  commentInput.className = 'exercise-comment';
+  commentInput.placeholder = 'Commentaire (visible à la salle)';
+  commentInput.rows = 2;
+  commentInput.value = comment;
+  card.appendChild(commentInput);
+
+  return card;
+}
+
+function readCardioExerciseCard(card) {
+  return {
+    name:     card.querySelector('.exercise-name').value.trim() || 'Sans nom',
+    type:     'cardio',
+    duration: parseInt(card.querySelector('.cardio-duration').value) || 0,
+    power:    parseInt(card.querySelector('.cardio-power').value)    || 0,
+    comment:  card.querySelector('.exercise-comment').value.trim(),
+  };
+}

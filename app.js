@@ -188,50 +188,96 @@ async function renderHome() {
   if (!programmes.length) {
     const msg = document.createElement('p');
     msg.className = 'home-empty';
-    msg.textContent = 'Aucun programme.\nCrées-en un dans Paramètres ⚙';
+    msg.textContent = 'Aucun programme.\nCrées-en un dans Programmes ⚙';
     main.appendChild(msg);
     return;
   }
 
-  if (liveSession) {
-    const card = document.createElement('div');
-    card.className = 'home-resume-card';
-    card.innerHTML = `
-      <span class="home-resume-label">Séance en cours</span>
-      <span class="home-resume-name">${liveSession.programmeName}</span>
-      <span class="home-resume-cta">Tap pour reprendre →</span>
-    `;
-    card.addEventListener('click', () => showScreen('seance'));
-    main.appendChild(card);
-    return;
+  const liveCat = liveSession?.category || null;
+
+  const fonteProgrammes = programmes.filter(p => (p.category || 'fonte') === 'fonte');
+  const cardioProgrammes = programmes.filter(p => p.category === 'cardio');
+
+  // ── Section Fonte ──
+  if (fonteProgrammes.length) {
+    if (liveCat === 'fonte') {
+      const card = document.createElement('div');
+      card.className = 'home-resume-card';
+      card.innerHTML = `
+        <span class="home-resume-label">🏋️ Séance en cours</span>
+        <span class="home-resume-name">${liveSession.programmeName}</span>
+        <span class="home-resume-cta">Tap pour reprendre →</span>
+      `;
+      card.addEventListener('click', () => showScreen('seance'));
+      main.appendChild(card);
+    } else {
+      const { ordered } = await cyclicProgrammes(fonteProgrammes);
+      const next = ordered[0];
+      const seriesCount = next.exercises.reduce((s, e) => s + (e.count ?? e.series?.length ?? 0), 0);
+      const muscles = [...new Set(next.exercises.flatMap(e => migrateExercise(e).activities.map(a => a.name).filter(Boolean)))];
+
+      const card = document.createElement('div');
+      card.className = 'home-next-card';
+      card.innerHTML = `
+        <span class="home-next-label">🏋️ Fonte</span>
+        <span class="home-next-name">${next.name}</span>
+        ${muscles.length ? `<span class="home-next-muscles">${muscles.join(' · ')}</span>` : ''}
+        <span class="home-next-meta">${next.exercises.length} exercice${next.exercises.length > 1 ? 's' : ''} · ${seriesCount} séries</span>
+        <button class="home-next-cta">C'est parti →</button>
+      `;
+      card.querySelector('.home-next-cta').addEventListener('click', () => {
+        startSession(next);
+        showScreen('seance');
+      });
+      main.appendChild(card);
+    }
+    if (fonteProgrammes.length > 1) {
+      const other = document.createElement('button');
+      other.className = 'home-other-btn';
+      other.textContent = '🏋️ Choisir un autre programme fonte';
+      other.addEventListener('click', () => showScreen('seance'));
+      main.appendChild(other);
+    }
   }
 
-  const { ordered, lastSession } = await cyclicProgrammes(programmes);
-  const next = ordered[0];
-  const seriesCount = next.exercises.reduce((s, e) => s + (e.count ?? e.series?.length ?? 0), 0);
-  const muscles = [...new Set(next.exercises.flatMap(e => migrateExercise(e).activities.map(a => a.name).filter(Boolean)))];
+  // ── Section Cardio ──
+  if (cardioProgrammes.length) {
+    if (liveCat === 'cardio') {
+      const card = document.createElement('div');
+      card.className = 'home-resume-card';
+      card.innerHTML = `
+        <span class="home-resume-label">🏃 Séance en cours</span>
+        <span class="home-resume-name">${liveSession.programmeName}</span>
+        <span class="home-resume-cta">Tap pour reprendre →</span>
+      `;
+      card.addEventListener('click', () => showScreen('seance'));
+      main.appendChild(card);
+    } else {
+      const { ordered } = await cyclicProgrammes(cardioProgrammes);
+      const next = ordered[0];
+      const totalDur = next.exercises.reduce((s, e) => s + (e.duration || 0), 0);
 
-  const card = document.createElement('div');
-  card.className = 'home-next-card';
-  card.innerHTML = `
-    <span class="home-next-label">Prochain entraînement</span>
-    <span class="home-next-name">${next.name}</span>
-    ${muscles.length ? `<span class="home-next-muscles">${muscles.join(' · ')}</span>` : ''}
-    <span class="home-next-meta">${next.exercises.length} exercice${next.exercises.length > 1 ? 's' : ''} · ${seriesCount} séries</span>
-    <button class="home-next-cta">C'est parti →</button>
-  `;
-  card.querySelector('.home-next-cta').addEventListener('click', () => {
-    startSession(next);
-    showScreen('seance');
-  });
-  main.appendChild(card);
-
-  if (programmes.length > 1) {
-    const other = document.createElement('button');
-    other.className = 'home-other-btn';
-    other.textContent = 'Choisir un autre programme';
-    other.addEventListener('click', () => showScreen('seance'));
-    main.appendChild(other);
+      const card = document.createElement('div');
+      card.className = 'home-next-card home-next-cardio';
+      card.innerHTML = `
+        <span class="home-next-label">🏃 Cardio</span>
+        <span class="home-next-name">${next.name}</span>
+        <span class="home-next-meta">${next.exercises.length} machine${next.exercises.length > 1 ? 's' : ''} · ${totalDur} min</span>
+        <button class="home-next-cta">C'est parti →</button>
+      `;
+      card.querySelector('.home-next-cta').addEventListener('click', async () => {
+        await startSession(next);
+        showScreen('seance');
+      });
+      main.appendChild(card);
+    }
+    if (cardioProgrammes.length > 1) {
+      const other = document.createElement('button');
+      other.className = 'home-other-btn';
+      other.textContent = '🏃 Choisir un autre programme cardio';
+      other.addEventListener('click', () => showScreen('seance'));
+      main.appendChild(other);
+    }
   }
 }
 
@@ -281,10 +327,10 @@ async function renderProgrammeSelection(tab) {
   if (!programmes.length) {
     const msg = document.createElement('p');
     msg.className = 'empty-msg';
-    msg.textContent = 'Aucun programme. Crées-en un dans Paramètres.';
+    msg.textContent = 'Aucun programme. Crées-en un dans Programmes.';
     const btn = document.createElement('button');
     btn.className = 'btn-secondary btn-full';
-    btn.textContent = '→ Paramètres';
+    btn.textContent = '→ Programmes';
     btn.addEventListener('click', () => showScreen('params'));
     tab.appendChild(msg);
     tab.appendChild(btn);
@@ -336,23 +382,38 @@ function liveSessionSnapshot(durationSecs = 0) {
     id:            liveSession.id,
     programmeId:   liveSession.programmeId,
     programmeName: liveSession.programmeName,
+    category:      liveSession.category || 'fonte',
     date:          liveSession.date,
     startedAt:     liveSession.startedAt,
     duration:      durationSecs,
-    exercises:     liveSession.exercises.map(ex => ({
-      name:       ex.name,
-      comment:    ex.comment || '',
-      activities: ex.activities,
-      series:     ex.series.map(s => ({
-        done: ex.activities.every((_, i) => s.activityStates?.[i] === 'done'),
-        values: s.values,
-      })),
-    })),
+    exercises:     liveSession.exercises.map(ex => {
+      if (ex.type === 'cardio') {
+        return {
+          name:    ex.name,
+          type:    'cardio',
+          comment: ex.comment || '',
+          duration: ex.duration,
+          power:    ex.power,
+          done:     ex.done,
+          state:    ex.state,
+        };
+      }
+      return {
+        name:       ex.name,
+        comment:    ex.comment || '',
+        activities: ex.activities,
+        series:     ex.series.map(s => ({
+          done: ex.activities.every((_, i) => s.activityStates?.[i] === 'done'),
+          values: s.values,
+        })),
+      };
+    }),
   };
 }
 
 async function startSession(programme) {
   requestWakeLock();
+  const isCardio = programme.category === 'cardio';
   const sessions   = await loadSessions();
   const prevSession = sessions
     .filter(s => s.programmeId === programme.id)
@@ -362,27 +423,42 @@ async function startSession(programme) {
     id: generateId(),
     programmeId: programme.id,
     programmeName: programme.name,
+    category: programme.category || 'fonte',
     date: todayIso(),
     startedAt: new Date().toISOString(),
-    exercises: programme.exercises.map(ex => {
-      const m      = migrateExercise(ex);
-      const sets   = ex.sets ?? m.series.length ?? (ex.count ?? 3);
-      const prevEx = prevSession?.exercises?.find(e => e.name === ex.name) || null;
-      return {
-        name:       ex.name,
-        comment:    ex.comment || '',
-        activities: m.activities,
-        prevSeries: prevEx?.series || null,
-        series: Array.from({ length: sets }, () => ({
-          activityStates: {},
-          values: m.activities.map(act =>
-            act.type === 'weight'
-              ? { reps: act.reps || 0, weight: act.weight || 0 }
-              : { duration: act.duration || 0 }
-          ),
-        })),
-      };
-    }),
+    exercises: isCardio
+      ? programme.exercises.map(ex => {
+          const prevEx = prevSession?.exercises?.find(e => e.name === ex.name) || null;
+          return {
+            name:     ex.name,
+            type:     'cardio',
+            comment:  ex.comment || '',
+            duration: ex.duration || 0,
+            power:    ex.power    || 0,
+            done:     { duration: ex.duration || 0, power: ex.power || 0 },
+            prev:     prevEx?.done || null,
+            state:    'pending',
+          };
+        })
+      : programme.exercises.map(ex => {
+          const m      = migrateExercise(ex);
+          const sets   = ex.sets ?? m.series.length ?? (ex.count ?? 3);
+          const prevEx = prevSession?.exercises?.find(e => e.name === ex.name) || null;
+          return {
+            name:       ex.name,
+            comment:    ex.comment || '',
+            activities: m.activities,
+            prevSeries: prevEx?.series || null,
+            series: Array.from({ length: sets }, () => ({
+              activityStates: {},
+              values: m.activities.map(act =>
+                act.type === 'weight'
+                  ? { reps: act.reps || 0, weight: act.weight || 0 }
+                  : { duration: act.duration || 0 }
+              ),
+            })),
+          };
+        }),
   };
   pushSession(liveSessionSnapshot()).catch(() => {});
   renderSeanceScreen();
@@ -400,14 +476,47 @@ function renderLiveSession(tab) {
   `;
   tab.appendChild(header);
 
+  if (liveSession.category === 'cardio') {
+    renderLiveCardio(tab);
+  } else {
+    liveSession.exercises.forEach((ex, exIdx) => {
+      const exDiv = document.createElement('div');
+      exDiv.className = 'live-exercise';
+
+      const exName = document.createElement('div');
+      exName.className = 'live-exercise-name';
+      exName.textContent = ex.name;
+      exDiv.appendChild(exName);
+
+      if (ex.comment) {
+        const exComment = document.createElement('div');
+        exComment.className = 'live-exercise-comment';
+        exComment.textContent = ex.comment;
+        exDiv.appendChild(exComment);
+      }
+
+      ex.series.forEach((s, sIdx) => {
+        ex.activities.forEach((_, actIdx) => {
+          exDiv.appendChild(buildActivityRow(exIdx, sIdx, actIdx));
+        });
+      });
+
+      tab.appendChild(exDiv);
+    });
+  }
+
+  document.getElementById('finish-session').addEventListener('click', finishSession);
+}
+
+function renderLiveCardio(tab) {
   liveSession.exercises.forEach((ex, exIdx) => {
     const exDiv = document.createElement('div');
-    exDiv.className = 'live-exercise';
+    exDiv.className = 'live-exercise live-cardio-exercise';
 
-    const exName = document.createElement('div');
-    exName.className = 'live-exercise-name';
-    exName.textContent = ex.name;
-    exDiv.appendChild(exName);
+    const nameRow = document.createElement('div');
+    nameRow.className = 'live-exercise-name';
+    nameRow.textContent = ex.name;
+    exDiv.appendChild(nameRow);
 
     if (ex.comment) {
       const exComment = document.createElement('div');
@@ -416,16 +525,73 @@ function renderLiveSession(tab) {
       exDiv.appendChild(exComment);
     }
 
-    ex.series.forEach((s, sIdx) => {
-      ex.activities.forEach((_, actIdx) => {
-        exDiv.appendChild(buildActivityRow(exIdx, sIdx, actIdx));
-      });
+    const fieldsRow = document.createElement('div');
+    fieldsRow.className = 'live-cardio-fields';
+
+    // Temps effectué
+    const durWrap = document.createElement('div');
+    durWrap.className = 'live-cardio-field';
+    const durLabel = document.createElement('span');
+    durLabel.className = 'live-cardio-label';
+    durLabel.textContent = 'Temps';
+    const durInput = document.createElement('input');
+    durInput.type = 'number';
+    durInput.inputMode = 'numeric';
+    durInput.className = 'live-cardio-input';
+    durInput.value = ex.done.duration || '';
+    durInput.min = '0';
+    durInput.addEventListener('input', e => {
+      liveSession.exercises[exIdx].done.duration = parseInt(e.target.value) || 0;
     });
+    const durUnit = document.createElement('span');
+    durUnit.className = 'live-cardio-unit';
+    durUnit.textContent = 'min';
+    durWrap.append(durLabel, durInput, durUnit);
+
+    // Puissance
+    const powWrap = document.createElement('div');
+    powWrap.className = 'live-cardio-field';
+    const powLabel = document.createElement('span');
+    powLabel.className = 'live-cardio-label';
+    powLabel.textContent = 'Puissance';
+    const powInput = document.createElement('input');
+    powInput.type = 'number';
+    powInput.inputMode = 'numeric';
+    powInput.className = 'live-cardio-input';
+    powInput.value = ex.done.power || '';
+    powInput.min = '0';
+    powInput.addEventListener('input', e => {
+      liveSession.exercises[exIdx].done.power = parseInt(e.target.value) || 0;
+    });
+    const powUnit = document.createElement('span');
+    powUnit.className = 'live-cardio-unit';
+    powUnit.textContent = 'W';
+    powWrap.append(powLabel, powInput, powUnit);
+
+    fieldsRow.append(durWrap, powWrap);
+    exDiv.appendChild(fieldsRow);
+
+    // Valeurs précédentes
+    if (ex.prev) {
+      const prevSpan = document.createElement('div');
+      prevSpan.className = 'live-cardio-prev';
+      prevSpan.textContent = `Précédent : ${ex.prev.duration || '—'} min · ${ex.prev.power || '—'} W`;
+      exDiv.appendChild(prevSpan);
+    }
+
+    // Bouton état
+    const stateBtn = document.createElement('button');
+    stateBtn.className = `btn-sm live-cardio-state ${ex.state}`;
+    stateBtn.textContent = ex.state === 'done' ? '✓ Fait' : '○ À faire';
+    stateBtn.addEventListener('click', () => {
+      ex.state = ex.state === 'done' ? 'pending' : 'done';
+      stateBtn.textContent = ex.state === 'done' ? '✓ Fait' : '○ À faire';
+      stateBtn.className = `btn-sm live-cardio-state ${ex.state}`;
+    });
+    exDiv.appendChild(stateBtn);
 
     tab.appendChild(exDiv);
   });
-
-  document.getElementById('finish-session').addEventListener('click', finishSession);
 }
 
 /* ── Chrono / Minuterie overlays ───────────────────── */
@@ -1882,7 +2048,7 @@ async function renderParams() {
           <button class="btn-order" data-dir="up" ${idx === 0 ? 'disabled' : ''}>↑</button>
           <button class="btn-order" data-dir="down" ${idx === programmes.length - 1 ? 'disabled' : ''}>↓</button>
         </div>
-        <span class="param-row-name">${prog.name}</span>
+        <span class="param-row-name">${prog.category === 'cardio' ? '🏃' : '🏋️'} ${prog.name}</span>
         <div class="param-row-actions">
           <button class="btn-secondary btn-sm">Modifier</button>
           <button class="btn-danger btn-sm">Suppr.</button>
@@ -1941,40 +2107,79 @@ function openProgrammeEditor(programme = null) {
   nameInput.id = 'prog-name-input';
   tab.appendChild(nameInput);
 
+  const currentCat = programme?.category || 'fonte';
+
+  const catWrap = document.createElement('div');
+  catWrap.className = 'prog-category-toggle';
+
   const exercisesList = document.createElement('div');
   exercisesList.id = 'prog-exercises-list';
   exercisesList.style.display = 'flex';
   exercisesList.style.flexDirection = 'column';
   exercisesList.style.gap = '12px';
-  tab.appendChild(exercisesList);
-
-  if (programme) {
-    programme.exercises.forEach(ex => {
-      const m    = migrateExercise(ex);
-      const acts = m.activities.map(act => ({
-        type:     act.type,
-        label:    act.label    || '',
-        name:     act.name     || '',
-        reps:     act.type === 'weight' ? (act.reps     ?? '') : '',
-        weight:   act.type === 'weight' ? (act.weight   ?? '') : '',
-        duration: act.type !== 'weight' ? (act.duration ?? '') : '',
-        rest:     act.rest ?? '',
-      }));
-      exercisesList.appendChild(makeExerciseCard({
-        name:       ex.name || '',
-        sets:       ex.sets || m.series?.length || ex.count || 3,
-        activities: acts,
-        comment:    ex.comment || '',
-      }));
-    });
-  } else {
-    exercisesList.appendChild(makeExerciseCard());
-  }
 
   const addExBtn = document.createElement('button');
   addExBtn.className = 'btn-secondary btn-full';
   addExBtn.textContent = '+ Exercice';
-  addExBtn.addEventListener('click', () => exercisesList.appendChild(makeExerciseCard()));
+
+  function getActiveCat() {
+    return catWrap.querySelector('.prog-cat-btn.active')?.dataset.cat || 'fonte';
+  }
+
+  function fillExercises(cat, exercises) {
+    exercisesList.innerHTML = '';
+    if (cat === 'cardio') {
+      if (exercises?.length) {
+        exercises.forEach(ex => exercisesList.appendChild(makeCardioExerciseCard({
+          name: ex.name || '', duration: ex.duration ?? '', power: ex.power ?? '', comment: ex.comment || '',
+        })));
+      } else {
+        exercisesList.appendChild(makeCardioExerciseCard());
+      }
+    } else {
+      if (exercises?.length) {
+        exercises.forEach(ex => {
+          const m = migrateExercise(ex);
+          const acts = m.activities.map(act => ({
+            type: act.type, label: act.label || '', name: act.name || '',
+            reps: act.type === 'weight' ? (act.reps ?? '') : '',
+            weight: act.type === 'weight' ? (act.weight ?? '') : '',
+            duration: act.type !== 'weight' ? (act.duration ?? '') : '',
+            rest: act.rest ?? '',
+          }));
+          exercisesList.appendChild(makeExerciseCard({
+            name: ex.name || '', sets: ex.sets || m.series?.length || ex.count || 3,
+            activities: acts, comment: ex.comment || '',
+          }));
+        });
+      } else {
+        exercisesList.appendChild(makeExerciseCard());
+      }
+    }
+  }
+
+  ['fonte', 'cardio'].forEach(cat => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'prog-cat-btn' + (currentCat === cat ? ' active' : '');
+    btn.dataset.cat = cat;
+    btn.textContent = cat === 'fonte' ? '🏋️ Fonte' : '🏃 Cardio';
+    btn.addEventListener('click', () => {
+      if (getActiveCat() === cat) return;
+      catWrap.querySelectorAll('.prog-cat-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      fillExercises(cat, null);
+    });
+    catWrap.appendChild(btn);
+  });
+  tab.appendChild(catWrap);
+
+  fillExercises(currentCat, programme?.exercises);
+  tab.appendChild(exercisesList);
+
+  addExBtn.addEventListener('click', () => {
+    exercisesList.appendChild(getActiveCat() === 'cardio' ? makeCardioExerciseCard() : makeExerciseCard());
+  });
   tab.appendChild(addExBtn);
 
   const saveBtn = document.createElement('button');
@@ -1991,13 +2196,14 @@ async function saveProgrammeFromEditor(existingId) {
   const cards = document.querySelectorAll('#prog-exercises-list .exercise-card');
   if (!cards.length) { showAlert('Ajoute au moins un exercice.'); return; }
 
-  const exercises = Array.from(cards).map(readExerciseCard);
+  const category = document.querySelector('.prog-cat-btn.active')?.dataset.cat || 'fonte';
+  const exercises = Array.from(cards).map(category === 'cardio' ? readCardioExerciseCard : readExerciseCard);
 
   const programmes = await loadProgrammes();
   if (existingId) {
-    await updateProgrammeDB({ id: existingId, name, exercises });
+    await updateProgrammeDB({ id: existingId, name, category, exercises });
   } else {
-    await upsertProgrammeDB({ id: generateId(), name, exercises, ordre: programmes.length });
+    await upsertProgrammeDB({ id: crypto.randomUUID(), name, category, exercises, ordre: programmes.length });
   }
   await renderParams();
 }
