@@ -1,7 +1,7 @@
 /* ═══════════════════════════════════════════════════════
    VERSION
 ═══════════════════════════════════════════════════════ */
-const APP_VERSION = '2026.avril.06';
+const APP_VERSION = '2026.avril.08';
 document.querySelectorAll('.app-version').forEach(el => el.textContent = APP_VERSION);
 
 /* ═══════════════════════════════════════════════════════
@@ -1034,6 +1034,7 @@ async function renderCorps() {
   grid.className = 'corps-grid';
 
   const inputs = {};
+  const diffSpans = {};
   fields.forEach(({ key, label, unit, step }) => {
     const cell = document.createElement('div');
     cell.className = 'corps-field';
@@ -1054,9 +1055,60 @@ async function renderCorps() {
     unitSpan.className = 'corps-field-unit';
     unitSpan.textContent = unit;
     row.append(inp, unitSpan);
+    if (key === 'poids' || key === 'masseGrasse') {
+      const diff = document.createElement('span');
+      diff.className = 'corps-field-diff';
+      diffSpans[key] = diff;
+      row.appendChild(diff);
+    }
     cell.append(lbl, row);
     grid.appendChild(cell);
   });
+
+  // Mapping DB snake_case → form camelCase
+  const dbToForm = { poids: 'poids', masse_grasse: 'masseGrasse', eau: 'eau', muscle: 'muscle', graisse: 'graisse', os: 'os' };
+
+  let editingId = null;
+
+  function fillFormForDate(date) {
+    const existing = measurements.find(m => m.date === date);
+    // Trouver la mesure précédente (date < date sélectionnée)
+    const prev = measurements.find(m => m.date < date);
+
+    if (existing) {
+      editingId = existing.id;
+      for (const [dbKey, formKey] of Object.entries(dbToForm)) {
+        inputs[formKey].value = existing[dbKey] ?? '';
+      }
+    } else {
+      editingId = null;
+      for (const formKey of Object.values(dbToForm)) {
+        inputs[formKey].value = '';
+      }
+    }
+
+    // Afficher les diffs poids / masse grasse
+    showDiff('poids', existing, prev);
+    showDiff('masseGrasse', existing, prev);
+  }
+
+  function showDiff(formKey, current, prev) {
+    const span = diffSpans[formKey];
+    if (!span) return;
+    span.textContent = '';
+    span.className = 'corps-field-diff';
+    const dbKey = formKey === 'masseGrasse' ? 'masse_grasse' : formKey;
+    const cur = current?.[dbKey];
+    const prv = prev?.[dbKey];
+    if (cur == null || prv == null) return;
+    const delta = +(cur - prv).toFixed(1);
+    if (delta === 0) return;
+    span.textContent = (delta > 0 ? '+' : '') + delta;
+    span.classList.add(delta > 0 ? 'diff-up' : 'diff-down');
+  }
+
+  fillFormForDate(dateInput.value);
+  dateInput.addEventListener('change', () => fillFormForDate(dateInput.value));
 
   // Auto-calcul % graisse ↔ masse grasse
   const syncGraisse = () => {
@@ -1079,7 +1131,7 @@ async function renderCorps() {
   saveBtn.textContent = 'Enregistrer';
   saveBtn.addEventListener('click', async () => {
     const m = {
-      id:          generateId(),
+      id:          editingId || crypto.randomUUID(),
       date:        dateInput.value || todayIso(),
       poids:       parseFloat(inputs.poids.value)       || null,
       masseGrasse: parseFloat(inputs.masseGrasse.value) || null,

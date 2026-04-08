@@ -115,8 +115,8 @@ async function loadBodyMeasurementsDB() {
 async function pushBodyMeasurementDB(m) {
   const { data: { user } } = await db.auth.getUser();
   if (!user) return;
-  await db.from('body_measurements').upsert({
-    id:          m.id,
+  const { error } = await db.from('body_measurements').upsert({
+    id:          m.id ?? crypto.randomUUID(),
     client_id:   user.id,
     date:        m.date,
     poids:       m.poids       ?? null,
@@ -126,6 +126,7 @@ async function pushBodyMeasurementDB(m) {
     graisse:     m.graisse     ?? null,
     os:          m.os          ?? null,
   });
+  if (error) console.error('pushBodyMeasurementDB error:', error);
 }
 
 async function deleteBodyMeasurementDB(id) {
