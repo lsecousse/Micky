@@ -17,6 +17,7 @@ create table if not exists public.profiles (
   nom        text default '',
   prenom     text default '',
   coach_id   uuid references public.profiles(id) on delete set null,
+  state      text not null default 'new' check (state in ('new', 'invited', 'password_created', 'connected')),
   created_at timestamptz default now()
 );
 
@@ -62,6 +63,7 @@ create table if not exists public.sessions (
   id             text primary key,
   client_id      uuid references public.profiles(id) on delete cascade,
   programme_name text,
+  programme_id   text,
   date           text,
   started_at     text,
   duration       int,
@@ -82,7 +84,36 @@ create policy "Coach lit les séances clients" on public.sessions
     )
   );
 
--- 4. Trigger : créer le profil automatiquement après inscription
+-- 4. Table body_measurements
+create table if not exists public.body_measurements (
+  id           uuid default gen_random_uuid() primary key,
+  client_id    uuid references auth.users(id) on delete cascade,
+  date         date not null,
+  poids        numeric,
+  masse_grasse numeric,
+  eau          numeric,
+  muscle       numeric,
+  graisse      numeric,
+  os           numeric,
+  created_at   timestamptz default now()
+);
+
+alter table public.body_measurements enable row level security;
+
+create policy "users manage own measurements" on public.body_measurements
+  for all using (auth.uid() = client_id)
+  with check (auth.uid() = client_id);
+
+-- Un coach peut lire les mesures de ses clients
+create policy "Coach lit les mesures clients" on public.body_measurements
+  for select using (
+    exists (
+      select 1 from public.profiles p
+      where p.id = body_measurements.client_id and p.coach_id = auth.uid()
+    )
+  );
+
+-- 5. Trigger : créer le profil automatiquement après inscription
 create or replace function public.handle_new_user()
 returns trigger
 language plpgsql

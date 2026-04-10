@@ -1846,12 +1846,12 @@ function buildStatsFrequency(sessions) {
 }
 
 async function buildStatsProgression(sessions) {
-  const section = statsSection('Machines');
+  const section = statsSection('Progression par exercice');
 
   const names = [...new Set(sessions.flatMap(s => s.exercises.map(e => e.name)))].sort();
   if (!names.length) return section;
 
-  // Calcul des données par exercice (max poids parmi les activités weight)
+  // Calcul des données par exercice — poids max + volume par séance
   const machineData = names.map(name => {
     let muscle = '';
     const points = sessions.map(s => {
@@ -1859,27 +1859,29 @@ async function buildStatsProgression(sessions) {
       if (!ex) return null;
       const e = migrateExercise(ex);
       if (!muscle && e.activities?.[0]?.name) muscle = e.activities[0].name;
-      const weights = e.series
-        .filter(se => se.done !== false)
-        .flatMap(set => e.activities.map((act, i) =>
-          act.type === 'weight' ? (set.values?.[i]?.weight || 0) : 0
-        ))
-        .filter(w => w > 0);
-      if (!weights.length) return null;
-      return { date: s.date, weight: Math.max(...weights) };
+      let maxWeight = 0, volume = 0, maxReps = 0;
+      e.series.filter(se => se.done !== false).forEach(set => {
+        e.activities.forEach((act, i) => {
+          if (act.type !== 'weight') return;
+          const v = set.values?.[i] || {};
+          const w = v.weight || 0, r = v.reps || 0;
+          if (w > maxWeight) maxWeight = w;
+          if (r > maxReps) maxReps = r;
+          volume += w * r;
+        });
+      });
+      if (!maxWeight && !volume) return null;
+      return { date: s.date, weight: maxWeight, volume, reps: maxReps };
     }).filter(Boolean);
     return { name, muscle, points };
   }).filter(d => d.points.length >= 1);
 
   if (!machineData.length) return section;
 
-  // Muscles uniques triés, avec "Tous" en premier
+  // Muscles pills
   const muscles = ['Tous', ...[...new Set(machineData.map(d => d.muscle).filter(Boolean))].sort()];
-
-  // Sélecteur muscle — pills
   const pills = document.createElement('div');
   pills.className = 'stats-pills';
-  let activeMuscle = 'Tous';
   muscles.forEach(m => {
     const pill = document.createElement('button');
     pill.className = 'stats-pill' + (m === 'Tous' ? ' active' : '');
@@ -1889,92 +1891,180 @@ async function buildStatsProgression(sessions) {
   });
   section.appendChild(pills);
 
-  // Shim select pour réutiliser le listener existant
-  const select = { value: 'Tous', addEventListener: (ev, fn) => { select._fn = fn; } };
+  // Exercise swap selector
+  const swapBar = document.createElement('div');
+  swapBar.className = 'stats-swap';
+  const prevBtn = document.createElement('button');
+  prevBtn.className = 'stats-swap-btn';
+  prevBtn.textContent = '‹';
+  const swapName = document.createElement('span');
+  swapName.className = 'stats-swap-name';
+  const nextBtn = document.createElement('button');
+  nextBtn.className = 'stats-swap-btn';
+  nextBtn.textContent = '›';
+  swapBar.appendChild(prevBtn);
+  swapBar.appendChild(swapName);
+  swapBar.appendChild(nextBtn);
+  section.appendChild(swapBar);
 
-  let current = 0;
+  const swapCounter = document.createElement('div');
+  swapCounter.className = 'stats-swap-counter';
+  section.appendChild(swapCounter);
+
+  // Metric toggle (poids / volume / reps)
+  const metricPills = document.createElement('div');
+  metricPills.className = 'stats-metric-pills';
+  ['Poids max', 'Volume', 'Reps max'].forEach((label, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'stats-metric-pill' + (i === 0 ? ' active' : '');
+    btn.textContent = label;
+    btn.dataset.metric = ['weight', 'volume', 'reps'][i];
+    metricPills.appendChild(btn);
+  });
+  section.appendChild(metricPills);
+
+  // Graph container
+  const graphWrap = document.createElement('div');
+  graphWrap.className = 'stats-graph-wrap';
+  section.appendChild(graphWrap);
+
+  // Summary line
+  const summaryLine = document.createElement('div');
+  summaryLine.className = 'stats-progression-summary';
+  section.appendChild(summaryLine);
+
   let filtered = machineData;
+  let activeMetric = 'weight';
+  let currentIdx = 0;
 
-  // Conteneur carousel
-  const carousel = document.createElement('div');
-  carousel.className = 'stats-carousel';
+  function updateSwapUI() {
+    const data = filtered[currentIdx];
+    swapName.textContent = data ? data.name : '—';
+    swapCounter.textContent = filtered.length > 1 ? `${currentIdx + 1} / ${filtered.length}` : '';
+    prevBtn.disabled = currentIdx <= 0;
+    nextBtn.disabled = currentIdx >= filtered.length - 1;
+  }
 
-  const track = document.createElement('div');
-  track.className = 'stats-carousel-track';
+  function populateSelect(data) {
+    currentIdx = 0;
+    updateSwapUI();
+  }
 
-  const buildCards = (data) => {
-    track.innerHTML = '';
-    data.forEach(({ name, muscle, points }) => {
-      const card = document.createElement('div');
-      card.className = 'stats-machine-card';
+  function metricUnit(metric) {
+    return metric === 'weight' ? 'kg' : metric === 'volume' ? 'kg' : 'reps';
+  }
 
-      const startW  = points[0].weight;
-    const currentW = points[points.length - 1].weight;
-    const delta   = currentW - startW;
-    const deltaStr = delta === 0 ? '=' : `${delta > 0 ? '+' : ''}${delta.toFixed(1)} kg`;
+  function metricValue(pt, metric) {
+    return metric === 'weight' ? pt.weight : metric === 'volume' ? pt.volume : pt.reps;
+  }
+
+  function renderGraph() {
+    graphWrap.innerHTML = '';
+    summaryLine.innerHTML = '';
+    updateSwapUI();
+    const data = filtered[currentIdx];
+    if (!data) { graphWrap.innerHTML = '<p class="stats-no-data">Aucune donnée</p>'; return; }
+
+    const points = data.points;
+    const unit = metricUnit(activeMetric);
+    const vals = points.map(p => metricValue(p, activeMetric));
+
+    // Summary
+    const first = vals[0], last = vals[vals.length - 1];
+    const delta = last - first;
+    const deltaStr = delta === 0 ? '=' : `${delta > 0 ? '+' : ''}${activeMetric === 'volume' ? Math.round(delta) : delta.toFixed(1)} ${unit}`;
     const deltaClass = delta > 0 ? 'up' : delta < 0 ? 'down' : 'neutral';
+    summaryLine.innerHTML = `
+      <span class="stats-prog-start">${activeMetric === 'volume' ? Math.round(first) : first} ${unit}</span>
+      <span class="stats-machine-arrow">→</span>
+      <span class="stats-prog-current">${activeMetric === 'volume' ? Math.round(last) : last} ${unit}</span>
+      <span class="stats-delta ${deltaClass}">${deltaStr}</span>
+    `;
 
-    let svgHtml = '';
-    if (points.length >= 2) {
-      const W = 280, H = 90;
-      const minW = Math.min(...points.map(p => p.weight));
-      const maxW = Math.max(...points.map(p => p.weight));
-      const range = maxW - minW || 1;
-      const pad = { t: 10, b: 22, l: 34, r: 8 };
-      const x = i => pad.l + (i / (points.length - 1)) * (W - pad.l - pad.r);
-      const y = w => pad.t + (1 - (w - minW) / range) * (H - pad.t - pad.b);
-      const path = points.map((p, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(p.weight).toFixed(1)}`).join(' ');
-      svgHtml = `
-        <svg viewBox="0 0 ${W} ${H}" class="stats-svg">
-          <line x1="${pad.l}" y1="${pad.t}" x2="${pad.l}" y2="${H-pad.b}" stroke="#2a2a2a" stroke-width="1"/>
-          <line x1="${pad.l}" y1="${H-pad.b}" x2="${W-pad.r}" y2="${H-pad.b}" stroke="#2a2a2a" stroke-width="1"/>
-          <text x="${pad.l-4}" y="${y(maxW)+4}" text-anchor="end" font-size="9" fill="#555">${maxW}kg</text>
-          <text x="${pad.l-4}" y="${y(minW)+4}" text-anchor="end" font-size="9" fill="#555">${minW}kg</text>
-          <path d="${path}" fill="none" stroke="#9A7A30" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
-          ${points.map((p,i) => `<circle cx="${x(i).toFixed(1)}" cy="${y(p.weight).toFixed(1)}" r="2.5" fill="#9A7A30"/>`).join('')}
-          <text x="${x(0)}" y="${H}" text-anchor="middle" font-size="9" fill="#555">${points[0].date.slice(5)}</text>
-          <text x="${x(points.length-1)}" y="${H}" text-anchor="middle" font-size="9" fill="#555">${points[points.length-1].date.slice(5)}</text>
-        </svg>`;
+    if (points.length < 2) {
+      graphWrap.innerHTML = '<p class="stats-no-data">Pas assez de données pour un graphique</p>';
+      return;
     }
 
-      card.innerHTML = `
-        <div class="stats-machine-name">${name}</div>
-        ${muscle ? `<div class="stats-machine-muscle">${muscle}</div>` : ''}
-        <div class="stats-machine-weights">
-          <span class="stats-machine-weight-item"><span class="stats-weight-lbl">Départ</span><span class="stats-weight-val">${startW} kg</span></span>
-          <span class="stats-machine-arrow">→</span>
-          <span class="stats-machine-weight-item"><span class="stats-weight-lbl">Actuel</span><span class="stats-weight-val stats-weight-val--current">${currentW} kg</span></span>
-          <span class="stats-delta ${deltaClass}">${deltaStr}</span>
-        </div>
-        ${svgHtml}
-      `;
-      track.appendChild(card);
-    });
-  };
+    const W = 340, H = 180;
+    const minV = Math.min(...vals);
+    const maxV = Math.max(...vals);
+    const range = maxV - minV || 1;
+    const pad = { t: 16, b: 34, l: 44, r: 12 };
+    const x = i => pad.l + (i / (points.length - 1)) * (W - pad.l - pad.r);
+    const y = v => pad.t + (1 - (v - minV) / range) * (H - pad.t - pad.b);
 
-  buildCards(machineData);
+    // Grid lines (3 horizontal)
+    const gridLines = [minV, minV + range / 2, maxV];
+    const gridSvg = gridLines.map(v =>
+      `<line x1="${pad.l}" y1="${y(v).toFixed(1)}" x2="${W - pad.r}" y2="${y(v).toFixed(1)}" stroke="#1a1a1a" stroke-width="1"/>
+       <text x="${pad.l - 6}" y="${y(v).toFixed(1)}" dy="3.5" text-anchor="end" font-size="10" fill="#555">${activeMetric === 'volume' ? Math.round(v) : v}${unit === 'reps' ? '' : ''}</text>`
+    ).join('');
 
-  // Dots
-  const dots = document.createElement('div');
-  dots.className = 'stats-carousel-dots';
+    // Area fill
+    const areaPath = `M${x(0).toFixed(1)},${y(vals[0]).toFixed(1)} ` +
+      vals.map((v, i) => `L${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' ') +
+      ` L${x(vals.length - 1).toFixed(1)},${H - pad.b} L${x(0).toFixed(1)},${H - pad.b} Z`;
 
-  const rebuildDots = (count) => {
-    dots.innerHTML = '';
-    for (let i = 0; i < count; i++) {
-      const dot = document.createElement('span');
-      dot.className = 'stats-dot' + (i === 0 ? ' active' : '');
-      dot.addEventListener('click', () => goTo(i));
-      dots.appendChild(dot);
-    }
-  };
+    const linePath = vals.map((v, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' ');
 
-  const goTo = (idx) => {
-    current = Math.max(0, Math.min(idx, filtered.length - 1));
-    track.style.transform = `translateX(calc(-${current} * 100%))`;
-    dots.querySelectorAll('.stats-dot').forEach((d, i) => d.classList.toggle('active', i === current));
-  };
+    // Date labels — first, middle, last
+    const dateIdxs = [0, Math.floor(points.length / 2), points.length - 1].filter((v, i, a) => a.indexOf(v) === i);
+    const dateLbls = dateIdxs.map(i =>
+      `<text x="${x(i).toFixed(1)}" y="${H - 6}" text-anchor="middle" font-size="10" fill="#555">${points[i].date.slice(5).replace('-', '/')}</text>`
+    ).join('');
 
-  rebuildDots(machineData.length);
+    const circlesSvg = vals.map((v, i) =>
+      `<circle cx="${x(i).toFixed(1)}" cy="${y(v).toFixed(1)}" r="3.5" fill="#9A7A30" stroke="#0f0f0f" stroke-width="1.5"/>`
+    ).join('');
+
+    graphWrap.innerHTML = `
+      <svg viewBox="0 0 ${W} ${H}" class="stats-svg stats-svg--large">
+        <defs>
+          <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#9A7A30" stop-opacity="0.3"/>
+            <stop offset="100%" stop-color="#9A7A30" stop-opacity="0.02"/>
+          </linearGradient>
+        </defs>
+        <line x1="${pad.l}" y1="${pad.t}" x2="${pad.l}" y2="${H - pad.b}" stroke="#2a2a2a" stroke-width="1"/>
+        <line x1="${pad.l}" y1="${H - pad.b}" x2="${W - pad.r}" y2="${H - pad.b}" stroke="#2a2a2a" stroke-width="1"/>
+        ${gridSvg}
+        <path d="${areaPath}" fill="url(#areaGrad)"/>
+        <path d="${linePath}" fill="none" stroke="#9A7A30" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+        ${circlesSvg}
+        ${dateLbls}
+      </svg>
+    `;
+  }
+
+  populateSelect(machineData);
+  renderGraph();
+
+  prevBtn.addEventListener('click', () => {
+    if (currentIdx > 0) { currentIdx--; renderGraph(); }
+  });
+  nextBtn.addEventListener('click', () => {
+    if (currentIdx < filtered.length - 1) { currentIdx++; renderGraph(); }
+  });
+
+  // Swipe support (mobile)
+  let touchStartX = 0;
+  graphWrap.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; }, { passive: true });
+  graphWrap.addEventListener('touchend', e => {
+    const dx = e.changedTouches[0].clientX - touchStartX;
+    if (Math.abs(dx) < 40) return;
+    if (dx < 0 && currentIdx < filtered.length - 1) { currentIdx++; renderGraph(); }
+    else if (dx > 0 && currentIdx > 0) { currentIdx--; renderGraph(); }
+  }, { passive: true });
+
+  metricPills.addEventListener('click', e => {
+    const btn = e.target.closest('.stats-metric-pill');
+    if (!btn) return;
+    metricPills.querySelectorAll('.stats-metric-pill').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    activeMetric = btn.dataset.metric;
+    renderGraph();
+  });
 
   pills.addEventListener('click', e => {
     const pill = e.target.closest('.stats-pill');
@@ -1983,25 +2073,10 @@ async function buildStatsProgression(sessions) {
     pill.classList.add('active');
     const muscle = pill.dataset.muscle;
     filtered = muscle === 'Tous' ? machineData : machineData.filter(d => d.muscle === muscle);
-    current = 0;
-    track.style.transition = 'none';
-    track.style.transform = 'translateX(0)';
-    buildCards(filtered);
-    rebuildDots(filtered.length);
-    setTimeout(() => { track.style.transition = ''; }, 50);
+    populateSelect(filtered);
+    renderGraph();
   });
 
-  // Swipe touch
-  let touchStartX = 0;
-  carousel.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; }, { passive: true });
-  carousel.addEventListener('touchend', e => {
-    const delta = touchStartX - e.changedTouches[0].clientX;
-    if (Math.abs(delta) > 40) goTo(current + (delta > 0 ? 1 : -1));
-  });
-
-  carousel.appendChild(track);
-  carousel.appendChild(dots);
-  section.appendChild(carousel);
   return section;
 }
 
@@ -2258,6 +2333,9 @@ function renderLogin() {
     currentUser = data.user;
     const profile = await getMyProfile();
     if (profile?.role === 'coach') { window.location.href = 'backoffice.html'; return; }
+    if (profile?.state && profile.state !== 'connected') {
+      await db.from('profiles').update({ state: 'connected' }).eq('id', currentUser.id);
+    }
     currentProfile = profile;
     showScreen('home');
   });

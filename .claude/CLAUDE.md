@@ -2,6 +2,10 @@
 
 Application de suivi de séances de musculation, optimisée iPhone et Android.
 
+## Plateformes
+- **index.html / app.js** → WebApp mobile (iPhone/Android), interactions tactiles (swipe, tap)
+- **backoffice.html / backoffice.js** → Interface coach sur PC, interactions souris/clavier (clic, flèches)
+
 ## Structure cible
 ```
 gym-tracker/

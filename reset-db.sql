@@ -6,11 +6,13 @@
 -- ====================================================
 
 -- 1. Supprimer les données
+truncate table public.body_measurements restart identity cascade;
 truncate table public.sessions  restart identity cascade;
 truncate table public.programmes restart identity cascade;
 truncate table public.profiles   restart identity cascade;
 
 -- 2. Supprimer les tables (pour repartir d'un schéma propre)
+drop table if exists public.body_measurements cascade;
 drop table if exists public.sessions   cascade;
 drop table if exists public.programmes cascade;
 drop table if exists public.profiles   cascade;
@@ -32,6 +34,7 @@ create table public.profiles (
   nom        text default '',
   prenom     text default '',
   coach_id   uuid references public.profiles(id) on delete set null,
+  state      text not null default 'new' check (state in ('new', 'invited', 'password_created', 'connected')),
   created_at timestamptz default now()
 );
 
@@ -54,6 +57,7 @@ create table public.programmes (
   coach_id   uuid references public.profiles(id) on delete cascade,
   client_id  uuid references public.profiles(id) on delete cascade,
   name       text not null,
+  category   text not null default 'fonte' check (category in ('fonte', 'cardio')),
   ordre      int default 0,
   exercises  jsonb default '[]'::jsonb,
   created_at timestamptz default now()
@@ -72,6 +76,7 @@ create table public.sessions (
   id             text primary key,
   client_id      uuid references public.profiles(id) on delete cascade,
   programme_name text,
+  programme_id   text,
   date           text,
   started_at     text,
   duration       int,
@@ -92,7 +97,27 @@ create policy "Coach lit les séances clients" on public.sessions
     )
   );
 
--- 7. Trigger : créer le profil automatiquement après inscription
+-- 7. Table body_measurements
+create table public.body_measurements (
+  id           uuid default gen_random_uuid() primary key,
+  client_id    uuid references auth.users(id) on delete cascade,
+  date         date not null,
+  poids        numeric,
+  masse_grasse numeric,
+  eau          numeric,
+  muscle       numeric,
+  graisse      numeric,
+  os           numeric,
+  created_at   timestamptz default now()
+);
+
+alter table public.body_measurements enable row level security;
+
+create policy "users manage own measurements" on public.body_measurements
+  for all using (auth.uid() = client_id)
+  with check (auth.uid() = client_id);
+
+-- 8. Trigger : créer le profil automatiquement après inscription
 create or replace function public.handle_new_user()
 returns trigger
 language plpgsql
@@ -110,7 +135,7 @@ create trigger on_auth_user_created
   after insert on auth.users
   for each row execute procedure public.handle_new_user();
 
--- 8. Fonction RPC pour lier un client à un coach (bypass RLS)
+-- 9. Fonction RPC pour lier un client à un coach (bypass RLS)
 create or replace function public.link_client_to_coach(p_client_id uuid, p_coach_id uuid)
 returns void
 language plpgsql
