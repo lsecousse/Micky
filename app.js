@@ -1,7 +1,7 @@
 /* ═══════════════════════════════════════════════════════
    VERSION
 ═══════════════════════════════════════════════════════ */
-const APP_VERSION = '2026.avril.08';
+const APP_VERSION = '2026.avril.10';
 document.querySelectorAll('.app-version').forEach(el => el.textContent = APP_VERSION);
 
 /* ═══════════════════════════════════════════════════════
@@ -213,7 +213,7 @@ async function renderHome() {
     } else {
       const { ordered } = await cyclicProgrammes(fonteProgrammes);
       const next = ordered[0];
-      const seriesCount = next.exercises.reduce((s, e) => s + (e.count ?? e.series?.length ?? 0), 0);
+      const seriesCount = next.exercises.reduce((s, e) => s + (e.sets || e.count || e.series?.length || 3), 0);
       const muscles = [...new Set(next.exercises.flatMap(e => migrateExercise(e).activities.map(a => a.name).filter(Boolean)))];
 
       const card = document.createElement('div');
@@ -223,10 +223,9 @@ async function renderHome() {
         <span class="home-next-name">${next.name}</span>
         ${muscles.length ? `<span class="home-next-muscles">${muscles.join(' · ')}</span>` : ''}
         <span class="home-next-meta">${next.exercises.length} exercice${next.exercises.length > 1 ? 's' : ''} · ${seriesCount} séries</span>
-        <button class="home-next-cta">C'est parti →</button>
       `;
-      card.querySelector('.home-next-cta').addEventListener('click', () => {
-        startSession(next);
+      card.addEventListener('click', async () => {
+        await startSession(next);
         showScreen('seance');
       });
       main.appendChild(card);
@@ -263,9 +262,8 @@ async function renderHome() {
         <span class="home-next-label">🏃 Cardio</span>
         <span class="home-next-name">${next.name}</span>
         <span class="home-next-meta">${next.exercises.length} machine${next.exercises.length > 1 ? 's' : ''} · ${totalDur} min</span>
-        <button class="home-next-cta">C'est parti →</button>
       `;
-      card.querySelector('.home-next-cta').addEventListener('click', async () => {
+      card.addEventListener('click', async () => {
         await startSession(next);
         showScreen('seance');
       });
@@ -612,8 +610,6 @@ function openChronoOverlay(exIdx, sIdx, actIdx, row) {
   let   stopBtn = document.getElementById('chrono-stop');
   if (!overlay || !display || !stopBtn) return;
 
-  const startTime = Date.now();
-  display.textContent = '00:00';
   const nameEl = document.getElementById('chrono-exercise-name');
   if (nameEl) {
     const ex = liveSession.exercises[exIdx];
@@ -621,7 +617,44 @@ function openChronoOverlay(exIdx, sIdx, actIdx, row) {
     const actName = ex.activities.length > 1 ? (act?.label || act?.name) : null;
     nameEl.textContent = [ex?.name, actName].filter(Boolean).join(' - ');
   }
+
   overlay.classList.remove('hidden');
+
+  // Remplace le bouton stop pour nettoyer les anciens listeners
+  const newStop = stopBtn.cloneNode(true);
+  stopBtn.parentNode.replaceChild(newStop, stopBtn);
+  newStop.style.display = 'none';
+
+  // Compte à rebours 3-2-1 avant le chrono
+  let countdown = 3;
+  display.textContent = countdown;
+  display.classList.add('chrono-countdown-active');
+  const countdownInterval = setInterval(() => {
+    countdown--;
+    if (countdown > 0) {
+      display.textContent = countdown;
+    } else {
+      clearInterval(countdownInterval);
+      display.classList.remove('chrono-countdown-active');
+      startChrono(exIdx, sIdx, actIdx, row, display, newStop);
+    }
+  }, 1000);
+
+  newStop.addEventListener('click', () => {
+    clearInterval(countdownInterval);
+    display.classList.remove('chrono-countdown-active');
+    if (currentChronoCtx) {
+      stopChronoOverlay();
+    } else {
+      overlay.classList.add('hidden');
+    }
+  });
+}
+
+function startChrono(exIdx, sIdx, actIdx, row, display, stopBtn) {
+  const startTime = Date.now();
+  display.textContent = '00:00';
+  stopBtn.style.display = '';
 
   currentChronoCtx = { exIdx, sIdx, actIdx, startTime, row };
 
@@ -629,10 +662,6 @@ function openChronoOverlay(exIdx, sIdx, actIdx, row) {
     const el = document.getElementById('chrono-display');
     if (el) el.textContent = formatSeconds(Math.floor((Date.now() - startTime) / 1000));
   }, 500);
-
-  const newStop = stopBtn.cloneNode(true);
-  stopBtn.parentNode.replaceChild(newStop, stopBtn);
-  newStop.addEventListener('click', () => stopChronoOverlay());
 }
 
 function stopChronoOverlay() {
