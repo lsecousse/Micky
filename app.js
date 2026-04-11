@@ -89,7 +89,15 @@ function formatDuration(seconds) {
 function stateIcon(state) {
   if (state === 'done') return '✓';
   if (state === 'active') return '▶';
+  if (state === 'locked') return '🔒';
   return '○';
+}
+
+function isSeriesLocked(exIdx, sIdx) {
+  if (sIdx === 0) return false;
+  const ex = liveSession.exercises[exIdx];
+  const prevSet = ex.series[sIdx - 1];
+  return !ex.activities.every((_, i) => prevSet.activityStates?.[i] === 'done');
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -156,12 +164,10 @@ document.getElementById('back-stats').addEventListener('click',   () => showScre
 document.getElementById('back-params').addEventListener('click',  () => showScreen('home'));
 document.getElementById('back-seance').addEventListener('click', () => {
   if (liveSession) {
-    showConfirm('Abandonner la séance en cours ?', () => {
-      stopAllChronos();
-      liveSession = null;
-      stopCountdown();
-      showScreen('home');
-    });
+    stopAllChronos();
+    stopCountdown();
+    pushSession(liveSessionSnapshot()).catch(() => {});
+    showScreen('home');
   } else {
     showScreen('home');
   }
@@ -204,11 +210,26 @@ async function renderHome() {
       const card = document.createElement('div');
       card.className = 'home-resume-card';
       card.innerHTML = `
-        <span class="home-resume-label">🏋️ Séance en cours</span>
-        <span class="home-resume-name">${liveSession.programmeName}</span>
-        <span class="home-resume-cta">Tap pour reprendre →</span>
+        <button class="home-resume-icon home-resume-icon--delete" title="Supprimer">🗑</button>
+        <div class="home-resume-center">
+          <span class="home-resume-label">🏋️ Séance en cours</span>
+          <span class="home-resume-name">${liveSession.programmeName}</span>
+        </div>
+        <button class="home-resume-icon home-resume-icon--finish" title="Terminer">✅</button>
       `;
-      card.addEventListener('click', () => showScreen('seance'));
+      card.querySelector('.home-resume-center').addEventListener('click', () => showScreen('seance'));
+      card.querySelector('.home-resume-icon--delete').addEventListener('click', (e) => {
+        e.stopPropagation();
+        showConfirm('Supprimer cette séance ?', async () => {
+          await deleteSessionDB(liveSession.id);
+          liveSession = null;
+          showScreen('home');
+        });
+      });
+      card.querySelector('.home-resume-icon--finish').addEventListener('click', (e) => {
+        e.stopPropagation();
+        finishSession();
+      });
       main.appendChild(card);
     } else {
       const { ordered } = await cyclicProgrammes(fonteProgrammes);
@@ -245,11 +266,26 @@ async function renderHome() {
       const card = document.createElement('div');
       card.className = 'home-resume-card';
       card.innerHTML = `
-        <span class="home-resume-label">🏃 Séance en cours</span>
-        <span class="home-resume-name">${liveSession.programmeName}</span>
-        <span class="home-resume-cta">Tap pour reprendre →</span>
+        <button class="home-resume-icon home-resume-icon--delete" title="Supprimer">🗑</button>
+        <div class="home-resume-center">
+          <span class="home-resume-label">🏃 Séance en cours</span>
+          <span class="home-resume-name">${liveSession.programmeName}</span>
+        </div>
+        <button class="home-resume-icon home-resume-icon--finish" title="Terminer">✅</button>
       `;
-      card.addEventListener('click', () => showScreen('seance'));
+      card.querySelector('.home-resume-center').addEventListener('click', () => showScreen('seance'));
+      card.querySelector('.home-resume-icon--delete').addEventListener('click', (e) => {
+        e.stopPropagation();
+        showConfirm('Supprimer cette séance ?', async () => {
+          await deleteSessionDB(liveSession.id);
+          liveSession = null;
+          showScreen('home');
+        });
+      });
+      card.querySelector('.home-resume-icon--finish').addEventListener('click', (e) => {
+        e.stopPropagation();
+        finishSession();
+      });
       main.appendChild(card);
     } else {
       const { ordered } = await cyclicProgrammes(cardioProgrammes);
@@ -402,6 +438,7 @@ function liveSessionSnapshot(durationSecs = 0) {
         activities: ex.activities,
         series:     ex.series.map(s => ({
           done: ex.activities.every((_, i) => s.activityStates?.[i] === 'done'),
+          activityStates: s.activityStates || {},
           values: s.values,
         })),
       };
@@ -736,18 +773,23 @@ function buildActivityRow(exIdx, sIdx, actIdx) {
   const v   = set.values?.[actIdx] || {};
 
   if (!set.activityStates) set.activityStates = {};
-  if (set.activityStates[actIdx] === undefined) set.activityStates[actIdx] = 'pending';
+  if (set.activityStates[actIdx] === undefined) {
+    // Backward compat: if series was marked done before activityStates existed
+    set.activityStates[actIdx] = (set.done || set.state === 'done') ? 'done' : 'pending';
+  }
 
   const state = set.activityStates[actIdx];
+  const locked = state !== 'done' && isSeriesLocked(exIdx, sIdx);
+  const displayState = locked ? 'locked' : state;
   const row = document.createElement('div');
-  row.className = `live-series-row ${state}`;
+  row.className = `live-series-row ${displayState}`;
   row.dataset.ex  = exIdx;
   row.dataset.s   = sIdx;
   row.dataset.act = actIdx;
 
   const stateBtn = document.createElement('button');
   stateBtn.className = 'series-state-btn';
-  stateBtn.textContent = stateIcon(state);
+  stateBtn.textContent = stateIcon(displayState);
   stateBtn.addEventListener('click', () => advanceActivityState(exIdx, sIdx, actIdx, row));
   row.appendChild(stateBtn);
 
@@ -764,132 +806,148 @@ function buildActivityRow(exIdx, sIdx, actIdx) {
     row.appendChild(nameSpan);
   }
 
+  // ── Display mode (read-only) ──
+  const valuesSpan = document.createElement('span');
+  valuesSpan.className = 'live-values';
+
   if (act.type === 'weight') {
-    const repsInput = document.createElement('input');
-    repsInput.type = 'number';
-    repsInput.inputMode = 'decimal';
-    repsInput.className = 'live-reps';
-    repsInput.value = v.reps ?? act.reps ?? 0;
-    repsInput.min = '1';
-    repsInput.dataset.ex  = exIdx;
-    repsInput.dataset.s   = sIdx;
-    repsInput.dataset.act = actIdx;
-    repsInput.addEventListener('input', e =>
-      propagateLiveValue(exIdx, sIdx, actIdx, 'reps', parseFloat(e.target.value) || 0));
-
-    const xSpan = document.createElement('span');
-    xSpan.className = 'live-x';
-    xSpan.textContent = '×';
-
-    const wInput = document.createElement('input');
-    wInput.type = 'number';
-    wInput.inputMode = 'decimal';
-    wInput.className = 'live-weight';
-    wInput.value = v.weight ?? act.weight ?? 0;
-    wInput.min = '0';
-    wInput.step = '0.5';
-    wInput.dataset.ex  = exIdx;
-    wInput.dataset.s   = sIdx;
-    wInput.dataset.act = actIdx;
-    wInput.addEventListener('input', e =>
-      propagateLiveValue(exIdx, sIdx, actIdx, 'weight', parseFloat(e.target.value) || 0));
-
-    const kgSpan = document.createElement('span');
-    kgSpan.className = 'live-kg';
-    kgSpan.textContent = 'kg';
-
-    const reposLabel = document.createElement('span');
-    reposLabel.className = 'live-repos-label';
-    reposLabel.textContent = 'Repos:';
-
-    const restInput = document.createElement('input');
-    restInput.type = 'number';
-    restInput.inputMode = 'numeric';
-    restInput.className = 'live-rest';
-    restInput.value = act.rest ?? 0;
-    restInput.min = '0';
-    restInput.addEventListener('change', e => {
-      const val = parseInt(e.target.value) || 0;
-      liveSession.exercises[exIdx].activities[actIdx].rest = val;
-      document.querySelectorAll(`.live-rest[data-ex="${exIdx}"][data-act="${actIdx}"]`)
-        .forEach(inp => { inp.value = val; });
-      updateProgrammeTemplate(exIdx, actIdx, 'rest', val);
-    });
-    restInput.dataset.ex  = exIdx;
-    restInput.dataset.act = actIdx;
-
-    const sSpan = document.createElement('span');
-    sSpan.className = 'live-x';
-    sSpan.textContent = 's';
-
-    const prevVal = ex.prevSeries?.[sIdx]?.values?.[actIdx];
-    if (prevVal?.reps || prevVal?.weight) {
-      const prevSpan = document.createElement('span');
-      prevSpan.className = 'live-prev';
-      prevSpan.textContent = `${prevVal.reps ?? '—'}×${prevVal.weight ?? '—'}`;
-      row.append(repsInput, xSpan, wInput, kgSpan, prevSpan, reposLabel, restInput, sSpan);
-    } else {
-      row.append(repsInput, xSpan, wInput, kgSpan, reposLabel, restInput, sSpan);
-    }
+    const reps   = v.reps   ?? act.reps   ?? 0;
+    const weight = v.weight ?? act.weight ?? 0;
+    const rest   = act.rest ?? 0;
+    valuesSpan.innerHTML = `<b>${reps}</b> <span class="live-x">×</span> <b>${weight}</b> <span class="live-kg">kg</span>`
+      + (rest ? `<span class="live-rest-display">repos ${rest}s</span>` : '');
   } else if (act.type === 'countdown') {
-    const durInput = document.createElement('input');
-    durInput.type = 'number';
-    durInput.inputMode = 'numeric';
-    durInput.className = 'live-duration';
-    durInput.value = v.duration ?? act.duration ?? 0;
-    durInput.min = '1';
-    durInput.dataset.ex  = exIdx;
-    durInput.dataset.s   = sIdx;
-    durInput.dataset.act = actIdx;
-    durInput.addEventListener('change', e => {
-      liveSession.exercises[exIdx].series[sIdx].values[actIdx].duration = parseInt(e.target.value) || 0;
-    });
-    const sSpan = document.createElement('span');
-    sSpan.className = 'live-x';
-    sSpan.textContent = 's';
-    row.append(durInput, sSpan);
+    const dur = v.duration ?? act.duration ?? 0;
+    const rest = act.rest ?? 0;
+    valuesSpan.innerHTML = `<b>${dur}</b><span class="live-x">s</span>`
+      + (rest ? `<span class="live-rest-display">repos ${rest}s</span>` : '');
   } else {
-    // stopwatch
     const resultSpan = document.createElement('span');
     resultSpan.className = 'live-chrono-result';
     resultSpan.dataset.act = actIdx;
     resultSpan.textContent = v.duration ? formatSeconds(v.duration) : '⏱';
-    row.appendChild(resultSpan);
+    valuesSpan.appendChild(resultSpan);
   }
 
-  // Input repos pour les activités chrono (le weight a déjà l'input inline)
-  if (act.type !== 'weight') {
-    const reposLabel = document.createElement('span');
-    reposLabel.className = 'live-repos-label';
-    reposLabel.textContent = 'Repos:';
+  row.appendChild(valuesSpan);
 
-    const restInput = document.createElement('input');
-    restInput.type = 'number';
-    restInput.inputMode = 'numeric';
-    restInput.className = 'live-rest';
-    restInput.value = act.rest ?? 0;
-    restInput.min = '0';
-    restInput.dataset.ex  = exIdx;
-    restInput.dataset.act = actIdx;
-    restInput.addEventListener('change', e => {
-      const val = parseInt(e.target.value) || 0;
-      liveSession.exercises[exIdx].activities[actIdx].rest = val;
+  // Edit button
+  const editBtn = document.createElement('button');
+  editBtn.className = 'live-edit-btn';
+  editBtn.textContent = '✎';
+  row.appendChild(editBtn);
+
+  // ── Edit mode (hidden by default) ──
+  const editZone = document.createElement('div');
+  editZone.className = 'live-edit-zone hidden';
+
+  if (act.type === 'weight') {
+    editZone.innerHTML = `
+      <label>Reps<input type="number" inputmode="decimal" class="live-reps" value="${v.reps ?? act.reps ?? 0}" min="1"
+        data-ex="${exIdx}" data-s="${sIdx}" data-act="${actIdx}"></label>
+      <label>Poids<input type="number" inputmode="decimal" class="live-weight" value="${v.weight ?? act.weight ?? 0}" min="0" step="0.5"
+        data-ex="${exIdx}" data-s="${sIdx}" data-act="${actIdx}"></label>
+      <label>Repos<input type="number" inputmode="numeric" class="live-rest" value="${act.rest ?? 0}" min="0"
+        data-ex="${exIdx}" data-act="${actIdx}">s</label>
+    `;
+  } else if (act.type === 'countdown') {
+    editZone.innerHTML = `
+      <label>Durée<input type="number" inputmode="numeric" class="live-duration" value="${v.duration ?? act.duration ?? 0}" min="1"
+        data-ex="${exIdx}" data-s="${sIdx}" data-act="${actIdx}">s</label>
+      <label>Repos<input type="number" inputmode="numeric" class="live-rest" value="${act.rest ?? 0}" min="0"
+        data-ex="${exIdx}" data-act="${actIdx}">s</label>
+    `;
+  }
+
+  // Confirm button inside edit zone
+  if (act.type !== 'stopwatch') {
+    const confirmBtn = document.createElement('button');
+    confirmBtn.className = 'live-edit-confirm';
+    confirmBtn.textContent = 'OK';
+    editZone.appendChild(confirmBtn);
+
+    const originalWeight = v.weight ?? act.weight ?? 0;
+
+    function applyWeightEdit() {
+      const rI = editZone.querySelector('.live-reps');
+      const wI = editZone.querySelector('.live-weight');
+      const restI = editZone.querySelector('.live-rest');
+      propagateLiveValue(exIdx, sIdx, actIdx, 'reps', parseFloat(rI.value) || 0);
+      propagateLiveValue(exIdx, sIdx, actIdx, 'weight', parseFloat(wI.value) || 0);
+      const restVal = parseInt(restI.value) || 0;
+      liveSession.exercises[exIdx].activities[actIdx].rest = restVal;
       document.querySelectorAll(`.live-rest[data-ex="${exIdx}"][data-act="${actIdx}"]`)
-        .forEach(inp => { inp.value = val; });
-      updateProgrammeTemplate(exIdx, actIdx, 'rest', val);
+        .forEach(inp => { inp.value = restVal; });
+      updateProgrammeTemplate(exIdx, actIdx, 'rest', restVal);
+      const r = parseFloat(rI.value) || 0, w = parseFloat(wI.value) || 0;
+      valuesSpan.innerHTML = `<b>${r}</b> <span class="live-x">×</span> <b>${w}</b> <span class="live-kg">kg</span>`
+        + (restVal ? `<span class="live-rest-display">repos ${restVal}s</span>` : '');
+      editZone.classList.add('hidden');
+      editBtn.classList.remove('hidden');
+      pushSession(liveSessionSnapshot()).catch(() => {});
+    }
+
+    confirmBtn.addEventListener('click', () => {
+      // Save values from inputs
+      if (act.type === 'weight') {
+        const newWeight = parseFloat(editZone.querySelector('.live-weight').value) || 0;
+        if (newWeight < originalWeight && originalWeight > 0) {
+          showConfirm(`Réduire le poids de ${originalWeight} kg à ${newWeight} kg ?`, applyWeightEdit);
+          return;
+        }
+        applyWeightEdit();
+        return;
+      } else {
+        const dI = editZone.querySelector('.live-duration');
+        const restI = editZone.querySelector('.live-rest');
+        liveSession.exercises[exIdx].series[sIdx].values[actIdx].duration = parseInt(dI.value) || 0;
+        const restVal = parseInt(restI.value) || 0;
+        liveSession.exercises[exIdx].activities[actIdx].rest = restVal;
+        document.querySelectorAll(`.live-rest[data-ex="${exIdx}"][data-act="${actIdx}"]`)
+          .forEach(inp => { inp.value = restVal; });
+        updateProgrammeTemplate(exIdx, actIdx, 'rest', restVal);
+        valuesSpan.innerHTML = `<b>${parseInt(dI.value) || 0}</b><span class="live-x">s</span>`
+          + (restVal ? `<span class="live-rest-display">repos ${restVal}s</span>` : '');
+      }
+      editZone.classList.add('hidden');
+      editBtn.classList.remove('hidden');
+      pushSession(liveSessionSnapshot()).catch(() => {});
     });
+  }
 
-    const sSpan = document.createElement('span');
-    sSpan.className = 'live-x';
-    sSpan.textContent = 's';
+  row.appendChild(editZone);
 
-    row.append(reposLabel, restInput, sSpan);
+  editBtn.addEventListener('click', () => {
+    editZone.classList.remove('hidden');
+    editBtn.classList.add('hidden');
+    const firstInput = editZone.querySelector('input');
+    if (firstInput) { firstInput.focus(); firstInput.select(); }
+  });
+
+  // ── Previous session line ──
+  const prevVal = ex.prevSeries?.[sIdx]?.values?.[actIdx];
+  if (act.type === 'weight' && (prevVal?.reps || prevVal?.weight)) {
+    const prevLine = document.createElement('div');
+    prevLine.className = 'live-prev-line';
+    prevLine.textContent = `Préc: ${prevVal.reps ?? '—'} × ${prevVal.weight ?? '—'} kg`;
+    row.appendChild(prevLine);
+  } else if (act.type === 'countdown' && prevVal?.duration) {
+    const prevLine = document.createElement('div');
+    prevLine.className = 'live-prev-line';
+    prevLine.textContent = `Préc: ${prevVal.duration} s`;
+    row.appendChild(prevLine);
+  } else if (act.type === 'stopwatch' && prevVal?.duration) {
+    const prevLine = document.createElement('div');
+    prevLine.className = 'live-prev-line';
+    prevLine.textContent = `Préc: ${formatSeconds(prevVal.duration)}`;
+    row.appendChild(prevLine);
   }
 
   return row;
 }
 
 function advanceActivityState(exIdx, sIdx, actIdx, row) {
+  if (isSeriesLocked(exIdx, sIdx)) return;
   const ex  = liveSession.exercises[exIdx];
   const set = ex.series[sIdx];
   if (!set.activityStates) set.activityStates = {};
@@ -922,6 +980,20 @@ function doneActivity(exIdx, sIdx, actIdx, row) {
 
   pushSession(liveSessionSnapshot()).catch(() => {});
 
+  // Check if current series is fully done → unlock next series
+  const seriesDone = ex.activities.every((_, i) => set.activityStates?.[i] === 'done');
+  if (seriesDone && sIdx + 1 < ex.series.length) {
+    ex.activities.forEach((_, ai) => {
+      const lockedRow = document.querySelector(`.live-series-row[data-ex="${exIdx}"][data-s="${sIdx + 1}"][data-act="${ai}"]`);
+      if (lockedRow && lockedRow.classList.contains('locked')) {
+        lockedRow.classList.remove('locked');
+        lockedRow.classList.add('pending');
+        const btn = lockedRow.querySelector('.series-state-btn');
+        if (btn) btn.textContent = stateIcon('pending');
+      }
+    });
+  }
+
   const allDone = ex.series.every(s =>
     ex.activities.every((_, i) => s.activityStates?.[i] === 'done')
   );
@@ -951,7 +1023,8 @@ function doneActivity(exIdx, sIdx, actIdx, row) {
 }
 
 function propagateLiveValue(exIdx, sIdx, actIdx, field, val) {
-  const series = liveSession.exercises[exIdx].series;
+  const ex = liveSession.exercises[exIdx];
+  const series = ex.series;
   series.forEach((s, j) => {
     if (j < sIdx) return;
     const isDone = s.activityStates?.[actIdx] === 'done';
@@ -960,11 +1033,32 @@ function propagateLiveValue(exIdx, sIdx, actIdx, field, val) {
       s.values[actIdx][field] = val;
     }
     if (j > sIdx && !isDone) {
+      // Update hidden edit inputs
       const input = document.querySelector(`.live-${field}[data-ex="${exIdx}"][data-s="${j}"][data-act="${actIdx}"]`);
       if (input) input.value = val;
+      // Update display text
+      const row = document.querySelector(`.live-series-row[data-ex="${exIdx}"][data-s="${j}"][data-act="${actIdx}"]`);
+      if (row) refreshRowDisplay(row, exIdx, j, actIdx);
     }
   });
   updateProgrammeTemplate(exIdx, actIdx, field, val);
+}
+
+function refreshRowDisplay(row, exIdx, sIdx, actIdx) {
+  const ex  = liveSession.exercises[exIdx];
+  const act = ex.activities[actIdx];
+  const v   = ex.series[sIdx].values?.[actIdx] || {};
+  const display = row.querySelector('.live-values');
+  if (!display) return;
+  if (act.type === 'weight') {
+    const r = v.reps ?? 0, w = v.weight ?? 0, rest = act.rest ?? 0;
+    display.innerHTML = `<b>${r}</b> <span class="live-x">×</span> <b>${w}</b> <span class="live-kg">kg</span>`
+      + (rest ? `<span class="live-rest-display">repos ${rest}s</span>` : '');
+  } else if (act.type === 'countdown') {
+    const d = v.duration ?? 0, rest = act.rest ?? 0;
+    display.innerHTML = `<b>${d}</b><span class="live-x">s</span>`
+      + (rest ? `<span class="live-rest-display">repos ${rest}s</span>` : '');
+  }
 }
 
 async function updateProgrammeTemplate(exIdx, actIdx, field, val) {
@@ -1624,6 +1718,7 @@ function resumeSessionFromHistory(session) {
     id:            session.id,
     programmeId:   session.programmeId,
     programmeName: session.programmeName,
+    category:      session.category || 'fonte',
     date:          session.date,
     startedAt:     session.startedAt,
     exercises:     session.exercises.map(ex => {
@@ -1632,7 +1727,11 @@ function resumeSessionFromHistory(session) {
         name:       e.name,
         comment:    e.comment || '',
         activities: e.activities,
-        series:     e.series.map(s => ({ state: s.state || (s.done ? 'done' : 'pending'), values: s.values })),
+        series:     e.series.map(s => ({
+          state: s.state || (s.done ? 'done' : 'pending'),
+          activityStates: s.activityStates || {},
+          values: s.values,
+        })),
       };
     }),
   };
@@ -2373,6 +2472,7 @@ function renderLogin() {
         id:            inProgress.id,
         programmeId:   inProgress.programmeId,
         programmeName: inProgress.programmeName,
+        category:      inProgress.category || 'fonte',
         date:          inProgress.date,
         startedAt:     inProgress.startedAt,
         exercises:     inProgress.exercises.map(ex => {
@@ -2381,7 +2481,11 @@ function renderLogin() {
             name:       e.name,
             comment:    e.comment || '',
             activities: e.activities,
-            series:     e.series.map(s => ({ state: s.state || (s.done ? 'done' : 'pending'), values: s.values })),
+            series:     e.series.map(s => ({
+              state: s.state || (s.done ? 'done' : 'pending'),
+              activityStates: s.activityStates || {},
+              values: s.values,
+            })),
           };
         }),
       };
