@@ -156,11 +156,29 @@ function makeExerciseCard({ name = '', sets = 3, activities = null, comment = ''
   nameInput.placeholder = 'Nom de l\'exercice';
   nameInput.maxLength = 60;
   nameInput.value = name;
+  const moveUpBtn = document.createElement('button');
+  moveUpBtn.className = 'btn-ghost btn-sm exercise-move-btn';
+  moveUpBtn.textContent = '↑';
+  moveUpBtn.title = 'Monter';
+  moveUpBtn.addEventListener('click', () => {
+    const prev = card.previousElementSibling;
+    if (prev) card.parentNode.insertBefore(card, prev);
+  });
+
+  const moveDownBtn = document.createElement('button');
+  moveDownBtn.className = 'btn-ghost btn-sm exercise-move-btn';
+  moveDownBtn.textContent = '↓';
+  moveDownBtn.title = 'Descendre';
+  moveDownBtn.addEventListener('click', () => {
+    const next = card.nextElementSibling;
+    if (next) card.parentNode.insertBefore(next, card);
+  });
+
   const removeExBtn = document.createElement('button');
   removeExBtn.className = 'btn-danger btn-sm';
   removeExBtn.textContent = 'Suppr.';
   removeExBtn.addEventListener('click', () => card.remove());
-  nameRow.append(nameInput, removeExBtn);
+  nameRow.append(nameInput, moveUpBtn, moveDownBtn, removeExBtn);
   card.appendChild(nameRow);
 
   // Nombre de séries
