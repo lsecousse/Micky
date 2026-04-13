@@ -1,7 +1,7 @@
 /* ═══════════════════════════════════════════════════════
    VERSION
 ═══════════════════════════════════════════════════════ */
-const APP_VERSION = '2026.avril.11';
+const APP_VERSION = '2026.avril.13';
 document.querySelectorAll('.app-version').forEach(el => el.textContent = APP_VERSION);
 
 /* ═══════════════════════════════════════════════════════
@@ -420,6 +420,7 @@ function liveSessionSnapshot(durationSecs = 0) {
     date:          liveSession.date,
     startedAt:     liveSession.startedAt,
     duration:      durationSecs,
+    sync:          liveSession.sync || null,
     exercises:     liveSession.exercises.map(ex => {
       if (ex.type === 'cardio') {
         return {
@@ -496,6 +497,7 @@ async function startSession(programme) {
         }),
   };
   pushSession(liveSessionSnapshot()).catch(() => {});
+  startSyncPolling();
   renderSeanceScreen();
 }
 
@@ -1093,6 +1095,7 @@ function stopAllChronos() {
 function finishSession() {
   showConfirm('Terminer et enregistrer la séance ?', () => {
     stopAllChronos();
+    stopSyncPolling();
     const durationSecs = Math.round((Date.now() - new Date(liveSession.startedAt).getTime()) / 1000);
     pushSession(liveSessionSnapshot(durationSecs)).catch(() => {});
     liveSession = null;
@@ -1100,6 +1103,97 @@ function finishSession() {
     stopCountdown();
     showScreen('home');
   });
+}
+
+/* ═══════════════════════════════════════════════════════
+   SYNC POLLING — bidirectionnel avec la montre
+═══════════════════════════════════════════════════════ */
+let syncPollTimer = null;
+
+function startSyncPolling() {
+  stopSyncPolling();
+  syncPollTimer = setInterval(syncFromDB, 500);
+}
+
+function stopSyncPolling() {
+  if (syncPollTimer) { clearInterval(syncPollTimer); syncPollTimer = null; }
+}
+
+async function syncFromDB() {
+  if (!liveSession) return;
+  try {
+    const sessions = await loadSessions();
+    const remote = sessions.find(s => s.id === liveSession.id);
+    if (!remote) return;
+
+    // Session terminee sur la montre ?
+    if (remote.duration && remote.duration > 0) {
+      liveSession = null;
+      stopCountdown();
+      stopAllChronos();
+      stopSyncPolling();
+      showScreen('home');
+      return;
+    }
+
+    let changed = false;
+    remote.exercises.forEach((dbEx, exIdx) => {
+      const localEx = liveSession.exercises[exIdx];
+      if (!localEx) return;
+
+      // Cardio sync
+      if (dbEx.type === 'cardio' && localEx.type === 'cardio') {
+        if (dbEx.state !== localEx.state) { localEx.state = dbEx.state; changed = true; }
+        if (dbEx.done?.duration !== localEx.done?.duration || dbEx.done?.power !== localEx.done?.power) {
+          localEx.done = dbEx.done; changed = true;
+        }
+        return;
+      }
+
+      // Fonte sync
+      const eDb = migrateExercise(dbEx);
+      eDb.series.forEach((dbSet, sIdx) => {
+        const localSet = localEx.series?.[sIdx];
+        if (!localSet) return;
+        const dbStates = dbSet.activityStates || {};
+        localEx.activities?.forEach((_, actIdx) => {
+          // Sync states (done > active > pending)
+          const dbState = dbStates[actIdx];
+          const localState = localSet.activityStates?.[actIdx];
+          if (dbState === 'done' && localState !== 'done') {
+            if (!localSet.activityStates) localSet.activityStates = {};
+            localSet.activityStates[actIdx] = 'done';
+            changed = true;
+          } else if (dbState === 'active' && localState === 'pending') {
+            if (!localSet.activityStates) localSet.activityStates = {};
+            localSet.activityStates[actIdx] = 'active';
+            changed = true;
+          }
+        });
+        // Sync values
+        (dbSet.values || []).forEach((dbVal, actIdx) => {
+          const localVal = localSet.values?.[actIdx];
+          if (!localVal) return;
+          if (dbVal.reps !== localVal.reps || dbVal.weight !== localVal.weight) {
+            localSet.values[actIdx] = { ...dbVal };
+            changed = true;
+          }
+        });
+      });
+    });
+
+    // Sync countdown from watch
+    if (remote.sync?.type === 'rest' && !countdownTimer) {
+      const elapsed = (Date.now() - new Date(remote.sync.startedAt).getTime()) / 1000;
+      const remaining = Math.round(remote.sync.duration - elapsed);
+      if (remaining > 0) {
+        liveSession.sync = remote.sync;
+        startCountdown(remaining, remote.sync.label, null);
+      }
+    }
+
+    if (changed) renderSeanceScreen();
+  } catch { /* network error, skip */ }
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -1192,6 +1286,12 @@ function startCountdown(seconds, nextLabel, onFinish) {
   countdownTotal    = seconds;
   countdownOnFinish = onFinish;
 
+  // Sync countdown to watch
+  if (liveSession) {
+    liveSession.sync = { type: 'rest', startedAt: new Date().toISOString(), duration: seconds, label: nextLabel || '' };
+    pushSession(liveSessionSnapshot()).catch(() => {});
+  }
+
   document.getElementById('countdown-bar').classList.remove('hidden');
   document.getElementById('ring-progress').style.strokeDashoffset = 0;
   const cdNameEl = document.getElementById('countdown-exercise-name');
@@ -1240,6 +1340,10 @@ function stopCountdown() {
   const bar = document.getElementById('countdown-bar');
   bar.classList.add('hidden');
   bar.classList.remove('urgent');
+  if (liveSession?.sync?.type === 'rest') {
+    liveSession.sync = null;
+    pushSession(liveSessionSnapshot()).catch(() => {});
+  }
 }
 
 document.getElementById('countdown-skip').addEventListener('click', finishCountdown);
@@ -1736,6 +1840,7 @@ function resumeSessionFromHistory(session) {
     }),
   };
   closeModal();
+  startSyncPolling();
   showScreen('seance');
 }
 
@@ -1833,9 +1938,7 @@ async function renderStats() {
     return;
   }
 
-  body.appendChild(buildStatsSummary(sessions));
-  body.appendChild(buildStatsFrequency(sessions));
-  body.appendChild(await buildStatsProgression(sessions));
+  body.appendChild(buildStatsProgression(sessions));
 }
 
 function statsSection(title) {
@@ -1848,332 +1951,208 @@ function statsSection(title) {
   return section;
 }
 
-function sessionVolume(session) {
-  return totalVolume(session.exercises);
-}
-
-function buildStatsSummary(sessions) {
-  const section = statsSection('Résumé');
-
-  const totalVol = sessions.reduce((s, se) => s + sessionVolume(se), 0);
-  const totalDur = sessions.reduce((s, se) => s + (se.duration || 0), 0);
-  const best = sessions.reduce((b, s) => {
-    const v = sessionVolume(s);
-    return v > b.vol ? { vol: v, name: s.programmeName } : b;
-  }, { vol: 0, name: '' });
-
-  const grid = document.createElement('div');
-  grid.className = 'stats-summary-grid';
-
-  [
-    { value: sessions.length,                      label: 'Séances' },
-    { value: `${(totalVol / 1000).toFixed(1)} t`,  label: 'Volume total' },
-    { value: `${Math.round(totalDur / 3600)} h`,   label: 'Temps total' },
-    { value: `${(best.vol / 1000).toFixed(1)} t`,  label: 'Meilleure séance', sub: best.name },
-  ].forEach(({ value, label, sub }) => {
-    const card = document.createElement('div');
-    card.className = 'stats-card';
-    card.innerHTML = `
-      <span class="stats-card-value">${value}</span>
-      <span class="stats-card-label">${label}</span>
-      ${sub ? `<span class="stats-card-sub">${sub}</span>` : ''}
-    `;
-    grid.appendChild(card);
+function exoMetrics(ex, session) {
+  const e = migrateExercise(ex);
+  let volume = 0, best1RM = 0;
+  e.series.filter(s => s.done !== false).forEach(set => {
+    e.activities.forEach((act, i) => {
+      if (act.type !== 'weight') return;
+      const v = set.values?.[i] || {};
+      const w = v.weight || 0, r = v.reps || 0;
+      volume += w * r;
+      const rm = w * (1 + r / 30);
+      if (rm > best1RM) best1RM = rm;
+    });
   });
-
-  section.appendChild(grid);
-  return section;
+  return { date: session.date, volume, e1rm: Math.round(best1RM * 10) / 10 };
 }
 
-function isoWeekKey(dateStr) {
-  const d = new Date(dateStr);
-  const day = (d.getDay() + 6) % 7; // lundi = 0
-  const monday = new Date(d);
-  monday.setDate(d.getDate() - day);
-  return monday.toISOString().slice(0, 10);
-}
+const CHART_COLORS = [
+  '#9A7A30', '#4caf50', '#2196f3', '#e53e3e', '#ff9800',
+  '#9c27b0', '#00bcd4', '#8bc34a', '#ff5722', '#607d8b',
+];
 
-function buildStatsFrequency(sessions) {
-  const section = statsSection('Fréquence');
+function buildStatsProgression(sessions) {
+  const section = statsSection('Progression');
 
-  const weekMap = {};
-  sessions.forEach(s => {
-    const k = isoWeekKey(s.date);
-    weekMap[k] = (weekMap[k] || 0) + 1;
-  });
+  const progNames = [...new Set(sessions.map(s => s.programmeName).filter(Boolean))].sort();
+  if (!progNames.length) return section;
 
-  const weeks = [];
-  for (let i = 7; i >= 0; i--) {
-    const d = new Date();
-    d.setDate(d.getDate() - i * 7);
-    const monday = new Date(d);
-    monday.setDate(d.getDate() - ((d.getDay() + 6) % 7));
-    const k = isoWeekKey(d.toISOString().slice(0, 10));
-    const label = `${String(monday.getDate()).padStart(2,'0')}/${String(monday.getMonth()+1).padStart(2,'0')}`;
-    weeks.push({ key: k, count: weekMap[k] || 0, label });
-  }
-
-  const maxCount = Math.max(...weeks.map(w => w.count), 1);
-
-  const chart = document.createElement('div');
-  chart.className = 'stats-bar-chart';
-
-  weeks.forEach(({ count, label }) => {
-    const col = document.createElement('div');
-    col.className = 'stats-bar-col';
-
-    const countLbl = document.createElement('span');
-    countLbl.className = 'stats-bar-count';
-    countLbl.textContent = count || '';
-
-    const bar = document.createElement('div');
-    bar.className = 'stats-bar' + (count === 0 ? ' stats-bar--empty' : '');
-    bar.style.height = `${Math.round((count / maxCount) * 100)}%`;
-
-    const dateLbl = document.createElement('span');
-    dateLbl.className = 'stats-bar-label';
-    dateLbl.textContent = label;
-
-    col.appendChild(countLbl);
-    col.appendChild(bar);
-    col.appendChild(dateLbl);
-    chart.appendChild(col);
-  });
-
-  section.appendChild(chart);
-  return section;
-}
-
-async function buildStatsProgression(sessions) {
-  const section = statsSection('Progression par exercice');
-
-  const names = [...new Set(sessions.flatMap(s => s.exercises.map(e => e.name)))].sort();
-  if (!names.length) return section;
-
-  // Calcul des données par exercice — poids max + volume par séance
-  const machineData = names.map(name => {
-    let muscle = '';
-    const points = sessions.map(s => {
-      const ex = s.exercises.find(e => e.name === name);
-      if (!ex) return null;
-      const e = migrateExercise(ex);
-      if (!muscle && e.activities?.[0]?.name) muscle = e.activities[0].name;
-      let maxWeight = 0, volume = 0, maxReps = 0;
-      e.series.filter(se => se.done !== false).forEach(set => {
-        e.activities.forEach((act, i) => {
-          if (act.type !== 'weight') return;
-          const v = set.values?.[i] || {};
-          const w = v.weight || 0, r = v.reps || 0;
-          if (w > maxWeight) maxWeight = w;
-          if (r > maxReps) maxReps = r;
-          volume += w * r;
-        });
-      });
-      if (!maxWeight && !volume) return null;
-      return { date: s.date, weight: maxWeight, volume, reps: maxReps };
-    }).filter(Boolean);
-    return { name, muscle, points };
-  }).filter(d => d.points.length >= 1);
-
-  if (!machineData.length) return section;
-
-  // Muscles pills
-  const muscles = ['Tous', ...[...new Set(machineData.map(d => d.muscle).filter(Boolean))].sort()];
+  // Programme pills
   const pills = document.createElement('div');
-  pills.className = 'stats-pills';
-  muscles.forEach(m => {
-    const pill = document.createElement('button');
-    pill.className = 'stats-pill' + (m === 'Tous' ? ' active' : '');
-    pill.textContent = m;
-    pill.dataset.muscle = m;
-    pills.appendChild(pill);
+  pills.className = 'stats-prog-pills';
+  progNames.forEach((name, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'stats-prog-pill' + (i === 0 ? ' active' : '');
+    btn.textContent = name;
+    btn.dataset.prog = name;
+    pills.appendChild(btn);
   });
   section.appendChild(pills);
 
-  // Exercise swap selector
-  const swapBar = document.createElement('div');
-  swapBar.className = 'stats-swap';
-  const prevBtn = document.createElement('button');
-  prevBtn.className = 'stats-swap-btn';
-  prevBtn.textContent = '‹';
-  const swapName = document.createElement('span');
-  swapName.className = 'stats-swap-name';
-  const nextBtn = document.createElement('button');
-  nextBtn.className = 'stats-swap-btn';
-  nextBtn.textContent = '›';
-  swapBar.appendChild(prevBtn);
-  swapBar.appendChild(swapName);
-  swapBar.appendChild(nextBtn);
-  section.appendChild(swapBar);
-
-  const swapCounter = document.createElement('div');
-  swapCounter.className = 'stats-swap-counter';
-  section.appendChild(swapCounter);
-
-  // Metric toggle (poids / volume / reps)
-  const metricPills = document.createElement('div');
-  metricPills.className = 'stats-metric-pills';
-  ['Poids max', 'Volume', 'Reps max'].forEach((label, i) => {
+  // Volume / 1RM toggle
+  const toggle = document.createElement('div');
+  toggle.className = 'stats-metric-toggle';
+  ['Volume total', '1RM estimé'].forEach((label, i) => {
     const btn = document.createElement('button');
-    btn.className = 'stats-metric-pill' + (i === 0 ? ' active' : '');
+    btn.className = 'stats-metric-btn' + (i === 0 ? ' active' : '');
     btn.textContent = label;
-    btn.dataset.metric = ['weight', 'volume', 'reps'][i];
-    metricPills.appendChild(btn);
+    btn.dataset.metric = i === 0 ? 'volume' : 'e1rm';
+    toggle.appendChild(btn);
   });
-  section.appendChild(metricPills);
+  section.appendChild(toggle);
 
-  // Graph container
-  const graphWrap = document.createElement('div');
-  graphWrap.className = 'stats-graph-wrap';
-  section.appendChild(graphWrap);
+  // Cards container
+  const cardsGrid = document.createElement('div');
+  cardsGrid.className = 'stats-cards-grid';
+  section.appendChild(cardsGrid);
 
-  // Summary line
-  const summaryLine = document.createElement('div');
-  summaryLine.className = 'stats-progression-summary';
-  section.appendChild(summaryLine);
+  // Chart container
+  const chartWrap = document.createElement('div');
+  chartWrap.className = 'stats-chart-wrap';
+  const canvas = document.createElement('canvas');
+  chartWrap.appendChild(canvas);
+  section.appendChild(chartWrap);
 
-  let filtered = machineData;
-  let activeMetric = 'weight';
-  let currentIdx = 0;
+  let activeProg = progNames[0];
+  let activeMetric = 'volume';
+  let chartInstance = null;
 
-  function updateSwapUI() {
-    const data = filtered[currentIdx];
-    swapName.textContent = data ? data.name : '—';
-    swapCounter.textContent = filtered.length > 1 ? `${currentIdx + 1} / ${filtered.length}` : '';
-    prevBtn.disabled = currentIdx <= 0;
-    nextBtn.disabled = currentIdx >= filtered.length - 1;
+  function buildExoData(progName) {
+    const progSessions = sessions.filter(s => s.programmeName === progName);
+    const exoNames = [...new Set(progSessions.flatMap(s => (s.exercises || []).map(e => e.name)))].sort();
+
+    return exoNames.map(name => {
+      const points = progSessions.map(s => {
+        const ex = (s.exercises || []).find(e => e.name === name);
+        if (!ex) return null;
+        return exoMetrics(ex, s);
+      }).filter(Boolean);
+      return { name, points };
+    }).filter(d => d.points.length >= 1);
   }
 
-  function populateSelect(data) {
-    currentIdx = 0;
-    updateSwapUI();
-  }
+  function render() {
+    const exoData = buildExoData(activeProg);
+    const unit = 'kg';
 
-  function metricUnit(metric) {
-    return metric === 'weight' ? 'kg' : metric === 'volume' ? 'kg' : 'reps';
-  }
+    // Cards
+    cardsGrid.innerHTML = '';
+    exoData.forEach(exo => {
+      if (!exo.points.length) return;
+      const first = exo.points[0][activeMetric];
+      const last = exo.points[exo.points.length - 1][activeMetric];
+      const delta = first > 0 ? ((last - first) / first * 100) : 0;
+      const deltaClass = delta > 0 ? 'up' : delta < 0 ? 'down' : 'neutral';
+      const deltaStr = delta === 0 ? '=' : `${delta > 0 ? '+' : ''}${Math.round(delta)}%`;
+      const fmt = v => activeMetric === 'volume' ? Math.round(v) : v.toFixed(1);
 
-  function metricValue(pt, metric) {
-    return metric === 'weight' ? pt.weight : metric === 'volume' ? pt.volume : pt.reps;
-  }
+      const card = document.createElement('div');
+      card.className = 'stats-exo-card';
+      card.innerHTML = `
+        <span class="stats-exo-name">${exo.name}</span>
+        <div class="stats-exo-values">
+          <span class="stats-exo-start">${fmt(first)}</span>
+          <span class="stats-exo-arrow">→</span>
+          <span class="stats-exo-end">${fmt(last)} ${unit}</span>
+          <span class="stats-exo-delta ${deltaClass}">${deltaStr}</span>
+        </div>
+      `;
+      cardsGrid.appendChild(card);
+    });
 
-  function renderGraph() {
-    graphWrap.innerHTML = '';
-    summaryLine.innerHTML = '';
-    updateSwapUI();
-    const data = filtered[currentIdx];
-    if (!data) { graphWrap.innerHTML = '<p class="stats-no-data">Aucune donnée</p>'; return; }
+    // Chart
+    if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
 
-    const points = data.points;
-    const unit = metricUnit(activeMetric);
-    const vals = points.map(p => metricValue(p, activeMetric));
-
-    // Summary
-    const first = vals[0], last = vals[vals.length - 1];
-    const delta = last - first;
-    const deltaStr = delta === 0 ? '=' : `${delta > 0 ? '+' : ''}${activeMetric === 'volume' ? Math.round(delta) : delta.toFixed(1)} ${unit}`;
-    const deltaClass = delta > 0 ? 'up' : delta < 0 ? 'down' : 'neutral';
-    summaryLine.innerHTML = `
-      <span class="stats-prog-start">${activeMetric === 'volume' ? Math.round(first) : first} ${unit}</span>
-      <span class="stats-machine-arrow">→</span>
-      <span class="stats-prog-current">${activeMetric === 'volume' ? Math.round(last) : last} ${unit}</span>
-      <span class="stats-delta ${deltaClass}">${deltaStr}</span>
-    `;
-
-    if (points.length < 2) {
-      graphWrap.innerHTML = '<p class="stats-no-data">Pas assez de données pour un graphique</p>';
+    const multiPointExos = exoData.filter(d => d.points.length >= 2);
+    if (!multiPointExos.length) {
+      chartWrap.style.display = 'none';
       return;
     }
+    chartWrap.style.display = 'block';
 
-    const W = 340, H = 180;
-    const minV = Math.min(...vals);
-    const maxV = Math.max(...vals);
-    const range = maxV - minV || 1;
-    const pad = { t: 16, b: 34, l: 44, r: 12 };
-    const x = i => pad.l + (i / (points.length - 1)) * (W - pad.l - pad.r);
-    const y = v => pad.t + (1 - (v - minV) / range) * (H - pad.t - pad.b);
+    const allDates = [...new Set(multiPointExos.flatMap(d => d.points.map(p => p.date)))].sort();
 
-    // Grid lines (3 horizontal)
-    const gridLines = [minV, minV + range / 2, maxV];
-    const gridSvg = gridLines.map(v =>
-      `<line x1="${pad.l}" y1="${y(v).toFixed(1)}" x2="${W - pad.r}" y2="${y(v).toFixed(1)}" stroke="#1a1a1a" stroke-width="1"/>
-       <text x="${pad.l - 6}" y="${y(v).toFixed(1)}" dy="3.5" text-anchor="end" font-size="10" fill="#555">${activeMetric === 'volume' ? Math.round(v) : v}${unit === 'reps' ? '' : ''}</text>`
-    ).join('');
+    const datasets = multiPointExos.map((exo, i) => {
+      const color = CHART_COLORS[i % CHART_COLORS.length];
+      const dateMap = {};
+      exo.points.forEach(p => { dateMap[p.date] = p[activeMetric]; });
+      return {
+        label: exo.name,
+        data: allDates.map(d => dateMap[d] ?? null),
+        borderColor: color,
+        backgroundColor: color + '33',
+        borderWidth: 2,
+        pointRadius: 3,
+        pointHoverRadius: 5,
+        tension: 0.3,
+        spanGaps: true,
+      };
+    });
 
-    // Area fill
-    const areaPath = `M${x(0).toFixed(1)},${y(vals[0]).toFixed(1)} ` +
-      vals.map((v, i) => `L${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' ') +
-      ` L${x(vals.length - 1).toFixed(1)},${H - pad.b} L${x(0).toFixed(1)},${H - pad.b} Z`;
-
-    const linePath = vals.map((v, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' ');
-
-    // Date labels — first, middle, last
-    const dateIdxs = [0, Math.floor(points.length / 2), points.length - 1].filter((v, i, a) => a.indexOf(v) === i);
-    const dateLbls = dateIdxs.map(i =>
-      `<text x="${x(i).toFixed(1)}" y="${H - 6}" text-anchor="middle" font-size="10" fill="#555">${points[i].date.slice(5).replace('-', '/')}</text>`
-    ).join('');
-
-    const circlesSvg = vals.map((v, i) =>
-      `<circle cx="${x(i).toFixed(1)}" cy="${y(v).toFixed(1)}" r="3.5" fill="#9A7A30" stroke="#0f0f0f" stroke-width="1.5"/>`
-    ).join('');
-
-    graphWrap.innerHTML = `
-      <svg viewBox="0 0 ${W} ${H}" class="stats-svg stats-svg--large">
-        <defs>
-          <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="#9A7A30" stop-opacity="0.3"/>
-            <stop offset="100%" stop-color="#9A7A30" stop-opacity="0.02"/>
-          </linearGradient>
-        </defs>
-        <line x1="${pad.l}" y1="${pad.t}" x2="${pad.l}" y2="${H - pad.b}" stroke="#2a2a2a" stroke-width="1"/>
-        <line x1="${pad.l}" y1="${H - pad.b}" x2="${W - pad.r}" y2="${H - pad.b}" stroke="#2a2a2a" stroke-width="1"/>
-        ${gridSvg}
-        <path d="${areaPath}" fill="url(#areaGrad)"/>
-        <path d="${linePath}" fill="none" stroke="#9A7A30" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
-        ${circlesSvg}
-        ${dateLbls}
-      </svg>
-    `;
+    chartInstance = new Chart(canvas, {
+      type: 'line',
+      data: { labels: allDates.map(d => d.slice(5).replace('-', '/')), datasets },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: { color: '#888', font: { family: "'DM Mono', monospace", size: 10 }, boxWidth: 10, padding: 8 },
+          },
+          tooltip: {
+            backgroundColor: '#1a1a1a',
+            borderColor: '#2e2e2e',
+            borderWidth: 1,
+            titleColor: '#f0f0f0',
+            bodyColor: '#f0f0f0',
+            titleFont: { family: "'DM Mono', monospace", size: 11 },
+            bodyFont: { family: "'DM Mono', monospace", size: 11 },
+            callbacks: {
+              label: ctx => `${ctx.dataset.label}: ${activeMetric === 'volume' ? Math.round(ctx.parsed.y) : ctx.parsed.y.toFixed(1)} ${unit}`,
+            },
+          },
+        },
+        scales: {
+          x: {
+            ticks: { color: '#555', font: { family: "'DM Mono', monospace", size: 9 }, maxRotation: 45 },
+            grid: { color: '#1a1a1a' },
+          },
+          y: {
+            ticks: {
+              color: '#555',
+              font: { family: "'DM Mono', monospace", size: 9 },
+              callback: v => activeMetric === 'volume' ? Math.round(v) : v.toFixed(1),
+            },
+            grid: { color: '#1a1a1a' },
+          },
+        },
+      },
+    });
   }
 
-  populateSelect(machineData);
-  renderGraph();
+  render();
 
-  prevBtn.addEventListener('click', () => {
-    if (currentIdx > 0) { currentIdx--; renderGraph(); }
-  });
-  nextBtn.addEventListener('click', () => {
-    if (currentIdx < filtered.length - 1) { currentIdx++; renderGraph(); }
-  });
-
-  // Swipe support (mobile)
-  let touchStartX = 0;
-  graphWrap.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; }, { passive: true });
-  graphWrap.addEventListener('touchend', e => {
-    const dx = e.changedTouches[0].clientX - touchStartX;
-    if (Math.abs(dx) < 40) return;
-    if (dx < 0 && currentIdx < filtered.length - 1) { currentIdx++; renderGraph(); }
-    else if (dx > 0 && currentIdx > 0) { currentIdx--; renderGraph(); }
-  }, { passive: true });
-
-  metricPills.addEventListener('click', e => {
-    const btn = e.target.closest('.stats-metric-pill');
+  // Programme pill click
+  pills.addEventListener('click', e => {
+    const btn = e.target.closest('.stats-prog-pill');
     if (!btn) return;
-    metricPills.querySelectorAll('.stats-metric-pill').forEach(b => b.classList.remove('active'));
+    pills.querySelectorAll('.stats-prog-pill').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    activeProg = btn.dataset.prog;
+    render();
+  });
+
+  // Metric toggle click
+  toggle.addEventListener('click', e => {
+    const btn = e.target.closest('.stats-metric-btn');
+    if (!btn) return;
+    toggle.querySelectorAll('.stats-metric-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     activeMetric = btn.dataset.metric;
-    renderGraph();
-  });
-
-  pills.addEventListener('click', e => {
-    const pill = e.target.closest('.stats-pill');
-    if (!pill) return;
-    pills.querySelectorAll('.stats-pill').forEach(p => p.classList.remove('active'));
-    pill.classList.add('active');
-    const muscle = pill.dataset.muscle;
-    filtered = muscle === 'Tous' ? machineData : machineData.filter(d => d.muscle === muscle);
-    populateSelect(filtered);
-    renderGraph();
+    render();
   });
 
   return section;
@@ -2215,6 +2194,35 @@ async function renderParams() {
       });
     });
     accountSection.appendChild(logoutBtn);
+
+    const watchBtn = document.createElement('button');
+    watchBtn.className = 'btn-secondary btn-full';
+    watchBtn.textContent = '⌚ Connecter la montre';
+    watchBtn.addEventListener('click', async () => {
+      watchBtn.textContent = '⌚ ...';
+      try {
+        const code = String(Math.floor(1000 + Math.random() * 9000));
+        const { data: { session } } = await db.auth.getSession();
+        if (!session) { watchBtn.textContent = '⌚ Erreur session'; return; }
+        // Supprimer les anciens codes de cet utilisateur
+        await db.from('watch_codes').delete().eq('user_id', currentUser.id);
+        // Insérer le nouveau code
+        const { error } = await db.from('watch_codes').insert({
+          user_id: currentUser.id,
+          code,
+          refresh_token: session.refresh_token,
+        });
+        if (error) { watchBtn.textContent = '⌚ Erreur: ' + error.message; return; }
+        watchBtn.textContent = `Code : ${code}`;
+      } catch (e) { watchBtn.textContent = '⌚ Erreur: ' + e.message; return; }
+      watchBtn.style.cssText = 'font-size:24px;font-weight:700;color:var(--accent);letter-spacing:0.15em;padding:16px;text-align:center';
+      // Expirer au bout de 5 minutes visuellement
+      setTimeout(() => {
+        watchBtn.textContent = '⌚ Connecter la montre';
+        watchBtn.style.cssText = '';
+      }, 5 * 60 * 1000);
+    });
+    accountSection.appendChild(watchBtn);
   } else {
     const loginBtn = document.createElement('button');
     loginBtn.className = 'btn-primary btn-full';
@@ -2489,6 +2497,7 @@ function renderLogin() {
           };
         }),
       };
+      startSyncPolling();
     }
   }
 

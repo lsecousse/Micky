@@ -31,10 +31,12 @@ async function loadSessionsDB() {
     id:            row.id,
     programmeName: row.programme_name,
     programmeId:   row.programme_id || null,
+    category:      row.category || 'fonte',
     date:          row.date,
     startedAt:     row.started_at,
     duration:      row.duration,
     exercises:     row.exercises || [],
+    sync:          row.sync || null,
   }));
 }
 
@@ -101,6 +103,8 @@ async function pushSession(session) {
     started_at:     session.startedAt,
     duration:       session.duration,
     exercises:      session.exercises,
+    category:       session.category || 'fonte',
+    sync:           session.sync || null,
   });
 }
 

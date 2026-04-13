@@ -363,25 +363,10 @@ async function renderUserData(body) {
   const sorted = sessions.slice().sort((a, b) => a.date.localeCompare(b.date));
   if (!sorted.length) return;
 
-  body.appendChild(boStatsSummary(sorted));
-  body.appendChild(boStatsFrequency(sorted));
   body.appendChild(boStatsProgression(sorted));
 }
 
 /* ─── STATS HELPERS (backoffice) ──────────────────────── */
-
-function boSessionVolume(session) {
-  return (session.exercises || []).reduce((sum, ex) => {
-    const e = migrateExercise(ex);
-    return sum + e.series
-      .filter(s => s.done !== false)
-      .reduce((sv, set) => sv + e.activities.reduce((sa, act, i) => {
-        if (act.type !== 'weight') return sa;
-        const v = set.values?.[i] || {};
-        return sa + (v.reps || 0) * (v.weight || 0);
-      }, 0), 0);
-  }, 0);
-}
 
 function boStatsSection(title) {
   const section = document.createElement('div');
@@ -393,319 +378,209 @@ function boStatsSection(title) {
   return section;
 }
 
-function boStatsSummary(sessions) {
-  const section = boStatsSection('Résumé');
-  const totalVol = sessions.reduce((s, se) => s + boSessionVolume(se), 0);
-  const totalDur = sessions.reduce((s, se) => s + (se.duration || 0), 0);
-  const best = sessions.reduce((b, s) => {
-    const v = boSessionVolume(s);
-    return v > b.vol ? { vol: v, name: s.programmeName } : b;
-  }, { vol: 0, name: '' });
-
-  const grid = document.createElement('div');
-  grid.className = 'stats-summary-grid';
-
-  [
-    { value: sessions.length,                      label: 'Séances' },
-    { value: `${(totalVol / 1000).toFixed(1)} t`,  label: 'Volume total' },
-    { value: `${Math.round(totalDur / 3600)} h`,   label: 'Temps total' },
-    { value: `${(best.vol / 1000).toFixed(1)} t`,  label: 'Meilleure séance', sub: best.name },
-  ].forEach(({ value, label, sub }) => {
-    const card = document.createElement('div');
-    card.className = 'stats-card';
-    card.innerHTML = `
-      <span class="stats-card-value">${value}</span>
-      <span class="stats-card-label">${label}</span>
-      ${sub ? `<span class="stats-card-sub">${sub}</span>` : ''}
-    `;
-    grid.appendChild(card);
+function boExoMetrics(ex, session) {
+  const e = migrateExercise(ex);
+  let volume = 0, best1RM = 0;
+  e.series.filter(s => s.done !== false).forEach(set => {
+    e.activities.forEach((act, i) => {
+      if (act.type !== 'weight') return;
+      const v = set.values?.[i] || {};
+      const w = v.weight || 0, r = v.reps || 0;
+      volume += w * r;
+      const rm = w * (1 + r / 30);
+      if (rm > best1RM) best1RM = rm;
+    });
   });
-
-  section.appendChild(grid);
-  return section;
+  return { date: session.date, volume, e1rm: Math.round(best1RM * 10) / 10 };
 }
 
-function boIsoWeekKey(dateStr) {
-  const d = new Date(dateStr);
-  const day = (d.getDay() + 6) % 7;
-  const monday = new Date(d);
-  monday.setDate(d.getDate() - day);
-  return monday.toISOString().slice(0, 10);
-}
-
-function boStatsFrequency(sessions) {
-  const section = boStatsSection('Fréquence');
-
-  const weekMap = {};
-  sessions.forEach(s => {
-    const k = boIsoWeekKey(s.date);
-    weekMap[k] = (weekMap[k] || 0) + 1;
-  });
-
-  const weeks = [];
-  for (let i = 7; i >= 0; i--) {
-    const d = new Date();
-    d.setDate(d.getDate() - i * 7);
-    const monday = new Date(d);
-    monday.setDate(d.getDate() - ((d.getDay() + 6) % 7));
-    const k = boIsoWeekKey(d.toISOString().slice(0, 10));
-    const label = `${String(monday.getDate()).padStart(2,'0')}/${String(monday.getMonth()+1).padStart(2,'0')}`;
-    weeks.push({ key: k, count: weekMap[k] || 0, label });
-  }
-
-  const maxCount = Math.max(...weeks.map(w => w.count), 1);
-
-  const chart = document.createElement('div');
-  chart.className = 'stats-bar-chart';
-
-  weeks.forEach(({ count, label }) => {
-    const col = document.createElement('div');
-    col.className = 'stats-bar-col';
-    const countLbl = document.createElement('span');
-    countLbl.className = 'stats-bar-count';
-    countLbl.textContent = count || '';
-    const bar = document.createElement('div');
-    bar.className = 'stats-bar' + (count === 0 ? ' stats-bar--empty' : '');
-    bar.style.height = `${Math.round((count / maxCount) * 100)}%`;
-    const dateLbl = document.createElement('span');
-    dateLbl.className = 'stats-bar-label';
-    dateLbl.textContent = label;
-    col.appendChild(countLbl);
-    col.appendChild(bar);
-    col.appendChild(dateLbl);
-    chart.appendChild(col);
-  });
-
-  section.appendChild(chart);
-  return section;
-}
+const CHART_COLORS = [
+  '#9A7A30', '#4caf50', '#2196f3', '#e53e3e', '#ff9800',
+  '#9c27b0', '#00bcd4', '#8bc34a', '#ff5722', '#607d8b',
+];
 
 function boStatsProgression(sessions) {
-  const section = boStatsSection('Progression par exercice');
+  const section = boStatsSection('Progression');
 
-  const names = [...new Set(sessions.flatMap(s => (s.exercises || []).map(e => e.name)))].sort();
-  if (!names.length) return section;
+  // Collect distinct programmes
+  const progNames = [...new Set(sessions.map(s => s.programme_name).filter(Boolean))].sort();
+  if (!progNames.length) return section;
 
-  const machineData = names.map(name => {
-    let muscle = '';
-    const points = sessions.map(s => {
-      const ex = (s.exercises || []).find(e => e.name === name);
-      if (!ex) return null;
-      const e = migrateExercise(ex);
-      if (!muscle && e.activities?.[0]?.name) muscle = e.activities[0].name;
-      let maxWeight = 0, volume = 0, maxReps = 0;
-      e.series.filter(se => se.done !== false).forEach(set => {
-        e.activities.forEach((act, i) => {
-          if (act.type !== 'weight') return;
-          const v = set.values?.[i] || {};
-          const w = v.weight || 0, r = v.reps || 0;
-          if (w > maxWeight) maxWeight = w;
-          if (r > maxReps) maxReps = r;
-          volume += w * r;
-        });
-      });
-      if (!maxWeight && !volume) return null;
-      return { date: s.date, weight: maxWeight, volume, reps: maxReps };
-    }).filter(Boolean);
-    return { name, muscle, points };
-  }).filter(d => d.points.length >= 1);
-
-  if (!machineData.length) return section;
-
-  // Muscle pills
-  const muscles = ['Tous', ...[...new Set(machineData.map(d => d.muscle).filter(Boolean))].sort()];
+  // Programme pills
   const pills = document.createElement('div');
-  pills.className = 'stats-pills';
-  muscles.forEach(m => {
-    const pill = document.createElement('button');
-    pill.className = 'stats-pill' + (m === 'Tous' ? ' active' : '');
-    pill.textContent = m;
-    pill.dataset.muscle = m;
-    pills.appendChild(pill);
+  pills.className = 'stats-prog-pills';
+  progNames.forEach((name, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'stats-prog-pill' + (i === 0 ? ' active' : '');
+    btn.textContent = name;
+    btn.dataset.prog = name;
+    pills.appendChild(btn);
   });
   section.appendChild(pills);
 
-  // Exercise swap selector (PC: arrows + keyboard)
-  const swapBar = document.createElement('div');
-  swapBar.className = 'stats-swap';
-  const prevBtn = document.createElement('button');
-  prevBtn.className = 'stats-swap-btn';
-  prevBtn.textContent = '‹';
-  prevBtn.title = 'Précédent (←)';
-  const swapName = document.createElement('span');
-  swapName.className = 'stats-swap-name';
-  const nextBtn = document.createElement('button');
-  nextBtn.className = 'stats-swap-btn';
-  nextBtn.textContent = '›';
-  nextBtn.title = 'Suivant (→)';
-  swapBar.appendChild(prevBtn);
-  swapBar.appendChild(swapName);
-  swapBar.appendChild(nextBtn);
-  section.appendChild(swapBar);
-
-  const swapCounter = document.createElement('div');
-  swapCounter.className = 'stats-swap-counter';
-  section.appendChild(swapCounter);
-
-  // Metric toggle
-  const metricPills = document.createElement('div');
-  metricPills.className = 'stats-metric-pills';
-  ['Poids max', 'Volume', 'Reps max'].forEach((label, i) => {
+  // Volume / 1RM toggle
+  const toggle = document.createElement('div');
+  toggle.className = 'stats-metric-toggle';
+  ['Volume total', '1RM estimé'].forEach((label, i) => {
     const btn = document.createElement('button');
-    btn.className = 'stats-metric-pill' + (i === 0 ? ' active' : '');
+    btn.className = 'stats-metric-btn' + (i === 0 ? ' active' : '');
     btn.textContent = label;
-    btn.dataset.metric = ['weight', 'volume', 'reps'][i];
-    metricPills.appendChild(btn);
+    btn.dataset.metric = i === 0 ? 'volume' : 'e1rm';
+    toggle.appendChild(btn);
   });
-  section.appendChild(metricPills);
+  section.appendChild(toggle);
 
-  // Graph container
-  const graphWrap = document.createElement('div');
-  graphWrap.className = 'stats-graph-wrap';
-  section.appendChild(graphWrap);
+  // Cards container
+  const cardsGrid = document.createElement('div');
+  cardsGrid.className = 'stats-cards-grid';
+  section.appendChild(cardsGrid);
 
-  // Summary line
-  const summaryLine = document.createElement('div');
-  summaryLine.className = 'stats-progression-summary';
-  section.appendChild(summaryLine);
+  // Chart container
+  const chartWrap = document.createElement('div');
+  chartWrap.className = 'stats-chart-wrap';
+  const canvas = document.createElement('canvas');
+  chartWrap.appendChild(canvas);
+  section.appendChild(chartWrap);
 
-  let filtered = machineData;
-  let activeMetric = 'weight';
-  let currentIdx = 0;
+  let activeProg = progNames[0];
+  let activeMetric = 'volume';
+  let chartInstance = null;
 
-  function updateSwapUI() {
-    const data = filtered[currentIdx];
-    swapName.textContent = data ? data.name : '—';
-    swapCounter.textContent = filtered.length > 1 ? `${currentIdx + 1} / ${filtered.length}` : '';
-    prevBtn.disabled = currentIdx <= 0;
-    nextBtn.disabled = currentIdx >= filtered.length - 1;
+  function buildExoData(progName) {
+    const progSessions = sessions.filter(s => s.programme_name === progName);
+    const exoNames = [...new Set(progSessions.flatMap(s => (s.exercises || []).map(e => e.name)))].sort();
+
+    return exoNames.map(name => {
+      const points = progSessions.map(s => {
+        const ex = (s.exercises || []).find(e => e.name === name);
+        if (!ex) return null;
+        return boExoMetrics(ex, s);
+      }).filter(Boolean);
+      return { name, points };
+    }).filter(d => d.points.length >= 1);
   }
 
-  function populateSelect(data) {
-    currentIdx = 0;
-    updateSwapUI();
-  }
+  function render() {
+    const exoData = buildExoData(activeProg);
+    const unit = activeMetric === 'volume' ? 'kg' : 'kg';
 
-  function metricUnit(metric) {
-    return metric === 'weight' ? 'kg' : metric === 'volume' ? 'kg' : 'reps';
-  }
+    // Cards
+    cardsGrid.innerHTML = '';
+    exoData.forEach(exo => {
+      if (!exo.points.length) return;
+      const first = exo.points[0][activeMetric];
+      const last = exo.points[exo.points.length - 1][activeMetric];
+      const delta = first > 0 ? ((last - first) / first * 100) : 0;
+      const deltaClass = delta > 0 ? 'up' : delta < 0 ? 'down' : 'neutral';
+      const deltaStr = delta === 0 ? '=' : `${delta > 0 ? '+' : ''}${Math.round(delta)}%`;
+      const fmt = v => activeMetric === 'volume' ? Math.round(v) : v.toFixed(1);
 
-  function metricValue(pt, metric) {
-    return metric === 'weight' ? pt.weight : metric === 'volume' ? pt.volume : pt.reps;
-  }
+      const card = document.createElement('div');
+      card.className = 'stats-exo-card';
+      card.innerHTML = `
+        <span class="stats-exo-name">${exo.name}</span>
+        <div class="stats-exo-values">
+          <span class="stats-exo-start">${fmt(first)} ${unit}</span>
+          <span class="stats-exo-arrow">→</span>
+          <span class="stats-exo-end">${fmt(last)} ${unit}</span>
+          <span class="stats-exo-delta ${deltaClass}">${deltaStr}</span>
+        </div>
+      `;
+      cardsGrid.appendChild(card);
+    });
 
-  function renderGraph() {
-    graphWrap.innerHTML = '';
-    summaryLine.innerHTML = '';
-    updateSwapUI();
-    const data = filtered[currentIdx];
-    if (!data) { graphWrap.innerHTML = '<p class="stats-no-data">Aucune donnée</p>'; return; }
+    // Chart
+    if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
 
-    const points = data.points;
-    const unit = metricUnit(activeMetric);
-    const vals = points.map(p => metricValue(p, activeMetric));
-
-    // Summary
-    const first = vals[0], last = vals[vals.length - 1];
-    const delta = last - first;
-    const deltaStr = delta === 0 ? '=' : `${delta > 0 ? '+' : ''}${activeMetric === 'volume' ? Math.round(delta) : delta.toFixed(1)} ${unit}`;
-    const deltaClass = delta > 0 ? 'up' : delta < 0 ? 'down' : 'neutral';
-    summaryLine.innerHTML = `
-      <span class="stats-prog-start">${activeMetric === 'volume' ? Math.round(first) : first} ${unit}</span>
-      <span class="stats-machine-arrow">→</span>
-      <span class="stats-prog-current">${activeMetric === 'volume' ? Math.round(last) : last} ${unit}</span>
-      <span class="stats-delta ${deltaClass}">${deltaStr}</span>
-    `;
-
-    if (points.length < 2) {
-      graphWrap.innerHTML = '<p class="stats-no-data">Pas assez de données pour un graphique</p>';
+    const multiPointExos = exoData.filter(d => d.points.length >= 2);
+    if (!multiPointExos.length) {
+      chartWrap.style.display = 'none';
       return;
     }
+    chartWrap.style.display = 'block';
 
-    const W = 340, H = 180;
-    const minV = Math.min(...vals);
-    const maxV = Math.max(...vals);
-    const range = maxV - minV || 1;
-    const pad = { t: 16, b: 34, l: 44, r: 12 };
-    const x = i => pad.l + (i / (points.length - 1)) * (W - pad.l - pad.r);
-    const y = v => pad.t + (1 - (v - minV) / range) * (H - pad.t - pad.b);
+    const allDates = [...new Set(multiPointExos.flatMap(d => d.points.map(p => p.date)))].sort();
 
-    const gridLines = [minV, minV + range / 2, maxV];
-    const gridSvg = gridLines.map(v =>
-      `<line x1="${pad.l}" y1="${y(v).toFixed(1)}" x2="${W - pad.r}" y2="${y(v).toFixed(1)}" stroke="#1a1a1a" stroke-width="1"/>
-       <text x="${pad.l - 6}" y="${y(v).toFixed(1)}" dy="3.5" text-anchor="end" font-size="10" fill="#555">${activeMetric === 'volume' ? Math.round(v) : v}</text>`
-    ).join('');
+    const datasets = multiPointExos.map((exo, i) => {
+      const color = CHART_COLORS[i % CHART_COLORS.length];
+      const dateMap = {};
+      exo.points.forEach(p => { dateMap[p.date] = p[activeMetric]; });
+      return {
+        label: exo.name,
+        data: allDates.map(d => dateMap[d] ?? null),
+        borderColor: color,
+        backgroundColor: color + '33',
+        borderWidth: 2,
+        pointRadius: 3,
+        pointHoverRadius: 5,
+        tension: 0.3,
+        spanGaps: true,
+      };
+    });
 
-    const areaPath = `M${x(0).toFixed(1)},${y(vals[0]).toFixed(1)} ` +
-      vals.map((v, i) => `L${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' ') +
-      ` L${x(vals.length - 1).toFixed(1)},${H - pad.b} L${x(0).toFixed(1)},${H - pad.b} Z`;
-
-    const linePath = vals.map((v, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' ');
-
-    const dateIdxs = [0, Math.floor(points.length / 2), points.length - 1].filter((v, i, a) => a.indexOf(v) === i);
-    const dateLbls = dateIdxs.map(i =>
-      `<text x="${x(i).toFixed(1)}" y="${H - 6}" text-anchor="middle" font-size="10" fill="#555">${points[i].date.slice(5).replace('-', '/')}</text>`
-    ).join('');
-
-    const circlesSvg = vals.map((v, i) =>
-      `<circle cx="${x(i).toFixed(1)}" cy="${y(v).toFixed(1)}" r="3.5" fill="#9A7A30" stroke="#0f0f0f" stroke-width="1.5"/>`
-    ).join('');
-
-    graphWrap.innerHTML = `
-      <svg viewBox="0 0 ${W} ${H}" class="stats-svg stats-svg--large">
-        <defs>
-          <linearGradient id="boAreaGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="#9A7A30" stop-opacity="0.3"/>
-            <stop offset="100%" stop-color="#9A7A30" stop-opacity="0.02"/>
-          </linearGradient>
-        </defs>
-        <line x1="${pad.l}" y1="${pad.t}" x2="${pad.l}" y2="${H - pad.b}" stroke="#2a2a2a" stroke-width="1"/>
-        <line x1="${pad.l}" y1="${H - pad.b}" x2="${W - pad.r}" y2="${H - pad.b}" stroke="#2a2a2a" stroke-width="1"/>
-        ${gridSvg}
-        <path d="${areaPath}" fill="url(#boAreaGrad)"/>
-        <path d="${linePath}" fill="none" stroke="#9A7A30" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
-        ${circlesSvg}
-        ${dateLbls}
-      </svg>
-    `;
+    chartInstance = new Chart(canvas, {
+      type: 'line',
+      data: { labels: allDates.map(d => d.slice(5).replace('-', '/')), datasets },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: { color: '#888', font: { family: "'DM Mono', monospace", size: 11 }, boxWidth: 12, padding: 10 },
+          },
+          tooltip: {
+            backgroundColor: '#1a1a1a',
+            borderColor: '#2e2e2e',
+            borderWidth: 1,
+            titleColor: '#f0f0f0',
+            bodyColor: '#f0f0f0',
+            titleFont: { family: "'DM Mono', monospace" },
+            bodyFont: { family: "'DM Mono', monospace" },
+            callbacks: {
+              label: ctx => `${ctx.dataset.label}: ${activeMetric === 'volume' ? Math.round(ctx.parsed.y) : ctx.parsed.y.toFixed(1)} ${unit}`,
+            },
+          },
+        },
+        scales: {
+          x: {
+            ticks: { color: '#555', font: { family: "'DM Mono', monospace", size: 10 } },
+            grid: { color: '#1a1a1a' },
+          },
+          y: {
+            ticks: {
+              color: '#555',
+              font: { family: "'DM Mono', monospace", size: 10 },
+              callback: v => activeMetric === 'volume' ? Math.round(v) : v.toFixed(1),
+            },
+            grid: { color: '#1a1a1a' },
+          },
+        },
+      },
+    });
   }
 
-  populateSelect(machineData);
-  renderGraph();
+  render();
 
-  prevBtn.addEventListener('click', () => {
-    if (currentIdx > 0) { currentIdx--; renderGraph(); }
-  });
-  nextBtn.addEventListener('click', () => {
-    if (currentIdx < filtered.length - 1) { currentIdx++; renderGraph(); }
-  });
-
-  // Keyboard arrows (PC)
-  section.setAttribute('tabindex', '0');
-  section.style.outline = 'none';
-  section.addEventListener('keydown', e => {
-    if (e.key === 'ArrowLeft' && currentIdx > 0) { currentIdx--; renderGraph(); e.preventDefault(); }
-    if (e.key === 'ArrowRight' && currentIdx < filtered.length - 1) { currentIdx++; renderGraph(); e.preventDefault(); }
-  });
-
-  metricPills.addEventListener('click', e => {
-    const btn = e.target.closest('.stats-metric-pill');
+  // Programme pill click
+  pills.addEventListener('click', e => {
+    const btn = e.target.closest('.stats-prog-pill');
     if (!btn) return;
-    metricPills.querySelectorAll('.stats-metric-pill').forEach(b => b.classList.remove('active'));
+    pills.querySelectorAll('.stats-prog-pill').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    activeProg = btn.dataset.prog;
+    render();
+  });
+
+  // Metric toggle click
+  toggle.addEventListener('click', e => {
+    const btn = e.target.closest('.stats-metric-btn');
+    if (!btn) return;
+    toggle.querySelectorAll('.stats-metric-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     activeMetric = btn.dataset.metric;
-    renderGraph();
-  });
-
-  pills.addEventListener('click', e => {
-    const pill = e.target.closest('.stats-pill');
-    if (!pill) return;
-    pills.querySelectorAll('.stats-pill').forEach(p => p.classList.remove('active'));
-    pill.classList.add('active');
-    const muscle = pill.dataset.muscle;
-    filtered = muscle === 'Tous' ? machineData : machineData.filter(d => d.muscle === muscle);
-    populateSelect(filtered);
-    renderGraph();
+    render();
   });
 
   return section;

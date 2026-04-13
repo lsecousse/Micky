@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Gym Watch</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #131313;
+  --surface: #1c1c1c;
+  --surface2: #252525;
+  --accent: #9A7A30;
+  --accent-dim: #7d6226;
+  --accent-bg: rgba(154, 122, 48, 0.12);
+  --text: #f0f0f0;
+  --text-muted: #6a6a6a;
+  --danger: #ff5c5c;
+  --border: #333;
+  --radius: 12px;
+  --font: 'DM Mono', 'Courier New', monospace;
+}
+
+html, body {
+  height: 100%; width: 100%; overflow-x: hidden;
+  background: var(--bg); color: var(--text);
+  font-family: var(--font); font-size: 15px;
+  overscroll-behavior: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ── Screens ── */
+.screen {
+  display: none; flex-direction: column; min-height: 100vh;
+  padding: 12px; padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.screen.active { display: flex; }
+
+/* ── Login ── */
+#screen-login { justify-content: center; align-items: center; gap: 12px; padding: 20px; }
+#screen-login input {
+  width: 100%; padding: 10px 12px; border-radius: var(--radius);
+  border: 1px solid var(--border); background: var(--surface2);
+  color: var(--text); font-size: 14px; font-family: var(--font);
+  -webkit-appearance: none; appearance: none; outline: none;
+}
+#screen-login input:focus { border-color: var(--accent); }
+
+.btn {
+  width: 100%; padding: 12px; border: none; border-radius: var(--radius);
+  font-size: 14px; font-weight: 600; font-family: var(--font); cursor: pointer;
+}
+.btn-accent { background: var(--accent); color: #111; }
+.btn-accent:active { background: var(--accent-dim); }
+.btn-surface { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+.btn-surface:active { border-color: var(--accent); }
+
+/* ── Programme list ── */
+#screen-home { gap: 10px; }
+.prog-card {
+  background: var(--surface); border: 1px solid transparent;
+  border-radius: var(--radius); padding: 16px;
+  cursor: pointer; display: flex; flex-direction: column; gap: 4px;
+  transition: background 0.15s;
+}
+.prog-card:active { border-color: var(--accent); }
+.prog-card:first-child { border-color: var(--accent); }
+.prog-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--text-muted); }
+.prog-name { font-size: 16px; font-weight: 600; color: var(--accent); }
+.prog-meta { font-size: 12px; color: var(--text-muted); }
+.prog-card--active { border-color: var(--accent); background: var(--accent-bg); }
+
+/* ── Live session — focus card ── */
+#screen-live { padding: 0; justify-content: center; }
+#live-body {
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; flex: 1; padding: 10px;
+  gap: 6px; text-align: center;
+}
+
+.wf-exercise-name {
+  font-size: 13px; font-weight: 600; color: var(--accent);
+  letter-spacing: 0.03em;
+}
+.wf-series-label {
+  font-size: 10px; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 0.1em;
+}
+.wf-values {
+  display: flex; align-items: baseline; justify-content: center;
+  gap: 6px; margin: 8px 0;
+}
+.wf-values input {
+  width: 60px; padding: 8px 4px; border-radius: var(--radius);
+  border: 1px solid var(--border); background: var(--surface2);
+  color: var(--text); font-size: 24px; font-weight: 700;
+  text-align: center; font-family: var(--font);
+  -webkit-appearance: none; appearance: none; outline: none;
+}
+.wf-values input:focus { border-color: var(--accent); }
+.wf-values .wf-sep { font-size: 16px; color: var(--text-muted); }
+.wf-values .wf-unit { font-size: 12px; color: var(--text-muted); }
+
+.wf-prev {
+  font-size: 11px; color: #8ab4f8; font-style: italic;
+}
+
+.wf-done-btn {
+  width: 64px; height: 64px; border-radius: 50%;
+  border: 3px solid var(--accent); background: none;
+  color: var(--accent); font-size: 28px;
+  cursor: pointer; margin: 8px 0;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s, color 0.15s;
+}
+.wf-done-btn:active { background: var(--accent); color: #111; }
+.wf-done-btn.is-done {
+  background: var(--accent); color: #111;
+  border-color: var(--accent); opacity: 0.5;
+}
+
+.wf-nav {
+  display: flex; gap: 16px; align-items: center; margin-top: 6px;
+}
+.wf-nav-btn {
+  width: 36px; height: 36px; border-radius: 50%;
+  border: 1px solid var(--border); background: var(--surface);
+  color: var(--text); font-size: 16px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+.wf-nav-btn:active { border-color: var(--accent); color: var(--accent); }
+.wf-nav-btn:disabled { opacity: 0.2; pointer-events: none; }
+.wf-dots {
+  display: flex; gap: 4px; align-items: center;
+}
+.wf-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--text-muted); opacity: 0.3;
+}
+.wf-dot.active { opacity: 1; background: var(--accent); }
+.wf-dot.done { opacity: 0.6; background: var(--accent); }
+
+.wf-finish {
+  position: absolute; top: 10px; right: 10px;
+  background: none; border: none; font-size: 11px;
+  color: var(--text-muted); cursor: pointer;
+  font-family: var(--font); text-decoration: underline;
+}
+
+/* Dialog */
+.dialog-overlay {
+  display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+  justify-content: center; align-items: center; z-index: 100; padding: 24px;
+}
+.dialog-overlay.active { display: flex; }
+.dialog-box {
+  background: var(--surface); border-radius: 14px;
+  padding: 24px 20px 20px; text-align: center;
+  width: 100%; max-width: 260px;
+  display: flex; flex-direction: column; gap: 20px;
+}
+.dialog-msg { font-size: 15px; line-height: 1.5; }
+.dialog-btns { display: flex; gap: 10px; }
+.dialog-btns .btn { flex: 1; padding: 10px; font-size: 13px; }
+
+/* Countdown overlay */
+.countdown-overlay {
+  position: fixed; inset: 0; background: var(--bg);
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; gap: 16px; z-index: 50;
+}
+.countdown-overlay.hidden { display: none; }
+.countdown-secs { font-size: 72px; font-weight: 700; color: var(--accent); }
+.countdown-label { font-size: 13px; color: var(--text-muted); text-align: center; }
+
+/* Greeting */
+.greeting { font-size: 15px; font-weight: 600; color: var(--text); padding: 4px 0 8px; }
+
+/* Loader */
+.loader { text-align: center; padding: 40px 0; color: var(--text-muted); font-size: 13px; }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="screen active" id="screen-login">
+  <div style="font-size:13px;color:var(--text-muted);text-align:center;margin-bottom:4px">
+    Code affiché sur le téléphone<br>Paramètres → Connecter la montre
+  </div>
+  <input type="number" id="w-code" placeholder="Code 4 chiffres" inputmode="numeric"
+    maxlength="4" style="text-align:center;font-size:28px;letter-spacing:0.2em;padding:14px">
+  <button class="btn btn-accent" id="w-login">Connexion</button>
+  <div id="w-login-err" style="color:var(--danger);font-size:11px;text-align:center"></div>
+</div>
+
+<!-- HOME — programme list -->
+<div class="screen" id="screen-home">
+  <div id="prog-list"></div>
+</div>
+
+<!-- LIVE SESSION -->
+<div class="screen" id="screen-live">
+  <div id="live-body"></div>
+</div>
+
+<!-- COUNTDOWN -->
+<div class="countdown-overlay hidden" id="w-countdown">
+  <div class="countdown-secs" id="w-countdown-secs">0</div>
+  <div class="countdown-label" id="w-countdown-label"></div>
+  <button class="btn btn-surface" id="w-countdown-skip" style="width:auto;padding:10px 24px">Passer</button>
+</div>
+
+<!-- DIALOG -->
+<div class="dialog-overlay" id="dialog">
+  <div class="dialog-box">
+    <div class="dialog-msg" id="dialog-msg"></div>
+    <div class="dialog-btns">
+      <button class="btn btn-surface" id="dialog-cancel">Non</button>
+      <button class="btn btn-accent" id="dialog-ok">Oui</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+/* ═══════════════════════════════════════════════════════
+   SUPABASE
+═══════════════════════════════════════════════════════ */
+const SUPABASE_URL  = 'https://ukhekyabqeyhkanwgpfx.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVraGVreWFicWV5aGthbndncGZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2OTgxMjAsImV4cCI6MjA5MDI3NDEyMH0.2j415bJ7jVoh8gRHmLj2QV_-tELSRJzzghtXrr51Ipc';
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+
+/* ═══════════════════════════════════════════════════════
+   STATE
+═══════════════════════════════════════════════════════ */
+let currentUser = null;
+let currentProfile = null;
+let liveSession = null;
+let currentScreen = 'login';
+let pollTimer = null;
+
+/* ═══════════════════════════════════════════════════════
+   HELPERS
+═══════════════════════════════════════════════════════ */
+function show(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  currentScreen = id.replace('screen-', '');
+}
+
+function generateId() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+}
+
+function todayIso() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function migrateExercise(ex) {
+  if (ex.activities) return ex;
+  const type = ex.type === 'calisthenics' ? 'countdown' : 'weight';
+  const s0 = ex.series?.[0] || {};
+  const activity = {
+    type,
+    name:     ex.muscle   || '',
+    reps:     type === 'weight' ? (ex.reps     ?? s0.reps     ?? 0) : 0,
+    weight:   type === 'weight' ? (ex.weight   ?? s0.weight   ?? 0) : 0,
+    duration: type !== 'weight' ? (ex.duration ?? s0.duration ?? 0) : 0,
+    rest:     ex.rest ?? s0.rest ?? 0,
+  };
+  const series = ex.series
+    ? ex.series.map(s => ({
+        done: s.done ?? false, state: s.state || 'pending',
+        values: [type === 'weight' ? { reps: s.reps || 0, weight: s.weight || 0 } : { duration: s.duration || 0 }],
+      }))
+    : Array.from({ length: ex.count ?? 3 }, () => ({
+        done: false, state: 'pending',
+        values: [type === 'weight' ? { reps: activity.reps, weight: activity.weight } : { duration: activity.duration }],
+      }));
+  return { name: ex.name, comment: ex.comment || '', sets: ex.count ?? ex.series?.length ?? 3, activities: [activity], series };
+}
+
+function showConfirm(msg, onOk) {
+  const d = document.getElementById('dialog');
+  document.getElementById('dialog-msg').textContent = msg;
+  d.classList.add('active');
+  const ok = document.getElementById('dialog-ok');
+  const cancel = document.getElementById('dialog-cancel');
+  const cleanup = () => { d.classList.remove('active'); ok.removeEventListener('click', handleOk); cancel.removeEventListener('click', cleanup); };
+  const handleOk = () => { cleanup(); onOk(); };
+  ok.addEventListener('click', handleOk);
+  cancel.addEventListener('click', cleanup);
+}
+
+/* ═══════════════════════════════════════════════════════
+   DB
+═══════════════════════════════════════════════════════ */
+async function getMyProfile() {
+  const { data: { user } } = await db.auth.getUser();
+  if (!user) return null;
+  const { data } = await db.from('profiles').select('*').eq('id', user.id).single();
+  return data;
+}
+
+async function loadProgrammes() {
+  const { data: { user } } = await db.auth.getUser();
+  if (!user) return [];
+  const { data } = await db.from('programmes').select('*').eq('client_id', user.id).order('ordre');
+  return (data || []).map(r => ({ id: r.id, name: r.name, category: r.category || 'fonte', exercises: r.exercises || [] }));
+}
+
+async function loadSessions() {
+  const { data: { user } } = await db.auth.getUser();
+  if (!user) return [];
+  const { data } = await db.from('sessions').select('*').eq('client_id', user.id);
+  return (data || []).map(r => ({
+    id: r.id, programmeId: r.programme_id, programmeName: r.programme_name,
+    category: r.category || 'fonte', date: r.date, startedAt: r.started_at,
+    duration: r.duration, exercises: r.exercises || [], sync: r.sync || null,
+  }));
+}
+
+async function pushSession(session) {
+  const { data: { user } } = await db.auth.getUser();
+  if (!user) return;
+  await db.from('sessions').upsert({
+    id: session.id, client_id: user.id,
+    programme_name: session.programmeName, programme_id: session.programmeId || null,
+    date: session.date, started_at: session.startedAt, duration: session.duration,
+    exercises: session.exercises, category: session.category || 'fonte',
+    sync: session.sync || null,
+  });
+}
+
+function snapshot(dur = 0) {
+  return {
+    id: liveSession.id, programmeId: liveSession.programmeId,
+    programmeName: liveSession.programmeName, category: liveSession.category || 'fonte',
+    date: liveSession.date, startedAt: liveSession.startedAt, duration: dur,
+    sync: liveSession.sync || null,
+    exercises: liveSession.exercises.map(ex => {
+      if (ex.type === 'cardio') {
+        return {
+          name: ex.name, type: 'cardio', comment: ex.comment || '',
+          duration: ex.duration, power: ex.power,
+          done: ex.done, state: ex.state,
+        };
+      }
+      return {
+        name: ex.name, comment: ex.comment || '', activities: ex.activities,
+        series: ex.series.map(s => ({
+          done: ex.activities.every((_, i) => s.activityStates?.[i] === 'done'),
+          activityStates: s.activityStates || {}, values: s.values,
+        })),
+      };
+    }),
+  };
+}
+
+/* ═══════════════════════════════════════════════════════
+   LOGIN
+═══════════════════════════════════════════════════════ */
+document.getElementById('w-login').addEventListener('click', async () => {
+  const code = document.getElementById('w-code').value.trim();
+  const errEl = document.getElementById('w-login-err');
+  if (code.length !== 4) { errEl.textContent = 'Code à 4 chiffres'; return; }
+
+  // Chercher le code en base
+  const { data, error } = await db.from('watch_codes').select('*').eq('code', code).limit(1).single();
+  if (error || !data) { errEl.textContent = 'Code invalide'; return; }
+
+  // Vérifier expiration (5 min)
+  const age = Date.now() - new Date(data.created_at).getTime();
+  if (age > 5 * 60 * 1000) {
+    await db.from('watch_codes').delete().eq('id', data.id);
+    errEl.textContent = 'Code expiré';
+    return;
+  }
+
+  // Se connecter avec le refresh_token
+  const { error: authErr } = await db.auth.refreshSession({ refresh_token: data.refresh_token });
+  if (authErr) { errEl.textContent = 'Erreur de connexion'; return; }
+
+  // Supprimer le code utilisé
+  await db.from('watch_codes').delete().eq('id', data.id);
+
+  currentUser = (await db.auth.getUser()).data.user;
+  renderHome();
+  startPolling();
+});
+
+/* ═══════════════════════════════════════════════════════
+   HOME — programme selection
+═══════════════════════════════════════════════════════ */
+async function cyclicProgrammes(programmes) {
+  if (!programmes.length) return { ordered: programmes };
+  const sessions = await loadSessions();
+  if (!sessions.length) return { ordered: programmes };
+  const last = sessions.slice().sort((a, b) => {
+    const ta = a.startedAt || a.date;
+    const tb = b.startedAt || b.date;
+    return tb.localeCompare(ta);
+  })[0];
+  const lastIdx = programmes.findIndex(p => p.id === last.programmeId);
+  if (lastIdx === -1) return { ordered: programmes };
+  const start = (lastIdx + 1) % programmes.length;
+  return { ordered: [...programmes.slice(start), ...programmes.slice(0, start)] };
+}
+
+function resumeFromDB(session) {
+  liveSession = {
+    id: session.id, programmeId: session.programmeId,
+    programmeName: session.programmeName, category: session.category || 'fonte',
+    date: session.date, startedAt: session.startedAt,
+    exercises: session.exercises.map(ex => {
+      if (ex.type === 'cardio') {
+        return {
+          name: ex.name, type: 'cardio', comment: ex.comment || '',
+          duration: ex.duration, power: ex.power,
+          done: ex.done || { duration: 0, power: 0 },
+          prev: ex.prev || null, state: ex.state || 'pending',
+        };
+      }
+      const e = migrateExercise(ex);
+      return {
+        name: e.name, comment: e.comment || '', activities: e.activities,
+        prevSeries: null,
+        series: e.series.map(s => ({
+          state: s.state || (s.done ? 'done' : 'pending'),
+          activityStates: s.activityStates || {},
+          values: s.values,
+        })),
+      };
+    }),
+  };
+  watchExIdx = 0;
+  // Auto-navigate to first non-done exercise
+  for (let i = 0; i < liveSession.exercises.length; i++) {
+    const e = liveSession.exercises[i];
+    const done = e.type === 'cardio'
+      ? e.state === 'done'
+      : e.series.every(s => e.activities.every((_, a) => s.activityStates?.[a] === 'done'));
+    if (!done) { watchExIdx = i; break; }
+  }
+  renderLive();
+}
+
+async function renderHome() {
+  show('screen-home');
+  const list = document.getElementById('prog-list');
+  list.innerHTML = '<div class="loader">Chargement...</div>';
+
+  if (!currentProfile) currentProfile = await getMyProfile();
+  const sessions = await loadSessions();
+  const programmes = await loadProgrammes();
+  list.innerHTML = '';
+
+  if (currentProfile?.prenom) {
+    const greeting = document.createElement('p');
+    greeting.className = 'greeting';
+    greeting.textContent = `Bienvenue ${currentProfile.prenom}`;
+    list.appendChild(greeting);
+  }
+
+  // Seance en cours (demarree sur telephone ou montre) ?
+  const inProgress = sessions.find(s => s.duration === 0 || s.duration == null);
+  if (inProgress?.exercises?.length) {
+    const card = document.createElement('div');
+    card.className = 'prog-card prog-card--active';
+    card.innerHTML = `
+      <div class="prog-label">Seance en cours</div>
+      <div class="prog-name">${inProgress.programmeName}</div>
+    `;
+    card.addEventListener('click', () => resumeFromDB(inProgress));
+    list.appendChild(card);
+
+    addLogoutBtn(list);
+    return;
+  }
+
+  // Pas de seance en cours → afficher le prochain programme par categorie
+  const fonte = programmes.filter(p => (p.category || 'fonte') === 'fonte');
+  const cardio = programmes.filter(p => p.category === 'cardio');
+
+  if (!fonte.length && !cardio.length) {
+    list.innerHTML += '<div class="loader">Aucun programme</div>';
+    addLogoutBtn(list);
+    return;
+  }
+
+  if (fonte.length) {
+    const { ordered } = await cyclicProgrammes(fonte);
+    const next = ordered[0];
+    const m = next.exercises.map(e => migrateExercise(e));
+    const exCount = m.length;
+    const serCount = m.reduce((s, e) => s + (e.sets || e.series?.length || 3), 0);
+    const card = document.createElement('div');
+    card.className = 'prog-card';
+    card.style.borderColor = 'var(--accent)';
+    card.innerHTML = `
+      <div class="prog-label">Fonte</div>
+      <div class="prog-name">${next.name}</div>
+      <div class="prog-meta">${exCount} exercices · ${serCount} series</div>
+    `;
+    card.addEventListener('click', () => startSession(next));
+    list.appendChild(card);
+  }
+
+  if (cardio.length) {
+    const { ordered } = await cyclicProgrammes(cardio);
+    const next = ordered[0];
+    const totalDur = next.exercises.reduce((s, e) => s + (e.duration || 0), 0);
+    const card = document.createElement('div');
+    card.className = 'prog-card';
+    card.style.borderColor = 'var(--accent)';
+    card.innerHTML = `
+      <div class="prog-label">Cardio</div>
+      <div class="prog-name">${next.name}</div>
+      <div class="prog-meta">${next.exercises.length} machine${next.exercises.length > 1 ? 's' : ''} · ${totalDur} min</div>
+    `;
+    card.addEventListener('click', () => startSession(next));
+    list.appendChild(card);
+  }
+
+  addLogoutBtn(list);
+}
+
+function addLogoutBtn(list) {
+  const logoutBtn = document.createElement('button');
+  logoutBtn.className = 'btn btn-surface';
+  logoutBtn.textContent = 'Se deconnecter';
+  logoutBtn.style.marginTop = '12px';
+  logoutBtn.addEventListener('click', () => {
+    showConfirm('Se deconnecter ?', async () => {
+      await db.auth.signOut();
+      currentUser = null;
+      currentProfile = null;
+      stopPolling();
+      show('screen-login');
+    });
+  });
+  list.appendChild(logoutBtn);
+}
+
+/* ═══════════════════════════════════════════════════════
+   START SESSION
+═══════════════════════════════════════════════════════ */
+async function startSession(prog) {
+  const sessions = await loadSessions();
+  const prev = sessions.filter(s => s.programmeId === prog.id)
+    .sort((a, b) => (b.startedAt || b.date).localeCompare(a.startedAt || a.date))[0] || null;
+
+  const isCardio = prog.category === 'cardio';
+  liveSession = {
+    id: generateId(), programmeId: prog.id, programmeName: prog.name,
+    category: prog.category || 'fonte', date: todayIso(), startedAt: new Date().toISOString(),
+    exercises: isCardio
+      ? prog.exercises.map(ex => {
+          const prevEx = prev?.exercises?.find(e => e.name === ex.name) || null;
+          return {
+            name: ex.name, type: 'cardio', comment: ex.comment || '',
+            duration: ex.duration || 0, power: ex.power || 0,
+            done: { duration: ex.duration || 0, power: ex.power || 0 },
+            prev: prevEx?.done || null, state: 'pending',
+          };
+        })
+      : prog.exercises.map(ex => {
+          const m = migrateExercise(ex);
+          const sets = ex.sets ?? m.series.length ?? (ex.count ?? 3);
+          const prevEx = prev?.exercises?.find(e => e.name === ex.name) || null;
+          return {
+            name: ex.name, comment: ex.comment || '', activities: m.activities,
+            prevSeries: prevEx?.series || null,
+            series: Array.from({ length: sets }, () => ({
+              activityStates: {},
+              values: m.activities.map(act =>
+                act.type === 'weight'
+                  ? { reps: act.reps || 0, weight: act.weight || 0 }
+                  : { duration: act.duration || 0 }
+              ),
+            })),
+          };
+        }),
+  };
+  pushSession(snapshot()).catch(() => {});
+  watchExIdx = 0;
+  renderLive();
+}
+
+/* ═══════════════════════════════════════════════════════
+   LIVE SESSION
+═══════════════════════════════════════════════════════ */
+function isSeriesLocked(exIdx, sIdx) {
+  if (sIdx === 0) return false;
+  const ex = liveSession.exercises[exIdx];
+  const prev = ex.series[sIdx - 1];
+  return !ex.activities.every((_, i) => prev.activityStates?.[i] === 'done');
+}
+
+let watchExIdx = 0;
+
+// Find the current (first non-done) series index for an exercise
+function currentSeriesIdx(ex) {
+  if (ex.type === 'cardio') return 0;
+  for (let s = 0; s < ex.series.length; s++) {
+    const allDone = ex.activities.every((_, a) => ex.series[s].activityStates?.[a] === 'done');
+    if (!allDone) return s;
+  }
+  return ex.series.length - 1; // all done, show last
+}
+
+function renderLive() {
+  show('screen-live');
+  const body = document.getElementById('live-body');
+  body.innerHTML = '';
+
+  const exercises = liveSession.exercises;
+  if (watchExIdx >= exercises.length) watchExIdx = exercises.length - 1;
+  if (watchExIdx < 0) watchExIdx = 0;
+  const ex = exercises[watchExIdx];
+  const exIdx = watchExIdx;
+
+  // Finish button (top right)
+  const finBtn = document.createElement('button');
+  finBtn.className = 'wf-finish';
+  finBtn.textContent = 'Terminer';
+  finBtn.addEventListener('click', () => {
+    showConfirm('Terminer la seance ?', () => {
+      const dur = Math.round((Date.now() - new Date(liveSession.startedAt).getTime()) / 1000);
+      pushSession(snapshot(dur)).catch(() => {});
+      liveSession = null;
+      stopWatchCountdown();
+      renderHome();
+    });
+  });
+  body.appendChild(finBtn);
+
+  // Exercise name
+  const nameEl = document.createElement('div');
+  nameEl.className = 'wf-exercise-name';
+  nameEl.textContent = ex.name;
+  body.appendChild(nameEl);
+
+  // ── Cardio ──
+  if (ex.type === 'cardio') {
+    const label = document.createElement('div');
+    label.className = 'wf-series-label';
+    label.textContent = ex.state === 'done' ? 'Termine' : 'En cours';
+    body.appendChild(label);
+
+    const vals = document.createElement('div');
+    vals.className = 'wf-values';
+    const durIn = document.createElement('input');
+    durIn.type = 'number'; durIn.inputMode = 'numeric';
+    durIn.value = ex.done?.duration || 0; durIn.min = 0;
+    const powIn = document.createElement('input');
+    powIn.type = 'number'; powIn.inputMode = 'numeric';
+    powIn.value = ex.done?.power || 0; powIn.min = 0;
+    const durUnit = document.createElement('span'); durUnit.className = 'wf-unit'; durUnit.textContent = 'min';
+    const powUnit = document.createElement('span'); powUnit.className = 'wf-unit'; powUnit.textContent = 'W';
+    vals.append(durIn, durUnit, powIn, powUnit);
+    body.appendChild(vals);
+
+    if (ex.prev) {
+      const prev = document.createElement('div');
+      prev.className = 'wf-prev';
+      prev.textContent = `Prec: ${ex.prev.duration || '—'} min · ${ex.prev.power || '—'} W`;
+      body.appendChild(prev);
+    }
+
+    const doneBtn = document.createElement('button');
+    doneBtn.className = 'wf-done-btn' + (ex.state === 'done' ? ' is-done' : '');
+    doneBtn.textContent = ex.state === 'done' ? '✓' : '○';
+    doneBtn.addEventListener('click', () => {
+      ex.done = { duration: parseInt(durIn.value) || 0, power: parseInt(powIn.value) || 0 };
+      ex.state = ex.state === 'done' ? 'pending' : 'done';
+      pushSession(snapshot()).catch(() => {});
+      renderLive();
+    });
+    body.appendChild(doneBtn);
+
+  // ── Fonte ──
+  } else {
+    const sIdx = currentSeriesIdx(ex);
+    const set = ex.series[sIdx];
+    const act = ex.activities[0]; // primary activity
+    const actIdx = 0;
+    if (!set.activityStates) set.activityStates = {};
+    if (set.activityStates[actIdx] === undefined) {
+      set.activityStates[actIdx] = (set.done || set.state === 'done') ? 'done' : 'pending';
+    }
+    const state = set.activityStates[actIdx];
+    const v = set.values?.[actIdx] || {};
+
+    // Series label
+    const label = document.createElement('div');
+    label.className = 'wf-series-label';
+    label.textContent = `Serie ${sIdx + 1} / ${ex.series.length}`;
+    body.appendChild(label);
+
+    // Values
+    const vals = document.createElement('div');
+    vals.className = 'wf-values';
+    const repsIn = document.createElement('input');
+    repsIn.type = 'number'; repsIn.inputMode = 'decimal';
+    repsIn.value = v.reps || 0; repsIn.min = 0;
+    const sep = document.createElement('span'); sep.className = 'wf-sep'; sep.textContent = '×';
+    const weightIn = document.createElement('input');
+    weightIn.type = 'number'; weightIn.inputMode = 'decimal';
+    weightIn.value = v.weight || 0; weightIn.min = 0; weightIn.step = '0.5';
+    const unit = document.createElement('span'); unit.className = 'wf-unit'; unit.textContent = 'kg';
+    vals.append(repsIn, sep, weightIn, unit);
+    body.appendChild(vals);
+
+    // Save on change
+    const save = () => {
+      set.values[actIdx] = { reps: parseFloat(repsIn.value) || 0, weight: parseFloat(weightIn.value) || 0 };
+      pushSession(snapshot()).catch(() => {});
+    };
+    repsIn.addEventListener('change', save);
+    weightIn.addEventListener('change', () => {
+      const newW = parseFloat(weightIn.value) || 0;
+      const origW = v.weight || 0;
+      if (newW < origW && origW > 0) {
+        showConfirm(`${origW} → ${newW} kg ?`, save);
+      } else { save(); }
+    });
+
+    // Previous line
+    const prevVal = ex.prevSeries?.[sIdx]?.values?.[actIdx];
+    if (prevVal?.reps || prevVal?.weight) {
+      const prev = document.createElement('div');
+      prev.className = 'wf-prev';
+      prev.textContent = `Prec: ${prevVal.reps ?? '—'} × ${prevVal.weight ?? '—'} kg`;
+      body.appendChild(prev);
+    }
+
+    // Done button
+    const doneBtn = document.createElement('button');
+    doneBtn.className = 'wf-done-btn' + (state === 'done' ? ' is-done' : '');
+    doneBtn.textContent = state === 'done' ? '✓' : '○';
+    doneBtn.addEventListener('click', () => {
+      if (state === 'done') return;
+      set.values[actIdx] = { reps: parseFloat(repsIn.value) || 0, weight: parseFloat(weightIn.value) || 0 };
+      set.activityStates[actIdx] = 'done';
+
+      const rest = act?.rest || 0;
+      if (rest > 0 && sIdx + 1 < ex.series.length) {
+        liveSession.sync = { type: 'rest', startedAt: new Date().toISOString(), duration: rest, label: ex.name };
+        startWatchCountdown(rest, ex.name);
+      }
+
+      pushSession(snapshot()).catch(() => {});
+      renderLive();
+    });
+    body.appendChild(doneBtn);
+  }
+
+  // ── Navigation dots + arrows ──
+  const nav = document.createElement('div');
+  nav.className = 'wf-nav';
+
+  const prevBtn = document.createElement('button');
+  prevBtn.className = 'wf-nav-btn';
+  prevBtn.textContent = '‹';
+  prevBtn.disabled = exIdx === 0;
+  prevBtn.addEventListener('click', () => { watchExIdx--; renderLive(); });
+
+  const dots = document.createElement('div');
+  dots.className = 'wf-dots';
+  exercises.forEach((e, i) => {
+    const dot = document.createElement('div');
+    dot.className = 'wf-dot';
+    if (i === exIdx) dot.classList.add('active');
+    else {
+      const isDone = e.type === 'cardio'
+        ? e.state === 'done'
+        : e.series.every(s => e.activities.every((_, a) => s.activityStates?.[a] === 'done'));
+      if (isDone) dot.classList.add('done');
+    }
+    dots.appendChild(dot);
+  });
+
+  const nextBtn = document.createElement('button');
+  nextBtn.className = 'wf-nav-btn';
+  nextBtn.textContent = '›';
+  nextBtn.disabled = exIdx === exercises.length - 1;
+  nextBtn.addEventListener('click', () => { watchExIdx++; renderLive(); });
+
+  nav.append(prevBtn, dots, nextBtn);
+  body.appendChild(nav);
+}
+
+/* ═══════════════════════════════════════════════════════
+   COUNTDOWN — montre
+═══════════════════════════════════════════════════════ */
+let watchCountdownTimer = null;
+
+function startWatchCountdown(seconds, label) {
+  stopWatchCountdown();
+  if (!seconds || seconds <= 0) return;
+  const overlay = document.getElementById('w-countdown');
+  const secsEl  = document.getElementById('w-countdown-secs');
+  const labelEl = document.getElementById('w-countdown-label');
+  overlay.classList.remove('hidden');
+  labelEl.textContent = label ? `A suivre : ${label}` : '';
+  let remaining = seconds;
+  secsEl.textContent = remaining;
+  watchCountdownTimer = setInterval(() => {
+    remaining--;
+    if (remaining <= 0) {
+      stopWatchCountdown();
+      if (navigator.vibrate) navigator.vibrate([300, 100, 300]);
+    } else {
+      secsEl.textContent = remaining;
+      if (remaining <= 3 && navigator.vibrate) navigator.vibrate(80);
+    }
+  }, 1000);
+}
+
+function stopWatchCountdown() {
+  if (watchCountdownTimer) { clearInterval(watchCountdownTimer); watchCountdownTimer = null; }
+  document.getElementById('w-countdown').classList.add('hidden');
+  if (liveSession?.sync?.type === 'rest') {
+    liveSession.sync = null;
+    pushSession(snapshot()).catch(() => {});
+  }
+}
+
+document.getElementById('w-countdown-skip').addEventListener('click', stopWatchCountdown);
+
+/* ═══════════════════════════════════════════════════════
+   POLLING — sync avec le telephone
+═══════════════════════════════════════════════════════ */
+function startPolling() {
+  stopPolling();
+  pollTimer = setInterval(pollSync, 500);
+}
+
+function stopPolling() {
+  if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+}
+
+async function pollSync() {
+  if (!currentUser) return;
+  try {
+    const sessions = await loadSessions();
+    const inProgress = sessions.find(s => s.duration === 0 || s.duration == null);
+
+    if (currentScreen === 'home') {
+      // Seance demarree sur le telephone → basculer en live
+      if (inProgress?.exercises?.length) {
+        resumeFromDB(inProgress);
+      }
+    } else if (currentScreen === 'live' && liveSession) {
+      if (!inProgress) {
+        // Seance terminee sur le telephone → retour accueil
+        liveSession = null;
+        renderHome();
+        return;
+      }
+      // Sync les changements du telephone (series completees, valeurs modifiees)
+      if (inProgress.id === liveSession.id) {
+        syncLiveFromDB(inProgress);
+      }
+    }
+  } catch { /* network error, skip */ }
+}
+
+function syncLiveFromDB(session) {
+  let changed = false;
+  session.exercises.forEach((dbEx, exIdx) => {
+    const localEx = liveSession.exercises[exIdx];
+    if (!localEx) return;
+
+    // Cardio sync
+    if (dbEx.type === 'cardio' && localEx.type === 'cardio') {
+      if (dbEx.state !== localEx.state) { localEx.state = dbEx.state; changed = true; }
+      if (dbEx.done?.duration !== localEx.done?.duration || dbEx.done?.power !== localEx.done?.power) {
+        localEx.done = dbEx.done; changed = true;
+      }
+      return;
+    }
+
+    // Fonte sync
+    const e = migrateExercise(dbEx);
+    e.series.forEach((dbSet, sIdx) => {
+      const localSet = localEx.series?.[sIdx];
+      if (!localSet) return;
+      const dbStates = dbSet.activityStates || {};
+      localEx.activities?.forEach((_, actIdx) => {
+        const dbState = dbStates[actIdx];
+        const localState = localSet.activityStates?.[actIdx];
+        if (dbState === 'done' && localState !== 'done') {
+          if (!localSet.activityStates) localSet.activityStates = {};
+          localSet.activityStates[actIdx] = 'done';
+          changed = true;
+        } else if (dbState === 'active' && localState === 'pending') {
+          if (!localSet.activityStates) localSet.activityStates = {};
+          localSet.activityStates[actIdx] = 'active';
+          changed = true;
+        }
+      });
+      (dbSet.values || []).forEach((dbVal, actIdx) => {
+        const localVal = localSet.values?.[actIdx];
+        if (!localVal) return;
+        if (dbVal.reps !== localVal.reps || dbVal.weight !== localVal.weight) {
+          localSet.values[actIdx] = { ...dbVal };
+          changed = true;
+        }
+      });
+    });
+  });
+
+  // Sync countdown from phone
+  if (session.sync?.type === 'rest' && !watchCountdownTimer) {
+    const elapsed = (Date.now() - new Date(session.sync.startedAt).getTime()) / 1000;
+    const remaining = Math.round(session.sync.duration - elapsed);
+    if (remaining > 1) {
+      liveSession.sync = session.sync;
+      startWatchCountdown(remaining, session.sync.label);
+    }
+  }
+  // Countdown ended on phone
+  if (!session.sync && watchCountdownTimer) {
+    clearInterval(watchCountdownTimer); watchCountdownTimer = null;
+    document.getElementById('w-countdown').classList.add('hidden');
+  }
+
+  if (changed) renderLive();
+}
+
+/* ═══════════════════════════════════════════════════════
+   INIT
+═══════════════════════════════════════════════════════ */
+(async () => {
+  const { data: { session } } = await db.auth.getSession();
+  if (session?.user) {
+    currentUser = session.user;
+    renderHome();
+    startPolling();
+  }
+})();
+</script>
+</body>
+</html>
