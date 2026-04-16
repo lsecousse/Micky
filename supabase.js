@@ -125,18 +125,44 @@ async function pushBodyMeasurementDB(m) {
     id:          m.id ?? crypto.randomUUID(),
     client_id:   user.id,
     date:        m.date,
-    poids:       m.poids       ?? null,
-    masse_grasse: m.masseGrasse ?? null,
-    eau:         m.eau         ?? null,
-    muscle:      m.muscle      ?? null,
-    graisse:     m.graisse     ?? null,
-    os:          m.os          ?? null,
+    poids:          m.poids          ?? null,
+    graisse_kg:     m.graisseKg      ?? null,
+    eau:            m.eau            ?? null,
+    muscle:         m.muscle         ?? null,
+    img:            m.img            ?? null,
+    os:             m.os             ?? null,
+    tour_de_ventre: m.tourDeVentre   ?? null,
   });
   if (error) console.error('pushBodyMeasurementDB error:', error);
 }
 
 async function deleteBodyMeasurementDB(id) {
   await db.from('body_measurements').delete().eq('id', id);
+}
+
+/* Met à jour le profil (nom, prénom) */
+async function updateProfileDB(fields) {
+  const { data: { user } } = await db.auth.getUser();
+  if (!user) return;
+  const { error } = await db.from('profiles').update(fields).eq('id', user.id);
+  if (error) console.error('updateProfileDB error:', error);
+}
+
+/* Sauvegarde la clé API Claude (chiffrée côté serveur) */
+async function setClaudeApiKeyDB(apiKey) {
+  const { data: { user } } = await db.auth.getUser();
+  if (!user) return;
+  const { error } = await db.rpc('set_claude_api_key', { p_user_id: user.id, p_api_key: apiKey });
+  if (error) console.error('setClaudeApiKeyDB error:', error);
+}
+
+/* Lit la clé API Claude (déchiffrée côté serveur) */
+async function getClaudeApiKeyDB() {
+  const { data: { user } } = await db.auth.getUser();
+  if (!user) return null;
+  const { data, error } = await db.rpc('get_claude_api_key', { p_user_id: user.id });
+  if (error) { console.error('getClaudeApiKeyDB error:', error); return null; }
+  return data;
 }
 
 /* Crée un compte client sans écraser la session du coach */

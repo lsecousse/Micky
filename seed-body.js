@@ -35,13 +35,13 @@ function toISO(d) {
 }
 
 (async () => {
-  const rows = raw.map(([d, poids, masse_grasse]) => ({
+  const rows = raw.map(([d, poids, graisse_kg]) => ({
     id:           randomUUID(),
     client_id:    CLIENT_ID,
     date:         toISO(d),
     poids,
-    masse_grasse,
-    graisse:      +(( masse_grasse / poids ) * 100).toFixed(1),
+    graisse_kg,
+    img:          +(( graisse_kg / poids ) * 100).toFixed(1),
   }));
 
   const { error } = await db.from('body_measurements').insert(rows);

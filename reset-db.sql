@@ -35,7 +35,8 @@ create table public.profiles (
   prenom     text default '',
   coach_id   uuid references public.profiles(id) on delete set null,
   state      text not null default 'new' check (state in ('new', 'invited', 'password_created', 'connected')),
-  created_at timestamptz default now()
+  created_at timestamptz default now(),
+  claude_api_key_encrypted bytea
 );
 
 alter table public.profiles enable row level security;
@@ -102,12 +103,13 @@ create table public.body_measurements (
   id           uuid default gen_random_uuid() primary key,
   client_id    uuid references auth.users(id) on delete cascade,
   date         date not null,
-  poids        numeric,
-  masse_grasse numeric,
-  eau          numeric,
-  muscle       numeric,
-  graisse      numeric,
-  os           numeric,
+  poids           numeric,
+  graisse_kg      numeric,
+  eau             numeric,
+  muscle          numeric,
+  img             numeric,
+  os              numeric,
+  tour_de_ventre  numeric,
   created_at   timestamptz default now()
 );
 

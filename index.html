@@ -29,6 +29,10 @@
         <img src="icons/logo.jpg" class="home-logo" />
         <h1 class="home-title">Coach Mike</h1>
         <p class="home-sub app-version"></p>
+        <button class="home-user-btn" id="user-menu-btn">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </button>
+        <div class="user-dropdown hidden" id="user-dropdown"></div>
       </div>
       <div class="home-main" id="home-main"></div>
       <div class="home-footer">
@@ -37,6 +41,24 @@
         <button class="home-footer-btn" id="go-stats"><span class="btn-icon">📈</span>Stats</button>
         <button class="home-footer-btn" id="go-params"><span class="btn-icon">⚙️</span>Programmes</button>
       </div>
+    </div>
+
+    <!-- PROFIL -->
+    <div id="screen-profil" class="screen">
+      <div class="screen-header">
+        <button class="screen-back" id="back-profil">←</button>
+        <span class="screen-title">Profil</span>
+      </div>
+      <div class="screen-body" id="screen-profil-body"></div>
+    </div>
+
+    <!-- CLÉ API CLAUDE -->
+    <div id="screen-claude-api" class="screen">
+      <div class="screen-header">
+        <button class="screen-back" id="back-claude-api">←</button>
+        <span class="screen-title">Clé API Claude</span>
+      </div>
+      <div class="screen-body" id="screen-claude-api-body"></div>
     </div>
 
     <!-- COMPOSITION CORPORELLE -->

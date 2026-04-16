@@ -1,7 +1,7 @@
 /* ═══════════════════════════════════════════════════════
    VERSION
 ═══════════════════════════════════════════════════════ */
-const APP_VERSION = '2026.avril.13';
+const APP_VERSION = '2026.avril.16';
 document.querySelectorAll('.app-version').forEach(el => el.textContent = APP_VERSION);
 
 /* ═══════════════════════════════════════════════════════
@@ -150,8 +150,10 @@ function showScreen(name) {
   if (name === 'history') renderHistory();
   if (name === 'corps')   renderCorps();
   if (name === 'stats')   renderStats();
-  if (name === 'params')  renderParams();
-  if (name === 'login')   renderLogin();
+  if (name === 'params')      renderParams();
+  if (name === 'login')       renderLogin();
+  if (name === 'profil')      renderProfil();
+  if (name === 'claude-api')  renderClaudeApi();
 }
 
 document.getElementById('go-history').addEventListener('click', () => showScreen('history'));
@@ -162,6 +164,8 @@ document.getElementById('back-history').addEventListener('click', () => showScre
 document.getElementById('back-corps').addEventListener('click',   () => showScreen('home'));
 document.getElementById('back-stats').addEventListener('click',   () => showScreen('home'));
 document.getElementById('back-params').addEventListener('click',  () => showScreen('home'));
+document.getElementById('back-profil').addEventListener('click',     () => showScreen('home'));
+document.getElementById('back-claude-api').addEventListener('click', () => showScreen('home'));
 document.getElementById('back-seance').addEventListener('click', () => {
   if (liveSession) {
     stopAllChronos();
@@ -312,6 +316,188 @@ async function renderHome() {
       other.addEventListener('click', () => showScreen('seance'));
       main.appendChild(other);
     }
+  }
+}
+
+/* ═══════════════════════════════════════════════════════
+   MENU UTILISATEUR (dropdown)
+═══════════════════════════════════════════════════════ */
+(function initUserMenu() {
+  const btn = document.getElementById('user-menu-btn');
+  const dropdown = document.getElementById('user-dropdown');
+
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    dropdown.classList.toggle('hidden');
+    if (!dropdown.classList.contains('hidden')) buildUserDropdown();
+  });
+
+  document.addEventListener('click', () => dropdown.classList.add('hidden'));
+  dropdown.addEventListener('click', (e) => e.stopPropagation());
+})();
+
+function buildUserDropdown() {
+  const dropdown = document.getElementById('user-dropdown');
+  dropdown.innerHTML = '';
+
+  const items = [
+    { label: 'Profil', icon: '👤', action: () => { dropdown.classList.add('hidden'); showScreen('profil'); } },
+    { label: 'Clé API Claude', icon: '🔑', action: () => { dropdown.classList.add('hidden'); showScreen('claude-api'); } },
+    { label: 'Connecter la montre', icon: '⌚', action: () => { dropdown.classList.add('hidden'); startWatchPairing(); } },
+    { label: 'Déconnexion', icon: '🚪', danger: true, action: () => {
+      dropdown.classList.add('hidden');
+      showConfirm('Se déconnecter ?', async () => {
+        await db.auth.signOut();
+        currentUser = null;
+        loginReady = false;
+        showScreen('login');
+      });
+    }},
+  ];
+
+  items.forEach(({ label, icon, danger, action }) => {
+    const btn = document.createElement('button');
+    btn.className = 'user-dropdown-item' + (danger ? ' user-dropdown-item--danger' : '');
+    btn.textContent = `${icon}  ${label}`;
+    btn.addEventListener('click', action);
+    dropdown.appendChild(btn);
+  });
+}
+
+/* ═══════════════════════════════════════════════════════
+   PROFIL
+═══════════════════════════════════════════════════════ */
+function renderProfil() {
+  const body = document.getElementById('screen-profil-body');
+  body.innerHTML = '';
+
+  const form = document.createElement('div');
+  form.style.cssText = 'display:flex;flex-direction:column;gap:12px;padding:8px 0';
+
+  // Email (lecture seule)
+  const emailLabel = document.createElement('label');
+  emailLabel.className = 'corps-field-label';
+  emailLabel.textContent = 'Email';
+  const emailInput = document.createElement('input');
+  emailInput.type = 'text';
+  emailInput.value = currentUser?.email || '';
+  emailInput.readOnly = true;
+  emailInput.style.opacity = '0.5';
+
+  // Nom
+  const nomLabel = document.createElement('label');
+  nomLabel.className = 'corps-field-label';
+  nomLabel.textContent = 'Nom';
+  const nomInput = document.createElement('input');
+  nomInput.type = 'text';
+  nomInput.placeholder = 'Nom';
+  nomInput.maxLength = 60;
+  nomInput.value = currentProfile?.nom || '';
+
+  // Prénom
+  const prenomLabel = document.createElement('label');
+  prenomLabel.className = 'corps-field-label';
+  prenomLabel.textContent = 'Prénom';
+  const prenomInput = document.createElement('input');
+  prenomInput.type = 'text';
+  prenomInput.placeholder = 'Prénom';
+  prenomInput.maxLength = 60;
+  prenomInput.value = currentProfile?.prenom || '';
+
+  const saveBtn = document.createElement('button');
+  saveBtn.className = 'btn-primary btn-full';
+  saveBtn.textContent = 'Enregistrer';
+  saveBtn.addEventListener('click', async () => {
+    await updateProfileDB({ nom: nomInput.value.trim(), prenom: prenomInput.value.trim() });
+    currentProfile.nom = nomInput.value.trim();
+    currentProfile.prenom = prenomInput.value.trim();
+    showToast('Profil mis à jour');
+  });
+
+  form.append(emailLabel, emailInput, nomLabel, nomInput, prenomLabel, prenomInput, saveBtn);
+  body.appendChild(form);
+}
+
+/* ═══════════════════════════════════════════════════════
+   CLÉ API CLAUDE
+═══════════════════════════════════════════════════════ */
+async function renderClaudeApi() {
+  const body = document.getElementById('screen-claude-api-body');
+  body.innerHTML = '<p style="color:var(--text-muted);font-size:13px">Chargement...</p>';
+
+  const existingKey = await getClaudeApiKeyDB();
+
+  body.innerHTML = '';
+  const form = document.createElement('div');
+  form.style.cssText = 'display:flex;flex-direction:column;gap:12px;padding:8px 0';
+
+  const hint = document.createElement('p');
+  hint.style.cssText = 'font-size:12px;color:var(--text-muted)';
+  hint.textContent = 'Cette clé est utilisée pour générer le feedback IA après chaque séance. Elle est chiffrée en base de données.';
+
+  const inputWrap = document.createElement('div');
+  inputWrap.style.cssText = 'display:flex;gap:8px;align-items:center';
+
+  const keyInput = document.createElement('input');
+  keyInput.type = 'password';
+  keyInput.placeholder = 'sk-ant-...';
+  keyInput.value = existingKey || '';
+  keyInput.style.flex = '1';
+
+  const toggleBtn = document.createElement('button');
+  toggleBtn.className = 'btn-secondary btn-sm';
+  toggleBtn.textContent = '👁';
+  toggleBtn.addEventListener('click', () => {
+    keyInput.type = keyInput.type === 'password' ? 'text' : 'password';
+  });
+
+  inputWrap.append(keyInput, toggleBtn);
+
+  const saveBtn = document.createElement('button');
+  saveBtn.className = 'btn-primary btn-full';
+  saveBtn.textContent = 'Enregistrer';
+  saveBtn.addEventListener('click', async () => {
+    const key = keyInput.value.trim();
+    if (!key) { showAlert('Saisis une clé API.'); return; }
+    await setClaudeApiKeyDB(key);
+    showToast('Clé API sauvegardée');
+  });
+
+  form.append(hint, inputWrap, saveBtn);
+  body.appendChild(form);
+}
+
+/* ═══════════════════════════════════════════════════════
+   PAIRING MONTRE (extrait de renderParams)
+═══════════════════════════════════════════════════════ */
+async function startWatchPairing() {
+  if (!currentUser) { showAlert('Connecte-toi d\'abord.'); return; }
+  const modal = document.getElementById('modal');
+  const body = document.getElementById('modal-body');
+  body.innerHTML = `
+    <div style="text-align:center">
+      <p style="font-size:14px;color:var(--text-muted);margin-bottom:12px">Code de liaison montre</p>
+      <p id="watch-code-display" style="font-size:32px;font-weight:700;color:var(--accent);letter-spacing:0.15em">...</p>
+      <p style="font-size:11px;color:var(--text-muted);margin-top:8px">Expire dans 5 minutes</p>
+    </div>
+  `;
+  modal.classList.remove('hidden');
+
+  try {
+    const code = String(Math.floor(1000 + Math.random() * 9000));
+    const { data: { session } } = await db.auth.getSession();
+    if (!session) { document.getElementById('watch-code-display').textContent = 'Erreur session'; return; }
+    await db.from('watch_codes').delete().eq('user_id', currentUser.id);
+    const { error } = await db.from('watch_codes').insert({
+      user_id: currentUser.id,
+      code,
+      refresh_token: session.refresh_token,
+    });
+    if (error) { document.getElementById('watch-code-display').textContent = 'Erreur'; return; }
+    document.getElementById('watch-code-display').textContent = code;
+    setTimeout(() => { if (!modal.classList.contains('hidden')) closeModal(); }, 5 * 60 * 1000);
+  } catch (e) {
+    document.getElementById('watch-code-display').textContent = 'Erreur';
   }
 }
 
@@ -1093,15 +1279,17 @@ function stopAllChronos() {
 }
 
 function finishSession() {
-  showConfirm('Terminer et enregistrer la séance ?', () => {
+  showConfirm('Terminer et enregistrer la séance ?', async () => {
     stopAllChronos();
     stopSyncPolling();
     const durationSecs = Math.round((Date.now() - new Date(liveSession.startedAt).getTime()) / 1000);
-    pushSession(liveSessionSnapshot(durationSecs)).catch(() => {});
+    const snapshot = liveSessionSnapshot(durationSecs);
+    await pushSession(snapshot);
     liveSession = null;
     releaseWakeLock();
     stopCountdown();
     showScreen('home');
+    showPostSessionFeedback(snapshot);
   });
 }
 
@@ -1409,12 +1597,13 @@ async function renderCorps() {
   form.className = 'corps-form';
 
   const fields = [
-    { key: 'poids',       label: 'Poids',        unit: 'kg', step: '0.1' },
-    { key: 'masseGrasse', label: 'Masse grasse',  unit: 'kg', step: '0.1' },
-    { key: 'eau',         label: 'Eau',           unit: '%',  step: '0.1' },
-    { key: 'muscle',      label: 'Muscle',        unit: '%',  step: '0.1' },
-    { key: 'graisse',     label: 'Graisse',       unit: '%',  step: '0.1' },
-    { key: 'os',          label: 'Os',            unit: '%',  step: '0.1' },
+    { key: 'poids',        label: 'Poids',          unit: 'kg', step: '0.1' },
+    { key: 'graisseKg',   label: 'Graisse',        unit: 'kg', step: '0.1' },
+    { key: 'eau',          label: 'Eau',            unit: '%',  step: '0.1' },
+    { key: 'muscle',       label: 'Muscle',         unit: '%',  step: '0.1' },
+    { key: 'img',          label: 'IMG',            unit: '%',  step: '0.1' },
+    { key: 'os',           label: 'Os',             unit: '%',  step: '0.1' },
+    { key: 'tourDeVentre', label: 'Tour de ventre', unit: 'cm', step: '0.1' },
   ];
 
   const dateInput = document.createElement('input');
@@ -1448,7 +1637,7 @@ async function renderCorps() {
     unitSpan.className = 'corps-field-unit';
     unitSpan.textContent = unit;
     row.append(inp, unitSpan);
-    if (key === 'poids' || key === 'masseGrasse') {
+    if (key === 'poids' || key === 'graisseKg') {
       const diff = document.createElement('span');
       diff.className = 'corps-field-diff';
       diffSpans[key] = diff;
@@ -1459,7 +1648,7 @@ async function renderCorps() {
   });
 
   // Mapping DB snake_case → form camelCase
-  const dbToForm = { poids: 'poids', masse_grasse: 'masseGrasse', eau: 'eau', muscle: 'muscle', graisse: 'graisse', os: 'os' };
+  const dbToForm = { poids: 'poids', graisse_kg: 'graisseKg', eau: 'eau', muscle: 'muscle', img: 'img', os: 'os', tour_de_ventre: 'tourDeVentre' };
 
   let editingId = null;
 
@@ -1482,7 +1671,7 @@ async function renderCorps() {
 
     // Afficher les diffs poids / masse grasse
     showDiff('poids', existing, prev);
-    showDiff('masseGrasse', existing, prev);
+    showDiff('graisseKg', existing, prev);
   }
 
   function showDiff(formKey, current, prev) {
@@ -1490,7 +1679,7 @@ async function renderCorps() {
     if (!span) return;
     span.textContent = '';
     span.className = 'corps-field-diff';
-    const dbKey = formKey === 'masseGrasse' ? 'masse_grasse' : formKey;
+    const dbKey = formKey === 'graisseKg' ? 'graisse_kg' : formKey;
     const cur = current?.[dbKey];
     const prv = prev?.[dbKey];
     if (cur == null || prv == null) return;
@@ -1503,19 +1692,19 @@ async function renderCorps() {
   fillFormForDate(dateInput.value);
   dateInput.addEventListener('change', () => fillFormForDate(dateInput.value));
 
-  // Auto-calcul % graisse ↔ masse grasse
+  // Auto-calcul IMG ↔ graisse kg
   const syncGraisse = () => {
     const p = parseFloat(inputs.poids.value);
-    const mg = parseFloat(inputs.masseGrasse.value);
-    const gp = parseFloat(inputs.graisse.value);
-    if (p && mg && !inputs.graisse.value)
-      inputs.graisse.value = ((mg / p) * 100).toFixed(1);
-    else if (p && gp && !inputs.masseGrasse.value)
-      inputs.masseGrasse.value = ((gp / 100) * p).toFixed(1);
+    const mg = parseFloat(inputs.graisseKg.value);
+    const gp = parseFloat(inputs.img.value);
+    if (p && mg && !inputs.img.value)
+      inputs.img.value = ((mg / p) * 100).toFixed(1);
+    else if (p && gp && !inputs.graisseKg.value)
+      inputs.graisseKg.value = ((gp / 100) * p).toFixed(1);
   };
   inputs.poids.addEventListener('change', syncGraisse);
-  inputs.masseGrasse.addEventListener('change', syncGraisse);
-  inputs.graisse.addEventListener('change', syncGraisse);
+  inputs.graisseKg.addEventListener('change', syncGraisse);
+  inputs.img.addEventListener('change', syncGraisse);
 
   form.appendChild(grid);
 
@@ -1526,12 +1715,13 @@ async function renderCorps() {
     const m = {
       id:          editingId || crypto.randomUUID(),
       date:        dateInput.value || todayIso(),
-      poids:       parseFloat(inputs.poids.value)       || null,
-      masseGrasse: parseFloat(inputs.masseGrasse.value) || null,
-      eau:         parseFloat(inputs.eau.value)         || null,
-      muscle:      parseFloat(inputs.muscle.value)      || null,
-      graisse:     parseFloat(inputs.graisse.value)     || null,
-      os:          parseFloat(inputs.os.value)          || null,
+      poids:        parseFloat(inputs.poids.value)        || null,
+      graisseKg:    parseFloat(inputs.graisseKg.value)   || null,
+      eau:          parseFloat(inputs.eau.value)          || null,
+      muscle:       parseFloat(inputs.muscle.value)       || null,
+      img:          parseFloat(inputs.img.value)          || null,
+      os:           parseFloat(inputs.os.value)           || null,
+      tourDeVentre: parseFloat(inputs.tourDeVentre.value) || null,
     };
     if (!Object.values(m).slice(2).some(v => v !== null)) {
       showAlert('Renseigne au moins une valeur.'); return;
@@ -1553,13 +1743,13 @@ async function renderCorps() {
 
   // ── Tableau de tendance (10 dernières) ────────────────
   const trendPoids   = corpsTrend(measurements, 'poids');
-  const trendGraisse = corpsTrend(measurements, 'graisse');
+  const trendGraisse = corpsTrend(measurements, 'img');
 
   const trendItems = [
-    { label: 'Poids',  field: 'poids',   unit: 'kg', lowerIsBetter: true  },
-    { label: 'IMG',    field: 'graisse', unit: '%',  lowerIsBetter: true  },
-    { label: 'Eau',    field: 'eau',     unit: '%',  lowerIsBetter: false },
-    { label: 'Muscle', field: 'muscle',  unit: '%',  lowerIsBetter: false },
+    { label: 'Poids',  field: 'poids',  unit: 'kg', lowerIsBetter: true  },
+    { label: 'IMG',    field: 'img',    unit: '%',  lowerIsBetter: true  },
+    { label: 'Eau',    field: 'eau',    unit: '%',  lowerIsBetter: false },
+    { label: 'Muscle', field: 'muscle', unit: '%',  lowerIsBetter: false },
   ].map(({ label, field, unit, lowerIsBetter }) => {
     const latest = measurements.find(m => m[field] !== null && m[field] !== undefined);
     const trend  = corpsTrend(measurements, field);
@@ -1611,8 +1801,8 @@ async function renderCorps() {
       arrowSpan.style.color = arrowColor;
       arrowSpan.textContent = arrow;
 
-      // Catégorie graisse
-      if (field === 'graisse') {
+      // Catégorie IMG
+      if (field === 'img') {
         const cat = fatCategory(latest);
         if (cat) {
           const badge = document.createElement('span');
@@ -1635,8 +1825,8 @@ async function renderCorps() {
 
   // ── Courbes (poids, IMG, eau, muscle) ─────────────────
   const chartDefs = [
-    { field: 'poids',   label: 'Évolution du poids',   unit: 'kg' },
-    { field: 'graisse', label: 'Évolution de l\'IMG',   unit: '%'  },
+    { field: 'poids', label: 'Évolution du poids', unit: 'kg' },
+    { field: 'img',   label: 'Évolution de l\'IMG',  unit: '%'  },
     { field: 'eau',     label: 'Évolution de l\'eau',   unit: '%'  },
     { field: 'muscle',  label: 'Évolution du muscle',   unit: '%'  },
   ];
@@ -1687,9 +1877,9 @@ async function renderCorps() {
     card.appendChild(header);
 
     // Indice masse grasse calculé si besoin
-    let grPct = m.graisse;
-    if (!grPct && m.poids && m.masse_grasse)
-      grPct = +((m.masse_grasse / m.poids) * 100).toFixed(1);
+    let grPct = m.img;
+    if (!grPct && m.poids && m.graisse_kg)
+      grPct = +((m.graisse_kg / m.poids) * 100).toFixed(1);
     const cat = fatCategory(grPct);
     if (cat) {
       const badge = document.createElement('span');
@@ -1705,12 +1895,13 @@ async function renderCorps() {
     const values = document.createElement('div');
     values.className = 'corps-card-values';
     [
-      { label: 'Poids',    value: m.poids,        unit: 'kg' },
-      { label: 'Gr. (kg)', value: m.masse_grasse,  unit: 'kg' },
-      { label: 'Eau',      value: m.eau,           unit: '%'  },
-      { label: 'Muscle',   value: m.muscle,        unit: '%'  },
-      { label: 'Graisse',  value: m.graisse,       unit: '%'  },
-      { label: 'Os',       value: m.os,            unit: '%'  },
+      { label: 'Poids',    value: m.poids,          unit: 'kg' },
+      { label: 'Gr. (kg)', value: m.graisse_kg,    unit: 'kg' },
+      { label: 'Eau',      value: m.eau,            unit: '%'  },
+      { label: 'Muscle',   value: m.muscle,         unit: '%'  },
+      { label: 'IMG',      value: m.img,            unit: '%'  },
+      { label: 'Os',       value: m.os,             unit: '%'  },
+      { label: 'Ventre',   value: m.tour_de_ventre, unit: 'cm' },
     ].filter(e => e.value !== null && e.value !== undefined).forEach(({ label, value, unit }) => {
       const chip = document.createElement('span');
       chip.className = 'corps-chip';
@@ -1924,6 +2115,126 @@ document.getElementById('modal-close').addEventListener('click', closeModal);
 document.getElementById('modal').addEventListener('click', e => {
   if (e.target === e.currentTarget) closeModal();
 });
+
+/* ═══════════════════════════════════════════════════════
+   FEEDBACK IA (Claude API)
+═══════════════════════════════════════════════════════ */
+const COACH_PROMPT = `Coach sportif. Analyse séance musculation vs historique même programme. Feedback 3 parties, français, max 250 mots, droit au but :
+
+1. Progression : tendance par exercice (progression/stagnation/régression). Comparer via 1RM Epley (poids × (1 + reps/30)) si reps changent.
+
+2. Forces/faiblesses : 2-3 points forts, 1-2 à améliorer. Pas de compliments creux.
+
+3. Conseil prochaine séance : 1-2 actions concrètes basées sur tendances.`;
+
+async function showPostSessionFeedback(session) {
+  const apiKey = await getClaudeApiKeyDB();
+  if (!apiKey) return;
+
+  const modal = document.getElementById('modal');
+  const body = document.getElementById('modal-body');
+
+  const name = session.programmeName || session.name || 'Séance';
+  const vol = totalVolume(session.exercises);
+  const durStr = session.duration ? formatDuration(session.duration) : '';
+
+  body.innerHTML = `
+    <div class="feedback-ia-modal">
+      <div class="modal-title">${name}</div>
+      <div class="modal-date">${formatDate(session.date)}${durStr ? ' · ' + durStr : ''} · ${vol.toLocaleString('fr-FR')} kg</div>
+      <div class="feedback-ia-loading">
+        <div class="feedback-ia-spinner"></div>
+        <p>Analyse en cours...</p>
+      </div>
+    </div>
+  `;
+  modal.classList.remove('hidden');
+
+  try {
+    const allSessions = await loadSessions();
+    const history = allSessions
+      .filter(s => s.programmeName === session.programmeName && s.id !== session.id && s.duration)
+      .slice(0, 5);
+
+    const sessionData = formatSessionForAI(session);
+    const historyData = history.map(formatSessionForAI);
+
+    const userMessage = `Séance actuelle :\n${JSON.stringify(sessionData, null, 1)}\n\nHistorique (${history.length} dernières séances) :\n${JSON.stringify(historyData, null, 1)}`;
+
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true',
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 500,
+        messages: [{ role: 'user', content: userMessage }],
+        system: COACH_PROMPT,
+      }),
+    });
+
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.error?.message || `Erreur ${response.status}`);
+    }
+
+    const data = await response.json();
+    const feedback = data.content?.[0]?.text || 'Pas de réponse.';
+
+    body.innerHTML = `
+      <div class="feedback-ia-modal">
+        <div class="modal-title">${name}</div>
+        <div class="modal-date">${formatDate(session.date)}${durStr ? ' · ' + durStr : ''} · ${vol.toLocaleString('fr-FR')} kg</div>
+        <div class="feedback-ia-card">
+          <div class="feedback-ia-title">🤖 Feedback IA</div>
+          <div class="feedback-ia-content">${formatFeedback(feedback)}</div>
+        </div>
+      </div>
+    `;
+  } catch (e) {
+    body.innerHTML = `
+      <div class="feedback-ia-modal">
+        <div class="modal-title">${name}</div>
+        <div class="feedback-ia-card" style="border-color:#ff5c5c">
+          <div class="feedback-ia-title" style="color:#ff5c5c">Erreur</div>
+          <div class="feedback-ia-content">${e.message}</div>
+        </div>
+      </div>
+    `;
+  }
+}
+
+function formatSessionForAI(session) {
+  return {
+    programme: session.programmeName,
+    date: session.date,
+    duree: session.duration ? formatDuration(session.duration) : null,
+    exercices: (session.exercises || []).map(ex => {
+      const e = migrateExercise(ex);
+      return {
+        nom: e.name,
+        series: e.series.filter(s => s.done !== false).map(s =>
+          e.activities.map((act, i) => {
+            const v = s.values?.[i] || {};
+            return act.type === 'weight'
+              ? { reps: v.reps || 0, kg: v.weight || 0 }
+              : { duree_s: v.duration || 0 };
+          })
+        ),
+      };
+    }),
+  };
+}
+
+function formatFeedback(text) {
+  return text
+    .replace(/\n/g, '<br>')
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+}
 
 /* ═══════════════════════════════════════════════════════
    STATS
@@ -2164,74 +2475,6 @@ function buildStatsProgression(sessions) {
 async function renderParams() {
   const tab = document.getElementById('screen-params-body');
   tab.innerHTML = '';
-
-  // Section compte
-  const accountSection = document.createElement('div');
-  accountSection.style.display = 'flex';
-  accountSection.style.flexDirection = 'column';
-  accountSection.style.gap = '8px';
-
-  const accountTitle = document.createElement('p');
-  accountTitle.className = 'section-title';
-  accountTitle.textContent = 'Compte';
-  accountSection.appendChild(accountTitle);
-
-  if (currentUser) {
-    const emailLine = document.createElement('p');
-    emailLine.style.cssText = 'font-size:13px;color:var(--text-muted);padding:4px 0';
-    emailLine.textContent = currentUser.email;
-    accountSection.appendChild(emailLine);
-
-    const logoutBtn = document.createElement('button');
-    logoutBtn.className = 'btn-secondary btn-full';
-    logoutBtn.textContent = 'Se déconnecter';
-    logoutBtn.addEventListener('click', async () => {
-      showConfirm('Se déconnecter ?', async () => {
-        await db.auth.signOut();
-        currentUser = null;
-        loginReady = false;
-        showScreen('login');
-      });
-    });
-    accountSection.appendChild(logoutBtn);
-
-    const watchBtn = document.createElement('button');
-    watchBtn.className = 'btn-secondary btn-full';
-    watchBtn.textContent = '⌚ Connecter la montre';
-    watchBtn.addEventListener('click', async () => {
-      watchBtn.textContent = '⌚ ...';
-      try {
-        const code = String(Math.floor(1000 + Math.random() * 9000));
-        const { data: { session } } = await db.auth.getSession();
-        if (!session) { watchBtn.textContent = '⌚ Erreur session'; return; }
-        // Supprimer les anciens codes de cet utilisateur
-        await db.from('watch_codes').delete().eq('user_id', currentUser.id);
-        // Insérer le nouveau code
-        const { error } = await db.from('watch_codes').insert({
-          user_id: currentUser.id,
-          code,
-          refresh_token: session.refresh_token,
-        });
-        if (error) { watchBtn.textContent = '⌚ Erreur: ' + error.message; return; }
-        watchBtn.textContent = `Code : ${code}`;
-      } catch (e) { watchBtn.textContent = '⌚ Erreur: ' + e.message; return; }
-      watchBtn.style.cssText = 'font-size:24px;font-weight:700;color:var(--accent);letter-spacing:0.15em;padding:16px;text-align:center';
-      // Expirer au bout de 5 minutes visuellement
-      setTimeout(() => {
-        watchBtn.textContent = '⌚ Connecter la montre';
-        watchBtn.style.cssText = '';
-      }, 5 * 60 * 1000);
-    });
-    accountSection.appendChild(watchBtn);
-  } else {
-    const loginBtn = document.createElement('button');
-    loginBtn.className = 'btn-primary btn-full';
-    loginBtn.textContent = 'Se connecter';
-    loginBtn.addEventListener('click', () => { loginReady = false; showScreen('login'); });
-    accountSection.appendChild(loginBtn);
-  }
-
-  tab.appendChild(accountSection);
 
   // Section programmes
   const progSection = document.createElement('div');

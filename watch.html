@@ -6,23 +6,26 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Gym Watch</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Azeret+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --bg: #131313;
-  --surface: #1c1c1c;
-  --surface2: #252525;
-  --accent: #9A7A30;
-  --accent-dim: #7d6226;
-  --accent-bg: rgba(154, 122, 48, 0.12);
-  --text: #f0f0f0;
-  --text-muted: #6a6a6a;
-  --danger: #ff5c5c;
-  --border: #333;
-  --radius: 12px;
-  --font: 'DM Mono', 'Courier New', monospace;
+  --bg: #080808;
+  --surface: #121212;
+  --surface2: #1a1a1a;
+  --surface3: #222;
+  --accent: #D4A03C;
+  --accent-dim: #B8882E;
+  --accent-glow: rgba(212, 160, 60, 0.12);
+  --accent-glow2: rgba(212, 160, 60, 0.06);
+  --text: #e4e4e4;
+  --text-muted: #555;
+  --danger: #E94444;
+  --border: #1e1e1e;
+  --radius: 14px;
+  --font: 'Azeret Mono', 'Courier New', monospace;
+  --font-display: 'Syne', sans-serif;
 }
 
 html, body {
@@ -33,156 +36,331 @@ html, body {
   -webkit-tap-highlight-color: transparent;
 }
 
+/* Noise texture */
+body::after {
+  content: '';
+  position: fixed; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");
+  pointer-events: none; z-index: 0;
+}
+
 /* ── Screens ── */
 .screen {
   display: none; flex-direction: column; min-height: 100vh;
-  padding: 12px; padding-top: env(safe-area-inset-top);
-  padding-bottom: env(safe-area-inset-bottom);
+  padding: 16px; padding-top: calc(env(safe-area-inset-top) + 8px);
+  padding-bottom: calc(env(safe-area-inset-bottom) + 8px);
+  position: relative; z-index: 1;
 }
 .screen.active { display: flex; }
 
 /* ── Login ── */
-#screen-login { justify-content: center; align-items: center; gap: 12px; padding: 20px; }
+#screen-login {
+  justify-content: center; align-items: center; gap: 16px; padding: 24px;
+}
+#screen-login::before {
+  content: '⬡';
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%, -55%);
+  font-size: 280px; color: var(--accent); opacity: 0.025;
+  pointer-events: none;
+}
 #screen-login input {
-  width: 100%; padding: 10px 12px; border-radius: var(--radius);
-  border: 1px solid var(--border); background: var(--surface2);
+  width: 100%; padding: 14px 16px; border-radius: var(--radius);
+  border: 2px solid var(--border); background: var(--surface);
   color: var(--text); font-size: 14px; font-family: var(--font);
   -webkit-appearance: none; appearance: none; outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
-#screen-login input:focus { border-color: var(--accent); }
+#screen-login input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 20px var(--accent-glow2);
+}
 
 .btn {
-  width: 100%; padding: 12px; border: none; border-radius: var(--radius);
-  font-size: 14px; font-weight: 600; font-family: var(--font); cursor: pointer;
+  width: 100%; padding: 14px; border: none; border-radius: var(--radius);
+  font-size: 13px; font-weight: 700; font-family: var(--font-display);
+  letter-spacing: 0.08em; text-transform: uppercase;
+  cursor: pointer; transition: all 0.15s;
 }
-.btn-accent { background: var(--accent); color: #111; }
-.btn-accent:active { background: var(--accent-dim); }
-.btn-surface { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
-.btn-surface:active { border-color: var(--accent); }
+.btn-accent {
+  background: var(--accent); color: #0a0a0a;
+  box-shadow: 0 4px 20px rgba(212, 160, 60, 0.25);
+}
+.btn-accent:active {
+  background: var(--accent-dim);
+  transform: scale(0.97);
+  box-shadow: 0 2px 10px rgba(212, 160, 60, 0.15);
+}
+.btn-surface {
+  background: var(--surface2); color: var(--text);
+  border: 1px solid var(--border);
+}
+.btn-surface:active { border-color: var(--accent); color: var(--accent); }
 
-/* ── Programme list ── */
-#screen-home { gap: 10px; }
+/* ── Programme cards ── */
+#screen-home { gap: 12px; }
 .prog-card {
-  background: var(--surface); border: 1px solid transparent;
-  border-radius: var(--radius); padding: 16px;
-  cursor: pointer; display: flex; flex-direction: column; gap: 4px;
-  transition: background 0.15s;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 20px;
+  cursor: pointer; display: flex; flex-direction: column; gap: 6px;
+  transition: all 0.2s;
+  position: relative; overflow: hidden;
 }
-.prog-card:active { border-color: var(--accent); }
+.prog-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  opacity: 0; transition: opacity 0.2s;
+}
+.prog-card:active { transform: scale(0.98); }
 .prog-card:first-child { border-color: var(--accent); }
-.prog-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--text-muted); }
-.prog-name { font-size: 16px; font-weight: 600; color: var(--accent); }
-.prog-meta { font-size: 12px; color: var(--text-muted); }
-.prog-card--active { border-color: var(--accent); background: var(--accent-bg); }
+.prog-card:first-child::before { opacity: 1; }
+.prog-label {
+  font-size: 9px; text-transform: uppercase; letter-spacing: 0.2em;
+  color: var(--text-muted); font-family: var(--font-display); font-weight: 700;
+}
+.prog-name {
+  font-size: 18px; font-weight: 800; color: var(--accent);
+  font-family: var(--font-display);
+}
+.prog-meta { font-size: 11px; color: var(--text-muted); letter-spacing: 0.03em; }
+.prog-card--active {
+  border-color: var(--accent);
+  background: linear-gradient(135deg, var(--accent-glow) 0%, var(--surface) 100%);
+}
+.prog-card--active::before { opacity: 1; }
 
-/* ── Live session — focus card ── */
+/* ── Live session ── */
 #screen-live { padding: 0; justify-content: center; }
 #live-body {
   display: flex; flex-direction: column; align-items: center;
-  justify-content: center; flex: 1; padding: 10px;
-  gap: 6px; text-align: center;
+  justify-content: center; flex: 1; padding: 16px;
+  gap: 10px; text-align: center;
+  animation: wf-enter 0.3s ease-out;
+}
+@keyframes wf-enter {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .wf-exercise-name {
-  font-size: 13px; font-weight: 600; color: var(--accent);
-  letter-spacing: 0.03em;
+  font-size: 15px; font-weight: 800; color: var(--accent);
+  font-family: var(--font-display);
+  letter-spacing: 0.05em; text-transform: uppercase;
 }
 .wf-series-label {
   font-size: 10px; color: var(--text-muted);
-  text-transform: uppercase; letter-spacing: 0.1em;
+  text-transform: uppercase; letter-spacing: 0.15em;
+  font-family: var(--font-display); font-weight: 700;
 }
 .wf-values {
   display: flex; align-items: baseline; justify-content: center;
-  gap: 6px; margin: 8px 0;
+  gap: 8px; margin: 10px 0;
 }
-.wf-values input {
-  width: 60px; padding: 8px 4px; border-radius: var(--radius);
-  border: 1px solid var(--border); background: var(--surface2);
-  color: var(--text); font-size: 24px; font-weight: 700;
-  text-align: center; font-family: var(--font);
-  -webkit-appearance: none; appearance: none; outline: none;
+.wf-val {
+  font-size: 32px; font-weight: 700;
+  color: var(--text); font-family: var(--font);
+  min-width: 40px; text-align: center;
 }
-.wf-values input:focus { border-color: var(--accent); }
-.wf-values .wf-sep { font-size: 16px; color: var(--text-muted); }
-.wf-values .wf-unit { font-size: 12px; color: var(--text-muted); }
+.wf-values .wf-sep { font-size: 18px; color: var(--text-muted); font-weight: 300; }
+.wf-values .wf-unit { font-size: 11px; color: var(--text-muted); letter-spacing: 0.05em; }
 
 .wf-prev {
-  font-size: 11px; color: #8ab4f8; font-style: italic;
+  font-size: 11px; color: #7aa2d4; font-style: italic; opacity: 0.7;
 }
 
 .wf-done-btn {
-  width: 64px; height: 64px; border-radius: 50%;
+  width: 72px; height: 72px; border-radius: 50%;
   border: 3px solid var(--accent); background: none;
-  color: var(--accent); font-size: 28px;
-  cursor: pointer; margin: 8px 0;
+  color: var(--accent); font-size: 30px;
+  cursor: pointer; margin: 10px 0;
   display: flex; align-items: center; justify-content: center;
-  transition: background 0.15s, color 0.15s;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
 }
-.wf-done-btn:active { background: var(--accent); color: #111; }
+.wf-done-btn::before {
+  content: ''; position: absolute; inset: -7px;
+  border-radius: 50%; border: 1px solid var(--accent);
+  opacity: 0.15;
+}
+.wf-done-btn:active {
+  background: var(--accent); color: #0a0a0a;
+  transform: scale(0.92);
+  box-shadow: 0 0 30px rgba(212, 160, 60, 0.4);
+}
 .wf-done-btn.is-done {
-  background: var(--accent); color: #111;
-  border-color: var(--accent); opacity: 0.5;
+  background: var(--accent); color: #0a0a0a;
+  border-color: var(--accent); opacity: 0.45;
+  box-shadow: 0 0 20px rgba(212, 160, 60, 0.2);
 }
 
 .wf-nav {
-  display: flex; gap: 16px; align-items: center; margin-top: 6px;
+  display: flex; gap: 16px; align-items: center; margin-top: 10px;
 }
 .wf-nav-btn {
-  width: 36px; height: 36px; border-radius: 50%;
+  width: 40px; height: 40px; border-radius: 50%;
   border: 1px solid var(--border); background: var(--surface);
-  color: var(--text); font-size: 16px; cursor: pointer;
+  color: var(--text); font-size: 18px; cursor: pointer;
   display: flex; align-items: center; justify-content: center;
+  transition: all 0.15s;
 }
-.wf-nav-btn:active { border-color: var(--accent); color: var(--accent); }
-.wf-nav-btn:disabled { opacity: 0.2; pointer-events: none; }
+.wf-nav-btn:active {
+  border-color: var(--accent); color: var(--accent);
+  background: var(--accent-glow);
+}
+.wf-nav-btn:disabled { opacity: 0.15; pointer-events: none; }
 .wf-dots {
-  display: flex; gap: 4px; align-items: center;
+  display: flex; gap: 5px; align-items: center;
 }
 .wf-dot {
-  width: 6px; height: 6px; border-radius: 50%;
-  background: var(--text-muted); opacity: 0.3;
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--text-muted); opacity: 0.2;
+  transition: all 0.3s;
 }
-.wf-dot.active { opacity: 1; background: var(--accent); }
-.wf-dot.done { opacity: 0.6; background: var(--accent); }
+.wf-dot.active {
+  opacity: 1; background: var(--accent);
+  width: 20px; border-radius: 4px;
+  box-shadow: 0 0 8px rgba(212, 160, 60, 0.4);
+}
+.wf-dot.done { opacity: 0.5; background: var(--accent); }
 
 .wf-finish {
-  position: absolute; top: 10px; right: 10px;
-  background: none; border: none; font-size: 11px;
-  color: var(--text-muted); cursor: pointer;
-  font-family: var(--font); text-decoration: underline;
+  position: absolute; top: 12px; right: 14px;
+  background: none; border: 1px solid var(--border);
+  border-radius: 8px; padding: 6px 12px;
+  font-size: 10px; color: var(--text-muted); cursor: pointer;
+  font-family: var(--font-display); font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.1em;
+  text-decoration: none; transition: all 0.15s;
 }
+.wf-finish:active { border-color: var(--danger); color: var(--danger); }
 
-/* Dialog */
+/* ── Dialog ── */
 .dialog-overlay {
-  display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.8); backdrop-filter: blur(8px);
   justify-content: center; align-items: center; z-index: 100; padding: 24px;
 }
 .dialog-overlay.active { display: flex; }
 .dialog-box {
-  background: var(--surface); border-radius: 14px;
-  padding: 24px 20px 20px; text-align: center;
-  width: 100%; max-width: 260px;
-  display: flex; flex-direction: column; gap: 20px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 16px; padding: 28px 24px 24px;
+  text-align: center; width: 100%; max-width: 280px;
+  display: flex; flex-direction: column; gap: 24px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
 }
-.dialog-msg { font-size: 15px; line-height: 1.5; }
+.dialog-msg { font-size: 15px; line-height: 1.5; font-family: var(--font-display); }
 .dialog-btns { display: flex; gap: 10px; }
-.dialog-btns .btn { flex: 1; padding: 10px; font-size: 13px; }
+.dialog-btns .btn { flex: 1; padding: 12px; font-size: 12px; }
 
-/* Countdown overlay */
+/* ── Countdown overlay ── */
 .countdown-overlay {
   position: fixed; inset: 0; background: var(--bg);
   display: flex; flex-direction: column; align-items: center;
-  justify-content: center; gap: 16px; z-index: 50;
+  justify-content: center; gap: 20px; z-index: 50;
 }
 .countdown-overlay.hidden { display: none; }
-.countdown-secs { font-size: 72px; font-weight: 700; color: var(--accent); }
-.countdown-label { font-size: 13px; color: var(--text-muted); text-align: center; }
 
-/* Greeting */
-.greeting { font-size: 15px; font-weight: 600; color: var(--text); padding: 4px 0 8px; }
+.cd-ring-wrap {
+  position: relative; width: 200px; height: 200px;
+  display: flex; align-items: center; justify-content: center;
+}
+.cd-ring { position: absolute; inset: 0; }
+.cd-ring-bg { stroke: var(--surface2); }
+.cd-ring-progress { transition: stroke-dashoffset 0.9s linear; }
+.cd-time-wrap {
+  position: relative; z-index: 1;
+  display: flex; align-items: center; justify-content: center;
+}
 
-/* Loader */
-.loader { text-align: center; padding: 40px 0; color: var(--text-muted); font-size: 13px; }
+.countdown-secs {
+  font-size: 64px; font-weight: 800; color: var(--accent);
+  font-family: var(--font-display);
+  text-shadow: 0 0 40px rgba(212, 160, 60, 0.3);
+}
+.countdown-label {
+  font-size: 12px; color: var(--text-muted); text-align: center;
+  font-family: var(--font-display); font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.1em;
+}
+
+/* Countdown urgent state (≤5s) */
+.countdown-overlay.urgent .countdown-secs {
+  color: var(--danger);
+  text-shadow: 0 0 40px rgba(233, 68, 68, 0.4);
+  animation: cd-urgent 0.8s ease-in-out infinite;
+}
+.countdown-overlay.urgent .cd-ring-progress { stroke: var(--danger); }
+@keyframes cd-urgent {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(1.06); }
+}
+
+/* ── Greeting ── */
+.greeting {
+  font-size: 16px; font-weight: 800; color: var(--text);
+  padding: 4px 0 12px; font-family: var(--font-display);
+}
+
+/* ── Loader ── */
+.loader {
+  text-align: center; padding: 40px 0; color: var(--text-muted);
+  font-size: 12px; letter-spacing: 0.1em;
+  text-transform: uppercase; font-family: var(--font-display);
+}
+
+/* ── Exercise list ── */
+.wf-session-title {
+  font-size: 11px; color: var(--text-muted);
+  font-family: var(--font-display); font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.15em;
+  padding: 4px 0 8px;
+}
+.wf-ex-list {
+  display: flex; flex-direction: column; gap: 8px;
+  width: 100%; overflow-y: auto; flex: 1;
+}
+.wf-ex-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 16px 18px;
+  cursor: pointer; display: flex; align-items: center; gap: 12px;
+  transition: all 0.2s; position: relative; overflow: hidden;
+  flex-shrink: 0;
+}
+.wf-ex-card::before {
+  content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+  background: var(--accent); opacity: 0; transition: opacity 0.2s;
+}
+.wf-ex-card:active { transform: scale(0.98); }
+.wf-ex-card:active::before { opacity: 1; }
+.wf-ex-card.is-done { opacity: 0.35; }
+.wf-ex-card-info { flex: 1; display: flex; flex-direction: column; gap: 3px; }
+.wf-ex-card-name {
+  font-size: 14px; font-weight: 700; color: var(--text);
+  font-family: var(--font-display);
+}
+.wf-ex-card-meta { font-size: 11px; color: var(--text-muted); }
+.wf-ex-card-check {
+  width: 28px; height: 28px; border-radius: 50%;
+  border: 2px solid var(--border); background: none;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; color: var(--accent); flex-shrink: 0;
+}
+.wf-ex-card.is-done .wf-ex-card-check {
+  border-color: var(--accent); background: var(--accent); color: #0a0a0a;
+}
+
+/* ── Back button (live → list) ── */
+.wf-back {
+  position: absolute; top: 12px; left: 14px;
+  background: none; border: 1px solid var(--border);
+  border-radius: 8px; padding: 6px 12px;
+  font-size: 10px; color: var(--text-muted); cursor: pointer;
+  font-family: var(--font-display); font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.1em;
+  transition: all 0.15s;
+}
+.wf-back:active { border-color: var(--accent); color: var(--accent); }
 </style>
 </head>
 <body>
@@ -210,9 +388,19 @@ html, body {
 
 <!-- COUNTDOWN -->
 <div class="countdown-overlay hidden" id="w-countdown">
-  <div class="countdown-secs" id="w-countdown-secs">0</div>
+  <div class="cd-ring-wrap">
+    <svg class="cd-ring" viewBox="0 0 200 200" width="200" height="200">
+      <circle class="cd-ring-bg" cx="100" cy="100" r="88" fill="none" stroke-width="5"/>
+      <circle class="cd-ring-progress" id="w-cd-ring" cx="100" cy="100" r="88" fill="none"
+        stroke="var(--accent)" stroke-width="5" stroke-linecap="round"
+        transform="rotate(-90 100 100)" stroke-dasharray="553" stroke-dashoffset="0"/>
+    </svg>
+    <div class="cd-time-wrap">
+      <div class="countdown-secs" id="w-countdown-secs">0</div>
+    </div>
+  </div>
   <div class="countdown-label" id="w-countdown-label"></div>
-  <button class="btn btn-surface" id="w-countdown-skip" style="width:auto;padding:10px 24px">Passer</button>
+  <button class="btn btn-surface" id="w-countdown-skip" style="width:auto;padding:12px 28px">Passer</button>
 </div>
 
 <!-- DIALOG -->
@@ -439,16 +627,12 @@ function resumeFromDB(session) {
       };
     }),
   };
-  watchExIdx = 0;
-  // Auto-navigate to first non-done exercise
-  for (let i = 0; i < liveSession.exercises.length; i++) {
-    const e = liveSession.exercises[i];
-    const done = e.type === 'cardio'
-      ? e.state === 'done'
-      : e.series.every(s => e.activities.every((_, a) => s.activityStates?.[a] === 'done'));
-    if (!done) { watchExIdx = i; break; }
+  if (liveSession.exercises.length > 1) {
+    renderExerciseList();
+  } else {
+    watchExIdx = 0;
+    renderLive();
   }
-  renderLive();
 }
 
 async function renderHome() {
@@ -589,8 +773,12 @@ async function startSession(prog) {
         }),
   };
   pushSession(snapshot()).catch(() => {});
-  watchExIdx = 0;
-  renderLive();
+  if (liveSession.exercises.length > 1) {
+    renderExerciseList();
+  } else {
+    watchExIdx = 0;
+    renderLive();
+  }
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -613,6 +801,71 @@ function currentSeriesIdx(ex) {
     if (!allDone) return s;
   }
   return ex.series.length - 1; // all done, show last
+}
+
+function renderExerciseList() {
+  show('screen-live');
+  const body = document.getElementById('live-body');
+  body.innerHTML = '';
+
+  // Finish button
+  const finBtn = document.createElement('button');
+  finBtn.className = 'wf-finish';
+  finBtn.textContent = 'Terminer';
+  finBtn.addEventListener('click', () => {
+    showConfirm('Terminer la seance ?', () => {
+      const dur = Math.round((Date.now() - new Date(liveSession.startedAt).getTime()) / 1000);
+      pushSession(snapshot(dur)).catch(() => {});
+      liveSession = null;
+      stopWatchCountdown();
+      renderHome();
+    });
+  });
+  body.appendChild(finBtn);
+
+  // Session title
+  const title = document.createElement('div');
+  title.className = 'wf-session-title';
+  title.textContent = liveSession.programmeName;
+  body.appendChild(title);
+
+  // Exercise list
+  const list = document.createElement('div');
+  list.className = 'wf-ex-list';
+
+  liveSession.exercises.forEach((ex, i) => {
+    const isDone = ex.type === 'cardio'
+      ? ex.state === 'done'
+      : ex.series.every(s => ex.activities.every((_, a) => s.activityStates?.[a] === 'done'));
+
+    const doneSeries = ex.type === 'cardio'
+      ? (isDone ? 1 : 0)
+      : ex.series.filter(s => ex.activities.every((_, a) => s.activityStates?.[a] === 'done')).length;
+    const totalSeries = ex.type === 'cardio' ? 1 : ex.series.length;
+
+    const card = document.createElement('div');
+    card.className = 'wf-ex-card' + (isDone ? ' is-done' : '');
+
+    const info = document.createElement('div');
+    info.className = 'wf-ex-card-info';
+    const name = document.createElement('div');
+    name.className = 'wf-ex-card-name';
+    name.textContent = ex.name;
+    const meta = document.createElement('div');
+    meta.className = 'wf-ex-card-meta';
+    meta.textContent = isDone ? 'Termine' : `${doneSeries} / ${totalSeries} series`;
+    info.append(name, meta);
+
+    const check = document.createElement('div');
+    check.className = 'wf-ex-card-check';
+    check.textContent = isDone ? '✓' : '';
+
+    card.append(info, check);
+    card.addEventListener('click', () => { watchExIdx = i; renderLive(); });
+    list.appendChild(card);
+  });
+
+  body.appendChild(list);
 }
 
 function renderLive() {
@@ -656,15 +909,11 @@ function renderLive() {
 
     const vals = document.createElement('div');
     vals.className = 'wf-values';
-    const durIn = document.createElement('input');
-    durIn.type = 'number'; durIn.inputMode = 'numeric';
-    durIn.value = ex.done?.duration || 0; durIn.min = 0;
-    const powIn = document.createElement('input');
-    powIn.type = 'number'; powIn.inputMode = 'numeric';
-    powIn.value = ex.done?.power || 0; powIn.min = 0;
+    const durVal = document.createElement('span'); durVal.className = 'wf-val'; durVal.textContent = ex.done?.duration || 0;
     const durUnit = document.createElement('span'); durUnit.className = 'wf-unit'; durUnit.textContent = 'min';
+    const powVal = document.createElement('span'); powVal.className = 'wf-val'; powVal.textContent = ex.done?.power || 0;
     const powUnit = document.createElement('span'); powUnit.className = 'wf-unit'; powUnit.textContent = 'W';
-    vals.append(durIn, durUnit, powIn, powUnit);
+    vals.append(durVal, durUnit, powVal, powUnit);
     body.appendChild(vals);
 
     if (ex.prev) {
@@ -678,7 +927,6 @@ function renderLive() {
     doneBtn.className = 'wf-done-btn' + (ex.state === 'done' ? ' is-done' : '');
     doneBtn.textContent = ex.state === 'done' ? '✓' : '○';
     doneBtn.addEventListener('click', () => {
-      ex.done = { duration: parseInt(durIn.value) || 0, power: parseInt(powIn.value) || 0 };
       ex.state = ex.state === 'done' ? 'pending' : 'done';
       pushSession(snapshot()).catch(() => {});
       renderLive();
@@ -704,33 +952,15 @@ function renderLive() {
     label.textContent = `Serie ${sIdx + 1} / ${ex.series.length}`;
     body.appendChild(label);
 
-    // Values
+    // Values (read-only)
     const vals = document.createElement('div');
     vals.className = 'wf-values';
-    const repsIn = document.createElement('input');
-    repsIn.type = 'number'; repsIn.inputMode = 'decimal';
-    repsIn.value = v.reps || 0; repsIn.min = 0;
+    const repsVal = document.createElement('span'); repsVal.className = 'wf-val'; repsVal.textContent = v.reps || 0;
     const sep = document.createElement('span'); sep.className = 'wf-sep'; sep.textContent = '×';
-    const weightIn = document.createElement('input');
-    weightIn.type = 'number'; weightIn.inputMode = 'decimal';
-    weightIn.value = v.weight || 0; weightIn.min = 0; weightIn.step = '0.5';
+    const weightVal = document.createElement('span'); weightVal.className = 'wf-val'; weightVal.textContent = v.weight || 0;
     const unit = document.createElement('span'); unit.className = 'wf-unit'; unit.textContent = 'kg';
-    vals.append(repsIn, sep, weightIn, unit);
+    vals.append(repsVal, sep, weightVal, unit);
     body.appendChild(vals);
-
-    // Save on change
-    const save = () => {
-      set.values[actIdx] = { reps: parseFloat(repsIn.value) || 0, weight: parseFloat(weightIn.value) || 0 };
-      pushSession(snapshot()).catch(() => {});
-    };
-    repsIn.addEventListener('change', save);
-    weightIn.addEventListener('change', () => {
-      const newW = parseFloat(weightIn.value) || 0;
-      const origW = v.weight || 0;
-      if (newW < origW && origW > 0) {
-        showConfirm(`${origW} → ${newW} kg ?`, save);
-      } else { save(); }
-    });
 
     // Previous line
     const prevVal = ex.prevSeries?.[sIdx]?.values?.[actIdx];
@@ -747,7 +977,6 @@ function renderLive() {
     doneBtn.textContent = state === 'done' ? '✓' : '○';
     doneBtn.addEventListener('click', () => {
       if (state === 'done') return;
-      set.values[actIdx] = { reps: parseFloat(repsIn.value) || 0, weight: parseFloat(weightIn.value) || 0 };
       set.activityStates[actIdx] = 'done';
 
       const rest = act?.rest || 0;
@@ -762,45 +991,21 @@ function renderLive() {
     body.appendChild(doneBtn);
   }
 
-  // ── Navigation dots + arrows ──
-  const nav = document.createElement('div');
-  nav.className = 'wf-nav';
-
-  const prevBtn = document.createElement('button');
-  prevBtn.className = 'wf-nav-btn';
-  prevBtn.textContent = '‹';
-  prevBtn.disabled = exIdx === 0;
-  prevBtn.addEventListener('click', () => { watchExIdx--; renderLive(); });
-
-  const dots = document.createElement('div');
-  dots.className = 'wf-dots';
-  exercises.forEach((e, i) => {
-    const dot = document.createElement('div');
-    dot.className = 'wf-dot';
-    if (i === exIdx) dot.classList.add('active');
-    else {
-      const isDone = e.type === 'cardio'
-        ? e.state === 'done'
-        : e.series.every(s => e.activities.every((_, a) => s.activityStates?.[a] === 'done'));
-      if (isDone) dot.classList.add('done');
-    }
-    dots.appendChild(dot);
-  });
-
-  const nextBtn = document.createElement('button');
-  nextBtn.className = 'wf-nav-btn';
-  nextBtn.textContent = '›';
-  nextBtn.disabled = exIdx === exercises.length - 1;
-  nextBtn.addEventListener('click', () => { watchExIdx++; renderLive(); });
-
-  nav.append(prevBtn, dots, nextBtn);
-  body.appendChild(nav);
+  // Back to exercise list (if multiple exercises)
+  if (exercises.length > 1) {
+    const backBtn = document.createElement('button');
+    backBtn.className = 'wf-back';
+    backBtn.textContent = '\u2190 Exercices';
+    backBtn.addEventListener('click', renderExerciseList);
+    body.appendChild(backBtn);
+  }
 }
 
 /* ═══════════════════════════════════════════════════════
    COUNTDOWN — montre
 ═══════════════════════════════════════════════════════ */
 let watchCountdownTimer = null;
+let watchCountdownStartedAt = 0;
 
 function startWatchCountdown(seconds, label) {
   stopWatchCountdown();
@@ -808,10 +1013,15 @@ function startWatchCountdown(seconds, label) {
   const overlay = document.getElementById('w-countdown');
   const secsEl  = document.getElementById('w-countdown-secs');
   const labelEl = document.getElementById('w-countdown-label');
+  const ring    = document.getElementById('w-cd-ring');
+  const CIRC    = 553;
   overlay.classList.remove('hidden');
-  labelEl.textContent = label ? `A suivre : ${label}` : '';
+  overlay.classList.remove('urgent');
+  labelEl.textContent = label || '';
+  watchCountdownStartedAt = Date.now();
   let remaining = seconds;
   secsEl.textContent = remaining;
+  if (ring) { ring.style.transition = 'none'; ring.style.strokeDashoffset = '0'; requestAnimationFrame(() => { ring.style.transition = 'stroke-dashoffset 0.9s linear'; }); }
   watchCountdownTimer = setInterval(() => {
     remaining--;
     if (remaining <= 0) {
@@ -819,6 +1029,8 @@ function startWatchCountdown(seconds, label) {
       if (navigator.vibrate) navigator.vibrate([300, 100, 300]);
     } else {
       secsEl.textContent = remaining;
+      if (ring) ring.style.strokeDashoffset = ((1 - remaining / seconds) * CIRC).toString();
+      if (remaining <= 5) overlay.classList.add('urgent');
       if (remaining <= 3 && navigator.vibrate) navigator.vibrate(80);
     }
   }, 1000);
@@ -826,7 +1038,9 @@ function startWatchCountdown(seconds, label) {
 
 function stopWatchCountdown() {
   if (watchCountdownTimer) { clearInterval(watchCountdownTimer); watchCountdownTimer = null; }
-  document.getElementById('w-countdown').classList.add('hidden');
+  const overlay = document.getElementById('w-countdown');
+  overlay.classList.add('hidden');
+  overlay.classList.remove('urgent');
   if (liveSession?.sync?.type === 'rest') {
     liveSession.sync = null;
     pushSession(snapshot()).catch(() => {});
@@ -927,13 +1141,21 @@ function syncLiveFromDB(session) {
       startWatchCountdown(remaining, session.sync.label);
     }
   }
-  // Countdown ended on phone
-  if (!session.sync && watchCountdownTimer) {
+  // Countdown ended on phone (grace period: ignore stale pushes < 2s)
+  if (!session.sync && watchCountdownTimer && Date.now() - watchCountdownStartedAt > 2000) {
     clearInterval(watchCountdownTimer); watchCountdownTimer = null;
-    document.getElementById('w-countdown').classList.add('hidden');
+    const cdOverlay = document.getElementById('w-countdown');
+    cdOverlay.classList.add('hidden');
+    cdOverlay.classList.remove('urgent');
   }
 
-  if (changed) renderLive();
+  if (changed) {
+    // Refresh the current view (list or single exercise)
+    const liveBody = document.getElementById('live-body');
+    const isOnList = liveBody && liveBody.querySelector('.wf-ex-list');
+    if (isOnList) renderExerciseList();
+    else renderLive();
+  }
 }
 
 /* ═══════════════════════════════════════════════════════
