@@ -710,10 +710,12 @@ input:focus { border-color: var(--accent); }
 
 .live-rest { font-size: 13px; text-align: center; padding: 6px 2px; color: var(--text-muted); }
 
-/* ── Countdown sticky top bar ─────────────────────────── */
+/* ── Countdown fixed top bar ─────────────────────────── */
 #countdown-bar {
-  position: sticky;
+  position: fixed;
   top: 0;
+  left: 0;
+  right: 0;
   z-index: 150;
   display: flex;
   align-items: center;
@@ -727,11 +729,13 @@ input:focus { border-color: var(--accent); }
 #countdown-bar.hidden { display: none; }
 
 .countdown-label {
-  font-size: 10px;
+  font-size: 12px;
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.15em;
 }
+
+#countdown-bar .countdown-label { font-size: 10px; }
 
 .countdown-info {
   display: flex;
@@ -779,7 +783,7 @@ input:focus { border-color: var(--accent); }
   stroke: var(--accent);
   stroke-width: 6;
   stroke-linecap: round;
-  stroke-dasharray: 264;
+  stroke-dasharray: 264; /* = 2π × 42 — keep in sync with RING_CIRCUMFERENCE in app.js */
   stroke-dashoffset: 0;
   transition: stroke-dashoffset 0.9s linear, stroke 0.3s ease;
 }
