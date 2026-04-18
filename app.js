@@ -2190,6 +2190,53 @@ const COACH_PROMPT = `Coach sportif. Analyse séance musculation vs historique m
 
 3. Conseil prochaine séance : 1-2 actions concrètes basées sur tendances.`;
 
+/**
+ * Appelle l'API Claude avec la séance + son historique, persiste le feedback
+ * en DB, et renvoie le texte brut au caller. Lève si l'API échoue.
+ */
+async function generateAndPersistFeedback(session) {
+  const apiKey = await getClaudeApiKeyDB();
+  if (!apiKey) throw new Error('Clé API Claude non configurée');
+
+  const allSessions = await loadSessions();
+  const history = allSessions
+    .filter(s => s.programmeName === session.programmeName && s.id !== session.id && s.duration)
+    .slice(0, 5);
+
+  const sessionData = formatSessionForAI(session);
+  const historyData = history.map(formatSessionForAI);
+
+  const userMessage = `Séance actuelle :\n${JSON.stringify(sessionData, null, 1)}\n\nHistorique (${history.length} dernières séances) :\n${JSON.stringify(historyData, null, 1)}`;
+
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true',
+    },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 500,
+      messages: [{ role: 'user', content: userMessage }],
+      system: COACH_PROMPT,
+    }),
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.error?.message || `Erreur ${response.status}`);
+  }
+
+  const data = await response.json();
+  const feedback = data.content?.[0]?.text || 'Pas de réponse.';
+
+  await updateSessionFeedbackDB(session.id, feedback);
+
+  return feedback;
+}
+
 async function showPostSessionFeedback(session) {
   const apiKey = await getClaudeApiKeyDB();
   if (!apiKey) return;
@@ -2214,40 +2261,7 @@ async function showPostSessionFeedback(session) {
   modal.classList.remove('hidden');
 
   try {
-    const allSessions = await loadSessions();
-    const history = allSessions
-      .filter(s => s.programmeName === session.programmeName && s.id !== session.id && s.duration)
-      .slice(0, 5);
-
-    const sessionData = formatSessionForAI(session);
-    const historyData = history.map(formatSessionForAI);
-
-    const userMessage = `Séance actuelle :\n${JSON.stringify(sessionData, null, 1)}\n\nHistorique (${history.length} dernières séances) :\n${JSON.stringify(historyData, null, 1)}`;
-
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 500,
-        messages: [{ role: 'user', content: userMessage }],
-        system: COACH_PROMPT,
-      }),
-    });
-
-    if (!response.ok) {
-      const err = await response.json().catch(() => ({}));
-      throw new Error(err.error?.message || `Erreur ${response.status}`);
-    }
-
-    const data = await response.json();
-    const feedback = data.content?.[0]?.text || 'Pas de réponse.';
-
+    const feedback = await generateAndPersistFeedback(session);
     body.innerHTML = `
       <div class="feedback-ia-modal">
         <div class="modal-title">${name}</div>
