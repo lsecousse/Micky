@@ -661,12 +661,10 @@ input:focus { border-color: var(--accent); }
 /* Previous session line */
 .live-prev-line {
   width: 100%;
-  font-size: 11px;
-  color: #8ab4f8;
-  opacity: 1;
+  font-size: 13px;
+  color: #b9d4ff;
   padding: 2px 0 2px 42px;
   margin-top: -2px;
-  font-style: italic;
 }
 
 .live-rest { font-size: 13px; text-align: center; padding: 6px 2px; color: var(--text-muted); }
