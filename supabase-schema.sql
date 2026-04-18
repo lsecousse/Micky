@@ -69,6 +69,7 @@ create table if not exists public.sessions (
   started_at     text,
   duration       int,
   exercises      jsonb default '[]'::jsonb,
+  feedback_ia    text,
   created_at     timestamptz default now()
 );
 
