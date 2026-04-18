@@ -1595,3 +1595,27 @@ input:focus { border-color: var(--accent); }
   background: var(--surface);
   color: var(--text-muted);
 }
+
+/* Suggestion IA inline dans le modal d'édition */
+.live-edit-suggestion {
+  background: rgba(255, 107, 0, 0.08);
+  border: 1px solid rgba(255, 107, 0, 0.3);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.4;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.live-edit-suggestion.hidden { display: none; }
+.live-edit-suggestion-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 107, 0, 0.3);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  flex-shrink: 0;
+}
