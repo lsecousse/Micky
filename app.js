@@ -2603,7 +2603,7 @@ function statsSection(title) {
 
 function exoMetrics(ex, session) {
   const e = migrateExercise(ex);
-  let volume = 0, best1RM = 0;
+  let volume = 0, best1RM = 0, topWeight = 0;
   e.series.filter(s => s.done !== false).forEach(set => {
     e.activities.forEach((act, i) => {
       if (act.type !== 'weight') return;
@@ -2612,9 +2612,15 @@ function exoMetrics(ex, session) {
       volume += w * r;
       const rm = w * (1 + r / 30);
       if (rm > best1RM) best1RM = rm;
+      if (w > topWeight) topWeight = w;
     });
   });
-  return { date: session.date, volume, e1rm: Math.round(best1RM * 10) / 10 };
+  return {
+    date: session.date,
+    volume,
+    e1rm: Math.round(best1RM * 10) / 10,
+    topWeight: Math.round(topWeight * 10) / 10,
+  };
 }
 
 const CHART_COLORS = [
@@ -2640,14 +2646,18 @@ function buildStatsProgression(sessions) {
   });
   section.appendChild(pills);
 
-  // Volume / 1RM toggle
+  // Volume / 1RM / Charge max toggle
   const toggle = document.createElement('div');
   toggle.className = 'stats-metric-toggle';
-  ['Volume total', '1RM estimé'].forEach((label, i) => {
+  [
+    { label: 'Volume total', metric: 'volume' },
+    { label: '1RM estimé',   metric: 'e1rm' },
+    { label: 'Charge max',   metric: 'topWeight' },
+  ].forEach(({ label, metric }, i) => {
     const btn = document.createElement('button');
     btn.className = 'stats-metric-btn' + (i === 0 ? ' active' : '');
     btn.textContent = label;
-    btn.dataset.metric = i === 0 ? 'volume' : 'e1rm';
+    btn.dataset.metric = metric;
     toggle.appendChild(btn);
   });
   section.appendChild(toggle);
