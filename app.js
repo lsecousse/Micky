@@ -2803,6 +2803,7 @@ function renderLogin() {
           };
         }),
       };
+      await attachPrevValues(liveSession.exercises, liveSession.programmeId, liveSession.category, liveSession.id);
       startSyncPolling();
     }
   }
