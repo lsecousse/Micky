@@ -633,10 +633,10 @@ function liveSessionSnapshot(durationSecs = 0) {
   };
 }
 
-async function attachPrevValues(exercises, programmeId, category) {
+async function attachPrevValues(exercises, programmeId, category, excludeSessionId) {
   const sessions   = await loadSessions();
   const prevSession = sessions
-    .filter(s => s.programmeId === programmeId)
+    .filter(s => s.programmeId === programmeId && s.id !== excludeSessionId)
     .sort((a, b) => (b.startedAt || b.date).localeCompare(a.startedAt || a.date))[0] || null;
 
   if (category === 'cardio') {
@@ -693,7 +693,7 @@ async function startSession(programme) {
           };
         }),
   };
-  await attachPrevValues(liveSession.exercises, programme.id, liveSession.category);
+  await attachPrevValues(liveSession.exercises, programme.id, liveSession.category, liveSession.id);
   pushSession(liveSessionSnapshot()).catch(() => {});
   startSyncPolling();
   renderSeanceScreen();
@@ -2042,7 +2042,7 @@ async function resumeSessionFromHistory(session) {
       };
     }),
   };
-  await attachPrevValues(liveSession.exercises, liveSession.programmeId, liveSession.category);
+  await attachPrevValues(liveSession.exercises, liveSession.programmeId, liveSession.category, liveSession.id);
   closeModal();
   startSyncPolling();
   showScreen('seance');
