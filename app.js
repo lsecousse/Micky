@@ -699,6 +699,46 @@ async function startSession(programme) {
   renderSeanceScreen();
 }
 
+/* ═══════════════════════════════════════════════════════
+   LIVE EDIT MODAL
+═══════════════════════════════════════════════════════ */
+let liveEditModalCtx = null; // { onOk: fn, escHandler: fn }
+
+function openLiveEditModal({ title, bodyHTML, focusSelector, onOk }) {
+  const modal = document.getElementById('live-edit-modal');
+  const titleEl = document.getElementById('live-edit-modal-title');
+  const bodyEl  = document.getElementById('live-edit-modal-body');
+
+  titleEl.textContent = title;
+  bodyEl.innerHTML = bodyHTML;
+  modal.classList.remove('hidden');
+
+  requestAnimationFrame(() => {
+    const el = bodyEl.querySelector(focusSelector);
+    if (el) { el.focus(); el.select?.(); }
+  });
+
+  const escHandler = (e) => { if (e.key === 'Escape') closeLiveEditModal(); };
+  document.addEventListener('keydown', escHandler);
+  liveEditModalCtx = { onOk, escHandler };
+}
+
+function closeLiveEditModal() {
+  const modal = document.getElementById('live-edit-modal');
+  modal.classList.add('hidden');
+  document.getElementById('live-edit-modal-body').innerHTML = '';
+  if (liveEditModalCtx?.escHandler) {
+    document.removeEventListener('keydown', liveEditModalCtx.escHandler);
+  }
+  liveEditModalCtx = null;
+}
+
+document.getElementById('live-edit-modal-cancel').addEventListener('click', closeLiveEditModal);
+document.querySelector('#live-edit-modal .live-edit-modal-overlay').addEventListener('click', closeLiveEditModal);
+document.getElementById('live-edit-modal-ok').addEventListener('click', () => {
+  if (liveEditModalCtx?.onOk) liveEditModalCtx.onOk();
+});
+
 function renderLiveSession(tab) {
   const header = document.createElement('div');
   header.className = 'live-header';
@@ -1037,91 +1077,92 @@ function buildActivityRow(exIdx, sIdx, actIdx) {
   editBtn.textContent = '✎';
   row.appendChild(editBtn);
 
-  // ── Edit mode (hidden by default) ──
-  const editZone = document.createElement('div');
-  editZone.className = 'live-edit-zone hidden';
+  // ── Edit mode : open centered modal ──
+  editBtn.addEventListener('click', () => {
+    if (act.type === 'stopwatch') return;
 
-  if (act.type === 'weight') {
-    editZone.innerHTML = `
-      <label>Reps<input type="number" inputmode="decimal" class="live-reps" value="${v.reps ?? act.reps ?? 0}" min="1"
-        data-ex="${exIdx}" data-s="${sIdx}" data-act="${actIdx}"></label>
-      <label>Poids<input type="number" inputmode="decimal" class="live-weight" value="${v.weight ?? act.weight ?? 0}" min="0" step="0.5"
-        data-ex="${exIdx}" data-s="${sIdx}" data-act="${actIdx}"></label>
-      <label>Repos<input type="number" inputmode="numeric" class="live-rest" value="${act.rest ?? 0}" min="0"
-        data-ex="${exIdx}" data-act="${actIdx}">s</label>
-    `;
-  } else if (act.type === 'countdown') {
-    editZone.innerHTML = `
-      <label>Durée<input type="number" inputmode="numeric" class="live-duration" value="${v.duration ?? act.duration ?? 0}" min="1"
-        data-ex="${exIdx}" data-s="${sIdx}" data-act="${actIdx}">s</label>
-      <label>Repos<input type="number" inputmode="numeric" class="live-rest" value="${act.rest ?? 0}" min="0"
-        data-ex="${exIdx}" data-act="${actIdx}">s</label>
-    `;
-  }
+    const actLabel = act.label || act.name || '';
+    const title = actLabel ? `${ex.name} — ${actLabel}` : ex.name;
 
-  // Confirm button inside edit zone
-  if (act.type !== 'stopwatch') {
-    const confirmBtn = document.createElement('button');
-    confirmBtn.className = 'live-edit-confirm';
-    confirmBtn.textContent = 'OK';
-    editZone.appendChild(confirmBtn);
+    if (act.type === 'weight') {
+      const currentReps   = v.reps   ?? act.reps   ?? 0;
+      const currentWeight = v.weight ?? act.weight ?? 0;
+      const currentRest   = act.rest ?? 0;
+      const originalWeight = currentWeight;
 
-    const originalWeight = v.weight ?? act.weight ?? 0;
+      const bodyHTML = `
+        <label>Reps<input type="number" inputmode="decimal" class="live-reps" value="${currentReps}" min="1"></label>
+        <label>Poids<input type="number" inputmode="decimal" class="live-weight" value="${currentWeight}" min="0" step="0.5"></label>
+        <label>Repos<input type="number" inputmode="numeric" class="live-rest" value="${currentRest}" min="0">s</label>
+      `;
 
-    function applyWeightEdit() {
-      const rI = editZone.querySelector('.live-reps');
-      const wI = editZone.querySelector('.live-weight');
-      const restI = editZone.querySelector('.live-rest');
-      propagateLiveValue(exIdx, sIdx, actIdx, 'reps', parseFloat(rI.value) || 0);
-      propagateLiveValue(exIdx, sIdx, actIdx, 'weight', parseFloat(wI.value) || 0);
-      const restVal = parseInt(restI.value) || 0;
-      liveSession.exercises[exIdx].activities[actIdx].rest = restVal;
-      document.querySelectorAll(`.live-rest[data-ex="${exIdx}"][data-act="${actIdx}"]`)
-        .forEach(inp => { inp.value = restVal; });
-      updateProgrammeTemplate(exIdx, actIdx, 'rest', restVal);
-      const r = parseFloat(rI.value) || 0, w = parseFloat(wI.value) || 0;
-      valuesSpan.innerHTML = `<b>${r}</b> <span class="live-x">×</span> <b>${w}</b> <span class="live-kg">kg</span>`
-        + (restVal ? `<span class="live-rest-display">repos ${restVal}s</span>` : '');
-      editZone.classList.add('hidden');
-      editBtn.classList.remove('hidden');
-      pushSession(liveSessionSnapshot()).catch(() => {});
+      const applyEdit = () => {
+        const rI = document.querySelector('#live-edit-modal-body .live-reps');
+        const wI = document.querySelector('#live-edit-modal-body .live-weight');
+        const restI = document.querySelector('#live-edit-modal-body .live-rest');
+        const r = parseFloat(rI.value) || 0;
+        const w = parseFloat(wI.value) || 0;
+        const restVal = parseInt(restI.value) || 0;
+
+        propagateLiveValue(exIdx, sIdx, actIdx, 'reps', r);
+        propagateLiveValue(exIdx, sIdx, actIdx, 'weight', w);
+        liveSession.exercises[exIdx].activities[actIdx].rest = restVal;
+        updateProgrammeTemplate(exIdx, actIdx, 'rest', restVal);
+
+        valuesSpan.innerHTML = `<b>${r}</b> <span class="live-x">×</span> <b>${w}</b> <span class="live-kg">kg</span>`
+          + (restVal ? `<span class="live-rest-display">repos ${restVal}s</span>` : '');
+
+        closeLiveEditModal();
+        pushSession(liveSessionSnapshot()).catch(() => {});
+      };
+
+      openLiveEditModal({
+        title,
+        bodyHTML,
+        focusSelector: '.live-weight',
+        onOk: () => {
+          const newWeight = parseFloat(document.querySelector('#live-edit-modal-body .live-weight').value) || 0;
+          if (newWeight < originalWeight && originalWeight > 0) {
+            showConfirm(`Réduire le poids de ${originalWeight} kg à ${newWeight} kg ?`, applyEdit);
+            return;
+          }
+          applyEdit();
+        },
+      });
+      return;
     }
 
-    confirmBtn.addEventListener('click', () => {
-      // Save values from inputs
-      if (act.type === 'weight') {
-        const newWeight = parseFloat(editZone.querySelector('.live-weight').value) || 0;
-        if (newWeight < originalWeight && originalWeight > 0) {
-          showConfirm(`Réduire le poids de ${originalWeight} kg à ${newWeight} kg ?`, applyWeightEdit);
-          return;
-        }
-        applyWeightEdit();
-        return;
-      } else {
-        const dI = editZone.querySelector('.live-duration');
-        const restI = editZone.querySelector('.live-rest');
-        liveSession.exercises[exIdx].series[sIdx].values[actIdx].duration = parseInt(dI.value) || 0;
-        const restVal = parseInt(restI.value) || 0;
-        liveSession.exercises[exIdx].activities[actIdx].rest = restVal;
-        document.querySelectorAll(`.live-rest[data-ex="${exIdx}"][data-act="${actIdx}"]`)
-          .forEach(inp => { inp.value = restVal; });
-        updateProgrammeTemplate(exIdx, actIdx, 'rest', restVal);
-        valuesSpan.innerHTML = `<b>${parseInt(dI.value) || 0}</b><span class="live-x">s</span>`
-          + (restVal ? `<span class="live-rest-display">repos ${restVal}s</span>` : '');
-      }
-      editZone.classList.add('hidden');
-      editBtn.classList.remove('hidden');
-      pushSession(liveSessionSnapshot()).catch(() => {});
-    });
-  }
+    if (act.type === 'countdown') {
+      const currentDur  = v.duration ?? act.duration ?? 0;
+      const currentRest = act.rest ?? 0;
 
-  row.appendChild(editZone);
+      const bodyHTML = `
+        <label>Durée<input type="number" inputmode="numeric" class="live-duration" value="${currentDur}" min="1">s</label>
+        <label>Repos<input type="number" inputmode="numeric" class="live-rest" value="${currentRest}" min="0">s</label>
+      `;
 
-  editBtn.addEventListener('click', () => {
-    editZone.classList.remove('hidden');
-    editBtn.classList.add('hidden');
-    const firstInput = editZone.querySelector('input');
-    if (firstInput) { firstInput.focus(); firstInput.select(); }
+      openLiveEditModal({
+        title,
+        bodyHTML,
+        focusSelector: '.live-duration',
+        onOk: () => {
+          const dI = document.querySelector('#live-edit-modal-body .live-duration');
+          const restI = document.querySelector('#live-edit-modal-body .live-rest');
+          const dur = parseInt(dI.value) || 0;
+          const restVal = parseInt(restI.value) || 0;
+
+          liveSession.exercises[exIdx].series[sIdx].values[actIdx].duration = dur;
+          liveSession.exercises[exIdx].activities[actIdx].rest = restVal;
+          updateProgrammeTemplate(exIdx, actIdx, 'rest', restVal);
+
+          valuesSpan.innerHTML = `<b>${dur}</b><span class="live-x">s</span>`
+            + (restVal ? `<span class="live-rest-display">repos ${restVal}s</span>` : '');
+
+          closeLiveEditModal();
+          pushSession(liveSessionSnapshot()).catch(() => {});
+        },
+      });
+    }
   });
 
   // ── Previous session line ──
