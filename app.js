@@ -1588,7 +1588,9 @@ function stopCountdown() {
   }
 }
 
-document.getElementById('countdown-skip').addEventListener('click', finishCountdown);
+document.getElementById('countdown-skip').addEventListener('click', () => {
+  showConfirm('Passer le repos ?', finishCountdown);
+});
 
 /* ═══════════════════════════════════════════════════════
    COMPOSITION CORPORELLE
