@@ -1809,6 +1809,7 @@ async function renderCorps() {
     if (!Object.values(m).slice(2).some(v => v !== null)) {
       showAlert('Renseigne au moins une valeur.'); return;
     }
+    bodyAnalysisCache = null;
     await pushBodyMeasurementDB(m);
     showToast('Mesure enregistrée ✓');
     renderCorps();
@@ -1995,6 +1996,25 @@ async function renderCorps() {
     card.appendChild(values);
     body.appendChild(card);
   });
+
+  // Analyse bienveillante en bas
+  const analysisCard = document.createElement('div');
+  analysisCard.className = 'corps-analysis';
+  analysisCard.innerHTML = `
+    <div class="corps-analysis-loading">
+      <div class="corps-analysis-spinner"></div>
+      <span>Analyse en cours…</span>
+    </div>
+  `;
+  body.appendChild(analysisCard);
+
+  generateBodyAnalysis(measurements).then(text => {
+    if (!text) { analysisCard.classList.add('hidden'); return; }
+    analysisCard.innerHTML = `
+      <div class="corps-analysis-title">🌱 Ton évolution</div>
+      <div class="corps-analysis-content">${formatFeedback(text)}</div>
+    `;
+  }).catch(() => analysisCard.classList.add('hidden'));
 }
 
 function drawCorpsChart(canvas, data, field, unit) {
@@ -2332,6 +2352,65 @@ async function generateWeightSuggestion(exerciseName) {
   suggestionCache.set(exerciseName, promise);
   promise.catch(() => suggestionCache.delete(exerciseName));
   return promise;
+}
+
+const BODY_ANALYSIS_PROMPT = `Coach bienveillant et non jugeant. L'utilisateur partage son évolution de composition corporelle (poids, graisse, eau, muscle, IMG, os, tour de ventre). Écris 2-3 phrases courtes en français :
+- Célèbre les tendances positives sur la durée (depuis la première mesure).
+- Mets les petites variations récentes en perspective (un poids fluctue au quotidien).
+- Encourage, jamais de jugement ni de pression, aucun conseil diététique ou médical, pas d'objectif chiffré.
+- Ton chaleureux, deuxième personne du singulier (tu).`;
+
+let bodyAnalysisCache = null;
+
+function cleanMeasurement(m) {
+  const out = { date: m.date };
+  if (m.poids != null)          out.poids = m.poids;
+  if (m.graisse_kg != null)     out.graisseKg = m.graisse_kg;
+  if (m.eau != null)            out.eau = m.eau;
+  if (m.muscle != null)         out.muscle = m.muscle;
+  if (m.img != null)            out.img = m.img;
+  if (m.os != null)             out.os = m.os;
+  if (m.tour_de_ventre != null) out.tourDeVentre = m.tour_de_ventre;
+  return out;
+}
+
+async function generateBodyAnalysis(measurements) {
+  if (bodyAnalysisCache !== null) return bodyAnalysisCache;
+  if (!measurements || measurements.length < 2) return null;
+
+  const apiKey = await getClaudeApiKeyDB();
+  if (!apiKey) return null;
+
+  const sorted = [...measurements].sort((a, b) => a.date.localeCompare(b.date));
+  const first = cleanMeasurement(sorted[0]);
+  const recent = sorted.slice(-5).filter(m => m !== sorted[0]).map(cleanMeasurement);
+
+  const payload = { first, recent };
+
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true',
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 180,
+        messages: [{ role: 'user', content: JSON.stringify(payload) }],
+        system: BODY_ANALYSIS_PROMPT,
+      }),
+    });
+    if (!response.ok) return null;
+    const data = await response.json();
+    const text = data.content?.[0]?.text || null;
+    bodyAnalysisCache = text;
+    return text;
+  } catch {
+    return null;
+  }
 }
 
 /**
