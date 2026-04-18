@@ -1456,7 +1456,7 @@ let countdownTimer    = null;
 let countdownSecs     = 0;
 let countdownTotal    = 0;
 let countdownOnFinish = null;
-const RING_CIRCUMFERENCE = 2 * Math.PI * 85; // ≈ 534
+const RING_CIRCUMFERENCE = 2 * Math.PI * 42; // ≈ 264 (ring compact)
 
 function updateCountdownUI() {
   const display = document.getElementById('countdown-display');

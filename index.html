@@ -146,18 +146,20 @@
   </div>
 
 
-  <!-- COUNTDOWN FULLSCREEN -->
+  <!-- COUNTDOWN STICKY TOP BAR -->
   <div id="countdown-bar" class="hidden">
-    <span class="countdown-label">Repos</span>
-    <span id="countdown-exercise-name" class="overlay-exercise-name"></span>
     <div class="countdown-ring-wrap">
-      <svg class="countdown-ring" viewBox="0 0 200 200">
-        <circle class="ring-bg" cx="100" cy="100" r="85" />
-        <circle id="ring-progress" class="ring-progress" cx="100" cy="100" r="85" />
+      <svg class="countdown-ring" viewBox="0 0 100 100">
+        <circle class="ring-bg" cx="50" cy="50" r="42" />
+        <circle id="ring-progress" class="ring-progress" cx="50" cy="50" r="42" />
       </svg>
       <span id="countdown-display">00:00</span>
     </div>
-    <button id="countdown-skip">Passer</button>
+    <div class="countdown-info">
+      <span class="countdown-label">Repos</span>
+      <span id="countdown-exercise-name" class="overlay-exercise-name"></span>
+    </div>
+    <button id="countdown-skip" title="Passer">⏭</button>
   </div>
 
   <!-- TOAST -->

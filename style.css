@@ -710,63 +710,76 @@ input:focus { border-color: var(--accent); }
 
 .live-rest { font-size: 13px; text-align: center; padding: 6px 2px; color: var(--text-muted); }
 
-/* ── Countdown fullscreen ─────────────────────────────── */
+/* ── Countdown sticky top bar ─────────────────────────── */
 #countdown-bar {
-  position: fixed;
-  inset: 0;
-  background: var(--bg);
+  position: sticky;
+  top: 0;
+  z-index: 150;
   display: flex;
-  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 32px;
-  z-index: 200;
-  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  gap: 12px;
+  padding: 8px 14px;
+  padding-top: calc(env(safe-area-inset-top) + 8px);
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
 }
 
 #countdown-bar.hidden { display: none; }
 
 .countdown-label {
-  font-size: 12px;
+  font-size: 10px;
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.15em;
 }
 
+.countdown-info {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  line-height: 1.2;
+}
+
 .overlay-exercise-name {
-  font-size: 18px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--accent);
-  margin-top: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .countdown-ring-wrap {
   position: relative;
-  width: 220px;
-  height: 220px;
+  width: 44px;
+  height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 
 .countdown-ring {
   position: absolute;
   inset: 0;
+  width: 100%;
+  height: 100%;
   transform: rotate(-90deg);
 }
 
 .ring-bg {
   fill: none;
   stroke: #222;
-  stroke-width: 8;
+  stroke-width: 6;
 }
 
 .ring-progress {
   fill: none;
   stroke: var(--accent);
-  stroke-width: 8;
+  stroke-width: 6;
   stroke-linecap: round;
-  stroke-dasharray: 534;
+  stroke-dasharray: 264;
   stroke-dashoffset: 0;
   transition: stroke-dashoffset 0.9s linear, stroke 0.3s ease;
 }
@@ -774,7 +787,7 @@ input:focus { border-color: var(--accent); }
 #countdown-bar.urgent .ring-progress { stroke: var(--danger); }
 
 #countdown-display {
-  font-size: 52px;
+  font-size: 14px;
   font-weight: 600;
   color: var(--accent);
   line-height: 1;
@@ -786,7 +799,7 @@ input:focus { border-color: var(--accent); }
 
 @keyframes tick-pulse {
   0%   { transform: scale(1); }
-  40%  { transform: scale(1.12); }
+  40%  { transform: scale(1.15); }
   100% { transform: scale(1); }
 }
 
@@ -797,10 +810,11 @@ input:focus { border-color: var(--accent); }
   border: 1px solid #333;
   color: var(--text-muted);
   font-family: var(--font);
-  font-size: 14px;
-  padding: 12px 36px;
-  border-radius: var(--radius);
+  font-size: 16px;
+  padding: 6px 12px;
+  border-radius: 8px;
   cursor: pointer;
+  flex-shrink: 0;
 }
 
 /* ── Toast ────────────────────────────────────────────── */
