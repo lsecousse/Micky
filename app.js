@@ -1302,13 +1302,19 @@ function refreshRowDisplay(row, exIdx, sIdx, actIdx) {
   }
 }
 
-async function updateProgrammeTemplate(exIdx, actIdx, field, val) {
-  if (!liveSession.programmeId) return;
-  const programmes = await loadProgrammes();
-  const prog = programmes.find(p => p.id === liveSession.programmeId);
-  if (!prog?.exercises[exIdx]?.activities?.[actIdx]) return;
-  prog.exercises[exIdx].activities[actIdx][field] = val;
-  await updateProgrammeDB(prog);
+// Sérialisée pour éviter les races entre updates concurrents du même programme
+let programmeTemplateQueue = Promise.resolve();
+
+function updateProgrammeTemplate(exIdx, actIdx, field, val) {
+  if (!liveSession.programmeId) return programmeTemplateQueue;
+  programmeTemplateQueue = programmeTemplateQueue.then(async () => {
+    const programmes = await loadProgrammes();
+    const prog = programmes.find(p => p.id === liveSession.programmeId);
+    if (!prog?.exercises[exIdx]?.activities?.[actIdx]) return;
+    prog.exercises[exIdx].activities[actIdx][field] = val;
+    await updateProgrammeDB(prog);
+  }).catch(err => console.error('updateProgrammeTemplate error:', err));
+  return programmeTemplateQueue;
 }
 
 function stopAllChronos() {
