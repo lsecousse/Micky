@@ -1582,3 +1582,16 @@ input:focus { border-color: var(--accent); }
 }
 
 .live-edit-modal-actions button { flex: 1; }
+
+/* Feedback IA — bouton de génération à la demande dans l'historique */
+.feedback-ia-generate {
+  margin-top: 20px;
+  display: flex;
+  justify-content: center;
+}
+.feedback-ia-generate .btn-disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: var(--surface);
+  color: var(--text-muted);
+}

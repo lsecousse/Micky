@@ -2101,7 +2101,7 @@ async function resumeSessionFromHistory(session) {
 /* ═══════════════════════════════════════════════════════
    MODAL — détail séance
 ═══════════════════════════════════════════════════════ */
-function openModal(session) {
+async function openModal(session) {
   const body = document.getElementById('modal-body');
   const done = totalVolume(session.exercises);
   const planned = plannedVolume(session.exercises);
@@ -2109,6 +2109,7 @@ function openModal(session) {
   const volDisplay = planned > 0 && done !== planned
     ? `${done.toLocaleString('fr-FR')} kg / ${planned.toLocaleString('fr-FR')} kg`
     : `${done.toLocaleString('fr-FR')} kg`;
+  const isAbandoned = !session.duration;
 
   const timeLine = session.startedAt
     ? `${formatDate(session.date)} · ${formatTime(session.startedAt)}${session.duration ? ` · ${formatDuration(session.duration)}` : ''}`
@@ -2149,7 +2150,21 @@ function openModal(session) {
     </div>`;
   });
 
-  const isAbandoned = !session.duration;
+  if (session.feedbackIa) {
+    html += `
+      <div class="feedback-ia-card">
+        <div class="feedback-ia-title">🤖 Feedback IA</div>
+        <div class="feedback-ia-content">${formatFeedback(session.feedbackIa)}</div>
+      </div>
+    `;
+  } else if (!isAbandoned) {
+    html += `
+      <div class="feedback-ia-generate" id="feedback-ia-generate-wrap">
+        <button class="btn-primary" id="feedback-ia-generate">🤖 Générer l'analyse IA</button>
+      </div>
+    `;
+  }
+
   html += `<div class="modal-footer${isAbandoned ? ' modal-footer--two' : ''}">
     ${isAbandoned ? '<button class="btn-primary" id="resume-session">Reprendre la séance</button>' : ''}
     <button class="btn-danger" id="delete-session">Supprimer la séance</button>
@@ -2166,6 +2181,46 @@ function openModal(session) {
       await renderHistory();
     });
   });
+
+  const generateBtn = document.getElementById('feedback-ia-generate');
+  if (generateBtn) {
+    const apiKey = await getClaudeApiKeyDB();
+    if (!apiKey) {
+      generateBtn.disabled = true;
+      generateBtn.textContent = 'Configurez votre clé API Claude dans Profil';
+      generateBtn.classList.add('btn-disabled');
+    } else {
+      generateBtn.addEventListener('click', async () => {
+        const wrap = document.getElementById('feedback-ia-generate-wrap');
+        wrap.innerHTML = `
+          <div class="feedback-ia-card">
+            <div class="feedback-ia-title">🤖 Feedback IA</div>
+            <div class="feedback-ia-loading">
+              <div class="feedback-ia-spinner"></div>
+              <p>Analyse en cours…</p>
+            </div>
+          </div>
+        `;
+        try {
+          const feedback = await generateAndPersistFeedback(session);
+          session.feedbackIa = feedback;
+          wrap.outerHTML = `
+            <div class="feedback-ia-card">
+              <div class="feedback-ia-title">🤖 Feedback IA</div>
+              <div class="feedback-ia-content">${formatFeedback(feedback)}</div>
+            </div>
+          `;
+        } catch (e) {
+          wrap.innerHTML = `
+            <div class="feedback-ia-card" style="border-color:#ff5c5c">
+              <div class="feedback-ia-title" style="color:#ff5c5c">Erreur</div>
+              <div class="feedback-ia-content">${e.message}</div>
+            </div>
+          `;
+        }
+      });
+    }
+  }
 
   document.getElementById('modal').classList.remove('hidden');
 }
