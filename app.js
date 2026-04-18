@@ -1932,6 +1932,28 @@ async function renderCorps() {
     requestAnimationFrame(() => drawCorpsChart(canvas, chartData, field, unit));
   });
 
+  // ── Analyse bienveillante (au-dessus de l'historique) ──
+  const analysisCard = document.createElement('div');
+  analysisCard.className = 'corps-analysis';
+  analysisCard.innerHTML = `
+    <div class="corps-analysis-loading">
+      <div class="corps-analysis-spinner"></div>
+      <span>Analyse en cours…</span>
+    </div>
+  `;
+  body.appendChild(analysisCard);
+
+  const wasCached = bodyAnalysisCache !== null;
+  generateBodyAnalysis(measurements).then(text => {
+    if (!text) { analysisCard.classList.add('hidden'); return; }
+    analysisCard.innerHTML = `
+      <div class="corps-analysis-title">🌱 Ton évolution</div>
+      <div class="corps-analysis-content">${formatFeedback(text)}</div>
+    `;
+    // Première génération du tab → afficher aussi en popup pour attirer l'attention
+    if (!wasCached) showBodyAnalysisPopup(text);
+  }).catch(() => analysisCard.classList.add('hidden'));
+
   // ── Historique ────────────────────────────────────────
   const histTitle = document.createElement('p');
   histTitle.className = 'section-title';
@@ -1996,25 +2018,18 @@ async function renderCorps() {
     card.appendChild(values);
     body.appendChild(card);
   });
+}
 
-  // Analyse bienveillante en bas
-  const analysisCard = document.createElement('div');
-  analysisCard.className = 'corps-analysis';
-  analysisCard.innerHTML = `
-    <div class="corps-analysis-loading">
-      <div class="corps-analysis-spinner"></div>
-      <span>Analyse en cours…</span>
+function showBodyAnalysisPopup(text) {
+  const modal = document.getElementById('modal');
+  const modalBody = document.getElementById('modal-body');
+  modalBody.innerHTML = `
+    <div class="feedback-ia-modal">
+      <div class="modal-title" style="color:#5abe78">🌱 Ton évolution</div>
+      <div class="corps-analysis-content">${formatFeedback(text)}</div>
     </div>
   `;
-  body.appendChild(analysisCard);
-
-  generateBodyAnalysis(measurements).then(text => {
-    if (!text) { analysisCard.classList.add('hidden'); return; }
-    analysisCard.innerHTML = `
-      <div class="corps-analysis-title">🌱 Ton évolution</div>
-      <div class="corps-analysis-content">${formatFeedback(text)}</div>
-    `;
-  }).catch(() => analysisCard.classList.add('hidden'));
+  modal.classList.remove('hidden');
 }
 
 function drawCorpsChart(canvas, data, field, unit) {
