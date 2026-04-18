@@ -670,7 +670,7 @@ async function startSession(programme) {
           comment:  ex.comment || '',
           duration: ex.duration || 0,
           power:    ex.power    || 0,
-          done:     { duration: ex.duration || 0, power: ex.power || 0 },
+          done:     { duration: ex.duration || 0, power: ex.power || 0, km: 0 },
           prev:     null,
           state:    'pending',
         }))
@@ -863,14 +863,40 @@ function renderLiveCardio(tab) {
     powUnit.textContent = 'W';
     powWrap.append(powLabel, powInput, powUnit);
 
-    fieldsRow.append(durWrap, powWrap);
+    // Distance km
+    const kmWrap = document.createElement('div');
+    kmWrap.className = 'live-cardio-field';
+    const kmLabel = document.createElement('span');
+    kmLabel.className = 'live-cardio-label';
+    kmLabel.textContent = 'Distance';
+    const kmInput = document.createElement('input');
+    kmInput.type = 'number';
+    kmInput.inputMode = 'decimal';
+    kmInput.step = '0.1';
+    kmInput.className = 'live-cardio-input';
+    kmInput.value = ex.done.km || '';
+    kmInput.min = '0';
+    kmInput.addEventListener('input', e => {
+      liveSession.exercises[exIdx].done.km = parseFloat(e.target.value) || 0;
+    });
+    const kmUnit = document.createElement('span');
+    kmUnit.className = 'live-cardio-unit';
+    kmUnit.textContent = 'km';
+    kmWrap.append(kmLabel, kmInput, kmUnit);
+
+    fieldsRow.append(durWrap, powWrap, kmWrap);
     exDiv.appendChild(fieldsRow);
 
     // Valeurs précédentes
     if (ex.prev) {
       const prevSpan = document.createElement('div');
       prevSpan.className = 'live-cardio-prev';
-      prevSpan.textContent = `Précédent : ${ex.prev.duration || '—'} min · ${ex.prev.power || '—'} W`;
+      const parts = [
+        `${ex.prev.duration || '—'} min`,
+        `${ex.prev.power || '—'} W`,
+      ];
+      if (ex.prev.km) parts.push(`${ex.prev.km} km`);
+      prevSpan.textContent = `Précédent : ${parts.join(' · ')}`;
       exDiv.appendChild(prevSpan);
     }
 
@@ -1409,12 +1435,11 @@ async function syncFromDB() {
       const localEx = liveSession.exercises[exIdx];
       if (!localEx) return;
 
-      // Cardio sync
+      // Cardio sync : seul l'état (done/pending) est synchronisé.
+      // Les valeurs done.duration/power/km sont saisies uniquement sur le téléphone,
+      // les écraser depuis la DB provoquerait un reset pendant la saisie.
       if (dbEx.type === 'cardio' && localEx.type === 'cardio') {
         if (dbEx.state !== localEx.state) { localEx.state = dbEx.state; changed = true; }
-        if (dbEx.done?.duration !== localEx.done?.duration || dbEx.done?.power !== localEx.done?.power) {
-          localEx.done = dbEx.done; changed = true;
-        }
         return;
       }
 
