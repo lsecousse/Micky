@@ -633,13 +633,28 @@ function liveSessionSnapshot(durationSecs = 0) {
   };
 }
 
+async function attachPrevValues(exercises, programmeId, category) {
+  const sessions   = await loadSessions();
+  const prevSession = sessions
+    .filter(s => s.programmeId === programmeId)
+    .sort((a, b) => (b.startedAt || b.date).localeCompare(a.startedAt || a.date))[0] || null;
+
+  if (category === 'cardio') {
+    exercises.forEach(ex => {
+      const prevEx = prevSession?.exercises?.find(e => e.name === ex.name) || null;
+      ex.prev = prevEx?.done || null;
+    });
+  } else {
+    exercises.forEach(ex => {
+      const prevEx = prevSession?.exercises?.find(e => e.name === ex.name) || null;
+      ex.prevSeries = prevEx?.series || null;
+    });
+  }
+}
+
 async function startSession(programme) {
   requestWakeLock();
   const isCardio = programme.category === 'cardio';
-  const sessions   = await loadSessions();
-  const prevSession = sessions
-    .filter(s => s.programmeId === programme.id)
-    .sort((a, b) => (b.startedAt || b.date).localeCompare(a.startedAt || a.date))[0] || null;
 
   liveSession = {
     id: generateId(),
@@ -649,28 +664,24 @@ async function startSession(programme) {
     date: todayIso(),
     startedAt: new Date().toISOString(),
     exercises: isCardio
-      ? programme.exercises.map(ex => {
-          const prevEx = prevSession?.exercises?.find(e => e.name === ex.name) || null;
-          return {
-            name:     ex.name,
-            type:     'cardio',
-            comment:  ex.comment || '',
-            duration: ex.duration || 0,
-            power:    ex.power    || 0,
-            done:     { duration: ex.duration || 0, power: ex.power || 0 },
-            prev:     prevEx?.done || null,
-            state:    'pending',
-          };
-        })
+      ? programme.exercises.map(ex => ({
+          name:     ex.name,
+          type:     'cardio',
+          comment:  ex.comment || '',
+          duration: ex.duration || 0,
+          power:    ex.power    || 0,
+          done:     { duration: ex.duration || 0, power: ex.power || 0 },
+          prev:     null,
+          state:    'pending',
+        }))
       : programme.exercises.map(ex => {
-          const m      = migrateExercise(ex);
-          const sets   = ex.sets ?? m.series.length ?? (ex.count ?? 3);
-          const prevEx = prevSession?.exercises?.find(e => e.name === ex.name) || null;
+          const m    = migrateExercise(ex);
+          const sets = ex.sets ?? m.series.length ?? (ex.count ?? 3);
           return {
             name:       ex.name,
             comment:    ex.comment || '',
             activities: m.activities,
-            prevSeries: prevEx?.series || null,
+            prevSeries: null,
             series: Array.from({ length: sets }, () => ({
               activityStates: {},
               values: m.activities.map(act =>
@@ -682,6 +693,7 @@ async function startSession(programme) {
           };
         }),
   };
+  await attachPrevValues(liveSession.exercises, programme.id, liveSession.category);
   pushSession(liveSessionSnapshot()).catch(() => {});
   startSyncPolling();
   renderSeanceScreen();
@@ -2008,7 +2020,7 @@ async function renderHistory() {
   });
 }
 
-function resumeSessionFromHistory(session) {
+async function resumeSessionFromHistory(session) {
   liveSession = {
     id:            session.id,
     programmeId:   session.programmeId,
@@ -2030,6 +2042,7 @@ function resumeSessionFromHistory(session) {
       };
     }),
   };
+  await attachPrevValues(liveSession.exercises, liveSession.programmeId, liveSession.category);
   closeModal();
   startSyncPolling();
   showScreen('seance');
