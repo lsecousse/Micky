@@ -704,13 +704,16 @@ async function startSession(programme) {
 ═══════════════════════════════════════════════════════ */
 let liveEditModalCtx = null; // { onOk: fn, escHandler: fn }
 
-function openLiveEditModal({ title, bodyHTML, focusSelector, onOk }) {
+function openLiveEditModal({ title, bodyHTML, focusSelector, onOk, suggestionFor }) {
   const modal = document.getElementById('live-edit-modal');
   const titleEl = document.getElementById('live-edit-modal-title');
   const bodyEl  = document.getElementById('live-edit-modal-body');
+  const sugEl   = document.getElementById('live-edit-suggestion');
 
   titleEl.textContent = title;
   bodyEl.innerHTML = bodyHTML;
+  sugEl.classList.add('hidden');
+  sugEl.innerHTML = '';
   modal.classList.remove('hidden');
 
   requestAnimationFrame(() => {
@@ -720,16 +723,33 @@ function openLiveEditModal({ title, bodyHTML, focusSelector, onOk }) {
 
   const escHandler = (e) => { if (e.key === 'Escape') closeLiveEditModal(); };
   document.addEventListener('keydown', escHandler);
-  liveEditModalCtx = { onOk, escHandler };
+
+  const ctx = { onOk, escHandler, canceled: false };
+  liveEditModalCtx = ctx;
+
+  if (suggestionFor) {
+    sugEl.innerHTML = `<div class="live-edit-suggestion-spinner"></div><span>Suggestion…</span>`;
+    sugEl.classList.remove('hidden');
+    generateWeightSuggestion(suggestionFor).then(text => {
+      if (ctx.canceled) return;
+      if (!text) { sugEl.classList.add('hidden'); return; }
+      sugEl.innerHTML = `💡 ${text}`;
+    }).catch(() => {
+      if (!ctx.canceled) sugEl.classList.add('hidden');
+    });
+  }
 }
 
 function closeLiveEditModal() {
   const modal = document.getElementById('live-edit-modal');
   modal.classList.add('hidden');
   document.getElementById('live-edit-modal-body').innerHTML = '';
+  const sugEl = document.getElementById('live-edit-suggestion');
+  if (sugEl) { sugEl.classList.add('hidden'); sugEl.innerHTML = ''; }
   if (liveEditModalCtx?.escHandler) {
     document.removeEventListener('keydown', liveEditModalCtx.escHandler);
   }
+  if (liveEditModalCtx) liveEditModalCtx.canceled = true;
   liveEditModalCtx = null;
 }
 
@@ -1120,6 +1140,7 @@ function buildActivityRow(exIdx, sIdx, actIdx) {
         title,
         bodyHTML,
         focusSelector: '.live-weight',
+        suggestionFor: ex.name,
         onOk: () => {
           const newWeight = parseFloat(document.querySelector('#live-edit-modal-body .live-weight').value) || 0;
           if (newWeight < originalWeight && originalWeight > 0) {
@@ -2244,6 +2265,74 @@ const COACH_PROMPT = `Coach sportif. Analyse séance musculation vs historique m
 2. Forces/faiblesses : 2-3 points forts, 1-2 à améliorer. Pas de compliments creux.
 
 3. Conseil prochaine séance : 1-2 actions concrètes basées sur tendances.`;
+
+const SUGGESTION_PROMPT = `Coach sportif. L'utilisateur ouvre son éditeur de poids pour un exercice. Donne UNE phrase courte (max 25 mots, français, droit au but) : tendance récente (progression/stagnation/régression), et un poids ou objectif concret pour aujourd'hui. Pas de compliment creux.`;
+
+const suggestionCache = new Map();
+
+async function generateWeightSuggestion(exerciseName) {
+  if (suggestionCache.has(exerciseName)) {
+    return suggestionCache.get(exerciseName);
+  }
+
+  const promise = (async () => {
+    const apiKey = await getClaudeApiKeyDB();
+    if (!apiKey) return null;
+
+    const sessions = (await loadSessions())
+      .filter(s => s.duration > 0)
+      .sort((a, b) => (a.startedAt || a.date).localeCompare(b.startedAt || b.date));
+
+    const matching = sessions
+      .map(s => {
+        const ex = (s.exercises || []).find(e => migrateExercise(e).name === exerciseName);
+        if (!ex) return null;
+        const e = migrateExercise(ex);
+        const series = e.series.filter(sr => sr.done !== false).map(sr =>
+          e.activities.map((act, i) => {
+            const v = sr.values?.[i] || {};
+            return act.type === 'weight'
+              ? { reps: v.reps || 0, kg: v.weight || 0 }
+              : null;
+          }).filter(Boolean)
+        ).filter(arr => arr.length > 0);
+        if (!series.length) return null;
+        return { date: s.date, series: series.flat() };
+      })
+      .filter(Boolean);
+
+    if (matching.length < 2) return null;
+
+    const first = matching[0];
+    const recent = matching.slice(-5).filter(m => m !== first);
+
+    const payload = { exercise: exerciseName, first, recent };
+
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true',
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 80,
+        messages: [{ role: 'user', content: JSON.stringify(payload) }],
+        system: SUGGESTION_PROMPT,
+      }),
+    });
+
+    if (!response.ok) return null;
+    const data = await response.json();
+    return data.content?.[0]?.text || null;
+  })();
+
+  suggestionCache.set(exerciseName, promise);
+  promise.catch(() => suggestionCache.delete(exerciseName));
+  return promise;
+}
 
 /**
  * Appelle l'API Claude avec la séance + son historique, persiste le feedback
