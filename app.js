@@ -1944,15 +1944,22 @@ async function renderCorps() {
   body.appendChild(analysisCard);
 
   const wasCached = bodyAnalysisCache !== null;
+  if (!wasCached) openBodyAnalysisPopupLoading();
   generateBodyAnalysis(measurements).then(text => {
-    if (!text) { analysisCard.classList.add('hidden'); return; }
+    if (!text) {
+      analysisCard.classList.add('hidden');
+      if (!wasCached) closeBodyAnalysisPopup();
+      return;
+    }
     analysisCard.innerHTML = `
       <div class="corps-analysis-title">🌱 Ton évolution</div>
       <div class="corps-analysis-content">${formatFeedback(text)}</div>
     `;
-    // Première génération du tab → afficher aussi en popup pour attirer l'attention
-    if (!wasCached) showBodyAnalysisPopup(text);
-  }).catch(() => analysisCard.classList.add('hidden'));
+    if (!wasCached) fillBodyAnalysisPopup(text);
+  }).catch(() => {
+    analysisCard.classList.add('hidden');
+    if (!wasCached) closeBodyAnalysisPopup();
+  });
 
   // ── Historique ────────────────────────────────────────
   const histTitle = document.createElement('p');
@@ -2020,16 +2027,33 @@ async function renderCorps() {
   });
 }
 
-function showBodyAnalysisPopup(text) {
+function openBodyAnalysisPopupLoading() {
   const modal = document.getElementById('modal');
   const modalBody = document.getElementById('modal-body');
   modalBody.innerHTML = `
-    <div class="feedback-ia-modal">
+    <div class="feedback-ia-modal" id="body-analysis-popup">
       <div class="modal-title" style="color:#5abe78">🌱 Ton évolution</div>
-      <div class="corps-analysis-content">${formatFeedback(text)}</div>
+      <div class="feedback-ia-loading">
+        <div class="feedback-ia-spinner"></div>
+        <p>Analyse en cours…</p>
+      </div>
     </div>
   `;
   modal.classList.remove('hidden');
+}
+
+function fillBodyAnalysisPopup(text) {
+  const popup = document.getElementById('body-analysis-popup');
+  if (!popup) return;
+  popup.innerHTML = `
+    <div class="modal-title" style="color:#5abe78">🌱 Ton évolution</div>
+    <div class="corps-analysis-content">${formatFeedback(text)}</div>
+  `;
+}
+
+function closeBodyAnalysisPopup() {
+  const popup = document.getElementById('body-analysis-popup');
+  if (popup) document.getElementById('modal').classList.add('hidden');
 }
 
 function drawCorpsChart(canvas, data, field, unit) {
