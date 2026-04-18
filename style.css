@@ -1619,3 +1619,42 @@ input:focus { border-color: var(--accent); }
   animation: spin 0.8s linear infinite;
   flex-shrink: 0;
 }
+
+/* Analyse bienveillante des données corporelles */
+.corps-analysis {
+  margin-top: 20px;
+  border-radius: var(--radius);
+  border: 1px solid rgba(90, 190, 120, 0.4);
+  background: rgba(90, 190, 120, 0.08);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.corps-analysis.hidden { display: none; }
+.corps-analysis-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #5abe78;
+}
+.corps-analysis-content {
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.5;
+}
+.corps-analysis-loading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+.corps-analysis-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(90, 190, 120, 0.3);
+  border-top-color: #5abe78;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  flex-shrink: 0;
+}
