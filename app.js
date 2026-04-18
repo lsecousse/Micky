@@ -1947,7 +1947,7 @@ async function renderCorps() {
     header.className = 'corps-card-header';
     const dateSpan = document.createElement('span');
     dateSpan.className = 'corps-card-date';
-    dateSpan.textContent = formatDateFr(m.date);
+    dateSpan.textContent = formatDate(m.date);
     const delBtn = document.createElement('button');
     delBtn.className = 'btn-icon-danger';
     delBtn.textContent = '✕';
