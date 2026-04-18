@@ -37,6 +37,7 @@ async function loadSessionsDB() {
     duration:      row.duration,
     exercises:     row.exercises || [],
     sync:          row.sync || null,
+    feedbackIa:    row.feedback_ia || null,
   }));
 }
 
@@ -66,6 +67,17 @@ async function deleteProgrammeDB(id) {
 /* Supprime une séance */
 async function deleteSessionDB(id) {
   await db.from('sessions').delete().eq('id', id);
+}
+
+/* Persiste le feedback IA d'une séance */
+async function updateSessionFeedbackDB(id, feedback) {
+  const { data: { user } } = await db.auth.getUser();
+  if (!user) return;
+  const { error } = await db.from('sessions')
+    .update({ feedback_ia: feedback })
+    .eq('id', id)
+    .eq('client_id', user.id);
+  if (error) console.error('updateSessionFeedbackDB error:', error);
 }
 
 /* Met à jour name + exercises d'un programme existant (client) */
