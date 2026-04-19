@@ -152,6 +152,56 @@ async function deleteBodyMeasurementDB(id) {
   await db.from('body_measurements').delete().eq('id', id);
 }
 
+/* ── Food entries (suivi alimentaire) ────────────────── */
+async function loadFoodEntriesForDate(dateIso) {
+  const { data: { user } } = await db.auth.getUser();
+  if (!user) return [];
+  const { data, error } = await db.from('food_entries')
+    .select('*')
+    .eq('client_id', user.id)
+    .eq('date', dateIso)
+    .order('time', { ascending: true });
+  if (error) console.error('loadFoodEntriesForDate error:', error);
+  return data || [];
+}
+
+async function insertFoodEntryDB(entry) {
+  const { data: { user } } = await db.auth.getUser();
+  if (!user) return null;
+  const payload = { ...entry, client_id: user.id };
+  const { data, error } = await db.from('food_entries').insert(payload).select().single();
+  if (error) { console.error('insertFoodEntryDB error:', error); return null; }
+  return data;
+}
+
+async function deleteFoodEntryDB(id) {
+  const { error } = await db.from('food_entries').delete().eq('id', id);
+  if (error) console.error('deleteFoodEntryDB error:', error);
+}
+
+/* ── Food photos (Supabase Storage) ──────────────────── */
+async function uploadFoodPhoto(file, entryId) {
+  const { data: { user } } = await db.auth.getUser();
+  if (!user) return null;
+  const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+  const path = `${user.id}/${entryId}.${ext}`;
+  const { error } = await db.storage.from('food-photos').upload(path, file, { upsert: true });
+  if (error) { console.error('uploadFoodPhoto error:', error); return null; }
+  return path;
+}
+
+async function getFoodPhotoSignedUrl(path) {
+  if (!path) return null;
+  const { data, error } = await db.storage.from('food-photos').createSignedUrl(path, 3600);
+  if (error) { console.error('getFoodPhotoSignedUrl error:', error); return null; }
+  return data?.signedUrl || null;
+}
+
+async function deleteFoodPhoto(path) {
+  if (!path) return;
+  await db.storage.from('food-photos').remove([path]);
+}
+
 /* Met à jour le profil (nom, prénom) */
 async function updateProfileDB(fields) {
   const { data: { user } } = await db.auth.getUser();
