@@ -22,7 +22,8 @@ create table if not exists public.profiles (
   claude_api_key_encrypted bytea,
   taille_cm    int,
   date_naissance date,
-  sexe         text check (sexe in ('h', 'f'))
+  sexe         text check (sexe in ('h', 'f')),
+  niveau_activite text check (niveau_activite in ('sedentaire', 'leger', 'modere', 'actif'))
 );
 
 alter table public.profiles enable row level security;

@@ -462,6 +462,37 @@ function renderProfil() {
     applySexeStyle(btnF, selectedSexe === 'f');
   }));
 
+  // Niveau d'activité
+  const actLabel = document.createElement('label');
+  actLabel.className = 'corps-field-label';
+  actLabel.textContent = 'Niveau d\'activité (hors sport)';
+  const actWrap = document.createElement('div');
+  actWrap.style.cssText = 'display:flex;flex-direction:column;gap:6px';
+  const ACTIVITES = [
+    { val: 'sedentaire', label: 'Sédentaire — bureau assis toute la journée' },
+    { val: 'leger',      label: 'Léger — bureau + déplacements occasionnels' },
+    { val: 'modere',     label: 'Modéré — debout fréquent / marche régulière' },
+    { val: 'actif',      label: 'Actif — métier manuel, beaucoup de marche' },
+  ];
+  let selectedActivite = currentProfile?.niveau_activite || null;
+  const actBtns = ACTIVITES.map(({ val, label }) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = label;
+    b.dataset.act = val;
+    b.style.textAlign = 'left';
+    b.className = (selectedActivite === val) ? 'btn-primary btn-sm' : 'btn-secondary btn-sm';
+    b.addEventListener('click', () => {
+      selectedActivite = val;
+      actBtns.forEach(x => {
+        x.className = (x.dataset.act === selectedActivite) ? 'btn-primary btn-sm' : 'btn-secondary btn-sm';
+        x.style.textAlign = 'left';
+      });
+    });
+    actWrap.appendChild(b);
+    return b;
+  });
+
   const saveBtn = document.createElement('button');
   saveBtn.className = 'btn-primary btn-full';
   saveBtn.textContent = 'Enregistrer';
@@ -472,6 +503,7 @@ function renderProfil() {
       taille_cm: parseInt(tailleInput.value) || null,
       date_naissance: dnInput.value || null,
       sexe: selectedSexe,
+      niveau_activite: selectedActivite,
     };
     await updateProfileDB(fields);
     Object.assign(currentProfile, fields);
@@ -485,6 +517,7 @@ function renderProfil() {
     tailleLabel, tailleInput,
     dnLabel, dnInput,
     sexeLabel, sexeWrap,
+    actLabel, actWrap,
     saveBtn,
   );
   body.appendChild(form);
@@ -2789,13 +2822,16 @@ function formatFeedback(text) {
     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
 }
 
+const ACTIVITY_FACTOR = { sedentaire: 1.2, leger: 1.4, modere: 1.55, actif: 1.7 };
+
 /**
- * Métabolisme de base (Mifflin-St Jeor) en kcal/24h.
- * Renvoie null si données manquantes (profil incomplet ou pas de mesure poids).
+ * Dépense énergétique journalière estimée en kcal/24h
+ * = BMR (Mifflin-St Jeor) × facteur d'activité quotidienne (NEAT, hors sport).
+ * Renvoie null si données manquantes.
  */
 async function computeBmrKcal() {
   const p = currentProfile;
-  if (!p?.taille_cm || !p?.date_naissance || !p?.sexe) return null;
+  if (!p?.taille_cm || !p?.date_naissance || !p?.sexe || !p?.niveau_activite) return null;
   const measurements = await loadBodyMeasurementsDB();
   const lastWithWeight = measurements.find(m => m.poids != null);
   if (!lastWithWeight) return null;
@@ -2803,7 +2839,9 @@ async function computeBmrKcal() {
   const taille = parseFloat(p.taille_cm);
   const ageYears = (new Date() - new Date(p.date_naissance)) / (365.25 * 24 * 3600 * 1000);
   const base = 10 * poids + 6.25 * taille - 5 * ageYears;
-  return Math.round(base + (p.sexe === 'h' ? 5 : -161));
+  const bmr = base + (p.sexe === 'h' ? 5 : -161);
+  const factor = ACTIVITY_FACTOR[p.niveau_activite] || 1.2;
+  return Math.round(bmr * factor);
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -2885,7 +2923,7 @@ async function renderAlimentation() {
         bmrLine = `<div class="alim-bilan-row"><span>Métabolisme (24h)</span><b>${bmrToday} kcal</b></div>`;
       }
     } else {
-      bmrLine = `<div class="alim-bilan-row" style="font-size:11px"><span style="color:var(--text-muted)">Configure taille / âge / sexe dans Profil pour le métabolisme</span></div>`;
+      bmrLine = `<div class="alim-bilan-row" style="font-size:11px"><span style="color:var(--text-muted)">Configure taille / âge / sexe / niveau d'activité dans Profil pour le métabolisme</span></div>`;
     }
 
     const net = apports - depenses - bmrToday;
