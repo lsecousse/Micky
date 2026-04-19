@@ -973,6 +973,14 @@ function completeFocusedActivity() {
   // Quand l'exercice est entièrement fini, retour à la liste (null) pour choisir le suivant.
   const next = nextUndoneActivity(exIdx);
 
+  // Pas de repos après la dernière activité de l'exercice → retour direct à la liste
+  if (!next) {
+    liveFocus = null;
+    liveRest = null;
+    renderSeanceScreen();
+    return;
+  }
+
   if (restSecs > 0) {
     liveRest = { exIdx, sIdx, actIdx };
     liveFocus = null;
