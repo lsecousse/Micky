@@ -2724,8 +2724,118 @@ async function renderAlimentation() {
     return;
   }
 
-  // Stub à compléter en Task 5
-  body.innerHTML = '<p class="empty-msg">À implémenter (Task 5)</p>';
+  body.innerHTML = '';
+
+  // ── Date selector ────────────────────────────────────
+  const dateInput = document.createElement('input');
+  dateInput.type = 'date';
+  dateInput.value = todayIso();
+  dateInput.className = 'alim-date-input';
+  body.appendChild(dateInput);
+
+  // ── Bilan card ───────────────────────────────────────
+  const bilanCard = document.createElement('div');
+  bilanCard.className = 'alim-bilan';
+  body.appendChild(bilanCard);
+
+  // ── Action buttons ───────────────────────────────────
+  const addBtn = document.createElement('button');
+  addBtn.className = 'btn-primary btn-full';
+  addBtn.textContent = '+ Ajouter un repas';
+  body.appendChild(addBtn);
+
+  const adviceBtn = document.createElement('button');
+  adviceBtn.className = 'btn-secondary btn-full';
+  adviceBtn.textContent = '🌙 Conseil pour ce soir';
+  body.appendChild(adviceBtn);
+
+  // ── Timeline container ───────────────────────────────
+  const timeline = document.createElement('div');
+  timeline.className = 'alim-timeline';
+  body.appendChild(timeline);
+
+  async function refresh() {
+    const entries = await loadFoodEntriesForDate(dateInput.value);
+
+    // Bilan
+    let apports = 0, depenses = 0;
+    entries.forEach(e => {
+      const k = parseFloat(e.kcal) || 0;
+      if (e.type === 'meal') apports += k;
+      else if (e.type === 'session_burn') depenses += k;
+    });
+    const net = apports - depenses;
+    bilanCard.innerHTML = `
+      <div class="alim-bilan-row"><span>Apports</span><b>${Math.round(apports)} kcal</b></div>
+      <div class="alim-bilan-row"><span>Dépenses</span><b>${Math.round(depenses)} kcal</b></div>
+      <div class="alim-bilan-row alim-bilan-net"><span>Net</span><b>${net >= 0 ? '+' : ''}${Math.round(net)} kcal</b></div>
+    `;
+
+    // Timeline
+    timeline.innerHTML = '';
+    if (!entries.length) {
+      timeline.innerHTML = '<p class="empty-msg">Aucune entrée pour ce jour.</p>';
+      return;
+    }
+
+    for (const e of entries) {
+      const card = document.createElement('div');
+      card.className = `alim-entry alim-entry--${e.type}`;
+      const isMeal = e.type === 'meal';
+      const arrow  = isMeal ? '↑' : '↓';
+      const icon   = isMeal ? '' : '🏋️ ';
+      const macros = isMeal && e.proteines_g != null
+        ? `<div class="alim-entry-macros">P ${e.proteines_g}g · G ${e.glucides_g}g · L ${e.lipides_g}g</div>`
+        : '';
+
+      card.innerHTML = `
+        <div class="alim-entry-time">${(e.time || '').slice(0, 5)}</div>
+        <div class="alim-entry-main">
+          <div class="alim-entry-desc">${icon}${e.description}</div>
+          ${macros}
+        </div>
+        <div class="alim-entry-kcal">${arrow} ${Math.round(e.kcal || 0)} kcal</div>
+        <button class="btn-icon-danger alim-entry-del" data-id="${e.id}" data-photo="${e.photo_path || ''}">✕</button>
+      `;
+
+      // Tap sur la card avec photo : preview
+      if (e.photo_path) {
+        card.classList.add('alim-entry--with-photo');
+        card.addEventListener('click', async (ev) => {
+          if (ev.target.closest('.alim-entry-del')) return;
+          const url = await getFoodPhotoSignedUrl(e.photo_path);
+          if (url) showFoodPhotoModal(url);
+        });
+      }
+
+      timeline.appendChild(card);
+    }
+
+    // Wire delete buttons
+    timeline.querySelectorAll('.alim-entry-del').forEach(btn => {
+      btn.addEventListener('click', async (ev) => {
+        ev.stopPropagation();
+        showConfirm('Supprimer cette entrée ?', async () => {
+          if (btn.dataset.photo) await deleteFoodPhoto(btn.dataset.photo);
+          await deleteFoodEntryDB(btn.dataset.id);
+          await refresh();
+        });
+      });
+    });
+  }
+
+  dateInput.addEventListener('change', refresh);
+  addBtn.addEventListener('click', () => openAddMealModal(dateInput.value, refresh));
+  adviceBtn.addEventListener('click', () => openEveningAdviceModal(dateInput.value));
+
+  await refresh();
+}
+
+function showFoodPhotoModal(url) {
+  const modal = document.getElementById('modal');
+  const body = document.getElementById('modal-body');
+  body.innerHTML = `<img src="${url}" style="width:100%;height:auto;border-radius:8px" />`;
+  modal.classList.remove('hidden');
 }
 
 /* ═══════════════════════════════════════════════════════

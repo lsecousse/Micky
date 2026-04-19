@@ -1765,3 +1765,63 @@ input:focus { border-color: var(--accent); }
 
 /* Quand on est en split repos, masquer le bandeau countdown sticky */
 #countdown-bar.in-rest-split { display: none !important; }
+
+/* ── Alimentation ─────────────────────────────────────── */
+.alim-date-input {
+  width: 100%;
+  padding: 10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 14px;
+}
+
+.alim-bilan {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.alim-bilan-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  color: var(--text-muted);
+}
+.alim-bilan-row b { color: var(--text); font-weight: 600; }
+.alim-bilan-net  { font-size: 16px; padding-top: 6px; border-top: 1px solid var(--border); margin-top: 4px; }
+.alim-bilan-net b { color: var(--accent); }
+
+.alim-timeline { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+.alim-entry {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  gap: 10px;
+  align-items: center;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+.alim-entry--with-photo { cursor: pointer; }
+.alim-entry-time { font-size: 12px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+.alim-entry-main { min-width: 0; }
+.alim-entry-desc { font-size: 14px; }
+.alim-entry-macros { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+.alim-entry-kcal { font-size: 13px; font-weight: 600; color: var(--accent); white-space: nowrap; }
+.alim-entry--session_burn .alim-entry-kcal { color: #5abe78; }
+.alim-entry-del {
+  background: rgba(255,60,60,0.12);
+  border: none;
+  color: var(--danger);
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+}
