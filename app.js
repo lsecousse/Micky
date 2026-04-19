@@ -227,6 +227,8 @@ async function renderHome() {
         showConfirm('Supprimer cette séance ?', async () => {
           await deleteSessionDB(liveSession.id);
           liveSession = null;
+          liveFocus = null;
+          liveRest = null;
           showScreen('home');
         });
       });
@@ -283,6 +285,8 @@ async function renderHome() {
         showConfirm('Supprimer cette séance ?', async () => {
           await deleteSessionDB(liveSession.id);
           liveSession = null;
+          liveFocus = null;
+          liveRest = null;
           showScreen('home');
         });
       });
@@ -505,7 +509,22 @@ async function startWatchPairing() {
    SÉANCE SCREEN
 ═══════════════════════════════════════════════════════ */
 let liveSession = null;
+let liveFocus = null; // { exIdx, sIdx, actIdx } : activité actuellement en focus dans state B
+let liveRest  = null; // { exIdx, sIdx, actIdx } : activité juste validée, en cours de repos (state C)
 let wakeLock    = null;
+
+function nextUndoneActivity(exIdx) {
+  const ex = liveSession?.exercises?.[exIdx];
+  if (!ex || ex.type === 'cardio') return null;
+  for (let s = 0; s < ex.series.length; s++) {
+    const set = ex.series[s];
+    for (let a = 0; a < ex.activities.length; a++) {
+      const state = set.activityStates?.[a];
+      if (state !== 'done') return { exIdx, sIdx: s, actIdx: a };
+    }
+  }
+  return null;
+}
 
 async function requestWakeLock() {
   if (!('wakeLock' in navigator)) return;
@@ -666,6 +685,8 @@ async function startSession(programme) {
   requestWakeLock();
   const isCardio = programme.category === 'cardio';
 
+  liveFocus = null;
+  liveRest = null;
   liveSession = {
     id: generateId(),
     programmeId: programme.id,
@@ -780,37 +801,363 @@ function renderLiveSession(tab) {
     <button class="btn-danger" id="finish-session">Terminer</button>
   `;
   tab.appendChild(header);
+  document.getElementById('finish-session').addEventListener('click', finishSession);
 
   if (liveSession.category === 'cardio') {
     renderLiveCardio(tab);
+    return;
+  }
+
+  // Toggle bandeau countdown sticky / mode split-repos
+  const cdBar = document.getElementById('countdown-bar');
+  if (cdBar) cdBar.classList.toggle('in-rest-split', liveRest !== null);
+
+  // Si on n'est plus en repos, nettoyer l'éventuel sync interval orphelin
+  if (!liveRest && window.__restSyncId) {
+    clearInterval(window.__restSyncId);
+    window.__restSyncId = null;
+  }
+
+  if (liveRest)        renderRestSplit(tab);
+  else if (liveFocus)  renderActivityFocus(tab);
+  else                 renderExerciseList(tab);
+}
+
+function renderExerciseList(tab) {
+  const list = document.createElement('div');
+  list.className = 'live-exo-list';
+
+  // Trier : exos terminés en bas
+  const indexed = liveSession.exercises.map((ex, exIdx) => {
+    const totalSets = ex.series.length;
+    const doneSets = ex.series.filter(s =>
+      ex.activities.every((_, a) => s.activityStates?.[a] === 'done')
+    ).length;
+    return { ex, exIdx, totalSets, doneSets };
+  });
+  indexed.sort((a, b) => {
+    const aDone = a.doneSets === a.totalSets ? 1 : 0;
+    const bDone = b.doneSets === b.totalSets ? 1 : 0;
+    return aDone - bDone;
+  });
+
+  indexed.forEach(({ ex, exIdx, totalSets, doneSets }) => {
+    const startedSets = ex.series.filter(s =>
+      ex.activities.some((_, a) => s.activityStates?.[a])
+    ).length;
+
+    let badge = '○ À faire';
+    let badgeCls = 'pending';
+    if (doneSets === totalSets) { badge = '✓ Fait'; badgeCls = 'done'; }
+    else if (startedSets > 0)   { badge = '▶ En cours'; badgeCls = 'partial'; }
+
+    const card = document.createElement('div');
+    card.className = `live-exo-row live-exo-row--${badgeCls}`;
+    card.innerHTML = `
+      <div class="live-exo-row-main">
+        <div class="live-exo-row-name">${ex.name}</div>
+        <div class="live-exo-row-meta">${doneSets}/${totalSets} séries</div>
+      </div>
+      <div class="live-exo-row-badge">${badge}</div>
+    `;
+    card.addEventListener('click', () => {
+      const next = nextUndoneActivity(exIdx);
+      if (!next) return; // tout est fait, rien à faire
+      liveFocus = next;
+      renderSeanceScreen();
+    });
+    list.appendChild(card);
+  });
+
+  tab.appendChild(list);
+}
+
+function renderActivityFocus(tab) {
+  const { exIdx, sIdx, actIdx } = liveFocus;
+  const ex = liveSession.exercises[exIdx];
+  const act = ex.activities[actIdx];
+  const v = ex.series[sIdx].values?.[actIdx] || {};
+  const totalSets = ex.series.length;
+
+  // Header retour
+  const back = document.createElement('button');
+  back.className = 'live-focus-back';
+  back.textContent = '← Retour à la liste';
+  back.addEventListener('click', () => { liveFocus = null; renderSeanceScreen(); });
+  tab.appendChild(back);
+
+  // Bloc focus
+  const wrap = document.createElement('div');
+  wrap.className = 'live-focus';
+
+  const subParts = [`Série ${sIdx + 1} / ${totalSets}`];
+  if (ex.activities.length > 1) subParts.push(act.label || act.name || `Activité ${actIdx + 1}`);
+  else if (act.name) subParts.push(act.name);
+
+  let valuesHtml;
+  if (act.type === 'weight') {
+    const reps = v.reps ?? act.reps ?? 0;
+    const kg   = v.weight ?? act.weight ?? 0;
+    valuesHtml = `<b>${reps}</b> reps × <b>${kg}</b> kg`;
+  } else if (act.type === 'countdown') {
+    const dur = v.duration ?? act.duration ?? 0;
+    valuesHtml = `<b>${dur}</b> s`;
   } else {
-    liveSession.exercises.forEach((ex, exIdx) => {
-      const exDiv = document.createElement('div');
-      exDiv.className = 'live-exercise';
+    valuesHtml = `<b>Chrono</b>`;
+  }
 
-      const exName = document.createElement('div');
-      exName.className = 'live-exercise-name';
-      exName.textContent = ex.name;
-      exDiv.appendChild(exName);
+  let prevHtml = '';
+  const prevVal = ex.prevSeries?.[sIdx]?.values?.[actIdx];
+  if (act.type === 'weight' && (prevVal?.reps || prevVal?.weight)) {
+    prevHtml = `<div class="live-focus-prev">Préc : ${prevVal.reps ?? '—'} × ${prevVal.weight ?? '—'} kg</div>`;
+  } else if (act.type === 'countdown' && prevVal?.duration) {
+    prevHtml = `<div class="live-focus-prev">Préc : ${prevVal.duration} s</div>`;
+  } else if (act.type === 'stopwatch' && prevVal?.duration) {
+    prevHtml = `<div class="live-focus-prev">Préc : ${formatSeconds(prevVal.duration)}</div>`;
+  }
 
-      if (ex.comment) {
-        const exComment = document.createElement('div');
-        exComment.className = 'live-exercise-comment';
-        exComment.textContent = ex.comment;
-        exDiv.appendChild(exComment);
-      }
+  // Pour stopwatch / countdown, on cache le bouton Modifier (countdown éditable, stopwatch non)
+  // mais surtout on remplace Valider par "Démarrer" qui lance l'overlay
+  const isTimed = (act.type === 'stopwatch' || act.type === 'countdown');
+  const editBtnHtml = (act.type === 'stopwatch')
+    ? ''
+    : `<button class="btn-secondary live-focus-edit" id="focus-edit">✎ Modifier</button>`;
+  const validateLabel = isTimed ? '▶ Démarrer' : '✓ Valider';
 
-      ex.series.forEach((s, sIdx) => {
-        ex.activities.forEach((_, actIdx) => {
-          exDiv.appendChild(buildActivityRow(exIdx, sIdx, actIdx));
-        });
-      });
+  wrap.innerHTML = `
+    <div class="live-focus-name">${ex.name}</div>
+    <div class="live-focus-sub">${subParts.join(' · ')}</div>
+    <div class="live-focus-target">${valuesHtml}</div>
+    ${prevHtml}
+    <div class="live-focus-actions">
+      ${editBtnHtml}
+      <button class="btn-primary live-focus-validate" id="focus-validate">${validateLabel}</button>
+    </div>
+  `;
+  tab.appendChild(wrap);
 
-      tab.appendChild(exDiv);
+  // Modifier : ouvre le modal existant pour CETTE activité
+  const editEl = document.getElementById('focus-edit');
+  if (editEl) {
+    editEl.addEventListener('click', () => {
+      openEditModalForActivity(exIdx, sIdx, actIdx);
     });
   }
 
-  document.getElementById('finish-session').addEventListener('click', finishSession);
+  // Valider : marque done + déclenche repos (ou lance overlay pour stopwatch/countdown)
+  document.getElementById('focus-validate').addEventListener('click', () => {
+    if (act.type === 'stopwatch') {
+      openChronoOverlay(exIdx, sIdx, actIdx, null);
+    } else if (act.type === 'countdown') {
+      openMinuterieOverlay(exIdx, sIdx, actIdx, null);
+    } else {
+      completeFocusedActivity();
+    }
+  });
+}
+
+function completeFocusedActivity() {
+  if (!liveFocus) return;
+  const { exIdx, sIdx, actIdx } = liveFocus;
+  const ex = liveSession.exercises[exIdx];
+  const set = ex.series[sIdx];
+  if (!set.activityStates) set.activityStates = {};
+  set.activityStates[actIdx] = 'done';
+  pushSession(liveSessionSnapshot()).catch(() => {});
+
+  const act = ex.activities[actIdx];
+  const restSecs = act.rest || 0;
+
+  if (restSecs > 0) {
+    liveRest = { exIdx, sIdx, actIdx };
+    liveFocus = null;
+    renderSeanceScreen();
+    // Démarre le countdown (le bandeau sticky est masqué via .in-rest-split)
+    const next = nextUndoneActivity(exIdx) || nextExerciseFirst(exIdx);
+    const nextLabel = next ? labelOfActivity(next) : '';
+    startCountdown(restSecs, nextLabel, () => {
+      liveRest = null;
+      liveFocus = next;
+      renderSeanceScreen();
+    });
+  } else {
+    // Pas de repos : enchaîner direct
+    const next = nextUndoneActivity(exIdx) || nextExerciseFirst(exIdx);
+    liveFocus = next;
+    renderSeanceScreen();
+  }
+}
+
+function nextExerciseFirst(currentExIdx) {
+  for (let i = 0; i < liveSession.exercises.length; i++) {
+    if (i === currentExIdx) continue;
+    const cand = nextUndoneActivity(i);
+    if (cand) return cand;
+  }
+  return null;
+}
+
+function labelOfActivity({ exIdx, sIdx, actIdx }) {
+  const ex = liveSession.exercises[exIdx];
+  const act = ex.activities[actIdx];
+  const parts = [ex.name, `Série ${sIdx + 1}`];
+  if (ex.activities.length > 1) parts.push(act.label || act.name || `Activité ${actIdx + 1}`);
+  return parts.join(' · ');
+}
+
+function renderRestSplit(tab) {
+  const { exIdx, sIdx, actIdx } = liveRest;
+  const ex = liveSession.exercises[exIdx];
+  const act = ex.activities[actIdx];
+  const v = ex.series[sIdx].values?.[actIdx] || {};
+
+  // Header retour
+  const back = document.createElement('button');
+  back.className = 'live-focus-back';
+  back.textContent = '← Retour à la liste';
+  back.addEventListener('click', () => {
+    liveRest = null;
+    renderSeanceScreen();
+    // countdown continue à tourner et le bandeau sticky reprend (classe in-rest-split retirée)
+  });
+  tab.appendChild(back);
+
+  const split = document.createElement('div');
+  split.className = 'live-rest-split';
+
+  let valHtml;
+  if (act.type === 'weight') {
+    valHtml = `<b>${v.reps ?? 0}</b> × <b>${v.weight ?? 0}</b> kg`;
+  } else {
+    valHtml = `<b>${v.duration ?? 0}</b> s`;
+  }
+
+  // Bouton Modifier seulement si activité éditable (pas pour stopwatch)
+  const editBtnHtml = (act.type === 'stopwatch')
+    ? ''
+    : `<button class="btn-secondary" id="rest-edit">✎ Modifier</button>`;
+
+  split.innerHTML = `
+    <div class="live-rest-split-top" id="rest-split-top">
+      <div class="live-rest-split-label">Repos</div>
+      <div class="live-rest-split-time" id="rest-split-time">--:--</div>
+      <div class="live-rest-split-next" id="rest-split-next"></div>
+    </div>
+    <div class="live-rest-split-bottom">
+      <div class="live-rest-split-recap">
+        <div class="live-rest-split-exo">${ex.name} · Série ${sIdx + 1} ✓</div>
+        <div class="live-rest-split-val">${valHtml}</div>
+      </div>
+      ${editBtnHtml}
+    </div>
+  `;
+  tab.appendChild(split);
+
+  // Mirror du countdown du bandeau sticky : on lit la valeur affichée toutes les 200ms
+  // (le bandeau est masqué via la classe in-rest-split, mais le timer tourne)
+  const sync = () => {
+    const cdDisplay = document.getElementById('countdown-display');
+    const splitTime = document.getElementById('rest-split-time');
+    const nextLabel = document.getElementById('countdown-exercise-name');
+    const splitNext = document.getElementById('rest-split-next');
+    if (cdDisplay && splitTime) splitTime.textContent = cdDisplay.textContent;
+    if (nextLabel && splitNext) splitNext.textContent = nextLabel.textContent;
+  };
+  sync();
+  const restSyncId = setInterval(sync, 200);
+  // Stocker pour clear quand on quitte
+  if (window.__restSyncId) clearInterval(window.__restSyncId);
+  window.__restSyncId = restSyncId;
+
+  const restEditEl = document.getElementById('rest-edit');
+  if (restEditEl) {
+    restEditEl.addEventListener('click', () => {
+      openEditModalForActivity(exIdx, sIdx, actIdx);
+    });
+  }
+}
+
+function openEditModalForActivity(exIdx, sIdx, actIdx) {
+  const ex = liveSession.exercises[exIdx];
+  const act = ex.activities[actIdx];
+  const v = ex.series[sIdx].values?.[actIdx] || {};
+  if (act.type === 'stopwatch') return;
+
+  const actLabel = act.label || act.name || '';
+  const title = actLabel ? `${ex.name} — ${actLabel}` : ex.name;
+
+  if (act.type === 'weight') {
+    const currentReps   = v.reps   ?? act.reps   ?? 0;
+    const currentWeight = v.weight ?? act.weight ?? 0;
+    const currentRest   = act.rest ?? 0;
+    const originalWeight = currentWeight;
+
+    const bodyHTML = `
+      <label>Reps<input type="number" inputmode="decimal" class="live-reps" value="${currentReps}" min="1"></label>
+      <label>Poids<input type="number" inputmode="decimal" class="live-weight" value="${currentWeight}" min="0" step="0.5"></label>
+      <label>Repos<input type="number" inputmode="numeric" class="live-rest" value="${currentRest}" min="0">s</label>
+    `;
+
+    const applyEdit = () => {
+      const rI = document.querySelector('#live-edit-modal-body .live-reps');
+      const wI = document.querySelector('#live-edit-modal-body .live-weight');
+      const restI = document.querySelector('#live-edit-modal-body .live-rest');
+      const r = parseFloat(rI.value) || 0;
+      const w = parseFloat(wI.value) || 0;
+      const restVal = parseInt(restI.value) || 0;
+
+      propagateLiveValue(exIdx, sIdx, actIdx, 'reps', r);
+      propagateLiveValue(exIdx, sIdx, actIdx, 'weight', w);
+      liveSession.exercises[exIdx].activities[actIdx].rest = restVal;
+      updateProgrammeTemplate(exIdx, actIdx, 'rest', restVal);
+
+      closeLiveEditModal();
+      pushSession(liveSessionSnapshot()).catch(() => {});
+      renderSeanceScreen();
+    };
+
+    openLiveEditModal({
+      title, bodyHTML, focusSelector: '.live-weight', suggestionFor: ex.name,
+      onOk: () => {
+        const newWeight = parseFloat(document.querySelector('#live-edit-modal-body .live-weight').value) || 0;
+        if (newWeight < originalWeight && originalWeight > 0) {
+          showConfirm(`Réduire le poids de ${originalWeight} kg à ${newWeight} kg ?`, applyEdit);
+          return;
+        }
+        applyEdit();
+      },
+    });
+    return;
+  }
+
+  if (act.type === 'countdown') {
+    const currentDur  = v.duration ?? act.duration ?? 0;
+    const currentRest = act.rest ?? 0;
+
+    const bodyHTML = `
+      <label>Durée<input type="number" inputmode="numeric" class="live-duration" value="${currentDur}" min="1">s</label>
+      <label>Repos<input type="number" inputmode="numeric" class="live-rest" value="${currentRest}" min="0">s</label>
+    `;
+
+    openLiveEditModal({
+      title, bodyHTML, focusSelector: '.live-duration',
+      onOk: () => {
+        const dI = document.querySelector('#live-edit-modal-body .live-duration');
+        const restI = document.querySelector('#live-edit-modal-body .live-rest');
+        const dur = parseInt(dI.value) || 0;
+        const restVal = parseInt(restI.value) || 0;
+        if (!liveSession.exercises[exIdx].series[sIdx].values[actIdx]) {
+          liveSession.exercises[exIdx].series[sIdx].values[actIdx] = {};
+        }
+        liveSession.exercises[exIdx].series[sIdx].values[actIdx].duration = dur;
+        liveSession.exercises[exIdx].activities[actIdx].rest = restVal;
+        updateProgrammeTemplate(exIdx, actIdx, 'rest', restVal);
+        closeLiveEditModal();
+        pushSession(liveSessionSnapshot()).catch(() => {});
+        renderSeanceScreen();
+      },
+    });
+  }
 }
 
 function renderLiveCardio(tab) {
@@ -1016,11 +1363,15 @@ function stopChronoOverlay() {
     liveSession.exercises[exIdx].series[sIdx].values[actIdx] = {};
   liveSession.exercises[exIdx].series[sIdx].values[actIdx].duration = elapsed;
 
-  const span = row.querySelector(`.live-chrono-result[data-act="${actIdx}"]`);
-  if (span) span.textContent = formatSeconds(elapsed);
+  if (row) {
+    const span = row.querySelector(`.live-chrono-result[data-act="${actIdx}"]`);
+    if (span) span.textContent = formatSeconds(elapsed);
+  }
 
   document.getElementById('chrono-overlay').classList.add('hidden');
-  doneActivity(exIdx, sIdx, actIdx, row);
+  // S'assurer que liveFocus pointe sur cette activité avant de la valider
+  liveFocus = { exIdx, sIdx, actIdx };
+  completeFocusedActivity();
 }
 
 function openMinuterieOverlay(exIdx, sIdx, actIdx, row) {
@@ -1061,269 +1412,12 @@ function stopMinuterieOverlay() {
   clearInterval(minuterieInterval);
   minuterieInterval = null;
 
-  const { exIdx, sIdx, actIdx, row } = currentMinuterieCtx;
+  const { exIdx, sIdx, actIdx } = currentMinuterieCtx;
   currentMinuterieCtx = null;
 
   document.getElementById('minuterie-overlay').classList.add('hidden');
-  doneActivity(exIdx, sIdx, actIdx, row);
-}
-
-function buildActivityRow(exIdx, sIdx, actIdx) {
-  const ex  = liveSession.exercises[exIdx];
-  const act = ex.activities[actIdx];
-  const set = ex.series[sIdx];
-  const v   = set.values?.[actIdx] || {};
-
-  if (!set.activityStates) set.activityStates = {};
-  if (set.activityStates[actIdx] === undefined) {
-    // Backward compat: if series was marked done before activityStates existed
-    set.activityStates[actIdx] = (set.done || set.state === 'done') ? 'done' : 'pending';
-  }
-
-  const state = set.activityStates[actIdx];
-  const locked = state !== 'done' && isSeriesLocked(exIdx, sIdx);
-  const displayState = locked ? 'locked' : state;
-  const row = document.createElement('div');
-  row.className = `live-series-row ${displayState}`;
-  row.dataset.ex  = exIdx;
-  row.dataset.s   = sIdx;
-  row.dataset.act = actIdx;
-
-  const stateBtn = document.createElement('button');
-  stateBtn.className = 'series-state-btn';
-  stateBtn.textContent = stateIcon(displayState);
-  stateBtn.addEventListener('click', () => advanceActivityState(exIdx, sIdx, actIdx, row));
-  row.appendChild(stateBtn);
-
-  const numSpan = document.createElement('span');
-  numSpan.className = 'series-num';
-  numSpan.textContent = ex.activities.length === 1 ? sIdx + 1 : actIdx + 1;
-  row.appendChild(numSpan);
-
-  const displayName = ex.activities.length > 1 ? (act.label || act.name) : null;
-  if (displayName) {
-    const nameSpan = document.createElement('span');
-    nameSpan.className = 'live-act-name';
-    nameSpan.textContent = displayName;
-    row.appendChild(nameSpan);
-  }
-
-  // ── Display mode (read-only) ──
-  const valuesSpan = document.createElement('span');
-  valuesSpan.className = 'live-values';
-
-  if (act.type === 'weight') {
-    const reps   = v.reps   ?? act.reps   ?? 0;
-    const weight = v.weight ?? act.weight ?? 0;
-    const rest   = act.rest ?? 0;
-    valuesSpan.innerHTML = `<b>${reps}</b> <span class="live-x">×</span> <b>${weight}</b> <span class="live-kg">kg</span>`
-      + (rest ? `<span class="live-rest-display">repos ${rest}s</span>` : '');
-  } else if (act.type === 'countdown') {
-    const dur = v.duration ?? act.duration ?? 0;
-    const rest = act.rest ?? 0;
-    valuesSpan.innerHTML = `<b>${dur}</b><span class="live-x">s</span>`
-      + (rest ? `<span class="live-rest-display">repos ${rest}s</span>` : '');
-  } else {
-    const resultSpan = document.createElement('span');
-    resultSpan.className = 'live-chrono-result';
-    resultSpan.dataset.act = actIdx;
-    resultSpan.textContent = v.duration ? formatSeconds(v.duration) : '⏱';
-    valuesSpan.appendChild(resultSpan);
-  }
-
-  row.appendChild(valuesSpan);
-
-  // Edit button
-  const editBtn = document.createElement('button');
-  editBtn.className = 'live-edit-btn';
-  editBtn.textContent = '✎';
-  row.appendChild(editBtn);
-
-  // ── Edit mode : open centered modal ──
-  editBtn.addEventListener('click', () => {
-    if (act.type === 'stopwatch') return;
-
-    const actLabel = act.label || act.name || '';
-    const title = actLabel ? `${ex.name} — ${actLabel}` : ex.name;
-
-    if (act.type === 'weight') {
-      const currentReps   = v.reps   ?? act.reps   ?? 0;
-      const currentWeight = v.weight ?? act.weight ?? 0;
-      const currentRest   = act.rest ?? 0;
-      const originalWeight = currentWeight;
-
-      const bodyHTML = `
-        <label>Reps<input type="number" inputmode="decimal" class="live-reps" value="${currentReps}" min="1"></label>
-        <label>Poids<input type="number" inputmode="decimal" class="live-weight" value="${currentWeight}" min="0" step="0.5"></label>
-        <label>Repos<input type="number" inputmode="numeric" class="live-rest" value="${currentRest}" min="0">s</label>
-      `;
-
-      const applyEdit = () => {
-        const rI = document.querySelector('#live-edit-modal-body .live-reps');
-        const wI = document.querySelector('#live-edit-modal-body .live-weight');
-        const restI = document.querySelector('#live-edit-modal-body .live-rest');
-        const r = parseFloat(rI.value) || 0;
-        const w = parseFloat(wI.value) || 0;
-        const restVal = parseInt(restI.value) || 0;
-
-        propagateLiveValue(exIdx, sIdx, actIdx, 'reps', r);
-        propagateLiveValue(exIdx, sIdx, actIdx, 'weight', w);
-        liveSession.exercises[exIdx].activities[actIdx].rest = restVal;
-        updateProgrammeTemplate(exIdx, actIdx, 'rest', restVal);
-
-        valuesSpan.innerHTML = `<b>${r}</b> <span class="live-x">×</span> <b>${w}</b> <span class="live-kg">kg</span>`
-          + (restVal ? `<span class="live-rest-display">repos ${restVal}s</span>` : '');
-
-        closeLiveEditModal();
-        pushSession(liveSessionSnapshot()).catch(() => {});
-      };
-
-      openLiveEditModal({
-        title,
-        bodyHTML,
-        focusSelector: '.live-weight',
-        suggestionFor: ex.name,
-        onOk: () => {
-          const newWeight = parseFloat(document.querySelector('#live-edit-modal-body .live-weight').value) || 0;
-          if (newWeight < originalWeight && originalWeight > 0) {
-            showConfirm(`Réduire le poids de ${originalWeight} kg à ${newWeight} kg ?`, applyEdit);
-            return;
-          }
-          applyEdit();
-        },
-      });
-      return;
-    }
-
-    if (act.type === 'countdown') {
-      const currentDur  = v.duration ?? act.duration ?? 0;
-      const currentRest = act.rest ?? 0;
-
-      const bodyHTML = `
-        <label>Durée<input type="number" inputmode="numeric" class="live-duration" value="${currentDur}" min="1">s</label>
-        <label>Repos<input type="number" inputmode="numeric" class="live-rest" value="${currentRest}" min="0">s</label>
-      `;
-
-      openLiveEditModal({
-        title,
-        bodyHTML,
-        focusSelector: '.live-duration',
-        onOk: () => {
-          const dI = document.querySelector('#live-edit-modal-body .live-duration');
-          const restI = document.querySelector('#live-edit-modal-body .live-rest');
-          const dur = parseInt(dI.value) || 0;
-          const restVal = parseInt(restI.value) || 0;
-
-          liveSession.exercises[exIdx].series[sIdx].values[actIdx].duration = dur;
-          liveSession.exercises[exIdx].activities[actIdx].rest = restVal;
-          updateProgrammeTemplate(exIdx, actIdx, 'rest', restVal);
-
-          valuesSpan.innerHTML = `<b>${dur}</b><span class="live-x">s</span>`
-            + (restVal ? `<span class="live-rest-display">repos ${restVal}s</span>` : '');
-
-          closeLiveEditModal();
-          pushSession(liveSessionSnapshot()).catch(() => {});
-        },
-      });
-    }
-  });
-
-  // ── Previous session line ──
-  const prevVal = ex.prevSeries?.[sIdx]?.values?.[actIdx];
-  if (act.type === 'weight' && (prevVal?.reps || prevVal?.weight)) {
-    const prevLine = document.createElement('div');
-    prevLine.className = 'live-prev-line';
-    prevLine.textContent = `Préc: ${prevVal.reps ?? '—'} × ${prevVal.weight ?? '—'} kg`;
-    row.appendChild(prevLine);
-  } else if (act.type === 'countdown' && prevVal?.duration) {
-    const prevLine = document.createElement('div');
-    prevLine.className = 'live-prev-line';
-    prevLine.textContent = `Préc: ${prevVal.duration} s`;
-    row.appendChild(prevLine);
-  } else if (act.type === 'stopwatch' && prevVal?.duration) {
-    const prevLine = document.createElement('div');
-    prevLine.className = 'live-prev-line';
-    prevLine.textContent = `Préc: ${formatSeconds(prevVal.duration)}`;
-    row.appendChild(prevLine);
-  }
-
-  return row;
-}
-
-function advanceActivityState(exIdx, sIdx, actIdx, row) {
-  if (isSeriesLocked(exIdx, sIdx)) return;
-  const ex  = liveSession.exercises[exIdx];
-  const set = ex.series[sIdx];
-  if (!set.activityStates) set.activityStates = {};
-  const state = set.activityStates[actIdx] ?? 'pending';
-
-  if (state === 'done') return;
-
-  if (state === 'pending') {
-    set.activityStates[actIdx] = 'active';
-    row.className = 'live-series-row active';
-    row.querySelector('.series-state-btn').textContent = stateIcon('active');
-    const act = ex.activities[actIdx];
-    if (act.type === 'stopwatch' || act.type === 'countdown') {
-      openActivityOverlay(exIdx, sIdx, actIdx, row);
-    }
-    return;
-  }
-
-  // active → done (weight only; timed overlays call doneActivity directly)
-  doneActivity(exIdx, sIdx, actIdx, row);
-}
-
-function doneActivity(exIdx, sIdx, actIdx, row) {
-  const ex  = liveSession.exercises[exIdx];
-  const set = ex.series[sIdx];
-  if (!set.activityStates) set.activityStates = {};
-  set.activityStates[actIdx] = 'done';
-  row.className = 'live-series-row done';
-  row.querySelector('.series-state-btn').textContent = stateIcon('done');
-
-  pushSession(liveSessionSnapshot()).catch(() => {});
-
-  // Check if current series is fully done → unlock next series
-  const seriesDone = ex.activities.every((_, i) => set.activityStates?.[i] === 'done');
-  if (seriesDone && sIdx + 1 < ex.series.length) {
-    ex.activities.forEach((_, ai) => {
-      const lockedRow = document.querySelector(`.live-series-row[data-ex="${exIdx}"][data-s="${sIdx + 1}"][data-act="${ai}"]`);
-      if (lockedRow && lockedRow.classList.contains('locked')) {
-        lockedRow.classList.remove('locked');
-        lockedRow.classList.add('pending');
-        const btn = lockedRow.querySelector('.series-state-btn');
-        if (btn) btn.textContent = stateIcon('pending');
-      }
-    });
-  }
-
-  const allDone = ex.series.every(s =>
-    ex.activities.every((_, i) => s.activityStates?.[i] === 'done')
-  );
-  const exDiv = row.closest('.live-exercise');
-  exDiv.querySelector('.live-exercise-name').classList.toggle('live-exercise-name--done', allDone);
-  if (allDone) exDiv.parentElement.appendChild(exDiv);
-
-  // Trouver la prochaine activité
-  let nextRow = null;
-  if (actIdx + 1 < ex.activities.length) {
-    nextRow = document.querySelector(`.live-series-row[data-ex="${exIdx}"][data-s="${sIdx}"][data-act="${actIdx + 1}"]`);
-  } else if (sIdx + 1 < ex.series.length) {
-    nextRow = document.querySelector(`.live-series-row[data-ex="${exIdx}"][data-s="${sIdx + 1}"][data-act="0"]`);
-  }
-
-  if (nextRow) {
-    const nex     = +nextRow.dataset.ex;
-    const ns      = +nextRow.dataset.s;
-    const na      = +nextRow.dataset.act;
-    const nextEx  = liveSession.exercises[nex];
-    const nextAct = nextEx?.activities?.[na];
-    const nextActPart = nextEx?.activities?.length > 1 ? (nextAct?.label || nextAct?.name) : null;
-    const label   = [nextEx?.name, nextActPart].filter(Boolean).join(' - ');
-    const rest    = ex.activities[actIdx]?.rest || 0;
-    startCountdown(rest, label, () => advanceActivityState(nex, ns, na, nextRow));
-  }
+  liveFocus = { exIdx, sIdx, actIdx };
+  completeFocusedActivity();
 }
 
 function propagateLiveValue(exIdx, sIdx, actIdx, field, val) {
@@ -1336,33 +1430,8 @@ function propagateLiveValue(exIdx, sIdx, actIdx, field, val) {
       if (!s.values[actIdx]) s.values[actIdx] = {};
       s.values[actIdx][field] = val;
     }
-    if (j > sIdx && !isDone) {
-      // Update hidden edit inputs
-      const input = document.querySelector(`.live-${field}[data-ex="${exIdx}"][data-s="${j}"][data-act="${actIdx}"]`);
-      if (input) input.value = val;
-      // Update display text
-      const row = document.querySelector(`.live-series-row[data-ex="${exIdx}"][data-s="${j}"][data-act="${actIdx}"]`);
-      if (row) refreshRowDisplay(row, exIdx, j, actIdx);
-    }
   });
   updateProgrammeTemplate(exIdx, actIdx, field, val);
-}
-
-function refreshRowDisplay(row, exIdx, sIdx, actIdx) {
-  const ex  = liveSession.exercises[exIdx];
-  const act = ex.activities[actIdx];
-  const v   = ex.series[sIdx].values?.[actIdx] || {};
-  const display = row.querySelector('.live-values');
-  if (!display) return;
-  if (act.type === 'weight') {
-    const r = v.reps ?? 0, w = v.weight ?? 0, rest = act.rest ?? 0;
-    display.innerHTML = `<b>${r}</b> <span class="live-x">×</span> <b>${w}</b> <span class="live-kg">kg</span>`
-      + (rest ? `<span class="live-rest-display">repos ${rest}s</span>` : '');
-  } else if (act.type === 'countdown') {
-    const d = v.duration ?? 0, rest = act.rest ?? 0;
-    display.innerHTML = `<b>${d}</b><span class="live-x">s</span>`
-      + (rest ? `<span class="live-rest-display">repos ${rest}s</span>` : '');
-  }
 }
 
 // Sérialisée pour éviter les races entre updates concurrents du même programme
@@ -1420,6 +1489,8 @@ function finishSession() {
     const snapshot = liveSessionSnapshot(durationSecs);
     await pushSession(snapshot);
     liveSession = null;
+    liveFocus = null;
+    liveRest = null;
     releaseWakeLock();
     stopCountdown();
     showScreen('home');
@@ -1451,6 +1522,8 @@ async function syncFromDB() {
     // Session terminee sur la montre ?
     if (remote.duration && remote.duration > 0) {
       liveSession = null;
+      liveFocus = null;
+      liveRest = null;
       stopCountdown();
       stopAllChronos();
       stopSyncPolling();
@@ -2192,6 +2265,8 @@ async function renderHistory() {
 }
 
 async function resumeSessionFromHistory(session) {
+  liveFocus = null;
+  liveRest = null;
   liveSession = {
     id:            session.id,
     programmeId:   session.programmeId,
@@ -3110,6 +3185,8 @@ function renderLogin() {
     const sessions = await loadSessions();
     const inProgress = sessions.find(s => s.duration === 0 || s.duration == null);
     if (inProgress?.exercises?.length) {
+      liveFocus = null;
+      liveRest = null;
       liveSession = {
         id:            inProgress.id,
         programmeId:   inProgress.programmeId,

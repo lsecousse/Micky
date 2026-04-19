@@ -1658,3 +1658,109 @@ input:focus { border-color: var(--accent); }
   animation: spin 0.8s linear infinite;
   flex-shrink: 0;
 }
+
+/* ── Live — état A : liste exercices ─────────────────── */
+.live-exo-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.live-exo-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  cursor: pointer;
+}
+.live-exo-row:active { background: rgba(255,107,0,0.08); }
+.live-exo-row-main { flex: 1; min-width: 0; }
+.live-exo-row-name { font-size: 16px; font-weight: 600; }
+.live-exo-row-meta { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+.live-exo-row-badge {
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 12px;
+  flex-shrink: 0;
+  background: rgba(255,255,255,0.05);
+}
+.live-exo-row--done .live-exo-row-badge   { color: #5abe78; background: rgba(90,190,120,0.12); }
+.live-exo-row--partial .live-exo-row-badge { color: var(--accent); background: rgba(255,107,0,0.12); }
+
+/* ── Live — état B : focus activité ──────────────────── */
+.live-focus-back {
+  background: none;
+  border: none;
+  color: var(--accent);
+  font-size: 14px;
+  padding: 6px 0;
+  margin-bottom: 8px;
+  cursor: pointer;
+  text-align: left;
+}
+.live-focus {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  text-align: center;
+}
+.live-focus-name { font-size: 26px; font-weight: 700; color: var(--accent); }
+.live-focus-sub  { font-size: 13px; color: var(--text-muted); }
+.live-focus-target {
+  font-size: 32px;
+  margin: 16px 0;
+  line-height: 1.2;
+}
+.live-focus-target b { color: var(--text); }
+.live-focus-prev { font-size: 13px; color: #b9d4ff; font-style: italic; }
+.live-focus-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 8px;
+}
+.live-focus-actions button { padding: 14px; font-size: 16px; }
+
+/* ── Live — état C : split repos + récap ─────────────── */
+.live-rest-split {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  height: calc(100vh - 200px);
+}
+.live-rest-split-top {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--surface);
+  border-radius: var(--radius);
+}
+.live-rest-split-label { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.15em; }
+.live-rest-split-time { font-size: 64px; font-weight: 700; color: var(--accent); line-height: 1; }
+.live-rest-split-next { font-size: 13px; color: var(--text-muted); text-align: center; padding: 0 12px; }
+.live-rest-split-bottom {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 20px;
+}
+.live-rest-split-recap { text-align: center; }
+.live-rest-split-exo { font-size: 14px; color: var(--text-muted); margin-bottom: 6px; }
+.live-rest-split-val { font-size: 28px; font-weight: 600; }
+
+/* Quand on est en split repos, masquer le bandeau countdown sticky */
+#countdown-bar.in-rest-split { display: none !important; }
