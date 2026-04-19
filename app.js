@@ -436,14 +436,20 @@ function renderProfil() {
   sexeLabel.textContent = 'Sexe';
   const sexeWrap = document.createElement('div');
   sexeWrap.style.cssText = 'display:flex;gap:8px';
+  const applySexeStyle = (b, active) => {
+    if (active) {
+      b.className = 'btn-primary btn-sm';
+    } else {
+      b.className = 'btn-secondary btn-sm';
+    }
+    b.style.flex = '1';
+  };
   const makeSexeBtn = (val, txt) => {
     const b = document.createElement('button');
     b.type = 'button';
-    b.className = 'btn-secondary btn-sm';
     b.textContent = txt;
-    b.style.flex = '1';
-    if (currentProfile?.sexe === val) b.classList.add('btn-primary');
     b.dataset.sexe = val;
+    applySexeStyle(b, currentProfile?.sexe === val);
     return b;
   };
   const btnH = makeSexeBtn('h', 'Homme');
@@ -452,8 +458,8 @@ function renderProfil() {
   let selectedSexe = currentProfile?.sexe || null;
   [btnH, btnF].forEach(b => b.addEventListener('click', () => {
     selectedSexe = b.dataset.sexe;
-    [btnH, btnF].forEach(x => x.classList.remove('btn-primary'));
-    b.classList.add('btn-primary');
+    applySexeStyle(btnH, selectedSexe === 'h');
+    applySexeStyle(btnF, selectedSexe === 'f');
   }));
 
   const saveBtn = document.createElement('button');
