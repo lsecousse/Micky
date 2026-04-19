@@ -3295,13 +3295,29 @@ async function estimateSessionBurn(session) {
   const apiKey = await getClaudeApiKeyDB();
   if (!apiKey) return null;
 
+  const isCardio = session.category === 'cardio';
   const exercises = (session.exercises || []).map(e => e.name);
-  const duration_min = session.duration ? Math.round(session.duration / 60) : null;
-  const volume_kg = session.category === 'cardio' ? null : Math.round(totalVolume(session.exercises));
+
+  // Cardio : on utilise le Temps saisi par l'utilisateur (done.duration en min) car
+  // session.duration peut être très court si on termine vite après saisie.
+  // Fonte : on utilise la durée écoulée de la session.
+  let duree_min;
+  if (isCardio) {
+    duree_min = Math.round((session.exercises || []).reduce((s, e) => s + (e.done?.duration || 0), 0));
+  } else {
+    duree_min = session.duration ? Math.round(session.duration / 60) : null;
+  }
+
+  const volume_kg = isCardio ? null : Math.round(totalVolume(session.exercises));
+  const power_w = isCardio ? Math.round((session.exercises || []).reduce((s, e) => Math.max(s, e.done?.power || 0), 0)) : null;
+  const km = isCardio ? +(session.exercises || []).reduce((s, e) => s + (e.done?.km || 0), 0).toFixed(1) : null;
+
   const payload = {
     type: session.category || 'fonte',
-    duree_min: duration_min,
+    duree_min,
     volume_kg,
+    power_w,
+    km,
     exercices: exercises,
   };
 
