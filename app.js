@@ -735,16 +735,13 @@ async function startSession(programme) {
 ═══════════════════════════════════════════════════════ */
 let liveEditModalCtx = null; // { onOk: fn, escHandler: fn }
 
-function openLiveEditModal({ title, bodyHTML, focusSelector, onOk, suggestionFor }) {
+function openLiveEditModal({ title, bodyHTML, focusSelector, onOk }) {
   const modal = document.getElementById('live-edit-modal');
   const titleEl = document.getElementById('live-edit-modal-title');
   const bodyEl  = document.getElementById('live-edit-modal-body');
-  const sugEl   = document.getElementById('live-edit-suggestion');
 
   titleEl.textContent = title;
   bodyEl.innerHTML = bodyHTML;
-  sugEl.classList.add('hidden');
-  sugEl.innerHTML = '';
   modal.classList.remove('hidden');
 
   requestAnimationFrame(() => {
@@ -755,32 +752,16 @@ function openLiveEditModal({ title, bodyHTML, focusSelector, onOk, suggestionFor
   const escHandler = (e) => { if (e.key === 'Escape') closeLiveEditModal(); };
   document.addEventListener('keydown', escHandler);
 
-  const ctx = { onOk, escHandler, canceled: false };
-  liveEditModalCtx = ctx;
-
-  if (suggestionFor) {
-    sugEl.innerHTML = `<div class="live-edit-suggestion-spinner"></div><span>Suggestion…</span>`;
-    sugEl.classList.remove('hidden');
-    generateWeightSuggestion(suggestionFor).then(text => {
-      if (ctx.canceled) return;
-      if (!text) { sugEl.classList.add('hidden'); return; }
-      sugEl.innerHTML = `💡 ${text}`;
-    }).catch(() => {
-      if (!ctx.canceled) sugEl.classList.add('hidden');
-    });
-  }
+  liveEditModalCtx = { onOk, escHandler };
 }
 
 function closeLiveEditModal() {
   const modal = document.getElementById('live-edit-modal');
   modal.classList.add('hidden');
   document.getElementById('live-edit-modal-body').innerHTML = '';
-  const sugEl = document.getElementById('live-edit-suggestion');
-  if (sugEl) { sugEl.classList.add('hidden'); sugEl.innerHTML = ''; }
   if (liveEditModalCtx?.escHandler) {
     document.removeEventListener('keydown', liveEditModalCtx.escHandler);
   }
-  if (liveEditModalCtx) liveEditModalCtx.canceled = true;
   liveEditModalCtx = null;
 }
 
@@ -924,9 +905,15 @@ function renderActivityFocus(tab) {
     : `<button class="btn-secondary live-focus-edit" id="focus-edit">✎ Modifier</button>`;
   const validateLabel = isTimed ? '▶ Démarrer' : '✓ Valider';
 
+  // Bloc suggestion IA (uniquement pour les activités weight, affiché à l'ouverture de l'exo)
+  const sugHtml = (act.type === 'weight')
+    ? `<div class="live-edit-suggestion hidden" id="focus-suggestion"></div>`
+    : '';
+
   wrap.innerHTML = `
     <div class="live-focus-name">${ex.name}</div>
     <div class="live-focus-sub">${subParts.join(' · ')}</div>
+    ${sugHtml}
     <div class="live-focus-target">${valuesHtml}</div>
     ${prevHtml}
     <div class="live-focus-actions">
@@ -935,6 +922,20 @@ function renderActivityFocus(tab) {
     </div>
   `;
   tab.appendChild(wrap);
+
+  // Suggestion IA : déclenchée à l'ouverture de l'exo (pas pendant l'édition)
+  if (act.type === 'weight') {
+    const sugEl = document.getElementById('focus-suggestion');
+    sugEl.innerHTML = `<div class="live-edit-suggestion-spinner"></div><span>Suggestion…</span>`;
+    sugEl.classList.remove('hidden');
+    const targetExName = ex.name;
+    generateWeightSuggestion(targetExName).then(text => {
+      // Vérifier qu'on est toujours sur la même activité (sinon focus a changé)
+      if (!liveFocus || liveSession.exercises[liveFocus.exIdx]?.name !== targetExName) return;
+      if (!text) { sugEl.classList.add('hidden'); return; }
+      sugEl.innerHTML = `💡 ${text}`;
+    }).catch(() => { sugEl.classList.add('hidden'); });
+  }
 
   // Modifier : ouvre le modal existant pour CETTE activité
   const editEl = document.getElementById('focus-edit');
@@ -1122,7 +1123,7 @@ function openEditModalForActivity(exIdx, sIdx, actIdx) {
     };
 
     openLiveEditModal({
-      title, bodyHTML, focusSelector: '.live-weight', suggestionFor: ex.name,
+      title, bodyHTML, focusSelector: '.live-weight',
       onOk: () => {
         const newWeight = parseFloat(document.querySelector('#live-edit-modal-body .live-weight').value) || 0;
         if (newWeight < originalWeight && originalWeight > 0) {
@@ -2446,7 +2447,7 @@ const COACH_PROMPT = `Coach sportif. Analyse séance musculation vs historique m
 
 3. Conseil prochaine séance : 1-2 actions concrètes basées sur tendances.`;
 
-const SUGGESTION_PROMPT = `Coach sportif. L'utilisateur ouvre son éditeur de poids pour un exercice. Donne UNE phrase courte (max 25 mots, français, droit au but) : tendance récente (progression/stagnation/régression), et un poids ou objectif concret pour aujourd'hui. Pas de compliment creux.`;
+const SUGGESTION_PROMPT = `Coach sportif. L'utilisateur ouvre un exercice à la salle. Donne UNE phrase courte (max 25 mots, français, droit au but) : indique un poids cible à viser sur la dernière série aujourd'hui, basé sur la tendance récente.`;
 
 const suggestionCache = new Map();
 
