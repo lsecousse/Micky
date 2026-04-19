@@ -19,7 +19,10 @@ create table if not exists public.profiles (
   coach_id   uuid references public.profiles(id) on delete set null,
   state      text not null default 'new' check (state in ('new', 'invited', 'password_created', 'connected')),
   created_at timestamptz default now(),
-  claude_api_key_encrypted bytea
+  claude_api_key_encrypted bytea,
+  taille_cm    int,
+  date_naissance date,
+  sexe         text check (sexe in ('h', 'f'))
 );
 
 alter table public.profiles enable row level security;

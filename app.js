@@ -410,17 +410,77 @@ function renderProfil() {
   prenomInput.maxLength = 60;
   prenomInput.value = currentProfile?.prenom || '';
 
+  // Taille
+  const tailleLabel = document.createElement('label');
+  tailleLabel.className = 'corps-field-label';
+  tailleLabel.textContent = 'Taille (cm)';
+  const tailleInput = document.createElement('input');
+  tailleInput.type = 'number';
+  tailleInput.inputMode = 'numeric';
+  tailleInput.min = '50';
+  tailleInput.max = '250';
+  tailleInput.placeholder = '180';
+  tailleInput.value = currentProfile?.taille_cm ?? '';
+
+  // Date de naissance
+  const dnLabel = document.createElement('label');
+  dnLabel.className = 'corps-field-label';
+  dnLabel.textContent = 'Date de naissance';
+  const dnInput = document.createElement('input');
+  dnInput.type = 'date';
+  dnInput.value = currentProfile?.date_naissance || '';
+
+  // Sexe
+  const sexeLabel = document.createElement('label');
+  sexeLabel.className = 'corps-field-label';
+  sexeLabel.textContent = 'Sexe';
+  const sexeWrap = document.createElement('div');
+  sexeWrap.style.cssText = 'display:flex;gap:8px';
+  const makeSexeBtn = (val, txt) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'btn-secondary btn-sm';
+    b.textContent = txt;
+    b.style.flex = '1';
+    if (currentProfile?.sexe === val) b.classList.add('btn-primary');
+    b.dataset.sexe = val;
+    return b;
+  };
+  const btnH = makeSexeBtn('h', 'Homme');
+  const btnF = makeSexeBtn('f', 'Femme');
+  sexeWrap.append(btnH, btnF);
+  let selectedSexe = currentProfile?.sexe || null;
+  [btnH, btnF].forEach(b => b.addEventListener('click', () => {
+    selectedSexe = b.dataset.sexe;
+    [btnH, btnF].forEach(x => x.classList.remove('btn-primary'));
+    b.classList.add('btn-primary');
+  }));
+
   const saveBtn = document.createElement('button');
   saveBtn.className = 'btn-primary btn-full';
   saveBtn.textContent = 'Enregistrer';
   saveBtn.addEventListener('click', async () => {
-    await updateProfileDB({ nom: nomInput.value.trim(), prenom: prenomInput.value.trim() });
-    currentProfile.nom = nomInput.value.trim();
-    currentProfile.prenom = prenomInput.value.trim();
+    const fields = {
+      nom: nomInput.value.trim(),
+      prenom: prenomInput.value.trim(),
+      taille_cm: parseInt(tailleInput.value) || null,
+      date_naissance: dnInput.value || null,
+      sexe: selectedSexe,
+    };
+    await updateProfileDB(fields);
+    Object.assign(currentProfile, fields);
     showToast('Profil mis à jour');
   });
 
-  form.append(emailLabel, emailInput, nomLabel, nomInput, prenomLabel, prenomInput, saveBtn);
+  form.append(
+    emailLabel, emailInput,
+    nomLabel, nomInput,
+    prenomLabel, prenomInput,
+    tailleLabel, tailleInput,
+    dnLabel, dnInput,
+    sexeLabel, sexeWrap,
+    saveBtn,
+  );
   body.appendChild(form);
 }
 
@@ -2723,6 +2783,23 @@ function formatFeedback(text) {
     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
 }
 
+/**
+ * Métabolisme de base (Mifflin-St Jeor) en kcal/24h.
+ * Renvoie null si données manquantes (profil incomplet ou pas de mesure poids).
+ */
+async function computeBmrKcal() {
+  const p = currentProfile;
+  if (!p?.taille_cm || !p?.date_naissance || !p?.sexe) return null;
+  const measurements = await loadBodyMeasurementsDB();
+  const lastWithWeight = measurements.find(m => m.poids != null);
+  if (!lastWithWeight) return null;
+  const poids = parseFloat(lastWithWeight.poids);
+  const taille = parseFloat(p.taille_cm);
+  const ageYears = (new Date() - new Date(p.date_naissance)) / (365.25 * 24 * 3600 * 1000);
+  const base = 10 * poids + 6.25 * taille - 5 * ageYears;
+  return Math.round(base + (p.sexe === 'h' ? 5 : -161));
+}
+
 /* ═══════════════════════════════════════════════════════
    ALIMENTATION
 ═══════════════════════════════════════════════════════ */
@@ -2785,10 +2862,31 @@ async function renderAlimentation() {
       if (e.type === 'meal') apports += k;
       else if (e.type === 'session_burn') depenses += k;
     });
-    const net = apports - depenses;
+
+    // Métabolisme : pro-rata selon l'heure si date = aujourd'hui, sinon journée pleine
+    const bmr = await computeBmrKcal();
+    let bmrToday = 0;
+    let bmrLine = '';
+    if (bmr) {
+      const isToday = dateInput.value === todayIso();
+      if (isToday) {
+        const now = new Date();
+        const fraction = (now.getHours() + now.getMinutes() / 60) / 24;
+        bmrToday = Math.round(bmr * fraction);
+        bmrLine = `<div class="alim-bilan-row"><span>Métabolisme (jusqu'à ${now.toTimeString().slice(0, 5)})</span><b>${bmrToday} kcal</b></div>`;
+      } else {
+        bmrToday = bmr;
+        bmrLine = `<div class="alim-bilan-row"><span>Métabolisme (24h)</span><b>${bmrToday} kcal</b></div>`;
+      }
+    } else {
+      bmrLine = `<div class="alim-bilan-row" style="font-size:11px"><span style="color:var(--text-muted)">Configure taille / âge / sexe dans Profil pour le métabolisme</span></div>`;
+    }
+
+    const net = apports - depenses - bmrToday;
     bilanCard.innerHTML = `
       <div class="alim-bilan-row"><span>Apports</span><b>${Math.round(apports)} kcal</b></div>
-      <div class="alim-bilan-row"><span>Dépenses</span><b>${Math.round(depenses)} kcal</b></div>
+      <div class="alim-bilan-row"><span>Dépenses séance</span><b>${Math.round(depenses)} kcal</b></div>
+      ${bmrLine}
       <div class="alim-bilan-row alim-bilan-net"><span>Net</span><b>${net >= 0 ? '+' : ''}${Math.round(net)} kcal</b></div>
     `;
 
