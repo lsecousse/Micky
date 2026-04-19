@@ -3154,21 +3154,56 @@ async function openEveningAdviceModal(dateIso) {
 
   // Build initial context
   const entries = await loadFoodEntriesForDate(dateIso);
-  let apports = 0, depenses = 0;
+  let apports = 0, depFonte = 0, depCardio = 0;
+  let totP = 0, totG = 0, totL = 0;
   entries.forEach(e => {
     const k = parseFloat(e.kcal) || 0;
-    if (e.type === 'meal') apports += k;
-    else if (e.type === 'session_burn') depenses += k;
+    if (e.type === 'meal') {
+      apports += k;
+      totP += parseFloat(e.proteines_g) || 0;
+      totG += parseFloat(e.glucides_g) || 0;
+      totL += parseFloat(e.lipides_g) || 0;
+    } else if (e.type === 'session_burn') {
+      if (e.session_category === 'cardio') depCardio += k;
+      else depFonte += k;
+    }
   });
-  const net = apports - depenses;
+  const depenses = depFonte + depCardio;
+
+  // Métabolisme pro-rata (même calcul que le bilan affiché)
+  const bmr24h = await computeBmrKcal();
+  let metabolisme = 0;
+  let metabolismeNote = null;
+  if (bmr24h) {
+    const isToday = dateIso === todayIso();
+    if (isToday) {
+      const now = new Date();
+      const fraction = (now.getHours() + now.getMinutes() / 60) / 24;
+      metabolisme = Math.round(bmr24h * fraction);
+      metabolismeNote = `pro-rata jusqu'à ${now.toTimeString().slice(0, 5)}`;
+    } else {
+      metabolisme = bmr24h;
+      metabolismeNote = '24h';
+    }
+  }
+  const netReel = apports - depenses - metabolisme;
+
   const initialPayload = JSON.stringify({
     demande: 'Conseil pour le repas du soir',
-    net_kcal: Math.round(net),
     apports_kcal: Math.round(apports),
-    depenses_kcal: Math.round(depenses),
+    proteines_g: Math.round(totP),
+    glucides_g: Math.round(totG),
+    lipides_g: Math.round(totL),
+    depenses_seance_kcal: Math.round(depenses),
+    depenses_fonte_kcal: Math.round(depFonte),
+    depenses_cardio_kcal: Math.round(depCardio),
+    metabolisme_kcal: metabolisme,
+    metabolisme_note: metabolismeNote,
+    net_reel_kcal: Math.round(netReel),
     entries: entries.map(e => ({
       time: e.time, type: e.type, description: e.description,
       kcal: e.kcal, P: e.proteines_g, G: e.glucides_g, L: e.lipides_g,
+      session_category: e.session_category,
     })),
   });
 
@@ -3298,13 +3333,38 @@ async function openAskQuestionModal(dateIso) {
       if (!apiKey) throw new Error('Clé API Claude manquante.');
 
       const entries = await loadFoodEntriesForDate(dateIso);
-      let apports = 0, depenses = 0;
+      let apports = 0, depFonte = 0, depCardio = 0;
+      let totP = 0, totG = 0, totL = 0;
       entries.forEach(e => {
         const k = parseFloat(e.kcal) || 0;
-        if (e.type === 'meal') apports += k;
-        else if (e.type === 'session_burn') depenses += k;
+        if (e.type === 'meal') {
+          apports += k;
+          totP += parseFloat(e.proteines_g) || 0;
+          totG += parseFloat(e.glucides_g) || 0;
+          totL += parseFloat(e.lipides_g) || 0;
+        } else if (e.type === 'session_burn') {
+          if (e.session_category === 'cardio') depCardio += k;
+          else depFonte += k;
+        }
       });
-      const net = apports - depenses;
+      const depenses = depFonte + depCardio;
+
+      const bmr24h = await computeBmrKcal();
+      let metabolisme = 0;
+      let metabolismeNote = null;
+      if (bmr24h) {
+        const isToday = dateIso === todayIso();
+        if (isToday) {
+          const nowD = new Date();
+          const fraction = (nowD.getHours() + nowD.getMinutes() / 60) / 24;
+          metabolisme = Math.round(bmr24h * fraction);
+          metabolismeNote = `pro-rata jusqu'à ${nowD.toTimeString().slice(0, 5)}`;
+        } else {
+          metabolisme = bmr24h;
+          metabolismeNote = '24h';
+        }
+      }
+      const netReel = apports - depenses - metabolisme;
 
       const now = new Date();
       const heure = now.toTimeString().slice(0, 5);
@@ -3312,12 +3372,20 @@ async function openAskQuestionModal(dateIso) {
       const payload = {
         question,
         heure_actuelle: heure,
-        net_kcal: Math.round(net),
         apports_kcal: Math.round(apports),
-        depenses_kcal: Math.round(depenses),
+        proteines_g: Math.round(totP),
+        glucides_g: Math.round(totG),
+        lipides_g: Math.round(totL),
+        depenses_seance_kcal: Math.round(depenses),
+        depenses_fonte_kcal: Math.round(depFonte),
+        depenses_cardio_kcal: Math.round(depCardio),
+        metabolisme_kcal: metabolisme,
+        metabolisme_note: metabolismeNote,
+        net_reel_kcal: Math.round(netReel),
         entries: entries.map(e => ({
           time: e.time, type: e.type, description: e.description,
           kcal: e.kcal, P: e.proteines_g, G: e.glucides_g, L: e.lipides_g,
+          session_category: e.session_category,
         })),
       };
 
