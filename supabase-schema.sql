@@ -116,7 +116,40 @@ create policy "Coach lit les mesures clients" on public.body_measurements
     )
   );
 
--- 5. Trigger : créer le profil automatiquement après inscription
+-- 5. Table food_entries (suivi alimentaire)
+create table if not exists public.food_entries (
+  id            uuid default gen_random_uuid() primary key,
+  client_id     uuid references public.profiles(id) on delete cascade,
+  date          date not null,
+  time          time not null,
+  type          text not null check (type in ('meal', 'session_burn')),
+  description   text not null,
+  photo_path    text,
+  kcal          numeric,
+  proteines_g   numeric,
+  glucides_g    numeric,
+  lipides_g     numeric,
+  created_at    timestamptz default now()
+);
+
+alter table public.food_entries enable row level security;
+
+create policy "Client gère ses entrées alimentaires" on public.food_entries
+  for all using (auth.uid() = client_id)
+  with check (auth.uid() = client_id);
+
+create policy "Coach lit les entrées alimentaires de ses clients" on public.food_entries
+  for select using (
+    exists (
+      select 1 from public.profiles p
+      where p.id = food_entries.client_id and p.coach_id = auth.uid()
+    )
+  );
+
+-- Bucket Storage food-photos + policies à créer manuellement via l'interface Supabase
+-- (cf docs/superpowers/plans/2026-04-19-suivi-alimentaire.md Task 1)
+
+-- 6. Trigger : créer le profil automatiquement après inscription
 create or replace function public.handle_new_user()
 returns trigger
 language plpgsql
