@@ -1855,6 +1855,12 @@ async function renderCorps() {
     bodyAnalysisCache = null;
     await pushBodyMeasurementDB(m);
     showToast('Mesure enregistrée ✓');
+    openBodyAnalysisPopupLoading();
+    const fresh = await loadBodyMeasurementsDB();
+    generateBodyAnalysis(fresh).then(text => {
+      if (!text) { closeBodyAnalysisPopup(); return; }
+      fillBodyAnalysisPopup(text);
+    }).catch(() => closeBodyAnalysisPopup());
     renderCorps();
   });
   form.appendChild(saveBtn);
@@ -1975,34 +1981,16 @@ async function renderCorps() {
     requestAnimationFrame(() => drawCorpsChart(canvas, chartData, field, unit));
   });
 
-  // ── Analyse bienveillante (au-dessus de l'historique) ──
-  const analysisCard = document.createElement('div');
-  analysisCard.className = 'corps-analysis';
-  analysisCard.innerHTML = `
-    <div class="corps-analysis-loading">
-      <div class="corps-analysis-spinner"></div>
-      <span>Analyse en cours…</span>
-    </div>
-  `;
-  body.appendChild(analysisCard);
-
-  const wasCached = bodyAnalysisCache !== null;
-  if (!wasCached) openBodyAnalysisPopupLoading();
-  generateBodyAnalysis(measurements).then(text => {
-    if (!text) {
-      analysisCard.classList.add('hidden');
-      if (!wasCached) closeBodyAnalysisPopup();
-      return;
-    }
+  // ── Analyse bienveillante (affichée seulement si déjà générée dans ce tab) ──
+  if (bodyAnalysisCache !== null) {
+    const analysisCard = document.createElement('div');
+    analysisCard.className = 'corps-analysis';
     analysisCard.innerHTML = `
       <div class="corps-analysis-title">🌱 Ton évolution</div>
-      <div class="corps-analysis-content">${formatFeedback(text)}</div>
+      <div class="corps-analysis-content">${formatFeedback(bodyAnalysisCache)}</div>
     `;
-    if (!wasCached) fillBodyAnalysisPopup(text);
-  }).catch(() => {
-    analysisCard.classList.add('hidden');
-    if (!wasCached) closeBodyAnalysisPopup();
-  });
+    body.appendChild(analysisCard);
+  }
 
   // ── Historique ────────────────────────────────────────
   const histTitle = document.createElement('p');
