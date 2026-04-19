@@ -259,7 +259,7 @@ async function renderHome() {
       const other = document.createElement('button');
       other.className = 'home-other-btn';
       other.textContent = '🏋️ Choisir un autre programme fonte';
-      other.addEventListener('click', () => showScreen('seance'));
+      other.addEventListener('click', () => { pendingSelectionCategory = 'fonte'; showScreen('seance'); });
       main.appendChild(other);
     }
   }
@@ -313,7 +313,7 @@ async function renderHome() {
       const other = document.createElement('button');
       other.className = 'home-other-btn';
       other.textContent = '🏃 Choisir un autre programme cardio';
-      other.addEventListener('click', () => showScreen('seance'));
+      other.addEventListener('click', () => { pendingSelectionCategory = 'cardio'; showScreen('seance'); });
       main.appendChild(other);
     }
   }
@@ -545,8 +545,14 @@ async function cyclicProgrammes(programmes) {
   return { ordered, lastDoneId: last.programmeId, lastSession: last };
 }
 
+let pendingSelectionCategory = null;
+
 async function renderProgrammeSelection(tab) {
-  const programmes = await loadProgrammes();
+  let programmes = await loadProgrammes();
+  if (pendingSelectionCategory) {
+    programmes = programmes.filter(p => (p.category || 'fonte') === pendingSelectionCategory);
+    pendingSelectionCategory = null;
+  }
 
   if (!programmes.length) {
     const msg = document.createElement('p');
