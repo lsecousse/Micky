@@ -528,7 +528,11 @@ async function cyclicProgrammes(programmes) {
   const sessions = await loadSessions();
   if (!sessions.length) return { ordered: programmes, lastDoneId: null, lastDoneDate: null };
 
-  const last = sessions.slice().sort((a, b) => {
+  const progIds = new Set(programmes.map(p => p.id));
+  const same = sessions.filter(s => progIds.has(s.programmeId));
+  if (!same.length) return { ordered: programmes, lastDoneId: null, lastDoneDate: null };
+
+  const last = same.slice().sort((a, b) => {
     const ta = a.startedAt || a.date;
     const tb = b.startedAt || b.date;
     return tb.localeCompare(ta);
@@ -3037,7 +3041,8 @@ async function saveProgrammeFromEditor(existingId) {
   if (existingId) {
     await updateProgrammeDB({ id: existingId, name, category, exercises });
   } else {
-    await upsertProgrammeDB({ id: crypto.randomUUID(), name, category, exercises, ordre: programmes.length });
+    const sameCategoryCount = programmes.filter(p => (p.category || 'fonte') === category).length;
+    await upsertProgrammeDB({ id: crypto.randomUUID(), name, category, exercises, ordre: sameCategoryCount });
   }
   await renderParams();
 }
