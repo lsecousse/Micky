@@ -156,9 +156,8 @@ function showScreen(name) {
   if (name === 'claude-api')  renderClaudeApi();
 }
 
-document.getElementById('go-history').addEventListener('click', () => showScreen('history'));
 document.getElementById('go-corps').addEventListener('click',   () => showScreen('corps'));
-document.getElementById('go-stats').addEventListener('click',   () => showScreen('stats'));
+document.getElementById('go-alim').addEventListener('click',    () => showScreen('alim'));
 document.getElementById('go-params').addEventListener('click',  () => showScreen('params'));
 document.getElementById('back-history').addEventListener('click', () => showScreen('home'));
 document.getElementById('back-corps').addEventListener('click',   () => showScreen('home'));
@@ -345,10 +344,11 @@ function buildUserDropdown() {
   dropdown.innerHTML = '';
 
   const items = [
-    { label: 'Profil', icon: '👤', action: () => { dropdown.classList.add('hidden'); showScreen('profil'); } },
-    { label: 'Clé API Claude', icon: '🔑', action: () => { dropdown.classList.add('hidden'); showScreen('claude-api'); } },
-    { label: 'Connecter la montre', icon: '⌚', action: () => { dropdown.classList.add('hidden'); startWatchPairing(); } },
-    { label: 'Déconnexion', icon: '🚪', danger: true, action: () => {
+    { label: 'Profil',          icon: '👤', action: () => { dropdown.classList.add('hidden'); showScreen('profil'); } },
+    { label: 'Clé API Claude',  icon: '🔑', action: () => { dropdown.classList.add('hidden'); showScreen('claude-api'); } },
+    { label: 'Historique',      icon: '📋', action: () => { dropdown.classList.add('hidden'); showScreen('history'); } },
+    { label: 'Stats',           icon: '📈', action: () => { dropdown.classList.add('hidden'); showScreen('stats'); } },
+    { label: 'Déconnexion',     icon: '🚪', danger: true, action: () => {
       dropdown.classList.add('hidden');
       showConfirm('Se déconnecter ?', async () => {
         await db.auth.signOut();
