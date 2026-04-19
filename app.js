@@ -150,6 +150,7 @@ function showScreen(name) {
   if (name === 'history') renderHistory();
   if (name === 'corps')   renderCorps();
   if (name === 'stats')   renderStats();
+  if (name === 'alim')    renderAlimentation();
   if (name === 'params')      renderParams();
   if (name === 'login')       renderLogin();
   if (name === 'profil')      renderProfil();
@@ -162,6 +163,7 @@ document.getElementById('go-params').addEventListener('click',  () => showScreen
 document.getElementById('back-history').addEventListener('click', () => showScreen('home'));
 document.getElementById('back-corps').addEventListener('click',   () => showScreen('home'));
 document.getElementById('back-stats').addEventListener('click',   () => showScreen('home'));
+document.getElementById('back-alim').addEventListener('click',    () => showScreen('home'));
 document.getElementById('back-params').addEventListener('click',  () => showScreen('home'));
 document.getElementById('back-profil').addEventListener('click',     () => showScreen('home'));
 document.getElementById('back-claude-api').addEventListener('click', () => showScreen('home'));
@@ -2703,6 +2705,27 @@ function formatFeedback(text) {
   return text
     .replace(/\n/g, '<br>')
     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+}
+
+/* ═══════════════════════════════════════════════════════
+   ALIMENTATION
+═══════════════════════════════════════════════════════ */
+async function renderAlimentation() {
+  const body = document.getElementById('screen-alim-body');
+  body.innerHTML = '<p class="empty-msg">Chargement…</p>';
+
+  const apiKey = await getClaudeApiKeyDB();
+  if (!apiKey) {
+    body.innerHTML = `
+      <p class="empty-msg">Configure ta clé API Claude dans Profil pour activer le suivi alimentaire.</p>
+      <button class="btn-primary btn-full" id="alim-go-key">→ Configurer la clé Claude</button>
+    `;
+    document.getElementById('alim-go-key').addEventListener('click', () => showScreen('claude-api'));
+    return;
+  }
+
+  // Stub à compléter en Task 5
+  body.innerHTML = '<p class="empty-msg">À implémenter (Task 5)</p>';
 }
 
 /* ═══════════════════════════════════════════════════════
