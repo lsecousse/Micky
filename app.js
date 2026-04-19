@@ -1042,6 +1042,7 @@ function renderRestSplit(tab) {
       <div class="live-rest-split-label">Repos</div>
       <div class="live-rest-split-time" id="rest-split-time">--:--</div>
       <div class="live-rest-split-next" id="rest-split-next"></div>
+      <button class="btn-secondary live-rest-split-skip" id="rest-split-skip">⏭ Passer le repos</button>
     </div>
     <div class="live-rest-split-bottom">
       <div class="live-rest-split-recap">
@@ -1075,6 +1076,10 @@ function renderRestSplit(tab) {
       openEditModalForActivity(exIdx, sIdx, actIdx);
     });
   }
+
+  document.getElementById('rest-split-skip').addEventListener('click', () => {
+    showConfirm('Passer le repos ?', finishCountdown);
+  });
 }
 
 function openEditModalForActivity(exIdx, sIdx, actIdx) {
