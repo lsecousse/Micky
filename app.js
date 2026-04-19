@@ -1504,6 +1504,22 @@ function finishSession() {
     const durationSecs = Math.round((Date.now() - new Date(liveSession.startedAt).getTime()) / 1000);
     const snapshot = liveSessionSnapshot(durationSecs);
     await pushSession(snapshot);
+
+    // Auto-injection de la dépense calorique dans le suivi alimentaire (fire-and-forget)
+    (async () => {
+      const burn = await estimateSessionBurn(snapshot);
+      if (burn?.kcal) {
+        const now = new Date();
+        await insertFoodEntryDB({
+          date: snapshot.date,
+          time: now.toTimeString().slice(0, 8),
+          type: 'session_burn',
+          description: snapshot.programmeName || 'Séance',
+          kcal: burn.kcal,
+        });
+      }
+    })().catch(() => {});
+
     liveSession = null;
     liveFocus = null;
     liveRest = null;
@@ -2959,6 +2975,49 @@ Sois conservateur si l'estimation est ambiguë.`,
   const match = raw.match(/\{[\s\S]*\}/);
   if (!match) throw new Error('Réponse IA invalide.');
   return JSON.parse(match[0]);
+}
+
+async function estimateSessionBurn(session) {
+  const apiKey = await getClaudeApiKeyDB();
+  if (!apiKey) return null;
+
+  const exercises = (session.exercises || []).map(e => e.name);
+  const duration_min = session.duration ? Math.round(session.duration / 60) : null;
+  const volume_kg = session.category === 'cardio' ? null : Math.round(totalVolume(session.exercises));
+  const payload = {
+    type: session.category || 'fonte',
+    duree_min: duration_min,
+    volume_kg,
+    exercices: exercises,
+  };
+
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true',
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 80,
+        messages: [{ role: 'user', content: JSON.stringify(payload) }],
+        system: `Tu es préparateur physique. Estime les calories dépensées pour une séance. Réponds en JSON STRICT (pas de markdown) :
+{ "kcal": <int> }
+Sois conservateur (musculation = endurance + force, pas de pic cardio sauf si cardio).`,
+      }),
+    });
+    if (!response.ok) return null;
+    const data = await response.json();
+    const raw = data.content?.[0]?.text?.trim() || '';
+    const match = raw.match(/\{[\s\S]*\}/);
+    if (!match) return null;
+    return JSON.parse(match[0]);
+  } catch {
+    return null;
+  }
 }
 
 /* ═══════════════════════════════════════════════════════
