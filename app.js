@@ -968,17 +968,9 @@ function completeFocusedActivity() {
   const act = ex.activities[actIdx];
   const restSecs = act.rest || 0;
 
-  // Série complète si toutes ses activités sont done (pour multi-activités type Gainage)
-  const seriesDone = ex.activities.every((_, a) => set.activityStates?.[a] === 'done');
-
-  // Si la série n'est pas finie (milieu d'une série multi-activités), on enchaîne dans la même série
-  // Si la série est finie, on revient à la liste pour laisser l'utilisateur choisir l'exo suivant
-  let next = null;
-  if (!seriesDone) {
-    for (let a = actIdx + 1; a < ex.activities.length; a++) {
-      if (set.activityStates?.[a] !== 'done') { next = { exIdx, sIdx, actIdx: a }; break; }
-    }
-  }
+  // On enchaîne dans le même exercice (séries suivantes, activités suivantes).
+  // Quand l'exercice est entièrement fini, retour à la liste (null) pour choisir le suivant.
+  const next = nextUndoneActivity(exIdx);
 
   if (restSecs > 0) {
     liveRest = { exIdx, sIdx, actIdx };
