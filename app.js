@@ -3149,40 +3149,64 @@ Sois conservateur si l'estimation est ambiguë.`,
 async function openEveningAdviceModal(dateIso) {
   const modal = document.getElementById('modal');
   const body = document.getElementById('modal-body');
+
+  const SYSTEM = `Coach nutrition bienveillant. L'utilisateur a fait sa journée alimentaire et te pose des questions ou demande des conseils. Réponds court (3-4 phrases max, français, ton chaleureux et direct). Pas de recette détaillée sauf si demandée. Pas de jugement sur ce qu'il a mangé. Tu peux répondre à plusieurs questions de suite, l'historique est conservé.`;
+
+  // Build initial context
+  const entries = await loadFoodEntriesForDate(dateIso);
+  let apports = 0, depenses = 0;
+  entries.forEach(e => {
+    const k = parseFloat(e.kcal) || 0;
+    if (e.type === 'meal') apports += k;
+    else if (e.type === 'session_burn') depenses += k;
+  });
+  const net = apports - depenses;
+  const initialPayload = JSON.stringify({
+    demande: 'Conseil pour le repas du soir',
+    net_kcal: Math.round(net),
+    apports_kcal: Math.round(apports),
+    depenses_kcal: Math.round(depenses),
+    entries: entries.map(e => ({
+      time: e.time, type: e.type, description: e.description,
+      kcal: e.kcal, P: e.proteines_g, G: e.glucides_g, L: e.lipides_g,
+    })),
+  });
+
+  const conversation = [{ role: 'user', content: initialPayload }];
+
   body.innerHTML = `
-    <div class="feedback-ia-modal">
+    <div class="feedback-ia-modal" style="display:flex;flex-direction:column;gap:10px">
       <div class="modal-title" style="color:#5abe78">🌙 Conseil pour ce soir</div>
-      <div class="feedback-ia-loading">
-        <div class="feedback-ia-spinner"></div>
-        <p>Réflexion en cours…</p>
+      <div id="advice-thread" style="display:flex;flex-direction:column;gap:10px;max-height:50vh;overflow-y:auto;padding-right:4px"></div>
+      <textarea id="advice-input" placeholder="Une question, une précision…" rows="2"
+                style="width:100%;padding:10px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--font);font-size:14px;resize:vertical"></textarea>
+      <div class="live-edit-modal-actions">
+        <button class="btn-secondary" id="advice-close">Fermer</button>
+        <button class="btn-primary"   id="advice-send">Envoyer</button>
       </div>
     </div>
   `;
   modal.classList.remove('hidden');
 
-  try {
-    const entries = await loadFoodEntriesForDate(dateIso);
-    let apports = 0, depenses = 0;
-    entries.forEach(e => {
-      const k = parseFloat(e.kcal) || 0;
-      if (e.type === 'meal') apports += k;
-      else if (e.type === 'session_burn') depenses += k;
-    });
-    const net = apports - depenses;
+  const thread = document.getElementById('advice-thread');
+  const input = document.getElementById('advice-input');
+  const sendBtn = document.getElementById('advice-send');
+  document.getElementById('advice-close').onclick = () => modal.classList.add('hidden');
 
+  function appendBubble(role, html) {
+    const div = document.createElement('div');
+    div.style.cssText = role === 'assistant'
+      ? 'background:rgba(90,190,120,0.08);border-left:3px solid #5abe78;padding:10px 12px;border-radius:6px;font-size:14px;line-height:1.5'
+      : 'background:rgba(255,255,255,0.05);padding:8px 12px;border-radius:6px;align-self:flex-end;max-width:90%;font-size:14px';
+    div.innerHTML = html;
+    thread.appendChild(div);
+    thread.scrollTop = thread.scrollHeight;
+    return div;
+  }
+
+  async function callClaude() {
     const apiKey = await getClaudeApiKeyDB();
     if (!apiKey) throw new Error('Clé API Claude manquante.');
-
-    const payload = {
-      net_kcal: Math.round(net),
-      apports_kcal: Math.round(apports),
-      depenses_kcal: Math.round(depenses),
-      entries: entries.map(e => ({
-        time: e.time, type: e.type, description: e.description,
-        kcal: e.kcal, P: e.proteines_g, G: e.glucides_g, L: e.lipides_g,
-      })),
-    };
-
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -3193,29 +3217,46 @@ async function openEveningAdviceModal(dateIso) {
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
-        max_tokens: 250,
-        messages: [{ role: 'user', content: JSON.stringify(payload) }],
-        system: `Coach nutrition bienveillant. L'utilisateur a fait sa journée alimentaire. Donne un conseil court (3-4 phrases, français, ton chaleureux) pour son repas du soir : type de plat, équilibre macros, taille de portion. Pas de recette détaillée. Pas de jugement sur ce qu'il a mangé.`,
+        max_tokens: 350,
+        messages: conversation,
+        system: SYSTEM,
       }),
     });
     if (!response.ok) throw new Error(`Erreur API ${response.status}`);
     const data = await response.json();
-    const text = data.content?.[0]?.text || 'Pas de réponse.';
-
-    body.innerHTML = `
-      <div class="feedback-ia-modal">
-        <div class="modal-title" style="color:#5abe78">🌙 Conseil pour ce soir</div>
-        <div class="corps-analysis-content">${formatFeedback(text)}</div>
-      </div>
-    `;
-  } catch (e) {
-    body.innerHTML = `
-      <div class="feedback-ia-modal">
-        <div class="modal-title" style="color:#ff5c5c">Erreur</div>
-        <div class="corps-analysis-content">${e.message}</div>
-      </div>
-    `;
+    return data.content?.[0]?.text || 'Pas de réponse.';
   }
+
+  async function sendAndRender(loadingBubble) {
+    sendBtn.disabled = true;
+    sendBtn.textContent = '…';
+    try {
+      const reply = await callClaude();
+      conversation.push({ role: 'assistant', content: reply });
+      loadingBubble.innerHTML = formatFeedback(reply);
+    } catch (e) {
+      loadingBubble.innerHTML = `<span style="color:#ff5c5c">${e.message}</span>`;
+    }
+    sendBtn.disabled = false;
+    sendBtn.textContent = 'Envoyer';
+  }
+
+  // Initial assistant reply
+  const firstLoading = appendBubble('assistant', `<div class="feedback-ia-loading" style="margin:0"><div class="feedback-ia-spinner"></div><span>Réflexion en cours…</span></div>`);
+  await sendAndRender(firstLoading);
+
+  setTimeout(() => input.focus(), 100);
+
+  sendBtn.onclick = async () => {
+    const txt = input.value.trim();
+    if (!txt) return;
+    appendBubble('user', txt);
+    conversation.push({ role: 'user', content: txt });
+    input.value = '';
+    const loading = appendBubble('assistant', `<div class="feedback-ia-loading" style="margin:0"><div class="feedback-ia-spinner"></div><span>…</span></div>`);
+    await sendAndRender(loading);
+    input.focus();
+  };
 }
 
 async function openAskQuestionModal(dateIso) {
