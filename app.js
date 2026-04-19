@@ -1,7 +1,7 @@
 /* ═══════════════════════════════════════════════════════
    VERSION
 ═══════════════════════════════════════════════════════ */
-const APP_VERSION = '2026.avril.18';
+const APP_VERSION = '2026.avril.19';
 document.querySelectorAll('.app-version').forEach(el => el.textContent = APP_VERSION);
 
 /* ═══════════════════════════════════════════════════════
@@ -670,7 +670,7 @@ async function startSession(programme) {
           comment:  ex.comment || '',
           duration: ex.duration || 0,
           power:    ex.power    || 0,
-          done:     { duration: ex.duration || 0, power: ex.power || 0, km: 0 },
+          done:     { duration: ex.duration || 0, power: ex.power || 0, km: ex.km || 0 },
           prev:     null,
           state:    'pending',
         }))
@@ -836,7 +836,9 @@ function renderLiveCardio(tab) {
     durInput.value = ex.done.duration || '';
     durInput.min = '0';
     durInput.addEventListener('input', e => {
-      liveSession.exercises[exIdx].done.duration = parseInt(e.target.value) || 0;
+      const v = parseInt(e.target.value) || 0;
+      liveSession.exercises[exIdx].done.duration = v;
+      updateCardioTemplate(exIdx, 'duration', v);
     });
     const durUnit = document.createElement('span');
     durUnit.className = 'live-cardio-unit';
@@ -856,7 +858,9 @@ function renderLiveCardio(tab) {
     powInput.value = ex.done.power || '';
     powInput.min = '0';
     powInput.addEventListener('input', e => {
-      liveSession.exercises[exIdx].done.power = parseInt(e.target.value) || 0;
+      const v = parseInt(e.target.value) || 0;
+      liveSession.exercises[exIdx].done.power = v;
+      updateCardioTemplate(exIdx, 'power', v);
     });
     const powUnit = document.createElement('span');
     powUnit.className = 'live-cardio-unit';
@@ -877,7 +881,9 @@ function renderLiveCardio(tab) {
     kmInput.value = ex.done.km || '';
     kmInput.min = '0';
     kmInput.addEventListener('input', e => {
-      liveSession.exercises[exIdx].done.km = parseFloat(e.target.value) || 0;
+      const v = parseFloat(e.target.value) || 0;
+      liveSession.exercises[exIdx].done.km = v;
+      updateCardioTemplate(exIdx, 'km', v);
     });
     const kmUnit = document.createElement('span');
     kmUnit.className = 'live-cardio-unit';
@@ -1361,6 +1367,18 @@ function updateProgrammeTemplate(exIdx, actIdx, field, val) {
     prog.exercises[exIdx].activities[actIdx][field] = val;
     await updateProgrammeDB(prog);
   }).catch(err => console.error('updateProgrammeTemplate error:', err));
+  return programmeTemplateQueue;
+}
+
+function updateCardioTemplate(exIdx, field, val) {
+  if (!liveSession.programmeId) return programmeTemplateQueue;
+  programmeTemplateQueue = programmeTemplateQueue.then(async () => {
+    const programmes = await loadProgrammes();
+    const prog = programmes.find(p => p.id === liveSession.programmeId);
+    if (!prog?.exercises[exIdx]) return;
+    prog.exercises[exIdx][field] = val;
+    await updateProgrammeDB(prog);
+  }).catch(err => console.error('updateCardioTemplate error:', err));
   return programmeTemplateQueue;
 }
 
