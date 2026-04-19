@@ -1560,14 +1560,14 @@ input:focus { border-color: var(--accent); }
   font-size: 11px;
   color: var(--text-muted);
   flex: 1;
-  min-width: 90px;
+  min-width: 110px;
 }
 
 .live-edit-modal-body input[type="number"] {
   width: 100%;
-  padding: 10px 8px;
+  padding: 14px 10px;
   text-align: center;
-  font-size: 18px;
+  font-size: 22px;
   background: var(--bg);
   border: 1px solid var(--border);
   border-radius: 8px;
