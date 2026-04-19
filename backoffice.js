@@ -225,6 +225,7 @@ async function renderProgrammeList(body) {
         </div>
         <div class="prog-row-actions">
           <button class="btn-secondary btn-sm" data-edit="${p.id}">Modifier</button>
+          <button class="btn-secondary btn-sm" data-copy="${p.id}">Copier</button>
           <button class="btn-danger btn-sm" data-del="${p.id}">Suppr.</button>
         </div>
       </div>`).join('');
@@ -237,8 +238,75 @@ async function renderProgrammeList(body) {
       if (prog) renderProgrammeEditor(prog);
     });
   });
+  body.querySelectorAll('[data-copy]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const prog = progs.find(p => p.id === btn.dataset.copy);
+      if (prog) showCopyProgrammeModal(prog);
+    });
+  });
   body.querySelectorAll('[data-del]').forEach(btn => {
     btn.addEventListener('click', () => deleteProgramme(btn.dataset.del));
+  });
+}
+
+function showCopyProgrammeModal(prog) {
+  const targets = clients.filter(c => c.id !== selClient.id);
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  if (!targets.length) {
+    overlay.innerHTML = `
+      <div class="modal">
+        <h2>Copier "${prog.name}"</h2>
+        <p style="color:var(--muted);font-size:13px">Aucun autre client à qui copier ce programme.</p>
+        <div class="flex-row" style="justify-content:flex-end">
+          <button class="btn-secondary" id="cp-close">Fermer</button>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+    overlay.querySelector('#cp-close').addEventListener('click', () => overlay.remove());
+    return;
+  }
+  overlay.innerHTML = `
+    <div class="modal">
+      <h2>Copier "${prog.name}" vers :</h2>
+      <div id="cp-targets" style="display:flex;flex-direction:column;gap:6px;max-height:50vh;overflow-y:auto">
+        ${targets.map(c => `
+          <button class="btn-secondary" data-target="${c.id}" style="text-align:left">
+            ${(c.prenom || '') + ' ' + (c.nom || '')} <span style="color:var(--muted);font-size:12px">${c.email || ''}</span>
+          </button>
+        `).join('')}
+      </div>
+      <p class="error-msg hidden" id="cp-err"></p>
+      <div class="flex-row" style="justify-content:flex-end">
+        <button class="btn-secondary" id="cp-cancel">Annuler</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  overlay.querySelector('#cp-cancel').addEventListener('click', () => overlay.remove());
+  overlay.querySelectorAll('[data-target]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const targetId = btn.dataset.target;
+      btn.disabled = true;
+      const targetProgs = await loadProgrammes(targetId);
+      const sameCat = targetProgs.filter(p => (p.category || 'fonte') === (prog.category || 'fonte'));
+      const payload = {
+        name:      prog.name,
+        category:  prog.category || 'fonte',
+        exercises: prog.exercises || [],
+        client_id: targetId,
+        coach_id:  coachId,
+        ordre:     sameCat.length,
+      };
+      const { error } = await db.from('programmes').insert(payload);
+      if (error) {
+        const errEl = overlay.querySelector('#cp-err');
+        errEl.textContent = error.message;
+        errEl.classList.remove('hidden');
+        btn.disabled = false;
+        return;
+      }
+      overlay.remove();
+    });
   });
 }
 
