@@ -2977,6 +2977,78 @@ Sois conservateur si l'estimation est ambiguë.`,
   return JSON.parse(match[0]);
 }
 
+async function openEveningAdviceModal(dateIso) {
+  const modal = document.getElementById('modal');
+  const body = document.getElementById('modal-body');
+  body.innerHTML = `
+    <div class="feedback-ia-modal">
+      <div class="modal-title" style="color:#5abe78">🌙 Conseil pour ce soir</div>
+      <div class="feedback-ia-loading">
+        <div class="feedback-ia-spinner"></div>
+        <p>Réflexion en cours…</p>
+      </div>
+    </div>
+  `;
+  modal.classList.remove('hidden');
+
+  try {
+    const entries = await loadFoodEntriesForDate(dateIso);
+    let apports = 0, depenses = 0;
+    entries.forEach(e => {
+      const k = parseFloat(e.kcal) || 0;
+      if (e.type === 'meal') apports += k;
+      else if (e.type === 'session_burn') depenses += k;
+    });
+    const net = apports - depenses;
+
+    const apiKey = await getClaudeApiKeyDB();
+    if (!apiKey) throw new Error('Clé API Claude manquante.');
+
+    const payload = {
+      net_kcal: Math.round(net),
+      apports_kcal: Math.round(apports),
+      depenses_kcal: Math.round(depenses),
+      entries: entries.map(e => ({
+        time: e.time, type: e.type, description: e.description,
+        kcal: e.kcal, P: e.proteines_g, G: e.glucides_g, L: e.lipides_g,
+      })),
+    };
+
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true',
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 250,
+        messages: [{ role: 'user', content: JSON.stringify(payload) }],
+        system: `Coach nutrition bienveillant. L'utilisateur a fait sa journée alimentaire. Donne un conseil court (3-4 phrases, français, ton chaleureux) pour son repas du soir : type de plat, équilibre macros, taille de portion. Pas de recette détaillée. Pas de jugement sur ce qu'il a mangé.`,
+      }),
+    });
+    if (!response.ok) throw new Error(`Erreur API ${response.status}`);
+    const data = await response.json();
+    const text = data.content?.[0]?.text || 'Pas de réponse.';
+
+    body.innerHTML = `
+      <div class="feedback-ia-modal">
+        <div class="modal-title" style="color:#5abe78">🌙 Conseil pour ce soir</div>
+        <div class="corps-analysis-content">${formatFeedback(text)}</div>
+      </div>
+    `;
+  } catch (e) {
+    body.innerHTML = `
+      <div class="feedback-ia-modal">
+        <div class="modal-title" style="color:#ff5c5c">Erreur</div>
+        <div class="corps-analysis-content">${e.message}</div>
+      </div>
+    `;
+  }
+}
+
 async function estimateSessionBurn(session) {
   const apiKey = await getClaudeApiKeyDB();
   if (!apiKey) return null;
