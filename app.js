@@ -2838,6 +2838,129 @@ function showFoodPhotoModal(url) {
   modal.classList.remove('hidden');
 }
 
+function openAddMealModal(dateIso, onSaved) {
+  const modal = document.getElementById('add-meal-modal');
+  const textEl = document.getElementById('meal-text');
+  const photoInput = document.getElementById('meal-photo');
+  const photoBtn = document.getElementById('meal-photo-btn');
+  const preview = document.getElementById('meal-photo-preview');
+  const errorEl = document.getElementById('meal-error');
+  const saveBtn = document.getElementById('meal-save');
+  const cancelBtn = document.getElementById('meal-cancel');
+
+  textEl.value = '';
+  photoInput.value = '';
+  preview.innerHTML = '';
+  preview.classList.add('hidden');
+  errorEl.textContent = '';
+  errorEl.classList.add('hidden');
+  saveBtn.disabled = false;
+  saveBtn.textContent = 'Estimer & sauvegarder';
+
+  let pendingFile = null;
+
+  photoBtn.onclick = () => photoInput.click();
+  photoInput.onchange = () => {
+    pendingFile = photoInput.files?.[0] || null;
+    if (pendingFile) {
+      const url = URL.createObjectURL(pendingFile);
+      preview.innerHTML = `<img src="${url}" style="max-width:100%;max-height:180px;border-radius:8px;margin-top:8px" />`;
+      preview.classList.remove('hidden');
+    } else {
+      preview.innerHTML = '';
+      preview.classList.add('hidden');
+    }
+  };
+
+  function close() {
+    modal.classList.add('hidden');
+    pendingFile = null;
+  }
+
+  cancelBtn.onclick = close;
+  modal.querySelector('.live-edit-modal-overlay').onclick = close;
+
+  saveBtn.onclick = async () => {
+    const text = textEl.value.trim();
+    if (!text) {
+      errorEl.textContent = 'Décris ton repas.';
+      errorEl.classList.remove('hidden');
+      return;
+    }
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Estimation…';
+    errorEl.classList.add('hidden');
+
+    try {
+      const macros = await estimateMealMacros(text);
+      const now = new Date();
+      const time = now.toTimeString().slice(0, 8);
+      const entry = await insertFoodEntryDB({
+        date: dateIso,
+        time,
+        type: 'meal',
+        description: text,
+        kcal:        macros?.kcal        ?? null,
+        proteines_g: macros?.proteines_g ?? null,
+        glucides_g:  macros?.glucides_g  ?? null,
+        lipides_g:   macros?.lipides_g   ?? null,
+      });
+      if (!entry) throw new Error('Échec sauvegarde.');
+
+      if (pendingFile) {
+        const path = await uploadFoodPhoto(pendingFile, entry.id);
+        if (path) {
+          await db.from('food_entries').update({ photo_path: path }).eq('id', entry.id);
+        }
+      }
+
+      close();
+      if (onSaved) await onSaved();
+    } catch (e) {
+      errorEl.textContent = e.message || 'Erreur lors de la sauvegarde.';
+      errorEl.classList.remove('hidden');
+      saveBtn.disabled = false;
+      saveBtn.textContent = 'Estimer & sauvegarder';
+    }
+  };
+
+  modal.classList.remove('hidden');
+  setTimeout(() => textEl.focus(), 50);
+}
+
+async function estimateMealMacros(text) {
+  const apiKey = await getClaudeApiKeyDB();
+  if (!apiKey) throw new Error('Clé API Claude manquante.');
+
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true',
+    },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 200,
+      messages: [{ role: 'user', content: text }],
+      system: `Tu es un nutritionniste. L'utilisateur décrit un repas. Estime ses macros et calories en JSON STRICT (pas de markdown, pas d'autres mots) :
+{ "kcal": <int>, "proteines_g": <int>, "glucides_g": <int>, "lipides_g": <int> }
+Sois conservateur si l'estimation est ambiguë.`,
+    }),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.error?.message || `Erreur API ${response.status}`);
+  }
+  const data = await response.json();
+  const raw = data.content?.[0]?.text?.trim() || '';
+  // Tenter de parser même si Claude entoure de markdown
+  const match = raw.match(/\{[\s\S]*\}/);
+  if (!match) throw new Error('Réponse IA invalide.');
+  return JSON.parse(match[0]);
+}
+
 /* ═══════════════════════════════════════════════════════
    STATS
 ═══════════════════════════════════════════════════════ */

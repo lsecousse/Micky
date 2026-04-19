@@ -205,6 +205,24 @@
     </div>
   </div>
 
+  <!-- MODAL AJOUTER REPAS -->
+  <div id="add-meal-modal" class="live-edit-modal hidden">
+    <div class="live-edit-modal-overlay"></div>
+    <div class="live-edit-modal-card">
+      <div class="live-edit-modal-title">Ajouter un repas</div>
+      <textarea id="meal-text" placeholder="3 weetabix, miel, banane…" rows="3"
+                style="width:100%;padding:12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--font);font-size:15px;resize:vertical"></textarea>
+      <input type="file" id="meal-photo" accept="image/*" capture="environment" style="display:none" />
+      <button type="button" id="meal-photo-btn" class="btn-secondary">📸 Joindre une photo</button>
+      <div id="meal-photo-preview" class="hidden" style="text-align:center"></div>
+      <p id="meal-error" class="error-msg hidden"></p>
+      <div class="live-edit-modal-actions">
+        <button class="btn-secondary" id="meal-cancel">Annuler</button>
+        <button class="btn-primary"   id="meal-save">Estimer & sauvegarder</button>
+      </div>
+    </div>
+  </div>
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase.js"></script>
