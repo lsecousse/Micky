@@ -2765,6 +2765,11 @@ async function renderAlimentation() {
   adviceBtn.textContent = '🌙 Conseil pour ce soir';
   body.appendChild(adviceBtn);
 
+  const askBtn = document.createElement('button');
+  askBtn.className = 'btn-secondary btn-full';
+  askBtn.textContent = '💬 Poser une question';
+  body.appendChild(askBtn);
+
   // ── Timeline container ───────────────────────────────
   const timeline = document.createElement('div');
   timeline.className = 'alim-timeline';
@@ -2843,6 +2848,7 @@ async function renderAlimentation() {
   dateInput.addEventListener('change', refresh);
   addBtn.addEventListener('click', () => openAddMealModal(dateInput.value, refresh));
   adviceBtn.addEventListener('click', () => openEveningAdviceModal(dateInput.value));
+  askBtn.addEventListener('click', () => openAskQuestionModal(dateInput.value));
 
   await refresh();
 }
@@ -3047,6 +3053,100 @@ async function openEveningAdviceModal(dateIso) {
       </div>
     `;
   }
+}
+
+async function openAskQuestionModal(dateIso) {
+  const modal = document.getElementById('modal');
+  const body = document.getElementById('modal-body');
+
+  body.innerHTML = `
+    <div class="feedback-ia-modal">
+      <div class="modal-title" style="color:#5abe78">💬 Poser une question</div>
+      <textarea id="ask-text" placeholder="Ex : je repars à la salle à 18h, je dois manger quelque chose avant ?" rows="3"
+                style="width:100%;padding:12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--font);font-size:14px;resize:vertical;margin-top:8px"></textarea>
+      <div id="ask-response" class="hidden" style="margin-top:12px"></div>
+      <div class="live-edit-modal-actions" style="margin-top:12px">
+        <button class="btn-secondary" id="ask-close">Fermer</button>
+        <button class="btn-primary"   id="ask-send">Envoyer</button>
+      </div>
+    </div>
+  `;
+  modal.classList.remove('hidden');
+
+  const textEl = document.getElementById('ask-text');
+  const responseEl = document.getElementById('ask-response');
+  const sendBtn = document.getElementById('ask-send');
+  const closeBtn = document.getElementById('ask-close');
+
+  closeBtn.onclick = () => modal.classList.add('hidden');
+  setTimeout(() => textEl.focus(), 50);
+
+  sendBtn.onclick = async () => {
+    const question = textEl.value.trim();
+    if (!question) return;
+    sendBtn.disabled = true;
+    sendBtn.textContent = 'Réflexion…';
+    responseEl.innerHTML = `<div class="feedback-ia-loading"><div class="feedback-ia-spinner"></div><p>Réflexion en cours…</p></div>`;
+    responseEl.classList.remove('hidden');
+
+    try {
+      const apiKey = await getClaudeApiKeyDB();
+      if (!apiKey) throw new Error('Clé API Claude manquante.');
+
+      const entries = await loadFoodEntriesForDate(dateIso);
+      let apports = 0, depenses = 0;
+      entries.forEach(e => {
+        const k = parseFloat(e.kcal) || 0;
+        if (e.type === 'meal') apports += k;
+        else if (e.type === 'session_burn') depenses += k;
+      });
+      const net = apports - depenses;
+
+      const now = new Date();
+      const heure = now.toTimeString().slice(0, 5);
+
+      const payload = {
+        question,
+        heure_actuelle: heure,
+        net_kcal: Math.round(net),
+        apports_kcal: Math.round(apports),
+        depenses_kcal: Math.round(depenses),
+        entries: entries.map(e => ({
+          time: e.time, type: e.type, description: e.description,
+          kcal: e.kcal, P: e.proteines_g, G: e.glucides_g, L: e.lipides_g,
+        })),
+      };
+
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true',
+        },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 300,
+          messages: [{ role: 'user', content: JSON.stringify(payload) }],
+          system: `Coach nutrition bienveillant. L'utilisateur pose une question sur son alimentation, dans le contexte de sa journée. Réponds court (max 4 phrases, français, ton chaleureux et direct). Tiens compte des apports/dépenses du jour, de l'heure actuelle, et de toute séance de sport déjà faite ou à venir mentionnée. Pas de jugement sur ce qu'il a mangé.`,
+        }),
+      });
+      if (!response.ok) throw new Error(`Erreur API ${response.status}`);
+      const data = await response.json();
+      const text = data.content?.[0]?.text || 'Pas de réponse.';
+
+      responseEl.innerHTML = `<div class="corps-analysis-content">${formatFeedback(text)}</div>`;
+      sendBtn.textContent = 'Reposer';
+      sendBtn.disabled = false;
+      textEl.value = '';
+      textEl.focus();
+    } catch (e) {
+      responseEl.innerHTML = `<div class="corps-analysis-content" style="color:#ff5c5c">${e.message}</div>`;
+      sendBtn.disabled = false;
+      sendBtn.textContent = 'Envoyer';
+    }
+  };
 }
 
 async function estimateSessionBurn(session) {
