@@ -1796,6 +1796,19 @@ input:focus { border-color: var(--accent); }
 .alim-bilan-row b { color: var(--text); font-weight: 600; }
 .alim-bilan-net  { font-size: 16px; padding-top: 6px; border-top: 1px solid var(--border); margin-top: 4px; }
 .alim-bilan-net b { color: var(--accent); }
+.alim-bilan-sub { font-size: 12px; padding-left: 12px; color: var(--text-muted); }
+.alim-bilan-sub b { color: var(--text-muted); font-weight: 500; }
+.alim-bilan-macros {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr auto 1fr auto;
+  gap: 4px 6px;
+  font-size: 12px;
+  padding: 4px 0;
+  border-top: 1px dashed var(--border);
+  border-bottom: 1px dashed var(--border);
+}
+.alim-bilan-macros span { color: var(--text-muted); }
+.alim-bilan-macros b { color: var(--text); font-weight: 600; }
 
 .alim-timeline { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
 .alim-entry {

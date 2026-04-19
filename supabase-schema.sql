@@ -133,6 +133,7 @@ create table if not exists public.food_entries (
   proteines_g   numeric,
   glucides_g    numeric,
   lipides_g     numeric,
+  session_category text check (session_category in ('fonte', 'cardio')),
   created_at    timestamptz default now()
 );
 

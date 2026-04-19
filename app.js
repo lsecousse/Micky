@@ -1615,6 +1615,7 @@ function finishSession() {
           type: 'session_burn',
           description: snapshot.programmeName || 'Séance',
           kcal: burn.kcal,
+          session_category: snapshot.category || 'fonte',
         });
       }
     })().catch(() => {});
@@ -2900,12 +2901,21 @@ async function renderAlimentation() {
     const entries = await loadFoodEntriesForDate(dateInput.value);
 
     // Bilan
-    let apports = 0, depenses = 0;
+    let apports = 0, depFonte = 0, depCardio = 0;
+    let totP = 0, totG = 0, totL = 0;
     entries.forEach(e => {
       const k = parseFloat(e.kcal) || 0;
-      if (e.type === 'meal') apports += k;
-      else if (e.type === 'session_burn') depenses += k;
+      if (e.type === 'meal') {
+        apports += k;
+        totP += parseFloat(e.proteines_g) || 0;
+        totG += parseFloat(e.glucides_g) || 0;
+        totL += parseFloat(e.lipides_g) || 0;
+      } else if (e.type === 'session_burn') {
+        if (e.session_category === 'cardio') depCardio += k;
+        else depFonte += k; // défaut fonte si non renseigné
+      }
     });
+    const depenses = depFonte + depCardio;
 
     // Métabolisme : pro-rata selon l'heure si date = aujourd'hui, sinon journée pleine
     const bmr = await computeBmrKcal();
@@ -2927,9 +2937,20 @@ async function renderAlimentation() {
     }
 
     const net = apports - depenses - bmrToday;
+
+    const fonteLine  = depFonte  > 0 ? `<div class="alim-bilan-row alim-bilan-sub"><span>↳ Fonte</span><b>${Math.round(depFonte)} kcal</b></div>` : '';
+    const cardioLine = depCardio > 0 ? `<div class="alim-bilan-row alim-bilan-sub"><span>↳ Cardio</span><b>${Math.round(depCardio)} kcal</b></div>` : '';
+
     bilanCard.innerHTML = `
       <div class="alim-bilan-row"><span>Apports</span><b>${Math.round(apports)} kcal</b></div>
+      <div class="alim-bilan-row alim-bilan-macros">
+        <span>Protéines</span><b>${Math.round(totP)} g</b>
+        <span>Glucides</span><b>${Math.round(totG)} g</b>
+        <span>Lipides</span><b>${Math.round(totL)} g</b>
+      </div>
       <div class="alim-bilan-row"><span>Dépenses séance</span><b>${Math.round(depenses)} kcal</b></div>
+      ${fonteLine}
+      ${cardioLine}
       ${bmrLine}
       <div class="alim-bilan-row alim-bilan-net"><span>Net</span><b>${net >= 0 ? '+' : ''}${Math.round(net)} kcal</b></div>
     `;
