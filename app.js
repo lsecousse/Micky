@@ -2573,6 +2573,14 @@ const COACH_PROMPT = `Coach sportif. Analyse séance musculation vs historique m
 
 3. Conseil prochaine séance : 1-2 actions concrètes basées sur tendances.`;
 
+const COACH_PROMPT_CARDIO = `Coach sportif. Analyse séance cardio vs historique même programme. Feedback 3 parties, français, max 250 mots, droit au but :
+
+1. Progression : tendance par exercice sur la durée (minutes), la distance (km) et la puissance moyenne (watts). Progression/stagnation/régression.
+
+2. Forces/faiblesses : 2-3 points forts, 1-2 à améliorer. Pas de compliments creux.
+
+3. Conseil prochaine séance : 1-2 actions concrètes (durée, intensité, allure) basées sur les tendances.`;
+
 const SUGGESTION_PROMPT = `Coach sportif. L'utilisateur ouvre un exercice à la salle. Donne UNE phrase courte (max 25 mots, français, droit au but) : indique un poids cible à viser sur la dernière série aujourd'hui, basé sur la tendance récente.`;
 
 const suggestionCache = new Map();
@@ -2718,6 +2726,8 @@ async function generateAndPersistFeedback(session) {
 
   const userMessage = `Séance actuelle :\n${JSON.stringify(sessionData, null, 1)}\n\nHistorique (${history.length} dernières séances) :\n${JSON.stringify(historyData, null, 1)}`;
 
+  const systemPrompt = session.category === 'cardio' ? COACH_PROMPT_CARDIO : COACH_PROMPT;
+
   const response = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
@@ -2730,7 +2740,7 @@ async function generateAndPersistFeedback(session) {
       model: 'claude-sonnet-4-20250514',
       max_tokens: 500,
       messages: [{ role: 'user', content: userMessage }],
-      system: COACH_PROMPT,
+      system: systemPrompt,
     }),
   });
 
@@ -2796,9 +2806,26 @@ async function showPostSessionFeedback(session) {
 }
 
 function formatSessionForAI(session) {
+  const isCardio = session.category === 'cardio';
+
+  if (isCardio) {
+    return {
+      programme: session.programmeName,
+      date: session.date,
+      type: 'cardio',
+      exercices: (session.exercises || []).map(ex => ({
+        nom: ex.name,
+        duree_min: ex.done?.duration || 0,
+        puissance_w: ex.done?.power || 0,
+        distance_km: ex.done?.km || 0,
+      })),
+    };
+  }
+
   return {
     programme: session.programmeName,
     date: session.date,
+    type: 'fonte',
     duree: session.duration ? formatDuration(session.duration) : null,
     exercices: (session.exercises || []).map(ex => {
       const e = migrateExercise(ex);
