@@ -120,6 +120,20 @@ create policy "Coach lit les mesures clients" on public.body_measurements
     )
   );
 
+-- Un coach peut écrire (insert/update/delete) les mesures de ses clients
+create policy "Coach écrit les mesures clients" on public.body_measurements
+  for all using (
+    exists (
+      select 1 from public.profiles p
+      where p.id = body_measurements.client_id and p.coach_id = auth.uid()
+    )
+  ) with check (
+    exists (
+      select 1 from public.profiles p
+      where p.id = body_measurements.client_id and p.coach_id = auth.uid()
+    )
+  );
+
 -- 5. Table food_entries (suivi alimentaire)
 create table if not exists public.food_entries (
   id            uuid default gen_random_uuid() primary key,

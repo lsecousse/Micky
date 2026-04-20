@@ -179,6 +179,7 @@ async function renderClientDetail() {
         </div>
         <div class="bo-tabs">
           <button class="bo-tab ${selTab === 'userdata' ? 'active' : ''}" data-tab="userdata">Données utilisateur</button>
+          <button class="bo-tab ${selTab === 'body' ? 'active' : ''}" data-tab="body">Suivi corporel</button>
           <button class="bo-tab ${selTab === 'programmes' ? 'active' : ''}" data-tab="programmes">Programmes</button>
           <button class="bo-tab ${selTab === 'sessions' ? 'active' : ''}" data-tab="sessions">Séances</button>
         </div>
@@ -208,6 +209,7 @@ async function renderDetailBody() {
   if (selTab === 'programmes') await renderProgrammeList(body);
   else if (selTab === 'sessions') await renderSessionList(body);
   else if (selTab === 'userdata') await renderUserData(body);
+  else if (selTab === 'body') await renderBodyTracking(body);
 }
 
 /* ─── PROGRAMMES ────────────────────────────────────── */
@@ -407,11 +409,16 @@ async function renderSessionList(body) {
 
 /* ─── DONNÉES UTILISATEUR ──────────────────────────── */
 async function renderUserData(body) {
-  const sessions = await loadSessions(selClient.id);
+  const [sessions, measurements] = await Promise.all([
+    loadSessions(selClient.id),
+    loadBodyMeasurements(selClient.id),
+  ]);
 
   const createdAt = selClient.created_at
     ? new Date(selClient.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
     : '—';
+
+  const latestPoids = measurements.find(m => m.poids !== null && m.poids !== undefined)?.poids ?? '';
 
   // Identité (compact — une ligne de tags)
   body.innerHTML = `
@@ -425,13 +432,247 @@ async function renderUserData(body) {
         <span class="bo-id-tag"><span class="bo-id-label">Inscrit</span> ${createdAt}</span>
         <span class="bo-id-tag"><span class="bo-id-label">Séances</span> ${sessions.filter(s => s.duration > 0).length}</span>
       </div>
+    </div>
+    <div class="bo-compact-section" style="margin-top:12px">
+      <p class="section-title">Mesures</p>
+      <div class="bo-id-row" style="gap:12px">
+        <label class="bo-id-tag" style="display:flex;align-items:center;gap:6px">
+          <span class="bo-id-label">Taille (cm)</span>
+          <input type="number" id="bo-taille" min="50" max="250" step="1" value="${selClient.taille_cm ?? ''}" style="width:80px" />
+        </label>
+        <label class="bo-id-tag" style="display:flex;align-items:center;gap:6px">
+          <span class="bo-id-label">Poids (kg)</span>
+          <input type="number" id="bo-poids" min="20" max="400" step="0.1" value="${latestPoids}" style="width:80px" />
+        </label>
+        <button class="btn-primary btn-sm" id="bo-save-mesures">Enregistrer</button>
+        <span id="bo-save-msg" style="font-size:12px;color:var(--muted)"></span>
+      </div>
     </div>`;
+
+  document.getElementById('bo-save-mesures').addEventListener('click', saveMesures);
 
   // Stats
   const sorted = sessions.slice().sort((a, b) => a.date.localeCompare(b.date));
   if (!sorted.length) return;
 
   body.appendChild(boStatsProgression(sorted));
+}
+
+async function saveMesures() {
+  const tailleEl = document.getElementById('bo-taille');
+  const poidsEl  = document.getElementById('bo-poids');
+  const msgEl    = document.getElementById('bo-save-msg');
+  const btn      = document.getElementById('bo-save-mesures');
+
+  const taille = tailleEl.value ? parseInt(tailleEl.value, 10) : null;
+  const poids  = poidsEl.value  ? parseFloat(poidsEl.value)    : null;
+
+  btn.disabled = true;
+  msgEl.style.color = 'var(--muted)';
+  msgEl.textContent = 'Enregistrement…';
+
+  try {
+    if (taille !== (selClient.taille_cm ?? null)) {
+      const { error } = await db.from('profiles').update({ taille_cm: taille }).eq('id', selClient.id);
+      if (error) throw error;
+      selClient.taille_cm = taille;
+    }
+
+    if (poids !== null) {
+      const today = new Date().toISOString().slice(0, 10);
+      const { data: existing } = await db.from('body_measurements')
+        .select('id').eq('client_id', selClient.id).eq('date', today).maybeSingle();
+
+      const payload = existing
+        ? { id: existing.id, client_id: selClient.id, date: today, poids }
+        : { id: crypto.randomUUID(), client_id: selClient.id, date: today, poids };
+      const { error } = await db.from('body_measurements').upsert(payload);
+      if (error) throw error;
+    }
+
+    msgEl.style.color = '#4caf50';
+    msgEl.textContent = '✓ Enregistré';
+  } catch (e) {
+    msgEl.style.color = 'var(--danger)';
+    msgEl.textContent = e.message || 'Erreur';
+  } finally {
+    btn.disabled = false;
+    setTimeout(() => { if (msgEl) msgEl.textContent = ''; }, 3000);
+  }
+}
+
+/* ─── SUIVI CORPOREL (lecture seule) ──────────────────── */
+function leanMassKg(m) {
+  if (m.poids == null) return null;
+  if (m.graisse_kg != null) return m.poids - m.graisse_kg;
+  if (m.img != null) return m.poids * (1 - m.img / 100);
+  return null;
+}
+
+function fmtDateFr(iso) {
+  const [, mo, d] = iso.split('-');
+  return `${d}/${mo}`;
+}
+
+function linearTrend(values) {
+  const n = values.length;
+  if (n < 2) return null;
+  const xs = values.map((_, i) => i);
+  const meanX = xs.reduce((a, b) => a + b, 0) / n;
+  const meanY = values.reduce((a, b) => a + b, 0) / n;
+  let num = 0, den = 0;
+  for (let i = 0; i < n; i++) {
+    num += (xs[i] - meanX) * (values[i] - meanY);
+    den += (xs[i] - meanX) ** 2;
+  }
+  if (den === 0) return values.slice();
+  const slope = num / den;
+  const intercept = meanY - slope * meanX;
+  return xs.map(x => slope * x + intercept);
+}
+
+async function renderBodyTracking(body) {
+  const measurements = await loadBodyMeasurements(selClient.id);
+
+  if (!measurements.length) {
+    body.innerHTML = '<p style="color:var(--muted);font-size:13px">Aucune mesure enregistrée.</p>';
+    return;
+  }
+
+  const sorted = measurements.slice().sort((a, b) => a.date.localeCompare(b.date));
+
+  // Première mesure avec masse maigre calculable (référence pour "prise de muscle")
+  const firstLean = sorted.map(m => ({ date: m.date, lean: leanMassKg(m) })).find(x => x.lean != null);
+
+  const metrics = [
+    {
+      label: 'Poids', unit: 'kg', color: '#9A7A30',
+      extract: m => m.poids ?? null,
+    },
+    {
+      label: 'Masse grasse', unit: '%', color: '#e53e3e',
+      extract: m => m.img ?? null,
+    },
+    {
+      label: 'Prise de muscle', unit: 'kg', color: '#4caf50',
+      extract: m => {
+        if (!firstLean) return null;
+        const lean = leanMassKg(m);
+        return lean == null ? null : +(lean - firstLean.lean).toFixed(2);
+      },
+    },
+  ];
+
+  body.innerHTML = '';
+
+  // Cartes résumé
+  const cardsGrid = document.createElement('div');
+  cardsGrid.className = 'stats-cards-grid';
+  metrics.forEach(m => {
+    const points = sorted.map(s => ({ date: s.date, value: m.extract(s) })).filter(p => p.value != null);
+    if (!points.length) return;
+    const first = points[0].value;
+    const last  = points[points.length - 1].value;
+    const delta = last - first;
+    const deltaClass = delta > 0 ? 'up' : delta < 0 ? 'down' : 'neutral';
+    const deltaStr = delta === 0 ? '=' : `${delta > 0 ? '+' : ''}${delta.toFixed(1)} ${m.unit}`;
+
+    const card = document.createElement('div');
+    card.className = 'stats-exo-card';
+    card.innerHTML = `
+      <span class="stats-exo-name">${m.label}</span>
+      <div class="stats-exo-values">
+        <span class="stats-exo-start">${first.toFixed(1)} ${m.unit}</span>
+        <span class="stats-exo-arrow">→</span>
+        <span class="stats-exo-end">${last.toFixed(1)} ${m.unit}</span>
+        <span class="stats-exo-delta ${deltaClass}">${deltaStr}</span>
+      </div>
+    `;
+    cardsGrid.appendChild(card);
+  });
+  body.appendChild(cardsGrid);
+
+  // Courbes avec tendance linéaire
+  metrics.forEach(m => {
+    const points = sorted.map(s => ({ date: s.date, value: m.extract(s) })).filter(p => p.value != null);
+    if (points.length < 2) return;
+
+    const section = document.createElement('div');
+    section.className = 'stats-section';
+    section.innerHTML = `<h3 class="stats-section-title">${m.label} (${m.unit})</h3>`;
+
+    const wrap = document.createElement('div');
+    wrap.className = 'stats-chart-wrap';
+    const canvas = document.createElement('canvas');
+    wrap.appendChild(canvas);
+    section.appendChild(wrap);
+    body.appendChild(section);
+
+    const values = points.map(p => p.value);
+    const trend  = linearTrend(values);
+
+    new Chart(canvas, {
+      type: 'line',
+      data: {
+        labels: points.map(p => fmtDateFr(p.date)),
+        datasets: [
+          {
+            label: m.label,
+            data: values,
+            borderColor: m.color,
+            backgroundColor: m.color + '33',
+            borderWidth: 2,
+            pointRadius: 3,
+            pointHoverRadius: 5,
+            tension: 0.3,
+            fill: true,
+          },
+          {
+            label: 'Tendance',
+            data: trend,
+            borderColor: m.color,
+            borderDash: [6, 4],
+            borderWidth: 1.5,
+            pointRadius: 0,
+            fill: false,
+            tension: 0,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: true, position: 'bottom',
+            labels: { color: '#888', font: { family: "'DM Mono', monospace", size: 11 }, boxWidth: 12, padding: 10 },
+          },
+          tooltip: {
+            backgroundColor: '#1a1a1a',
+            borderColor: '#2e2e2e',
+            borderWidth: 1,
+            titleColor: '#f0f0f0',
+            bodyColor: '#f0f0f0',
+            titleFont: { family: "'DM Mono', monospace" },
+            bodyFont: { family: "'DM Mono', monospace" },
+            callbacks: {
+              label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y.toFixed(1)} ${m.unit}`,
+            },
+          },
+        },
+        scales: {
+          x: {
+            ticks: { color: '#888', font: { family: "'DM Mono', monospace", size: 10 } },
+            grid:  { color: '#2e2e2e' },
+          },
+          y: {
+            ticks: { color: '#888', font: { family: "'DM Mono', monospace", size: 10 } },
+            grid:  { color: '#2e2e2e' },
+          },
+        },
+      },
+    });
+  });
 }
 
 /* ─── STATS HELPERS (backoffice) ──────────────────────── */
