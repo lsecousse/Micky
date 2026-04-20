@@ -1,7 +1,7 @@
 /* ═══════════════════════════════════════════════════════
    VERSION
 ═══════════════════════════════════════════════════════ */
-const APP_VERSION = '2026.avril.19';
+const APP_VERSION = '2026.avril.20';
 document.querySelectorAll('.app-version').forEach(el => el.textContent = APP_VERSION);
 
 /* ═══════════════════════════════════════════════════════
@@ -159,7 +159,6 @@ function showScreen(name) {
 
 document.getElementById('go-corps').addEventListener('click',   () => showScreen('corps'));
 document.getElementById('go-alim').addEventListener('click',    () => showScreen('alim'));
-document.getElementById('go-params').addEventListener('click',  () => showScreen('params'));
 document.getElementById('back-history').addEventListener('click', () => showScreen('home'));
 document.getElementById('back-corps').addEventListener('click',   () => showScreen('home'));
 document.getElementById('back-stats').addEventListener('click',   () => showScreen('home'));
@@ -350,6 +349,7 @@ function buildUserDropdown() {
     { label: 'Clé API Claude',  icon: '🔑', action: () => { dropdown.classList.add('hidden'); showScreen('claude-api'); } },
     { label: 'Historique',      icon: '📋', action: () => { dropdown.classList.add('hidden'); showScreen('history'); } },
     { label: 'Stats',           icon: '📈', action: () => { dropdown.classList.add('hidden'); showScreen('stats'); } },
+    { label: 'Programmes',      icon: '⚙️', action: () => { dropdown.classList.add('hidden'); showScreen('params'); } },
     { label: 'Déconnexion',     icon: '🚪', danger: true, action: () => {
       dropdown.classList.add('hidden');
       showConfirm('Se déconnecter ?', async () => {
