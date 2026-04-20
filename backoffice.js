@@ -100,6 +100,7 @@ async function loadBodyMeasurements(clientId) {
 function renderDashboard() {
   root.innerHTML = `
     <button class="bo-sidebar-toggle" id="bo-sidebar-toggle">☰</button>
+    <button class="bo-fab" id="bo-add-client" title="Nouveau client" aria-label="Nouveau client">+</button>
     <div class="bo-sidebar-overlay" id="bo-sidebar-overlay"></div>
     <div class="bo-layout">
       <div class="bo-sidebar" id="bo-sidebar">
@@ -108,9 +109,6 @@ function renderDashboard() {
           <button class="btn-ghost btn-sm" id="bo-logout">Déconnexion</button>
         </div>
         <div class="bo-clients" id="bo-clients-list"></div>
-        <div class="bo-sidebar-footer">
-          <button class="btn-primary btn-full" id="bo-add-client">+ Nouveau client</button>
-        </div>
       </div>
       <div class="bo-main" id="bo-main">
         <div class="bo-main-placeholder">← Sélectionnez un client</div>
