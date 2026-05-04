@@ -1,7 +1,7 @@
 /* ═══════════════════════════════════════════════════════
    VERSION
 ═══════════════════════════════════════════════════════ */
-const APP_VERSION = '2026.avril.20';
+const APP_VERSION = '2026.mai.04';
 document.querySelectorAll('.app-version').forEach(el => el.textContent = APP_VERSION);
 
 /* ═══════════════════════════════════════════════════════
@@ -2565,13 +2565,25 @@ document.getElementById('modal').addEventListener('click', e => {
 /* ═══════════════════════════════════════════════════════
    FEEDBACK IA (Claude API)
 ═══════════════════════════════════════════════════════ */
-const COACH_PROMPT = `Coach sportif. Analyse séance musculation vs historique même programme. Feedback 3 parties, français, max 250 mots, droit au but :
+const PHASE2_CONTEXT = `Contexte programme : phase 2 d'hypertrophie sarcoplasmique, démarrée lundi 27 avril 2026.
+- Semaine 1 (27 avril – 3 mai 2026) : poids constants, repos 2 min entre séries.
+- Semaine 2 (4 – 10 mai 2026) : poids constants, repos 1 min 45.
+- Semaine 3 (11 – 17 mai 2026) : augmentation des poids, repos 1 min 30.
+- Semaine 4 (18 – 24 mai 2026) : poids constants, repos 1 min 30.
 
-1. Progression : tendance par exercice (progression/stagnation/régression). Comparer via 1RM Epley (poids × (1 + reps/30)) si reps changent.
+Identifie la semaine en cours via la date de la séance. La stagnation des poids est attendue sauf en semaine 3 (où la progression est l'objectif). L'enjeu hypertrophie sarcoplasmique = volume + densité (réduction du repos), pas charge max.`;
+
+const COACH_PROMPT = `Coach sportif. Analyse séance musculation vs historique même programme.
+
+${PHASE2_CONTEXT}
+
+Feedback 3 parties, français, max 250 mots, droit au but :
+
+1. Progression : tendance par exercice (progression/stagnation/régression). Comparer via 1RM Epley (poids × (1 + reps/30)) si reps changent. Juge la cohérence avec la semaine en cours (stagnation OK semaines 1/2/4, progression attendue semaine 3).
 
 2. Forces/faiblesses : 2-3 points forts, 1-2 à améliorer. Pas de compliments creux.
 
-3. Conseil prochaine séance : 1-2 actions concrètes basées sur tendances.`;
+3. Conseil prochaine séance : 1-2 actions concrètes basées sur tendances et semaine de phase.`;
 
 const COACH_PROMPT_CARDIO = `Coach sportif. Analyse séance cardio vs historique même programme. Feedback 3 parties, français, max 250 mots, droit au but :
 
@@ -2581,7 +2593,11 @@ const COACH_PROMPT_CARDIO = `Coach sportif. Analyse séance cardio vs historique
 
 3. Conseil prochaine séance : 1-2 actions concrètes (durée, intensité, allure) basées sur les tendances.`;
 
-const SUGGESTION_PROMPT = `Coach sportif. L'utilisateur ouvre un exercice à la salle. Donne UNE phrase courte (max 25 mots, français, droit au but) : indique un poids cible à viser sur la dernière série aujourd'hui, basé sur la tendance récente.`;
+const SUGGESTION_PROMPT = `Coach sportif. L'utilisateur ouvre un exercice à la salle. Donne UNE phrase courte (max 25 mots, français, droit au but) : indique un poids cible à viser sur la dernière série aujourd'hui, basé sur la tendance récente.
+
+${PHASE2_CONTEXT}
+
+Aligne ta suggestion sur la semaine en cours : poids identique à la séance précédente sauf en semaine 3 (augmentation).`;
 
 const suggestionCache = new Map();
 
