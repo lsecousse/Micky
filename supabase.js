@@ -179,6 +179,50 @@ async function deleteFoodEntryDB(id) {
   if (error) console.error('deleteFoodEntryDB error:', error);
 }
 
+/* ── Meal presets (petit-dej avant/après salle) ──────── */
+async function loadMealPresets() {
+  const { data: { user } } = await db.auth.getUser();
+  if (!user) return [];
+  const { data, error } = await db.from('meal_presets')
+    .select('*')
+    .eq('client_id', user.id);
+  if (error) { console.error('loadMealPresets error:', error); return []; }
+  return data || [];
+}
+
+async function loadMealPreset(slot) {
+  const { data: { user } } = await db.auth.getUser();
+  if (!user) return null;
+  const { data, error } = await db.from('meal_presets')
+    .select('*')
+    .eq('client_id', user.id)
+    .eq('slot', slot)
+    .maybeSingle();
+  if (error) { console.error('loadMealPreset error:', error); return null; }
+  return data;
+}
+
+async function upsertMealPreset(slot, payload) {
+  const { data: { user } } = await db.auth.getUser();
+  if (!user) return null;
+  const row = {
+    client_id: user.id,
+    slot,
+    description: payload.description,
+    kcal:        payload.kcal        ?? null,
+    proteines_g: payload.proteines_g ?? null,
+    glucides_g:  payload.glucides_g  ?? null,
+    lipides_g:   payload.lipides_g   ?? null,
+    updated_at:  new Date().toISOString(),
+  };
+  const { data, error } = await db.from('meal_presets')
+    .upsert(row, { onConflict: 'client_id,slot' })
+    .select()
+    .single();
+  if (error) { console.error('upsertMealPreset error:', error); return null; }
+  return data;
+}
+
 /* ── Food photos (Supabase Storage) ──────────────────── */
 async function uploadFoodPhoto(file, entryId) {
   const { data: { user } } = await db.auth.getUser();
