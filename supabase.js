@@ -185,7 +185,8 @@ async function loadMealPresets() {
   if (!user) return [];
   const { data, error } = await db.from('meal_presets')
     .select('*')
-    .eq('client_id', user.id);
+    .eq('client_id', user.id)
+    .order('slot');
   if (error) { console.error('loadMealPresets error:', error); return []; }
   return data || [];
 }
