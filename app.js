@@ -3239,6 +3239,31 @@ function openMealPresetEditModal(slot, mode, dateIso, onSaved) {
   setTimeout(() => textEl.focus(), 50);
 }
 
+/**
+ * Insère une entrée alimentaire à partir d'un preset (sans appel Claude).
+ * @param {string} dateIso
+ * @param {'pre_gym'|'post_gym'} slot
+ * @returns {Promise<object|null>} l'entrée créée, ou null si preset absent.
+ */
+async function addMealFromPreset(dateIso, slot) {
+  const preset = await loadMealPreset(slot);
+  if (!preset || !preset.description) return null;
+
+  const now  = new Date();
+  const time = now.toTimeString().slice(0, 8);
+  const entry = await insertFoodEntryDB({
+    date: dateIso,
+    time,
+    type: 'meal',
+    description: preset.description,
+    kcal:        preset.kcal        ?? null,
+    proteines_g: preset.proteines_g ?? null,
+    glucides_g:  preset.glucides_g  ?? null,
+    lipides_g:   preset.lipides_g   ?? null,
+  });
+  return entry;
+}
+
 async function estimateMealMacros(text) {
   const apiKey = await getClaudeApiKeyDB();
   if (!apiKey) throw new Error('Clé API Claude manquante.');
