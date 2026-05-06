@@ -2926,23 +2926,24 @@ async function renderMealPresetButtons(container, dateIso, onChanged) {
 
     mainBtn.addEventListener('click', async () => {
       if (mainBtn.disabled) return;
-      const fresh = await loadMealPreset(slot);
-      if (!fresh || !fresh.description) {
-        openMealPresetEditModal(slot, 'define', dateIso, onChanged);
-      } else {
-        mainBtn.disabled = true;
-        try {
-          const entry = await addMealFromPreset(dateIso, slot);
-          if (entry) {
-            const t = (entry.time || '').slice(0, 5);
-            showToast(`Petit-dej ajouté à ${t}`);
-            if (onChanged) await onChanged();
-          } else {
-            showToast('Erreur ajout');
-          }
-        } finally {
+      mainBtn.disabled = true;
+      try {
+        const fresh = await loadMealPreset(slot);
+        if (!fresh || !fresh.description) {
           mainBtn.disabled = false;
+          openMealPresetEditModal(slot, 'define', dateIso, onChanged);
+          return;
         }
+        const entry = await addMealFromPreset(dateIso, slot);
+        if (entry) {
+          const t = (entry.time || '').slice(0, 5);
+          showToast(`Petit-dej ajouté à ${t}`);
+          if (onChanged) await onChanged();
+        } else {
+          showToast('Erreur ajout');
+        }
+      } finally {
+        mainBtn.disabled = false;
       }
     });
 
@@ -3295,7 +3296,8 @@ function openMealPresetEditModal(slot, mode, dateIso, onSaved) {
 
       // En mode 'define', insérer aussi une entrée alimentaire avec ce preset
       if (mode === 'define') {
-        await addMealFromPreset(dateIso, slot);
+        const entry = await addMealFromPreset(dateIso, slot);
+        if (!entry) throw new Error("Preset sauvegardé, mais l'insertion de l'entrée a échoué.");
       }
 
       close();
