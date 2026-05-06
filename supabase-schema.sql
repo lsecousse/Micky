@@ -165,6 +165,34 @@ create policy "Coach lit les entrées alimentaires de ses clients" on public.foo
     )
   );
 
+-- 5b. Table meal_presets (presets repas — petit-dej avant/après salle)
+create table if not exists public.meal_presets (
+  id            uuid default gen_random_uuid() primary key,
+  client_id     uuid references public.profiles(id) on delete cascade,
+  slot          text not null check (slot in ('pre_gym', 'post_gym')),
+  description   text not null,
+  kcal          numeric,
+  proteines_g   numeric,
+  glucides_g    numeric,
+  lipides_g     numeric,
+  updated_at    timestamptz default now(),
+  unique (client_id, slot)
+);
+
+alter table public.meal_presets enable row level security;
+
+create policy "Client gère ses presets repas" on public.meal_presets
+  for all using (auth.uid() = client_id)
+  with check (auth.uid() = client_id);
+
+create policy "Coach lit les presets repas de ses clients" on public.meal_presets
+  for select using (
+    exists (
+      select 1 from public.profiles p
+      where p.id = meal_presets.client_id and p.coach_id = auth.uid()
+    )
+  );
+
 -- Bucket Storage food-photos + policies à créer manuellement via l'interface Supabase
 -- (cf docs/superpowers/plans/2026-04-19-suivi-alimentaire.md Task 1)
 
