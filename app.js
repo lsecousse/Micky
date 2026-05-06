@@ -3158,6 +3158,87 @@ function openAddMealModal(dateIso, onSaved) {
   setTimeout(() => textEl.focus(), 50);
 }
 
+/**
+ * Ouvre le modal de définition/édition d'un preset petit-dej.
+ * mode: 'define' (preset vide → save crée preset + insère food_entry)
+ *       'edit'   (preset existe → save met à jour preset uniquement)
+ * @param {'pre_gym'|'post_gym'} slot
+ * @param {'define'|'edit'} mode
+ * @param {string} dateIso  date du jour (utile uniquement en mode 'define' pour insertion)
+ * @param {() => Promise<void>} onSaved  callback de refresh
+ */
+function openMealPresetEditModal(slot, mode, dateIso, onSaved) {
+  const modal     = document.getElementById('meal-preset-modal');
+  const titleEl   = document.getElementById('meal-preset-title');
+  const textEl    = document.getElementById('meal-preset-text');
+  const errorEl   = document.getElementById('meal-preset-error');
+  const saveBtn   = document.getElementById('meal-preset-save');
+  const cancelBtn = document.getElementById('meal-preset-cancel');
+
+  const slotLabel = slot === 'pre_gym' ? 'avant salle' : 'après salle';
+  titleEl.textContent = mode === 'define'
+    ? `Définir petit-dej ${slotLabel}`
+    : `Modifier petit-dej ${slotLabel}`;
+
+  textEl.value = '';
+  errorEl.textContent = '';
+  errorEl.classList.add('hidden');
+  saveBtn.disabled = false;
+  saveBtn.textContent = 'Estimer & sauvegarder';
+
+  // En mode édition, pré-remplir avec la description existante
+  if (mode === 'edit') {
+    loadMealPreset(slot).then(p => { if (p?.description) textEl.value = p.description; });
+  }
+
+  function close() {
+    modal.classList.add('hidden');
+  }
+
+  cancelBtn.onclick = close;
+  modal.querySelector('.live-edit-modal-overlay').onclick = close;
+
+  saveBtn.onclick = async () => {
+    const text = textEl.value.trim();
+    if (!text) {
+      errorEl.textContent = 'Décris ton petit-dej.';
+      errorEl.classList.remove('hidden');
+      return;
+    }
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Estimation…';
+    errorEl.classList.add('hidden');
+
+    try {
+      const macros = await estimateMealMacros(text);
+      const preset = await upsertMealPreset(slot, {
+        description: text,
+        kcal:        macros?.kcal        ?? null,
+        proteines_g: macros?.proteines_g ?? null,
+        glucides_g:  macros?.glucides_g  ?? null,
+        lipides_g:   macros?.lipides_g   ?? null,
+      });
+      if (!preset) throw new Error('Échec sauvegarde du preset.');
+
+      // En mode 'define', insérer aussi une entrée alimentaire avec ce preset
+      if (mode === 'define') {
+        await addMealFromPreset(dateIso, slot);
+      }
+
+      close();
+      if (onSaved) await onSaved();
+    } catch (e) {
+      errorEl.textContent = e.message || 'Erreur lors de la sauvegarde.';
+      errorEl.classList.remove('hidden');
+      saveBtn.disabled = false;
+      saveBtn.textContent = 'Estimer & sauvegarder';
+    }
+  };
+
+  modal.classList.remove('hidden');
+  setTimeout(() => textEl.focus(), 50);
+}
+
 async function estimateMealMacros(text) {
   const apiKey = await getClaudeApiKeyDB();
   if (!apiKey) throw new Error('Clé API Claude manquante.');
