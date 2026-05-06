@@ -2893,6 +2893,69 @@ async function computeBmrKcal() {
 /* ═══════════════════════════════════════════════════════
    ALIMENTATION
 ═══════════════════════════════════════════════════════ */
+
+/**
+ * Construit la ligne UI [bouton principal | ⚙️] pour un slot preset.
+ * Tap principal :
+ *   - preset vide → ouvre modal mode 'define'
+ *   - preset rempli → addMealFromPreset + toast
+ * Tap ⚙️ : ouvre modal mode 'edit' (caché si preset vide).
+ */
+async function renderMealPresetButtons(container, dateIso, onChanged) {
+  const presets = await loadMealPresets();
+  const bySlot = Object.fromEntries(presets.map(p => [p.slot, p]));
+
+  const slots = [
+    { slot: 'pre_gym',  emoji: '☕', label: 'Petit-dej avant salle' },
+    { slot: 'post_gym', emoji: '🥛', label: 'Petit-dej après salle' },
+  ];
+
+  for (const { slot, emoji, label } of slots) {
+    const preset = bySlot[slot] || null;
+    const row = document.createElement('div');
+    row.className = 'alim-preset-row';
+
+    const mainBtn = document.createElement('button');
+    mainBtn.className = 'btn-secondary alim-preset-btn';
+    mainBtn.textContent = `${emoji} ${label}`;
+
+    const editBtn = document.createElement('button');
+    editBtn.className = 'btn-secondary alim-preset-edit';
+    editBtn.textContent = '⚙️';
+    if (!preset) editBtn.classList.add('hidden');
+
+    mainBtn.addEventListener('click', async () => {
+      if (mainBtn.disabled) return;
+      const fresh = await loadMealPreset(slot);
+      if (!fresh || !fresh.description) {
+        openMealPresetEditModal(slot, 'define', dateIso, onChanged);
+      } else {
+        mainBtn.disabled = true;
+        try {
+          const entry = await addMealFromPreset(dateIso, slot);
+          if (entry) {
+            const t = (entry.time || '').slice(0, 5);
+            showToast(`Petit-dej ajouté à ${t}`);
+            if (onChanged) await onChanged();
+          } else {
+            showToast('Erreur ajout');
+          }
+        } finally {
+          mainBtn.disabled = false;
+        }
+      }
+    });
+
+    editBtn.addEventListener('click', () => {
+      openMealPresetEditModal(slot, 'edit', dateIso, onChanged);
+    });
+
+    row.appendChild(mainBtn);
+    row.appendChild(editBtn);
+    container.appendChild(row);
+  }
+}
+
 async function renderAlimentation() {
   const body = document.getElementById('screen-alim-body');
   body.innerHTML = '<p class="empty-msg">Chargement…</p>';
@@ -2920,6 +2983,10 @@ async function renderAlimentation() {
   const bilanCard = document.createElement('div');
   bilanCard.className = 'alim-bilan';
   body.appendChild(bilanCard);
+
+  // ── Preset buttons (petit-dej avant/après salle) ─────
+  const presetContainer = document.createElement('div');
+  body.appendChild(presetContainer);
 
   // ── Action buttons ───────────────────────────────────
   const addBtn = document.createElement('button');
@@ -3053,12 +3120,18 @@ async function renderAlimentation() {
     });
   }
 
-  dateInput.addEventListener('change', refresh);
-  addBtn.addEventListener('click', () => openAddMealModal(dateInput.value, refresh));
+  async function refreshAll() {
+    presetContainer.innerHTML = '';
+    await renderMealPresetButtons(presetContainer, dateInput.value, refreshAll);
+    await refresh();
+  }
+
+  dateInput.addEventListener('change', refreshAll);
+  addBtn.addEventListener('click', () => openAddMealModal(dateInput.value, refreshAll));
   adviceBtn.addEventListener('click', () => openEveningAdviceModal(dateInput.value));
   askBtn.addEventListener('click', () => openAskQuestionModal(dateInput.value));
 
-  await refresh();
+  await refreshAll();
 }
 
 function showFoodPhotoModal(url) {
