@@ -1838,3 +1838,25 @@ input:focus { border-color: var(--accent); }
   cursor: pointer;
   font-size: 14px;
 }
+
+/* Boutons preset petit-dej dans l'écran alim */
+.alim-preset-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.alim-preset-row .alim-preset-btn {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.alim-preset-row .alim-preset-edit {
+  flex: 0 0 auto;
+  width: 44px;
+  padding: 0;
+  font-size: 16px;
+}
+.alim-preset-edit.hidden { display: none; }
