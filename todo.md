@@ -25,7 +25,7 @@ Tokens lockés dans `CLAUDE.md` + `tailwind.config.js`:
 - [x] **A3b** — Cardio (renderLiveCardio tokens A: numero racing + 3 inputs cyan + state btn acid) + redesign live en `renderExerciseDetail` (table 3-cols Charge/Reps/Repos, border-left acid/racing/transparent, Σ cyan, Suite list). Suppressions : `renderActivityFocus`, `renderRestSplit`, `nextExerciseFirst`. Le repos vit dans la sticky `#countdown-bar` (plus de page dédiée).
 
 ## À faire — ordre proposé
-- [ ] **A4** — Historique (liste séances par date, cards avec volume/tonnage/reps cyan, tap pour modal détail).
+- [x] **A4** — Historique (`renderHistory`): sticky header tokens A + masthead H1 split acid + groupement par mois avec sous-total tonnage cyan + cards séances border-l acid (fini) / racing (en cours) + volume cyan kg + reps muted. Modal détail (`openModal`): masthead H1 + stats 3-cols cyan (Volume/Tonnage/Reps) + table séries par exo border-l acid + repos acid + feedback IA card inkAlt + CTAs (Reprendre racing / Supprimer blood). Modal scaffold override `.modal-content` → bg-ink rounded-none.
 - [ ] **A5** — Stats (Chart.js: datasets en cyan/acid/racing, axes en muted, gridlines border).
 - [ ] **A6** — Alimentation (suivi repas, totaux journaliers cyan).
 - [ ] **A7** — Formulaires: Login / Profil / Corps / Claude API / Params. Inputs border-border, focus acid, labels eyebrow muted, primary CTA bg-acid text-ink.

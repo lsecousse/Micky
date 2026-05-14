@@ -2688,33 +2688,108 @@ async function renderHistory() {
   const sessions = (await loadSessions()).slice().sort((a, b) => b.date.localeCompare(a.date));
 
   if (!sessions.length) {
-    list.innerHTML = '<p class="empty-msg">Aucune séance enregistrée.</p>';
+    list.innerHTML = `
+      <div class="px-5 pt-12 text-center font-display italic text-[16px] text-muted">
+        Aucune séance enregistrée.
+      </div>
+    `;
     return;
   }
 
+  // Group by year-month
+  const groups = new Map();
+  sessions.forEach(s => {
+    const key = (s.date || '').slice(0, 7); // YYYY-MM
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(s);
+  });
+
+  const monthLabel = (key) => {
+    const [y, m] = key.split('-');
+    const d = new Date(parseInt(y), parseInt(m) - 1, 1);
+    return d.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+  };
+
   list.innerHTML = '';
-  sessions.forEach(session => {
-    const card = document.createElement('div');
-    const isAbandoned = !session.duration;
-    card.className = 'session-card' + (isAbandoned ? ' session-card--inprogress' : '');
-    const done = totalVolume(session.exercises);
-    const planned = plannedVolume(session.exercises);
-    const name = session.programmeName || session.name || 'Séance';
-    const volDisplay = planned > 0 && done !== planned
-      ? `${done.toLocaleString('fr-FR')} kg / ${planned.toLocaleString('fr-FR')} kg`
-      : `${done.toLocaleString('fr-FR')} kg`;
-    card.innerHTML = `
-      <div class="session-card-header">
-        <span class="session-name">${name}${isAbandoned ? ' <span class="session-badge-inprogress">En cours</span>' : ''}</span>
-        <span class="session-date">${formatDate(session.date)}</span>
-      </div>
-      <div class="session-meta">
-        ${session.exercises.length} exercice${session.exercises.length > 1 ? 's' : ''}
-        · ${volDisplay}
-      </div>
+
+  // Header avec totaux globaux
+  const totalSessions = sessions.length;
+  const totalVol      = sessions.reduce((s, x) => s + totalVolume(x.exercises), 0);
+  const totalTon      = (totalVol / 1000).toFixed(1).replace('.', ',');
+  const totalExos     = sessions.reduce((s, x) => s + x.exercises.length, 0);
+
+  const masthead = document.createElement('section');
+  masthead.className = 'px-5 pt-9 pb-9 accent-line';
+  masthead.innerHTML = `
+    <h1 class="font-display font-black h-display text-paper">
+      Tes<br/>
+      <span class="text-paper/40"><span class="text-acid not-italic font-black">·</span> séances.</span>
+    </h1>
+    <p class="font-sans text-[10px] uppercase tracking-eyebrow text-muted mt-5">
+      ${String(totalSessions).padStart(2, '0')} séances · ${totalExos} exercices · ${totalTon} t cumulées
+    </p>
+  `;
+  list.appendChild(masthead);
+
+  // Groupes mois
+  [...groups.entries()].forEach(([monthKey, monthSessions]) => {
+    const section = document.createElement('section');
+    section.className = 'mb-8';
+
+    const monthHeader = document.createElement('header');
+    monthHeader.className = 'flex items-baseline justify-between mb-3 px-5';
+    const monthVol = monthSessions.reduce((s, x) => s + totalVolume(x.exercises), 0);
+    monthHeader.innerHTML = `
+      <h3 class="font-display italic font-bold text-[14px] uppercase tracking-eyebrow text-paper">${monthLabel(monthKey)}</h3>
+      <span class="font-sans text-[10px] uppercase tracking-eyebrow text-cyan num-stat">${(monthVol / 1000).toFixed(1).replace('.', ',')} t</span>
     `;
-    card.addEventListener('click', () => openModal(session));
-    list.appendChild(card);
+    section.appendChild(monthHeader);
+
+    const ul = document.createElement('ul');
+    ul.className = 'border-y border-border';
+
+    monthSessions.forEach((session, idx) => {
+      const isAbandoned = !session.duration;
+      const done    = Math.round(totalVolume(session.exercises));
+      const planned = Math.round(plannedVolume(session.exercises));
+      const reps    = session.exercises.reduce((acc, ex) => {
+        const e = migrateExercise(ex);
+        return acc + (e.series?.reduce((sa, s) => {
+          return sa + (e.activities || []).reduce((aa, act, j) => {
+            const v = s.values?.[j];
+            return aa + (act.type === 'weight' && s.activityStates?.[j] === 'done' ? (v?.reps || 0) : 0);
+          }, 0);
+        }, 0) || 0);
+      }, 0);
+
+      const borderLeft = isAbandoned ? 'border-l-[3px] border-l-racing bg-racing/[0.04]' : 'border-l-[3px] border-l-acid';
+      const isLast = idx === monthSessions.length - 1;
+
+      const name = session.programmeName || session.name || 'Séance';
+      const li = document.createElement('li');
+      li.innerHTML = `
+        <button class="w-full text-left flex items-start gap-4 px-5 py-4 ${isLast ? '' : 'border-b border-border/70'} ${borderLeft} active:bg-inkAlt transition">
+          <div class="flex-1 min-w-0">
+            <h4 class="font-display font-bold italic text-[18px] leading-tight text-paper truncate">${name}</h4>
+            <p class="font-sans text-[9px] uppercase tracking-eyebrow text-muted mt-1.5 flex items-center gap-2 flex-wrap">
+              <span>${formatDate(session.date)}</span>
+              ${session.duration ? `<span class="text-muted/50">·</span><span>${formatDuration(session.duration)}</span>` : `<span class="text-muted/50">·</span><span class="text-racing">En cours</span>`}
+              <span class="text-muted/50">·</span>
+              <span>${session.exercises.length} exo${session.exercises.length > 1 ? 's' : ''}</span>
+            </p>
+          </div>
+          <div class="text-right shrink-0 leading-none">
+            <p class="font-display font-bold text-[18px] num-stat text-cyan leading-none">${done.toLocaleString('fr-FR')}<span class="font-sans font-medium text-[9px] tracking-eyebrow text-muted ml-1 align-baseline">kg</span></p>
+            ${reps > 0 ? `<p class="font-sans font-medium text-[10px] uppercase tracking-eyebrow text-muted num-stat mt-1.5">${reps} reps</p>` : ''}
+          </div>
+        </button>
+      `;
+      li.querySelector('button').addEventListener('click', () => openModal(session));
+      ul.appendChild(li);
+    });
+
+    section.appendChild(ul);
+    list.appendChild(section);
   });
 }
 
@@ -2753,72 +2828,120 @@ async function resumeSessionFromHistory(session) {
 ═══════════════════════════════════════════════════════ */
 async function openModal(session) {
   const body = document.getElementById('modal-body');
-  const done = totalVolume(session.exercises);
-  const planned = plannedVolume(session.exercises);
+  const done = Math.round(totalVolume(session.exercises));
+  const planned = Math.round(plannedVolume(session.exercises));
   const name = session.programmeName || session.name || 'Séance';
-  const volDisplay = planned > 0 && done !== planned
-    ? `${done.toLocaleString('fr-FR')} kg / ${planned.toLocaleString('fr-FR')} kg`
-    : `${done.toLocaleString('fr-FR')} kg`;
   const isAbandoned = !session.duration;
+  const tonnage = (done / 1000).toFixed(1).replace('.', ',');
+  const { line1, sep, rest } = splitProgrammeTitle(name);
 
-  const timeLine = session.startedAt
-    ? `${formatDate(session.date)} · ${formatTime(session.startedAt)}${session.duration ? ` · ${formatDuration(session.duration)}` : ''}`
-    : formatDate(session.date);
+  // Reps cumulés
+  const totalRepsDone = session.exercises.reduce((acc, ex) => {
+    const e = migrateExercise(ex);
+    return acc + (e.series || []).reduce((sa, s) => {
+      return sa + (e.activities || []).reduce((aa, act, j) => {
+        const v = s.values?.[j];
+        return aa + (act.type === 'weight' && s.activityStates?.[j] === 'done' ? (v?.reps || 0) : 0);
+      }, 0);
+    }, 0);
+  }, 0);
 
+  // Masthead H1 split + status row
   let html = `
-    <div class="modal-title">${name}</div>
-    <div class="modal-date">${timeLine} · ${volDisplay}</div>
+    <!-- Status row -->
+    <div class="px-5 pt-5 pb-3 flex items-center justify-between font-sans text-[10px] uppercase tracking-eyebrow text-muted">
+      <div class="flex items-center gap-2">
+        <span>${formatDate(session.date)}</span>
+        ${session.startedAt ? `<span class="text-muted/50">·</span><span>${formatTime(session.startedAt)}</span>` : ''}
+        ${session.duration ? `<span class="text-muted/50">·</span><span>${formatDuration(session.duration)}</span>` : `<span class="text-muted/50">·</span><span class="text-racing">En cours</span>`}
+      </div>
+    </div>
+
+    <!-- Masthead H1 -->
+    <section class="px-5 pt-2 pb-7 accent-line">
+      <h1 class="font-display font-black h-display text-paper">
+        ${line1}${sep ? `<br/><span class="text-paper/40"><span class="text-acid not-italic font-black">${sep}</span> ${rest}.</span>` : ''}
+      </h1>
+    </section>
+
+    <!-- Stats strip cyan -->
+    <div class="grid grid-cols-3 border-y border-border">
+      <div class="px-3 py-3 border-r border-border min-w-0">
+        <p class="font-sans text-[8px] uppercase tracking-[0.40em] text-muted mb-1.5">Volume</p>
+        <p class="font-display font-bold text-[17px] num-stat text-cyan leading-none truncate">${done.toLocaleString('fr-FR')}<span class="font-sans text-[9px] uppercase tracking-eyebrow text-muted ml-1">kg</span></p>
+      </div>
+      <div class="px-3 py-3 border-r border-border min-w-0">
+        <p class="font-sans text-[8px] uppercase tracking-[0.40em] text-muted mb-1.5">Tonnage</p>
+        <p class="font-display font-bold text-[17px] num-stat text-cyan leading-none truncate">${tonnage}<span class="font-sans text-[9px] uppercase tracking-eyebrow text-muted ml-1">t</span></p>
+      </div>
+      <div class="px-3 py-3 min-w-0">
+        <p class="font-sans text-[8px] uppercase tracking-[0.40em] text-muted mb-1.5">Reps</p>
+        <p class="font-display font-bold text-[17px] num-stat text-cyan leading-none truncate">${totalRepsDone.toLocaleString('fr-FR')}</p>
+      </div>
+    </div>
   `;
 
+  // Exercices
   session.exercises.forEach(ex => {
     const e = migrateExercise(ex);
-    const actHeaders = e.activities.map(act => {
-      const label = act.name ? `<span class="modal-act-label">${act.name}</span> ` : '';
-      return act.type === 'weight'
-        ? `<th>${label}Reps</th><th>kg</th>`
-        : `<th>${label}Durée (s)</th>`;
-    }).join('');
-    html += `<div class="modal-exercise">
-      <div class="modal-exercise-name">${e.name}</div>
-      <table class="modal-series-table">
-        <thead><tr><th>#</th>${actHeaders}<th></th></tr></thead>
-        <tbody>
-          ${e.series.map((s, i) => `
-            <tr class="${s.done === false ? 'series-not-done' : ''}">
-              <td>${i + 1}</td>
-              ${e.activities.map((act, j) => {
-                const v = s.values?.[j] || {};
-                return act.type === 'weight'
-                  ? `<td>${v.reps ?? '—'}</td><td>${v.weight ?? '—'}</td>`
-                  : `<td>${v.duration ?? '—'}</td>`;
-              }).join('')}
-              <td>${s.done === false ? '—' : '✓'}</td>
-            </tr>
-          `).join('')}
-        </tbody>
-      </table>
-    </div>`;
+    const muscle = e.activities?.[0]?.name || '';
+    html += `
+      <article class="mt-6">
+        <header class="px-5 mb-3">
+          <h2 class="font-display font-bold text-[20px] leading-[1.1] text-paper">${e.name}</h2>
+          ${muscle ? `<p class="font-sans text-[10px] uppercase tracking-eyebrow text-muted mt-1.5">${muscle}</p>` : ''}
+        </header>
+        <div class="border-y border-border">
+          ${e.series.map((s, i) => {
+            const allDone = (e.activities || []).every((_, a) => s.activityStates?.[a] === 'done' || s.done !== false);
+            const borderLeft = allDone ? 'border-l-[3px] border-l-acid' : 'border-l-[3px] border-l-transparent opacity-50';
+            const restColor = allDone ? 'text-acid' : 'text-muted';
+            return e.activities.map((act, j) => {
+              const v = s.values?.[j] || {};
+              const isWeight = act.type === 'weight';
+              const charge = isWeight
+                ? `${v.weight ?? '—'}<span class="font-sans font-medium text-[10px] tracking-eyebrow text-muted ml-1.5">kg</span>`
+                : `${v.duration ?? '—'}<span class="font-sans font-medium text-[10px] tracking-eyebrow text-muted ml-1.5">s</span>`;
+              const second = isWeight ? `× ${v.reps ?? '—'}` : (act.label || act.name || '—');
+              const restSecs = act.rest || 0;
+              const restLabel = restSecs > 0 ? `${Math.floor(restSecs / 60)}:${String(restSecs % 60).padStart(2, '0')}` : '—';
+              return `
+                <div class="grid grid-cols-[1fr_60px_70px] gap-4 items-baseline px-5 py-3 ${borderLeft} border-b border-border/70 last:border-b-0">
+                  <span class="font-display font-bold text-[20px] num-stat text-paper">${charge}</span>
+                  <span class="font-display font-bold text-[14px] num-stat text-paper text-right">${second}</span>
+                  <span class="font-sans text-[9px] uppercase tracking-eyebrow ${restColor} num-stat text-right font-semibold">${restLabel}</span>
+                </div>
+              `;
+            }).join('');
+          }).join('')}
+        </div>
+      </article>
+    `;
   });
 
+  // Feedback IA
   if (session.feedbackIa) {
     html += `
-      <div class="feedback-ia-card">
-        <div class="feedback-ia-title">🤖 Feedback IA</div>
-        <div class="feedback-ia-content">${formatFeedback(session.feedbackIa)}</div>
+      <div class="mx-5 mt-8 border border-border bg-inkAlt p-4 space-y-2">
+        <p class="font-sans text-[10px] uppercase tracking-eyebrow text-acid font-semibold">Feedback IA</p>
+        <div class="font-sans text-[13px] text-paper leading-relaxed">${formatFeedback(session.feedbackIa)}</div>
       </div>
     `;
   } else if (!isAbandoned) {
     html += `
-      <div class="feedback-ia-generate" id="feedback-ia-generate-wrap">
-        <button class="btn-primary" id="feedback-ia-generate">🤖 Générer l'analyse IA</button>
+      <div class="px-5 mt-8" id="feedback-ia-generate-wrap">
+        <button id="feedback-ia-generate" class="w-full py-3 border border-border text-paper font-sans text-[11px] uppercase tracking-eyebrow active:border-acid active:text-acid transition">Générer l'analyse IA</button>
       </div>
     `;
   }
 
-  html += `<div class="modal-footer${isAbandoned ? ' modal-footer--two' : ''}">
-    ${isAbandoned ? '<button class="btn-primary" id="resume-session">Reprendre la séance</button>' : ''}
-    <button class="btn-danger" id="delete-session">Supprimer la séance</button>
-  </div>`;
+  // Footer actions
+  html += `
+    <div class="px-5 mt-8 mb-6 grid ${isAbandoned ? 'grid-cols-2 gap-3' : 'grid-cols-1'}">
+      ${isAbandoned ? `<button id="resume-session" class="py-4 bg-racing text-ink font-display font-bold text-[14px] uppercase tracking-eyebrow active:bg-racing/80 transition">▶ Reprendre</button>` : ''}
+      <button id="delete-session" class="py-4 border border-blood text-blood font-display font-bold text-[14px] uppercase tracking-eyebrow active:bg-blood active:text-paper transition">Supprimer</button>
+    </div>
+  `;
 
   body.innerHTML = html;
   if (isAbandoned) {

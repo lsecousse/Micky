@@ -93,13 +93,14 @@
 
     <!-- HISTORIQUE -->
     <div id="screen-history" class="screen">
-      <div class="screen-header">
-        <button class="screen-back" id="back-history">←</button>
-        <span class="screen-title">Historique</span>
-      </div>
-      <div class="screen-body">
-        <div id="history-list"></div>
-      </div>
+      <header class="sticky top-0 z-10 bg-ink/96 backdrop-blur-sm border-b border-border px-5 py-4 flex items-center gap-4">
+        <button id="back-history" class="flex items-center gap-2 font-sans text-[11px] uppercase tracking-eyebrow text-paper active:text-acid transition">
+          <span aria-hidden class="text-[18px] leading-none">←</span>
+          <span>Retour</span>
+        </button>
+        <div class="font-display font-bold italic text-[15px] leading-tight text-paper">Historique</div>
+      </header>
+      <main id="history-list" class="flex-1 min-h-0 overflow-y-auto"></main>
     </div>
 
     <!-- STATS -->
@@ -199,8 +200,8 @@
 
   <!-- MODAL DÉTAIL SÉANCE -->
   <div id="modal" class="modal hidden">
-    <div class="modal-content">
-      <button class="modal-close" id="modal-close">✕</button>
+    <div class="modal-content !bg-ink !p-0 !rounded-t-none border-t border-border">
+      <button class="modal-close !bg-inkAlt !border !border-border !text-paper !rounded-none" id="modal-close">✕</button>
       <div id="modal-body"></div>
     </div>
   </div>
