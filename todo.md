@@ -26,9 +26,14 @@ Tokens lockés dans `CLAUDE.md` + `tailwind.config.js`:
 
 ## À faire — ordre proposé
 - [x] **A4** — Historique (`renderHistory`): sticky header tokens A + masthead H1 split acid + groupement par mois avec sous-total tonnage cyan + cards séances border-l acid (fini) / racing (en cours) + volume cyan kg + reps muted. Modal détail (`openModal`): masthead H1 + stats 3-cols cyan (Volume/Tonnage/Reps) + table séries par exo border-l acid + repos acid + feedback IA card inkAlt + CTAs (Reprendre racing / Supprimer blood). Modal scaffold override `.modal-content` → bg-ink rounded-none.
-- [ ] **A5** — Stats (Chart.js: datasets en cyan/acid/racing, axes en muted, gridlines border).
-- [ ] **A6** — Alimentation (suivi repas, totaux journaliers cyan).
-- [ ] **A7** — Formulaires: Login / Profil / Corps / Claude API / Params. Inputs border-border, focus acid, labels eyebrow muted, primary CTA bg-acid text-ink.
+- [x] **A5** — Stats (`renderStats` + `buildStatsProgression`): scaffold tokens A, masthead "Tes · progrès." split. Pills programme (racing actif, border-border + paper sinon). Metric toggle segmented (acid bg-acid/6% + bord-top 2px acid). Cards exo : delta acid (up) / blood (down) / muted (=). Chart.js palette Direction A `[cyan, acid, racing, paper, blood]` rotation. Axes/gridlines/border en `#2A2A2A`. Tooltip bg ink + border border + titleColor paper.
+- [x] **A6** — Alimentation (`renderAlimentation`): scaffold sticky tokens A, masthead "Tes · apports." split. Date input border focus acid. Bilan : strip 4 cols cyan (Apports/Métabolisme/Dépenses/Net) + macros P/G/L sous-ligne + net coloré (acid négatif/blood positif/cyan neutre). Preset rows (petit-dej avant/après) border-border. CTAs : Ajouter repas (acid full) / Conseil / Question (border). Timeline ul : meal border-l-acid + kcal acid · session_burn border-l-racing bg-racing/4% + kcal racing. Empty state italic muted.
+- [x] **A7** — Formulaires migrés tokens A:
+  - **Login** (index.html): masthead "Coach · Mike." split acid + inputs border-b + CTA acid.
+  - **Profil** (`renderProfil`): masthead "Tes · infos." + helpers `makeField` / `makeSegment` / `makeOptionList`. Sexe segmented, Activité option-list.
+  - **Claude API** (`renderClaudeApi`): masthead "Clé · Claude." + input password border-b avec toggle 👁 border + CTA acid.
+  - **Corps** (`renderCorps`): masthead "Ton · corps." + grid 2 cols champs num avec border-b + diff acid/blood. Trend strip 2x2 cyan avec badge IMG. Charts ineline + historique cards inline.
+  - **Params** (`renderParams`): masthead "Tes · programmes." + liste avec ↑↓ reorder border + Modifier/Suppr inline + Nouveau programme border.
 - [ ] **A8** — Modals & overlays: loading screen + dialog + modal détail + live-edit-modal + meal modals + chrono / minuterie / countdown fullscreen.
 - [ ] **A9** — Cleanup `style.css`: purger règles orphelines (`.home-*`, `.btn-*`, `.screen-*`, `.live-*`, `.dialog-*`, `.modal-*`, `.programme-*`, `.section-title`, `.empty-msg`, etc.). Conserver routing (`.screen` / `.screen.active`) et resets globaux.
 

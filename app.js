@@ -355,128 +355,135 @@ function buildUserDropdown() {
 /* ═══════════════════════════════════════════════════════
    PROFIL
 ═══════════════════════════════════════════════════════ */
+// Helper : champ formulaire tokens A (label eyebrow muted + input border-bottom)
+function makeField(label, opts = {}) {
+  const { type = 'text', value = '', placeholder = '', readonly = false, inputMode = '', min, max, maxLength } = opts;
+  const wrap = document.createElement('div');
+  wrap.className = 'mb-5';
+  const lab = document.createElement('p');
+  lab.className = 'font-sans text-[9px] uppercase tracking-[0.40em] text-muted mb-1.5';
+  lab.textContent = label;
+  const input = document.createElement('input');
+  input.type = type;
+  input.value = value ?? '';
+  if (placeholder) input.placeholder = placeholder;
+  if (readonly) { input.readOnly = true; input.classList.add('opacity-50'); }
+  if (inputMode) input.inputMode = inputMode;
+  if (min != null) input.min = String(min);
+  if (max != null) input.max = String(max);
+  if (maxLength != null) input.maxLength = maxLength;
+  input.className = 'w-full bg-transparent border-b border-border focus:border-acid font-sans text-[16px] text-paper py-2 outline-none transition';
+  wrap.append(lab, input);
+  return { wrap, input };
+}
+
+// Helper : segmented buttons (radio-like)
+function makeSegment(options, selected, onChange) {
+  const wrap = document.createElement('div');
+  wrap.className = 'grid grid-cols-2 gap-2';
+  const buttons = [];
+  const refresh = (active) => {
+    buttons.forEach(b => {
+      b.className = (b.dataset.val === active)
+        ? 'py-3 border border-acid bg-acid/[0.10] text-acid font-sans text-[11px] uppercase tracking-eyebrow font-semibold transition'
+        : 'py-3 border border-border text-paper font-sans text-[11px] uppercase tracking-eyebrow active:border-paper transition';
+    });
+  };
+  options.forEach(({ val, label }) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = label;
+    b.dataset.val = val;
+    b.addEventListener('click', () => { onChange(val); refresh(val); });
+    buttons.push(b);
+    wrap.appendChild(b);
+  });
+  refresh(selected);
+  return wrap;
+}
+
+// Helper : option list (full-width buttons stacked)
+function makeOptionList(options, selected, onChange) {
+  const wrap = document.createElement('div');
+  wrap.className = 'flex flex-col gap-2';
+  const buttons = [];
+  const refresh = (active) => {
+    buttons.forEach(b => {
+      b.className = (b.dataset.val === active)
+        ? 'py-3 px-4 border border-acid bg-acid/[0.10] text-acid font-sans text-[11px] uppercase tracking-eyebrow font-semibold text-left transition'
+        : 'py-3 px-4 border border-border text-paper font-sans text-[11px] uppercase tracking-eyebrow text-left active:border-paper transition';
+    });
+  };
+  options.forEach(({ val, label }) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = label;
+    b.dataset.val = val;
+    b.addEventListener('click', () => { onChange(val); refresh(val); });
+    buttons.push(b);
+    wrap.appendChild(b);
+  });
+  refresh(selected);
+  return wrap;
+}
+
 function renderProfil() {
   const body = document.getElementById('screen-profil-body');
   body.innerHTML = '';
 
+  // Masthead
+  const masthead = document.createElement('section');
+  masthead.className = 'px-5 pt-9 pb-9 accent-line';
+  masthead.innerHTML = `
+    <h1 class="font-display font-black h-display text-paper">
+      Tes<br/>
+      <span class="text-paper/40"><span class="text-acid not-italic font-black">·</span> infos.</span>
+    </h1>
+  `;
+  body.appendChild(masthead);
+
   const form = document.createElement('div');
-  form.style.cssText = 'display:flex;flex-direction:column;gap:12px;padding:8px 0';
+  form.className = 'px-5 pt-6 pb-12';
 
-  // Email (lecture seule)
-  const emailLabel = document.createElement('label');
-  emailLabel.className = 'corps-field-label';
-  emailLabel.textContent = 'Email';
-  const emailInput = document.createElement('input');
-  emailInput.type = 'text';
-  emailInput.value = currentUser?.email || '';
-  emailInput.readOnly = true;
-  emailInput.style.opacity = '0.5';
-
-  // Nom
-  const nomLabel = document.createElement('label');
-  nomLabel.className = 'corps-field-label';
-  nomLabel.textContent = 'Nom';
-  const nomInput = document.createElement('input');
-  nomInput.type = 'text';
-  nomInput.placeholder = 'Nom';
-  nomInput.maxLength = 60;
-  nomInput.value = currentProfile?.nom || '';
-
-  // Prénom
-  const prenomLabel = document.createElement('label');
-  prenomLabel.className = 'corps-field-label';
-  prenomLabel.textContent = 'Prénom';
-  const prenomInput = document.createElement('input');
-  prenomInput.type = 'text';
-  prenomInput.placeholder = 'Prénom';
-  prenomInput.maxLength = 60;
-  prenomInput.value = currentProfile?.prenom || '';
-
-  // Taille
-  const tailleLabel = document.createElement('label');
-  tailleLabel.className = 'corps-field-label';
-  tailleLabel.textContent = 'Taille (cm)';
-  const tailleInput = document.createElement('input');
-  tailleInput.type = 'number';
-  tailleInput.inputMode = 'numeric';
-  tailleInput.min = '50';
-  tailleInput.max = '250';
-  tailleInput.placeholder = '180';
-  tailleInput.value = currentProfile?.taille_cm ?? '';
-
-  // Date de naissance
-  const dnLabel = document.createElement('label');
-  dnLabel.className = 'corps-field-label';
-  dnLabel.textContent = 'Date de naissance';
-  const dnInput = document.createElement('input');
-  dnInput.type = 'date';
-  dnInput.value = currentProfile?.date_naissance || '';
-
-  // Sexe
-  const sexeLabel = document.createElement('label');
-  sexeLabel.className = 'corps-field-label';
-  sexeLabel.textContent = 'Sexe';
-  const sexeWrap = document.createElement('div');
-  sexeWrap.style.cssText = 'display:flex;gap:8px';
-  const applySexeStyle = (b, active) => {
-    if (active) {
-      b.className = 'btn-primary btn-sm';
-    } else {
-      b.className = 'btn-secondary btn-sm';
-    }
-    b.style.flex = '1';
-  };
-  const makeSexeBtn = (val, txt) => {
-    const b = document.createElement('button');
-    b.type = 'button';
-    b.textContent = txt;
-    b.dataset.sexe = val;
-    applySexeStyle(b, currentProfile?.sexe === val);
-    return b;
-  };
-  const btnH = makeSexeBtn('h', 'Homme');
-  const btnF = makeSexeBtn('f', 'Femme');
-  sexeWrap.append(btnH, btnF);
-  let selectedSexe = currentProfile?.sexe || null;
-  [btnH, btnF].forEach(b => b.addEventListener('click', () => {
-    selectedSexe = b.dataset.sexe;
-    applySexeStyle(btnH, selectedSexe === 'h');
-    applySexeStyle(btnF, selectedSexe === 'f');
-  }));
-
-  // Niveau d'activité
-  const actLabel = document.createElement('label');
-  actLabel.className = 'corps-field-label';
-  actLabel.textContent = 'Niveau d\'activité (hors sport)';
-  const actWrap = document.createElement('div');
-  actWrap.style.cssText = 'display:flex;flex-direction:column;gap:6px';
-  const ACTIVITES = [
-    { val: 'sedentaire', label: 'Sédentaire — bureau assis toute la journée' },
-    { val: 'leger',      label: 'Léger — bureau + déplacements occasionnels' },
-    { val: 'modere',     label: 'Modéré — debout fréquent / marche régulière' },
-    { val: 'actif',      label: 'Actif — métier manuel, beaucoup de marche' },
-  ];
-  let selectedActivite = currentProfile?.niveau_activite || null;
-  const actBtns = ACTIVITES.map(({ val, label }) => {
-    const b = document.createElement('button');
-    b.type = 'button';
-    b.textContent = label;
-    b.dataset.act = val;
-    b.style.textAlign = 'left';
-    b.className = (selectedActivite === val) ? 'btn-primary btn-sm' : 'btn-secondary btn-sm';
-    b.addEventListener('click', () => {
-      selectedActivite = val;
-      actBtns.forEach(x => {
-        x.className = (x.dataset.act === selectedActivite) ? 'btn-primary btn-sm' : 'btn-secondary btn-sm';
-        x.style.textAlign = 'left';
-      });
-    });
-    actWrap.appendChild(b);
-    return b;
+  const { wrap: emailWrap }  = makeField('Email', { value: currentUser?.email || '', readonly: true });
+  const { wrap: nomWrap,    input: nomInput }    = makeField('Nom',    { placeholder: 'Nom',    maxLength: 60, value: currentProfile?.nom || '' });
+  const { wrap: prenomWrap, input: prenomInput } = makeField('Prénom', { placeholder: 'Prénom', maxLength: 60, value: currentProfile?.prenom || '' });
+  const { wrap: tailleWrap, input: tailleInput } = makeField('Taille (cm)', {
+    type: 'number', inputMode: 'numeric', min: 50, max: 250, placeholder: '180', value: currentProfile?.taille_cm ?? ''
   });
+  const { wrap: dnWrap, input: dnInput } = makeField('Date de naissance', { type: 'date', value: currentProfile?.date_naissance || '' });
+
+  // Sexe (segmented)
+  const sexeBlock = document.createElement('div');
+  sexeBlock.className = 'mb-5';
+  sexeBlock.innerHTML = `<p class="font-sans text-[9px] uppercase tracking-[0.40em] text-muted mb-1.5">Sexe</p>`;
+  let selectedSexe = currentProfile?.sexe || null;
+  const sexeSeg = makeSegment(
+    [{ val: 'h', label: 'Homme' }, { val: 'f', label: 'Femme' }],
+    selectedSexe,
+    (v) => { selectedSexe = v; }
+  );
+  sexeBlock.appendChild(sexeSeg);
+
+  // Niveau d'activité (option list)
+  const actBlock = document.createElement('div');
+  actBlock.className = 'mb-8';
+  actBlock.innerHTML = `<p class="font-sans text-[9px] uppercase tracking-[0.40em] text-muted mb-1.5">Niveau d'activité (hors sport)</p>`;
+  let selectedActivite = currentProfile?.niveau_activite || null;
+  const actList = makeOptionList(
+    [
+      { val: 'sedentaire', label: 'Sédentaire — bureau assis toute la journée' },
+      { val: 'leger',      label: 'Léger — bureau + déplacements occasionnels' },
+      { val: 'modere',     label: 'Modéré — debout fréquent / marche régulière' },
+      { val: 'actif',      label: 'Actif — métier manuel, beaucoup de marche' },
+    ],
+    selectedActivite,
+    (v) => { selectedActivite = v; }
+  );
+  actBlock.appendChild(actList);
 
   const saveBtn = document.createElement('button');
-  saveBtn.className = 'btn-primary btn-full';
+  saveBtn.className = 'w-full py-4 bg-acid text-ink font-display font-bold text-[14px] uppercase tracking-eyebrow active:bg-acid/80 transition';
   saveBtn.textContent = 'Enregistrer';
   saveBtn.addEventListener('click', async () => {
     const fields = {
@@ -492,16 +499,7 @@ function renderProfil() {
     showToast('Profil mis à jour');
   });
 
-  form.append(
-    emailLabel, emailInput,
-    nomLabel, nomInput,
-    prenomLabel, prenomInput,
-    tailleLabel, tailleInput,
-    dnLabel, dnInput,
-    sexeLabel, sexeWrap,
-    actLabel, actWrap,
-    saveBtn,
-  );
+  form.append(emailWrap, nomWrap, prenomWrap, tailleWrap, dnWrap, sexeBlock, actBlock, saveBtn);
   body.appendChild(form);
 }
 
@@ -510,38 +508,54 @@ function renderProfil() {
 ═══════════════════════════════════════════════════════ */
 async function renderClaudeApi() {
   const body = document.getElementById('screen-claude-api-body');
-  body.innerHTML = '<p style="color:var(--text-muted);font-size:13px">Chargement...</p>';
+  body.innerHTML = `
+    <div class="px-5 pt-12 text-center font-display italic text-[16px] text-muted">Chargement…</div>
+  `;
 
   const existingKey = await getClaudeApiKeyDB();
 
   body.innerHTML = '';
+
+  // Masthead
+  const masthead = document.createElement('section');
+  masthead.className = 'px-5 pt-9 pb-9 accent-line';
+  masthead.innerHTML = `
+    <h1 class="font-display font-black h-display text-paper">
+      Clé<br/>
+      <span class="text-paper/40"><span class="text-acid not-italic font-black">·</span> Claude.</span>
+    </h1>
+    <p class="font-sans text-[10px] uppercase tracking-eyebrow text-muted mt-5">
+      Utilisée pour le feedback IA · chiffrée en base
+    </p>
+  `;
+  body.appendChild(masthead);
+
   const form = document.createElement('div');
-  form.style.cssText = 'display:flex;flex-direction:column;gap:12px;padding:8px 0';
+  form.className = 'px-5 pt-6 pb-12';
 
-  const hint = document.createElement('p');
-  hint.style.cssText = 'font-size:12px;color:var(--text-muted)';
-  hint.textContent = 'Cette clé est utilisée pour générer le feedback IA après chaque séance. Elle est chiffrée en base de données.';
-
-  const inputWrap = document.createElement('div');
-  inputWrap.style.cssText = 'display:flex;gap:8px;align-items:center';
-
+  const fieldWrap = document.createElement('div');
+  fieldWrap.className = 'mb-6';
+  fieldWrap.innerHTML = `<p class="font-sans text-[9px] uppercase tracking-[0.40em] text-muted mb-1.5">Clé API</p>`;
+  const inputRow = document.createElement('div');
+  inputRow.className = 'flex items-baseline gap-2';
   const keyInput = document.createElement('input');
   keyInput.type = 'password';
-  keyInput.placeholder = 'sk-ant-...';
+  keyInput.placeholder = 'sk-ant-…';
   keyInput.value = existingKey || '';
-  keyInput.style.flex = '1';
-
+  keyInput.className = 'flex-1 bg-transparent border-b border-border focus:border-acid font-sans text-[16px] text-paper py-2 outline-none transition';
   const toggleBtn = document.createElement('button');
-  toggleBtn.className = 'btn-secondary btn-sm';
+  toggleBtn.type = 'button';
+  toggleBtn.className = 'shrink-0 px-3 py-2 border border-border text-muted active:text-paper active:border-paper font-sans text-[12px] transition';
   toggleBtn.textContent = '👁';
   toggleBtn.addEventListener('click', () => {
     keyInput.type = keyInput.type === 'password' ? 'text' : 'password';
   });
-
-  inputWrap.append(keyInput, toggleBtn);
+  inputRow.append(keyInput, toggleBtn);
+  fieldWrap.appendChild(inputRow);
+  form.appendChild(fieldWrap);
 
   const saveBtn = document.createElement('button');
-  saveBtn.className = 'btn-primary btn-full';
+  saveBtn.className = 'w-full py-4 bg-acid text-ink font-display font-bold text-[14px] uppercase tracking-eyebrow active:bg-acid/80 transition';
   saveBtn.textContent = 'Enregistrer';
   saveBtn.addEventListener('click', async () => {
     const key = keyInput.value.trim();
@@ -549,8 +563,8 @@ async function renderClaudeApi() {
     await setClaudeApiKeyDB(key);
     showToast('Clé API sauvegardée');
   });
+  form.appendChild(saveBtn);
 
-  form.append(hint, inputWrap, saveBtn);
   body.appendChild(form);
 }
 
@@ -1284,24 +1298,36 @@ function renderExerciseDetail(tab) {
       }
 
       const v = set.values?.[actIdx] || {};
+      const prevVal = ex.prevSeries?.[sIdx]?.values?.[actIdx] || null;
 
-      // Col 1 — Charge
+      // Col 1 — Charge (+ Préc inline si dispo)
       let chargeHtml;
       // Col 2 — Reps / unit
       let secondHtml;
+      // Préc eyebrow (sous la charge) — affiché si prev existe
+      let prevHtml = '';
       if (act.type === 'weight') {
         const w = v.weight ?? act.weight ?? 0;
         const r = v.reps ?? act.reps ?? 0;
         chargeHtml = `<span class="font-display font-black ${setSizeCls} ${valColor}">${w}<span class="font-sans font-medium text-[11px] tracking-eyebrow ${unitColor} ml-2 align-baseline">kg</span></span>`;
         secondHtml = `<span class="font-display font-bold text-[18px] num-stat ${secondColor} text-right pb-1.5">× ${r}</span>`;
+        if (prevVal && (prevVal.weight != null || prevVal.reps != null)) {
+          prevHtml = `<p class="font-sans text-[9px] uppercase tracking-eyebrow text-muted/70 num-stat mt-1.5">Préc ${prevVal.weight ?? '—'}×${prevVal.reps ?? '—'}</p>`;
+        }
       } else if (act.type === 'countdown') {
         const d = v.duration ?? act.duration ?? 0;
         chargeHtml = `<span class="font-display font-black ${setSizeCls} ${valColor}">${d}<span class="font-sans font-medium text-[11px] tracking-eyebrow ${unitColor} ml-2 align-baseline">s</span></span>`;
         secondHtml = `<span class="text-right pb-1.5 font-sans text-[10px] uppercase tracking-eyebrow ${secondColor}">${act.label || 'min.'}</span>`;
+        if (prevVal?.duration) {
+          prevHtml = `<p class="font-sans text-[9px] uppercase tracking-eyebrow text-muted/70 num-stat mt-1.5">Préc ${prevVal.duration}s</p>`;
+        }
       } else {
         const d = v.duration ?? 0;
         chargeHtml = `<span class="font-display font-black ${setSizeCls} ${valColor}">${d > 0 ? formatSeconds(d) : '—'}</span>`;
         secondHtml = `<span class="text-right pb-1.5 font-sans text-[10px] uppercase tracking-eyebrow ${secondColor}">chrono</span>`;
+        if (prevVal?.duration) {
+          prevHtml = `<p class="font-sans text-[9px] uppercase tracking-eyebrow text-muted/70 num-stat mt-1.5">Préc ${formatSeconds(prevVal.duration)}</p>`;
+        }
       }
 
       // Col 3 — Repos
@@ -1322,7 +1348,9 @@ function renderExerciseDetail(tab) {
 
       const row = document.createElement('button');
       row.className = `w-full text-left grid grid-cols-[1fr_60px_80px_20px] gap-4 items-end px-5 py-4 ${borderLeftCls} ${opacityCls} border-b border-border/70 active:bg-inkAlt transition`;
-      row.innerHTML = chargeHtml + secondHtml + restHtml + editIcon;
+      // Col 1 contient charge + prev sub-line si prev existe
+      const col1 = prevHtml ? `<div>${chargeHtml}${prevHtml}</div>` : chargeHtml;
+      row.innerHTML = col1 + secondHtml + restHtml + editIcon;
 
       if (editable) {
         row.addEventListener('click', () => openEditModalForActivity(exIdx, sIdx, actIdx));
@@ -1540,10 +1568,32 @@ function openEditModalForActivity(exIdx, sIdx, actIdx) {
     const currentRest   = act.rest ?? 0;
     const originalWeight = currentWeight;
 
+    const inputCls = 'w-full bg-transparent border-b border-border focus:border-acid font-display font-bold text-[22px] num-stat text-paper py-2 outline-none transition';
+    const labelCls = 'font-sans text-[9px] uppercase tracking-[0.40em] text-muted mb-1.5';
     const bodyHTML = `
-      <label>Reps<input type="number" inputmode="decimal" class="live-reps" value="${currentReps}" min="1"></label>
-      <label>Poids<input type="number" inputmode="decimal" class="live-weight" value="${currentWeight}" min="0" step="0.5"></label>
-      <label>Repos<input type="number" inputmode="numeric" class="live-rest" value="${currentRest}" min="0">s</label>
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <p class="${labelCls}">Poids</p>
+          <div class="flex items-baseline gap-2">
+            <input type="number" inputmode="decimal" class="live-weight ${inputCls}" value="${currentWeight}" min="0" step="0.5">
+            <span class="font-sans text-[10px] uppercase tracking-eyebrow text-muted shrink-0">kg</span>
+          </div>
+        </div>
+        <div>
+          <p class="${labelCls}">Reps</p>
+          <div class="flex items-baseline gap-2">
+            <input type="number" inputmode="decimal" class="live-reps ${inputCls}" value="${currentReps}" min="1">
+            <span class="font-sans text-[10px] uppercase tracking-eyebrow text-muted shrink-0">×</span>
+          </div>
+        </div>
+      </div>
+      <div>
+        <p class="${labelCls}">Repos</p>
+        <div class="flex items-baseline gap-2">
+          <input type="number" inputmode="numeric" class="live-rest ${inputCls}" value="${currentRest}" min="0">
+          <span class="font-sans text-[10px] uppercase tracking-eyebrow text-muted shrink-0">s</span>
+        </div>
+      </div>
     `;
 
     const applyEdit = () => {
@@ -1582,9 +1632,25 @@ function openEditModalForActivity(exIdx, sIdx, actIdx) {
     const currentDur  = v.duration ?? act.duration ?? 0;
     const currentRest = act.rest ?? 0;
 
+    const inputCls = 'w-full bg-transparent border-b border-border focus:border-acid font-display font-bold text-[22px] num-stat text-paper py-2 outline-none transition';
+    const labelCls = 'font-sans text-[9px] uppercase tracking-[0.40em] text-muted mb-1.5';
     const bodyHTML = `
-      <label>Durée<input type="number" inputmode="numeric" class="live-duration" value="${currentDur}" min="1">s</label>
-      <label>Repos<input type="number" inputmode="numeric" class="live-rest" value="${currentRest}" min="0">s</label>
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <p class="${labelCls}">Durée</p>
+          <div class="flex items-baseline gap-2">
+            <input type="number" inputmode="numeric" class="live-duration ${inputCls}" value="${currentDur}" min="1">
+            <span class="font-sans text-[10px] uppercase tracking-eyebrow text-muted shrink-0">s</span>
+          </div>
+        </div>
+        <div>
+          <p class="${labelCls}">Repos</p>
+          <div class="flex items-baseline gap-2">
+            <input type="number" inputmode="numeric" class="live-rest ${inputCls}" value="${currentRest}" min="0">
+            <span class="font-sans text-[10px] uppercase tracking-eyebrow text-muted shrink-0">s</span>
+          </div>
+        </div>
+      </div>
     `;
 
     openLiveEditModal({
@@ -2244,24 +2310,26 @@ async function renderCorps() {
   const body = document.getElementById('screen-corps-body');
   body.innerHTML = '';
 
-  // ── Logo ─────────────────────────────────────────────
-  const logoWrap = document.createElement('div');
-  logoWrap.className = 'corps-logo-wrap';
-  const logoImg = document.createElement('img');
-  logoImg.src = 'icons/logo.jpg';
-  logoImg.className = 'corps-logo';
-  logoWrap.appendChild(logoImg);
-  body.appendChild(logoWrap);
+  // Masthead
+  const masthead = document.createElement('section');
+  masthead.className = 'px-5 pt-9 pb-9 accent-line';
+  masthead.innerHTML = `
+    <h1 class="font-display font-black h-display text-paper">
+      Ton<br/>
+      <span class="text-paper/40"><span class="text-acid not-italic font-black">·</span> corps.</span>
+    </h1>
+  `;
+  body.appendChild(masthead);
 
   const measurements = await loadBodyMeasurementsDB();
 
-  // ── Formulaire ────────────────────────────────────────
+  // Formulaire
   const form = document.createElement('div');
-  form.className = 'corps-form';
+  form.className = 'px-5 pt-6 pb-6';
 
   const fields = [
     { key: 'poids',        label: 'Poids',          unit: 'kg', step: '0.1' },
-    { key: 'graisseKg',   label: 'Graisse',        unit: 'kg', step: '0.1' },
+    { key: 'graisseKg',    label: 'Graisse',        unit: 'kg', step: '0.1' },
     { key: 'eau',          label: 'Eau',            unit: '%',  step: '0.1' },
     { key: 'muscle',       label: 'Muscle',         unit: '%',  step: '0.1' },
     { key: 'img',          label: 'IMG',            unit: '%',  step: '0.1' },
@@ -2269,40 +2337,49 @@ async function renderCorps() {
     { key: 'tourDeVentre', label: 'Tour de ventre', unit: 'cm', step: '0.1' },
   ];
 
+  // Date input
+  const dateRow = document.createElement('div');
+  dateRow.className = 'mb-6 flex items-center gap-3';
+  dateRow.innerHTML = `
+    <p class="font-sans text-[9px] uppercase tracking-[0.40em] text-muted">Jour</p>
+    <span class="flex-1 h-px bg-border"></span>
+  `;
   const dateInput = document.createElement('input');
   dateInput.type = 'date';
-  dateInput.className = 'corps-date-input';
   dateInput.value = todayIso();
-  form.appendChild(dateInput);
+  dateInput.className = 'font-sans text-[12px] text-paper border border-border bg-transparent px-3 py-1.5 focus:border-acid focus:outline-none transition';
+  dateRow.appendChild(dateInput);
+  form.appendChild(dateRow);
 
+  // Grid 2 cols
   const grid = document.createElement('div');
-  grid.className = 'corps-grid';
+  grid.className = 'grid grid-cols-2 gap-x-4 gap-y-5';
 
   const inputs = {};
   const diffSpans = {};
   fields.forEach(({ key, label, unit, step }) => {
     const cell = document.createElement('div');
-    cell.className = 'corps-field';
-    const lbl = document.createElement('span');
-    lbl.className = 'corps-field-label';
+    cell.className = 'min-w-0';
+    const lbl = document.createElement('p');
+    lbl.className = 'font-sans text-[9px] uppercase tracking-[0.40em] text-muted mb-1.5';
     lbl.textContent = label;
     const row = document.createElement('div');
-    row.className = 'corps-field-row';
+    row.className = 'flex items-baseline gap-2 border-b border-border focus-within:border-acid transition';
     const inp = document.createElement('input');
     inp.type = 'number';
     inp.inputMode = 'decimal';
     inp.step = step;
     inp.min = '0';
-    inp.className = 'corps-field-input';
     inp.placeholder = '—';
+    inp.className = 'flex-1 min-w-0 bg-transparent font-display font-bold text-[20px] num-stat text-paper py-1.5 outline-none';
     inputs[key] = inp;
     const unitSpan = document.createElement('span');
-    unitSpan.className = 'corps-field-unit';
+    unitSpan.className = 'font-sans text-[10px] uppercase tracking-eyebrow text-muted shrink-0';
     unitSpan.textContent = unit;
     row.append(inp, unitSpan);
     if (key === 'poids' || key === 'graisseKg') {
       const diff = document.createElement('span');
-      diff.className = 'corps-field-diff';
+      diff.className = 'shrink-0 font-sans text-[10px] uppercase tracking-eyebrow font-semibold ml-1';
       diffSpans[key] = diff;
       row.appendChild(diff);
     }
@@ -2341,7 +2418,7 @@ async function renderCorps() {
     const span = diffSpans[formKey];
     if (!span) return;
     span.textContent = '';
-    span.className = 'corps-field-diff';
+    span.className = 'shrink-0 font-sans text-[10px] uppercase tracking-eyebrow font-semibold ml-1';
     const dbKey = formKey === 'graisseKg' ? 'graisse_kg' : formKey;
     const cur = current?.[dbKey];
     const prv = prev?.[dbKey];
@@ -2349,7 +2426,8 @@ async function renderCorps() {
     const delta = +(cur - prv).toFixed(1);
     if (delta === 0) return;
     span.textContent = (delta > 0 ? '+' : '') + delta;
-    span.classList.add(delta > 0 ? 'diff-up' : 'diff-down');
+    // Pour poids/graisse : up = blood (mauvais), down = acid (mieux)
+    span.classList.add(delta > 0 ? 'text-blood' : 'text-acid');
   }
 
   fillFormForDate(dateInput.value);
@@ -2372,7 +2450,7 @@ async function renderCorps() {
   form.appendChild(grid);
 
   const saveBtn = document.createElement('button');
-  saveBtn.className = 'btn-primary btn-full';
+  saveBtn.className = 'w-full mt-8 py-4 bg-acid text-ink font-display font-bold text-[14px] uppercase tracking-eyebrow active:bg-acid/80 transition';
   saveBtn.textContent = 'Enregistrer';
   saveBtn.addEventListener('click', async () => {
     const m = {
@@ -2405,14 +2483,13 @@ async function renderCorps() {
 
   if (!measurements.length) {
     const empty = document.createElement('p');
-    empty.className = 'home-empty';
+    empty.className = 'font-display italic text-[14px] text-muted px-5 py-4';
     empty.textContent = 'Aucune mesure enregistrée.';
     body.appendChild(empty);
     return;
   }
 
-  // ── Tableau de tendance (10 dernières) ────────────────
-  const trendPoids   = corpsTrend(measurements, 'poids');
+  // ── Tendance — stats strip cyan ───────────────────────
   const trendGraisse = corpsTrend(measurements, 'img');
 
   const trendItems = [
@@ -2427,90 +2504,79 @@ async function renderCorps() {
   }).filter(t => t.latest !== undefined);
 
   if (trendItems.length) {
-    const trendWrap = document.createElement('div');
-    trendWrap.className = 'corps-trend-wrap';
-    const trendTitle = document.createElement('p');
-    trendTitle.className = 'section-title';
-    trendTitle.textContent = 'Tendance — 10 dernières mesures (/ semaine)';
-    trendWrap.appendChild(trendTitle);
+    const trendSection = document.createElement('section');
+    trendSection.className = 'mt-4 mb-8';
+    trendSection.innerHTML = `
+      <header class="px-5 mb-3">
+        <h3 class="font-display italic font-bold text-[14px] uppercase tracking-eyebrow text-paper">Tendance</h3>
+        <p class="font-sans text-[9px] uppercase tracking-eyebrow text-muted mt-1">10 dernières mesures · variation hebdo</p>
+      </header>
+    `;
+    const grid4 = document.createElement('div');
+    grid4.className = 'grid grid-cols-2 border-y border-border';
 
-    const trendRow = document.createElement('div');
-    trendRow.className = 'corps-trend-row';
-
-    trendItems.forEach(({ label, field, unit, lowerIsBetter, latest, trend }) => {
+    trendItems.forEach(({ label, field, unit, lowerIsBetter, latest, trend }, idx) => {
       const cell = document.createElement('div');
-      cell.className = 'corps-trend-cell';
-
-      const val = document.createElement('span');
-      val.className = 'corps-trend-val';
-      val.textContent = `${latest}${unit}`;
-
-      const lbl = document.createElement('span');
-      lbl.className = 'corps-trend-label';
-      lbl.textContent = label;
+      const borderR = (idx % 2 === 0) ? 'border-r border-border' : '';
+      const borderB = (idx < 2) ? 'border-b border-border' : '';
+      cell.className = `px-4 py-3 min-w-0 ${borderR} ${borderB}`;
 
       let arrow = '';
-      let arrowColor = '#666';
+      let arrowColor = 'text-muted';
       if (trend && !trend.neutral) {
-        arrow = trend.up ? `↑ ${trend.delta}${unit}/sem` : `↓ ${trend.delta}${unit}/sem`;
+        arrow = trend.up ? `↑ ${trend.delta}/sem` : `↓ ${trend.delta}/sem`;
         let positive;
         if (field === 'poids' && trend.up && trendGraisse && !trendGraisse.neutral && !trendGraisse.up) {
-          // Poids ↑ mais IMG ↓ → prise de muscle → vert
           positive = true;
         } else {
           positive = lowerIsBetter ? !trend.up : trend.up;
         }
-        arrowColor = positive ? '#5cb85c' : '#ff5c5c';
+        arrowColor = positive ? 'text-acid' : 'text-blood';
       } else if (trend?.neutral) {
         arrow = '→ stable';
-        arrowColor = '#666';
+        arrowColor = 'text-muted';
       }
 
-      const arrowSpan = document.createElement('span');
-      arrowSpan.className = 'corps-trend-arrow';
-      arrowSpan.style.color = arrowColor;
-      arrowSpan.textContent = arrow;
-
-      // Catégorie IMG
+      // Catégorie IMG en badge
+      let catBadge = '';
       if (field === 'img') {
         const cat = fatCategory(latest);
         if (cat) {
-          const badge = document.createElement('span');
-          badge.className = 'corps-cat-badge';
-          badge.style.color = cat.color;
-          badge.textContent = cat.label;
-          cell.append(val, lbl, arrowSpan, badge);
-          trendRow.appendChild(cell);
-          return;
+          catBadge = `<span class="font-sans text-[8px] uppercase tracking-eyebrow font-semibold ml-2" style="color:${cat.color}">${cat.label}</span>`;
         }
       }
 
-      cell.append(val, lbl, arrowSpan);
-      trendRow.appendChild(cell);
+      cell.innerHTML = `
+        <p class="font-sans text-[8px] uppercase tracking-[0.40em] text-muted mb-1.5 flex items-center">${label}${catBadge}</p>
+        <p class="font-display font-bold text-[18px] num-stat text-cyan leading-none truncate">${latest}<span class="font-sans text-[9px] uppercase tracking-eyebrow text-muted ml-1">${unit}</span></p>
+        ${arrow ? `<p class="font-sans text-[9px] uppercase tracking-eyebrow font-semibold ${arrowColor} num-stat mt-1.5">${arrow}</p>` : ''}
+      `;
+      grid4.appendChild(cell);
     });
-
-    trendWrap.appendChild(trendRow);
-    body.appendChild(trendWrap);
+    trendSection.appendChild(grid4);
+    body.appendChild(trendSection);
   }
 
   // ── Courbes (poids, IMG, eau, muscle) ─────────────────
   const chartDefs = [
-    { field: 'poids', label: 'Évolution du poids', unit: 'kg' },
-    { field: 'img',   label: 'Évolution de l\'IMG',  unit: '%'  },
-    { field: 'eau',     label: 'Évolution de l\'eau',   unit: '%'  },
-    { field: 'muscle',  label: 'Évolution du muscle',   unit: '%'  },
+    { field: 'poids',  label: 'Poids',   unit: 'kg' },
+    { field: 'img',    label: 'IMG',     unit: '%'  },
+    { field: 'eau',    label: 'Eau',     unit: '%'  },
+    { field: 'muscle', label: 'Muscle',  unit: '%'  },
   ];
   chartDefs.forEach(({ field, label, unit }) => {
     const chartData = measurements.filter(m => m[field] != null).slice(0, 20).reverse();
     if (chartData.length < 2) return;
-    const chartWrap = document.createElement('div');
-    chartWrap.className = 'corps-chart-wrap';
-    const title = document.createElement('p');
-    title.className = 'section-title';
-    title.textContent = label;
-    chartWrap.appendChild(title);
+    const chartWrap = document.createElement('section');
+    chartWrap.className = 'px-5 mb-8';
+    chartWrap.innerHTML = `
+      <header class="mb-3 flex items-baseline justify-between">
+        <h3 class="font-display italic font-bold text-[14px] uppercase tracking-eyebrow text-paper">${label}</h3>
+        <span class="font-sans text-[10px] uppercase tracking-eyebrow text-muted num-stat">${chartData[chartData.length - 1][field]} ${unit}</span>
+      </header>
+    `;
     const canvas = document.createElement('canvas');
-    canvas.className = 'corps-chart';
+    canvas.className = 'w-full';
     canvas.width  = 340;
     canvas.height = 120;
     chartWrap.appendChild(canvas);
@@ -2521,33 +2587,36 @@ async function renderCorps() {
   // ── Analyse bienveillante (affichée seulement si déjà générée dans ce tab) ──
   if (bodyAnalysisCache !== null) {
     const analysisCard = document.createElement('div');
-    analysisCard.className = 'corps-analysis';
+    analysisCard.className = 'mx-5 mb-8 border border-border bg-inkAlt p-4 space-y-2';
     analysisCard.innerHTML = `
-      <div class="corps-analysis-title">🌱 Ton évolution</div>
-      <div class="corps-analysis-content">${formatFeedback(bodyAnalysisCache)}</div>
+      <p class="font-sans text-[10px] uppercase tracking-eyebrow text-acid font-semibold">Ton évolution</p>
+      <div class="font-sans text-[13px] text-paper leading-relaxed">${formatFeedback(bodyAnalysisCache)}</div>
     `;
     body.appendChild(analysisCard);
   }
 
   // ── Historique ────────────────────────────────────────
-  const histTitle = document.createElement('p');
-  histTitle.className = 'section-title';
-  histTitle.style.marginTop = '16px';
-  histTitle.textContent = 'Historique';
-  body.appendChild(histTitle);
+  const histSection = document.createElement('section');
+  histSection.className = 'mt-4';
+  histSection.innerHTML = `
+    <header class="px-5 mb-3">
+      <h3 class="font-display italic font-bold text-[14px] uppercase tracking-eyebrow text-paper">Historique</h3>
+    </header>
+  `;
+  body.appendChild(histSection);
 
   measurements.forEach(m => {
     const card = document.createElement('div');
-    card.className = 'corps-card';
+    card.className = 'px-5 py-4 border-b border-border/70';
 
     const header = document.createElement('div');
-    header.className = 'corps-card-header';
+    header.className = 'flex items-center justify-between gap-3 mb-2';
     const dateSpan = document.createElement('span');
-    dateSpan.className = 'corps-card-date';
+    dateSpan.className = 'font-sans text-[10px] uppercase tracking-eyebrow text-muted';
     dateSpan.textContent = formatDate(m.date);
     const delBtn = document.createElement('button');
-    delBtn.className = 'btn-icon-danger';
-    delBtn.textContent = '✕';
+    delBtn.className = 'font-sans text-[10px] uppercase tracking-eyebrow text-muted active:text-blood transition';
+    delBtn.textContent = '✕ Suppr';
     delBtn.addEventListener('click', () => {
       showConfirm('Supprimer cette mesure ?', async () => {
         await deleteBodyMeasurementDB(m.id);
@@ -2557,27 +2626,24 @@ async function renderCorps() {
     header.append(dateSpan, delBtn);
     card.appendChild(header);
 
-    // Indice masse grasse calculé si besoin
     let grPct = m.img;
     if (!grPct && m.poids && m.graisse_kg)
       grPct = +((m.graisse_kg / m.poids) * 100).toFixed(1);
     const cat = fatCategory(grPct);
     if (cat) {
       const badge = document.createElement('span');
-      badge.className = 'corps-cat-badge';
+      badge.className = 'inline-block font-sans text-[9px] uppercase tracking-eyebrow font-semibold mb-2';
       badge.style.color = cat.color;
-      badge.style.fontSize = '12px';
-      badge.style.marginBottom = '6px';
       badge.style.display = 'block';
       badge.textContent = `Graisse ${grPct}% — ${cat.label}`;
       card.appendChild(badge);
     }
 
     const values = document.createElement('div');
-    values.className = 'corps-card-values';
+    values.className = 'flex flex-wrap gap-x-3 gap-y-1';
     [
       { label: 'Poids',    value: m.poids,          unit: 'kg' },
-      { label: 'Gr. (kg)', value: m.graisse_kg,    unit: 'kg' },
+      { label: 'Gr.',      value: m.graisse_kg,     unit: 'kg' },
       { label: 'Eau',      value: m.eau,            unit: '%'  },
       { label: 'Muscle',   value: m.muscle,         unit: '%'  },
       { label: 'IMG',      value: m.img,            unit: '%'  },
@@ -2585,13 +2651,13 @@ async function renderCorps() {
       { label: 'Ventre',   value: m.tour_de_ventre, unit: 'cm' },
     ].filter(e => e.value !== null && e.value !== undefined).forEach(({ label, value, unit }) => {
       const chip = document.createElement('span');
-      chip.className = 'corps-chip';
-      chip.textContent = `${label} ${value}${unit}`;
+      chip.className = 'font-sans text-[10px] uppercase tracking-eyebrow';
+      chip.innerHTML = `<span class="text-muted">${label}</span> <span class="text-paper font-semibold num-stat">${value}</span><span class="text-muted">${unit}</span>`;
       values.appendChild(chip);
     });
 
     card.appendChild(values);
-    body.appendChild(card);
+    histSection.appendChild(card);
   });
 }
 
@@ -2625,9 +2691,14 @@ function closeBodyAnalysisPopup() {
 }
 
 function drawCorpsChart(canvas, data, field, unit) {
+  // Tokens Direction A
+  const C_BORDER = '#2A2A2A';
+  const C_MUTED  = '#888888';
+  const C_CYAN   = '#06B6D4';
+
   const ctx = canvas.getContext('2d');
   const W = canvas.width, H = canvas.height;
-  const pad = { top: 10, right: 10, bottom: 24, left: 38 };
+  const pad = { top: 10, right: 10, bottom: 24, left: 42 };
   const iW = W - pad.left - pad.right;
   const iH = H - pad.top - pad.bottom;
 
@@ -2643,20 +2714,20 @@ function drawCorpsChart(canvas, data, field, unit) {
   const yOf = v => pad.top + iH - ((v - minV) / (maxV - minV)) * iH;
 
   // Grille
-  ctx.strokeStyle = '#2a2a2a';
+  ctx.strokeStyle = C_BORDER;
   ctx.lineWidth = 1;
   [0, 0.5, 1].forEach(t => {
     const y = pad.top + iH * (1 - t);
     ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(W - pad.right, y); ctx.stroke();
-    ctx.fillStyle = '#555';
-    ctx.font = '10px monospace';
+    ctx.fillStyle = C_MUTED;
+    ctx.font = '10px "DM Sans", sans-serif';
     ctx.textAlign = 'right';
-    ctx.fillText((minV + t * (maxV - minV)).toFixed(1), pad.left - 4, y + 4);
+    ctx.fillText((minV + t * (maxV - minV)).toFixed(1), pad.left - 6, y + 4);
   });
 
-  // Ligne
+  // Ligne — cyan
   ctx.beginPath();
-  ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#9A7A30';
+  ctx.strokeStyle = C_CYAN;
   ctx.lineWidth = 2;
   ctx.lineJoin = 'round';
   data.forEach((m, i) => {
@@ -2668,12 +2739,12 @@ function drawCorpsChart(canvas, data, field, unit) {
   data.forEach((m, i) => {
     ctx.beginPath();
     ctx.arc(xOf(i), yOf(m[field]), 3, 0, Math.PI * 2);
-    ctx.fillStyle = '#9A7A30';
+    ctx.fillStyle = C_CYAN;
     ctx.fill();
 
     if (i === 0 || i === data.length - 1) {
-      ctx.fillStyle = '#666';
-      ctx.font = '9px monospace';
+      ctx.fillStyle = C_MUTED;
+      ctx.font = '9px "DM Sans", sans-serif';
       ctx.textAlign = i === 0 ? 'left' : 'right';
       ctx.fillText(m.date.slice(5), xOf(i), H - 4);
     }
@@ -3358,15 +3429,15 @@ async function renderMealPresetButtons(container, dateIso, onChanged) {
   for (const { slot, emoji, label } of slots) {
     const preset = bySlot[slot] || null;
     const row = document.createElement('div');
-    row.className = 'alim-preset-row';
+    row.className = 'flex items-stretch gap-2 mb-2';
 
     const mainBtn = document.createElement('button');
-    mainBtn.className = 'btn-secondary alim-preset-btn';
-    mainBtn.textContent = `${emoji} ${label}`;
+    mainBtn.className = 'flex-1 py-3 px-4 border border-border text-paper font-sans text-[11px] uppercase tracking-eyebrow text-left active:border-acid active:text-acid transition';
+    mainBtn.innerHTML = `<span class="text-[14px] mr-2">${emoji}</span>${label}`;
 
     const editBtn = document.createElement('button');
-    editBtn.className = 'btn-secondary alim-preset-edit';
-    editBtn.textContent = '⚙️';
+    editBtn.className = 'shrink-0 py-3 px-3 border border-border text-muted active:text-paper active:border-paper transition';
+    editBtn.textContent = '⚙';
     if (!preset) editBtn.classList.add('hidden');
 
     mainBtn.addEventListener('click', async () => {
@@ -3404,13 +3475,25 @@ async function renderMealPresetButtons(container, dateIso, onChanged) {
 
 async function renderAlimentation() {
   const body = document.getElementById('screen-alim-body');
-  body.innerHTML = '<p class="empty-msg">Chargement…</p>';
+  body.innerHTML = `
+    <div class="px-5 pt-12 text-center font-display italic text-[16px] text-muted">Chargement…</div>
+  `;
 
   const apiKey = await getClaudeApiKeyDB();
   if (!apiKey) {
     body.innerHTML = `
-      <p class="empty-msg">Configure ta clé API Claude dans Profil pour activer le suivi alimentaire.</p>
-      <button class="btn-primary btn-full" id="alim-go-key">→ Configurer la clé Claude</button>
+      <section class="px-5 pt-9 pb-9 accent-line">
+        <h1 class="font-display font-black h-display text-paper">
+          Clé<br/>
+          <span class="text-paper/40"><span class="text-acid not-italic font-black">·</span> manquante.</span>
+        </h1>
+        <p class="font-sans text-[10px] uppercase tracking-eyebrow text-muted mt-5">
+          Configure ta clé API Claude pour activer le suivi
+        </p>
+      </section>
+      <div class="px-5 mt-4">
+        <button id="alim-go-key" class="w-full py-4 bg-acid text-ink font-display font-bold text-[14px] uppercase tracking-eyebrow active:bg-acid/80 transition">→ Configurer la clé</button>
+      </div>
     `;
     document.getElementById('alim-go-key').addEventListener('click', () => showScreen('claude-api'));
     return;
@@ -3418,42 +3501,74 @@ async function renderAlimentation() {
 
   body.innerHTML = '';
 
-  // ── Date selector ────────────────────────────────────
+  // Masthead H1 split
+  const masthead = document.createElement('section');
+  masthead.className = 'px-5 pt-9 pb-9 accent-line';
+  masthead.innerHTML = `
+    <h1 class="font-display font-black h-display text-paper">
+      Tes<br/>
+      <span class="text-paper/40"><span class="text-acid not-italic font-black">·</span> apports.</span>
+    </h1>
+  `;
+  body.appendChild(masthead);
+
+  // Date selector (Tailwind-styled)
+  const dateRow = document.createElement('div');
+  dateRow.className = 'px-5 mt-6 mb-3 flex items-center gap-3';
+  dateRow.innerHTML = `
+    <p class="font-sans text-[10px] uppercase tracking-eyebrow text-muted">Jour</p>
+    <span class="flex-1 h-px bg-border"></span>
+  `;
   const dateInput = document.createElement('input');
   dateInput.type = 'date';
   dateInput.value = todayIso();
-  dateInput.className = 'alim-date-input';
-  body.appendChild(dateInput);
+  dateInput.className = 'font-sans text-[12px] text-paper border border-border bg-transparent px-3 py-1.5 focus:border-acid focus:outline-none';
+  dateRow.appendChild(dateInput);
+  body.appendChild(dateRow);
 
-  // ── Bilan card ───────────────────────────────────────
+  // Bilan strip cyan
   const bilanCard = document.createElement('div');
-  bilanCard.className = 'alim-bilan';
+  bilanCard.id = 'alim-bilan';
   body.appendChild(bilanCard);
 
-  // ── Preset buttons (petit-dej avant/après salle) ─────
+  // Preset buttons (petit-dej avant/après salle)
   const presetContainer = document.createElement('div');
+  presetContainer.className = 'px-5 mt-6';
   body.appendChild(presetContainer);
 
-  // ── Action buttons ───────────────────────────────────
+  // Actions
+  const actions = document.createElement('div');
+  actions.className = 'px-5 mt-4 space-y-3';
+  body.appendChild(actions);
+
   const addBtn = document.createElement('button');
-  addBtn.className = 'btn-primary btn-full';
+  addBtn.className = 'w-full py-4 bg-acid text-ink font-display font-bold text-[14px] uppercase tracking-eyebrow active:bg-acid/80 transition';
   addBtn.textContent = '+ Ajouter un repas';
-  body.appendChild(addBtn);
+  actions.appendChild(addBtn);
 
   const adviceBtn = document.createElement('button');
-  adviceBtn.className = 'btn-secondary btn-full';
-  adviceBtn.textContent = '🌙 Conseil pour ce soir';
-  body.appendChild(adviceBtn);
+  adviceBtn.className = 'w-full py-3 border border-border text-paper font-sans text-[11px] uppercase tracking-eyebrow active:border-acid active:text-acid transition';
+  adviceBtn.textContent = 'Conseil pour ce soir';
+  actions.appendChild(adviceBtn);
 
   const askBtn = document.createElement('button');
-  askBtn.className = 'btn-secondary btn-full';
-  askBtn.textContent = '💬 Poser une question';
-  body.appendChild(askBtn);
+  askBtn.className = 'w-full py-3 border border-border text-paper font-sans text-[11px] uppercase tracking-eyebrow active:border-acid active:text-acid transition';
+  askBtn.textContent = 'Poser une question';
+  actions.appendChild(askBtn);
 
-  // ── Timeline container ───────────────────────────────
+  // Timeline section
+  const timelineSec = document.createElement('section');
+  timelineSec.className = 'mt-10';
+  const timelineHdr = document.createElement('header');
+  timelineHdr.className = 'flex items-baseline justify-between mb-3 px-5';
+  timelineHdr.innerHTML = `
+    <h3 class="font-display italic font-bold text-[14px] uppercase tracking-eyebrow text-paper">Timeline</h3>
+  `;
+  timelineSec.appendChild(timelineHdr);
   const timeline = document.createElement('div');
-  timeline.className = 'alim-timeline';
-  body.appendChild(timeline);
+  timeline.id = 'alim-timeline';
+  timelineSec.appendChild(timeline);
+  body.appendChild(timelineSec);
 
   async function refresh() {
     const entries = await loadFoodEntriesForDate(dateInput.value);
@@ -3478,82 +3593,114 @@ async function renderAlimentation() {
     // Métabolisme : pro-rata selon l'heure si date = aujourd'hui, sinon journée pleine
     const bmr = await computeBmrKcal();
     let bmrToday = 0;
-    let bmrLine = '';
+    let bmrLabel = 'Métabolisme';
+    let bmrNote = '';
     if (bmr) {
       const isToday = dateInput.value === todayIso();
       if (isToday) {
         const now = new Date();
         const fraction = (now.getHours() + now.getMinutes() / 60) / 24;
         bmrToday = Math.round(bmr * fraction);
-        bmrLine = `<div class="alim-bilan-row"><span>Métabolisme (jusqu'à ${now.toTimeString().slice(0, 5)})</span><b>${bmrToday} kcal</b></div>`;
+        bmrLabel = `Métabolisme · ${now.toTimeString().slice(0, 5)}`;
       } else {
         bmrToday = bmr;
-        bmrLine = `<div class="alim-bilan-row"><span>Métabolisme (24h)</span><b>${bmrToday} kcal</b></div>`;
+        bmrLabel = 'Métabolisme · 24h';
       }
     } else {
-      bmrLine = `<div class="alim-bilan-row" style="font-size:11px"><span style="color:var(--text-muted)">Configure taille / âge / sexe / niveau d'activité dans Profil pour le métabolisme</span></div>`;
+      bmrNote = `<p class="font-sans text-[10px] uppercase tracking-eyebrow text-muted px-5 mt-3 italic">Configure taille / âge / sexe / activité dans Profil</p>`;
     }
 
     const net = apports - depenses - bmrToday;
+    const netColor = net > 200 ? 'text-blood' : net < -200 ? 'text-acid' : 'text-cyan';
 
-    const fonteLine  = depFonte  > 0 ? `<div class="alim-bilan-row alim-bilan-sub"><span>↳ Fonte</span><b>${Math.round(depFonte)} kcal</b></div>` : '';
-    const cardioLine = depCardio > 0 ? `<div class="alim-bilan-row alim-bilan-sub"><span>↳ Cardio</span><b>${Math.round(depCardio)} kcal</b></div>` : '';
-
+    // Stats 4 cols cyan (Apports / Métabolisme / Dépenses / Net)
     bilanCard.innerHTML = `
-      <div class="alim-bilan-row"><span>Apports</span><b>${Math.round(apports)} kcal</b></div>
-      <div class="alim-bilan-row alim-bilan-macros">
-        <span>Protéines</span><b>${Math.round(totP)} g</b>
-        <span>Glucides</span><b>${Math.round(totG)} g</b>
-        <span>Lipides</span><b>${Math.round(totL)} g</b>
+      <div class="grid grid-cols-4 border-y border-border">
+        <div class="px-2.5 py-3 border-r border-border min-w-0">
+          <p class="font-sans text-[8px] uppercase tracking-[0.40em] text-muted mb-1.5">Apports</p>
+          <p class="font-display font-bold text-[17px] num-stat text-cyan leading-none truncate">${Math.round(apports)}<span class="font-sans text-[9px] uppercase tracking-eyebrow text-muted ml-1">kcal</span></p>
+        </div>
+        <div class="px-2.5 py-3 border-r border-border min-w-0">
+          <p class="font-sans text-[8px] uppercase tracking-[0.40em] text-muted mb-1.5 truncate">${bmrLabel}</p>
+          <p class="font-display font-bold text-[17px] num-stat text-cyan leading-none truncate">${Math.round(bmrToday)}<span class="font-sans text-[9px] uppercase tracking-eyebrow text-muted ml-1">kcal</span></p>
+        </div>
+        <div class="px-2.5 py-3 border-r border-border min-w-0">
+          <p class="font-sans text-[8px] uppercase tracking-[0.40em] text-muted mb-1.5">Dépenses</p>
+          <p class="font-display font-bold text-[17px] num-stat text-cyan leading-none truncate">${Math.round(depenses)}<span class="font-sans text-[9px] uppercase tracking-eyebrow text-muted ml-1">kcal</span></p>
+        </div>
+        <div class="px-2.5 py-3 min-w-0">
+          <p class="font-sans text-[8px] uppercase tracking-[0.40em] text-muted mb-1.5">Net</p>
+          <p class="font-display font-bold text-[17px] num-stat ${netColor} leading-none truncate">${net >= 0 ? '+' : ''}${Math.round(net)}<span class="font-sans text-[9px] uppercase tracking-eyebrow text-muted ml-1">kcal</span></p>
+        </div>
       </div>
-      <div class="alim-bilan-row"><span>Dépenses séance</span><b>${Math.round(depenses)} kcal</b></div>
-      ${fonteLine}
-      ${cardioLine}
-      ${bmrLine}
-      <div class="alim-bilan-row alim-bilan-net"><span>Net</span><b>${net >= 0 ? '+' : ''}${Math.round(net)} kcal</b></div>
+      ${bmrNote}
+      <div class="grid grid-cols-3 px-5 mt-3 gap-x-3 gap-y-1 font-sans text-[10px] uppercase tracking-eyebrow">
+        <div class="flex items-baseline gap-1.5"><span class="text-muted">Prot</span><span class="text-paper font-semibold num-stat">${Math.round(totP)}<span class="text-muted ml-0.5">g</span></span></div>
+        <div class="flex items-baseline gap-1.5"><span class="text-muted">Gluc</span><span class="text-paper font-semibold num-stat">${Math.round(totG)}<span class="text-muted ml-0.5">g</span></span></div>
+        <div class="flex items-baseline gap-1.5"><span class="text-muted">Lip</span><span class="text-paper font-semibold num-stat">${Math.round(totL)}<span class="text-muted ml-0.5">g</span></span></div>
+      </div>
+      ${(depFonte > 0 || depCardio > 0) ? `
+        <div class="flex items-center gap-3 px-5 mt-3 font-sans text-[10px] uppercase tracking-eyebrow text-muted">
+          ${depFonte > 0  ? `<span>↳ Fonte ${Math.round(depFonte)} kcal</span>` : ''}
+          ${depCardio > 0 ? `<span>↳ Cardio ${Math.round(depCardio)} kcal</span>` : ''}
+        </div>` : ''}
     `;
 
     // Timeline
     timeline.innerHTML = '';
     if (!entries.length) {
-      timeline.innerHTML = '<p class="empty-msg">Aucune entrée pour ce jour.</p>';
+      timeline.innerHTML = `
+        <p class="font-display italic text-[14px] text-muted px-5 py-4">Aucune entrée pour ce jour.</p>
+      `;
       return;
     }
 
-    for (const e of entries) {
-      const card = document.createElement('div');
-      card.className = `alim-entry alim-entry--${e.type}`;
-      const isMeal = e.type === 'meal';
-      const arrow  = isMeal ? '↑' : '↓';
-      const icon   = isMeal ? '' : '🏋️ ';
+    const ul = document.createElement('ul');
+    ul.className = 'border-y border-border';
+
+    entries.forEach((e, idx) => {
+      const isMeal  = e.type === 'meal';
+      const borderLeft = isMeal
+        ? 'border-l-[3px] border-l-acid'
+        : 'border-l-[3px] border-l-racing bg-racing/[0.04]';
+      const kcalColor = isMeal ? 'text-acid' : 'text-racing';
+      const arrow = isMeal ? '↑' : '↓';
+      const isLast = idx === entries.length - 1;
+      const time = (e.time || '').slice(0, 5);
       const macros = isMeal && e.proteines_g != null
-        ? `<div class="alim-entry-macros">P ${e.proteines_g}g · G ${e.glucides_g}g · L ${e.lipides_g}g</div>`
+        ? `<p class="font-sans text-[9px] uppercase tracking-eyebrow text-muted num-stat mt-1.5">P ${e.proteines_g}g · G ${e.glucides_g}g · L ${e.lipides_g}g</p>`
         : '';
 
-      card.innerHTML = `
-        <div class="alim-entry-time">${(e.time || '').slice(0, 5)}</div>
-        <div class="alim-entry-main">
-          <div class="alim-entry-desc">${icon}${e.description}</div>
+      const li = document.createElement('li');
+      li.className = `flex items-start gap-3 px-5 py-4 ${isLast ? '' : 'border-b border-border/70'} ${borderLeft}`;
+      const photoClickable = e.photo_path ? 'cursor-pointer' : '';
+      li.innerHTML = `
+        <div class="shrink-0 w-12 pt-1 ${photoClickable}">
+          <p class="font-display font-bold text-[14px] num-stat text-paper leading-none">${time}</p>
+        </div>
+        <div class="flex-1 min-w-0 ${photoClickable}" data-photo="${e.photo_path || ''}">
+          <p class="font-display font-bold italic text-[15px] leading-tight text-paper">${e.description}</p>
           ${macros}
         </div>
-        <div class="alim-entry-kcal">${arrow} ${Math.round(e.kcal || 0)} kcal</div>
-        <button class="btn-icon-danger alim-entry-del" data-id="${e.id}" data-photo="${e.photo_path || ''}">✕</button>
+        <div class="text-right shrink-0 leading-none">
+          <p class="font-display font-bold text-[16px] num-stat ${kcalColor} leading-none">${arrow} ${Math.round(e.kcal || 0)}<span class="font-sans font-medium text-[9px] tracking-eyebrow text-muted ml-1">kcal</span></p>
+          <button class="font-sans text-[10px] uppercase tracking-eyebrow text-muted active:text-blood transition mt-2 alim-entry-del" data-id="${e.id}" data-photo="${e.photo_path || ''}">✕ Suppr</button>
+        </div>
       `;
 
-      // Tap sur la card avec photo : preview
       if (e.photo_path) {
-        card.classList.add('alim-entry--with-photo');
-        card.addEventListener('click', async (ev) => {
-          if (ev.target.closest('.alim-entry-del')) return;
-          const url = await getFoodPhotoSignedUrl(e.photo_path);
-          if (url) showFoodPhotoModal(url);
+        li.querySelectorAll('.cursor-pointer').forEach(el => {
+          el.addEventListener('click', async () => {
+            const url = await getFoodPhotoSignedUrl(e.photo_path);
+            if (url) showFoodPhotoModal(url);
+          });
         });
       }
 
-      timeline.appendChild(card);
-    }
+      ul.appendChild(li);
+    });
+    timeline.appendChild(ul);
 
-    // Wire delete buttons
     timeline.querySelectorAll('.alim-entry-del').forEach(btn => {
       btn.addEventListener('click', async (ev) => {
         ev.stopPropagation();
@@ -4160,20 +4307,34 @@ async function renderStats() {
   const sessions = (await loadSessions()).slice().sort((a, b) => a.date.localeCompare(b.date));
 
   if (!sessions.length) {
-    body.innerHTML = '<p class="empty-msg">Aucune séance enregistrée.</p>';
+    body.innerHTML = `
+      <div class="px-5 pt-12 text-center font-display italic text-[16px] text-muted">
+        Aucune séance enregistrée.
+      </div>
+    `;
     return;
   }
+
+  // Masthead
+  const masthead = document.createElement('section');
+  masthead.className = 'px-5 pt-9 pb-9 accent-line';
+  masthead.innerHTML = `
+    <h1 class="font-display font-black h-display text-paper">
+      Tes<br/>
+      <span class="text-paper/40"><span class="text-acid not-italic font-black">·</span> progrès.</span>
+    </h1>
+    <p class="font-sans text-[10px] uppercase tracking-eyebrow text-muted mt-5">
+      Évolution par exercice
+    </p>
+  `;
+  body.appendChild(masthead);
 
   body.appendChild(buildStatsProgression(sessions));
 }
 
 function statsSection(title) {
-  const section = document.createElement('div');
-  section.className = 'stats-section';
-  const h = document.createElement('h3');
-  h.className = 'stats-section-title';
-  h.textContent = title;
-  section.appendChild(h);
+  const section = document.createElement('section');
+  section.className = 'mt-2';
   return section;
 }
 
@@ -4199,10 +4360,8 @@ function exoMetrics(ex, session) {
   };
 }
 
-const CHART_COLORS = [
-  '#9A7A30', '#4caf50', '#2196f3', '#e53e3e', '#ff9800',
-  '#9c27b0', '#00bcd4', '#8bc34a', '#ff5722', '#607d8b',
-];
+// Palette Direction A — cyan (mesure) puis acid, racing, paper, en rotation
+const CHART_COLORS = ['#06B6D4', '#84CC16', '#FACC15', '#F5F4F0', '#DC2626'];
 
 function buildStatsProgression(sessions) {
   const section = statsSection('Progression');
@@ -4210,28 +4369,34 @@ function buildStatsProgression(sessions) {
   const progNames = [...new Set(sessions.map(s => s.programmeName).filter(Boolean))].sort();
   if (!progNames.length) return section;
 
-  // Programme pills
+  // Programme pills — eyebrow border default, racing accent active
   const pills = document.createElement('div');
-  pills.className = 'stats-prog-pills';
+  pills.className = 'flex gap-2 overflow-x-auto px-5 pb-4 -mx-px';
   progNames.forEach((name, i) => {
     const btn = document.createElement('button');
-    btn.className = 'stats-prog-pill' + (i === 0 ? ' active' : '');
+    const isActive = i === 0;
+    btn.className = `shrink-0 px-3 py-2 font-sans text-[10px] uppercase tracking-eyebrow font-semibold border transition ${
+      isActive ? 'border-racing text-racing bg-racing/[0.08]' : 'border-border text-muted active:border-paper active:text-paper'
+    }`;
     btn.textContent = name;
     btn.dataset.prog = name;
     pills.appendChild(btn);
   });
   section.appendChild(pills);
 
-  // Volume / 1RM / Charge max toggle
+  // Metric toggle — segmented bar acid active
   const toggle = document.createElement('div');
-  toggle.className = 'stats-metric-toggle';
+  toggle.className = 'grid grid-cols-3 border-y border-border mb-6';
   [
-    { label: 'Volume total', metric: 'volume' },
-    { label: '1RM estimé',   metric: 'e1rm' },
-    { label: 'Charge max',   metric: 'topWeight' },
+    { label: 'Volume', metric: 'volume' },
+    { label: '1RM',    metric: 'e1rm' },
+    { label: 'Max',    metric: 'topWeight' },
   ].forEach(({ label, metric }, i) => {
     const btn = document.createElement('button');
-    btn.className = 'stats-metric-btn' + (i === 0 ? ' active' : '');
+    const isActive = i === 0;
+    btn.className = `py-3 font-sans text-[11px] uppercase tracking-eyebrow font-semibold border-r border-border last:border-r-0 transition ${
+      isActive ? 'text-acid bg-acid/[0.06] border-t-2 border-t-acid -mt-px' : 'text-muted active:text-paper'
+    }`;
     btn.textContent = label;
     btn.dataset.metric = metric;
     toggle.appendChild(btn);
@@ -4240,12 +4405,12 @@ function buildStatsProgression(sessions) {
 
   // Cards container
   const cardsGrid = document.createElement('div');
-  cardsGrid.className = 'stats-cards-grid';
+  cardsGrid.className = 'px-5 mb-6 space-y-2';
   section.appendChild(cardsGrid);
 
   // Chart container
   const chartWrap = document.createElement('div');
-  chartWrap.className = 'stats-chart-wrap';
+  chartWrap.className = 'px-5 mb-12 h-[280px]';
   const canvas = document.createElement('canvas');
   chartWrap.appendChild(canvas);
   section.appendChild(chartWrap);
@@ -4272,26 +4437,29 @@ function buildStatsProgression(sessions) {
     const exoData = buildExoData(activeProg);
     const unit = 'kg';
 
-    // Cards
+    // Cards — delta acid (up) / blood (down) / muted (=)
     cardsGrid.innerHTML = '';
     exoData.forEach(exo => {
       if (!exo.points.length) return;
       const first = exo.points[0][activeMetric];
       const last = exo.points[exo.points.length - 1][activeMetric];
       const delta = first > 0 ? ((last - first) / first * 100) : 0;
-      const deltaClass = delta > 0 ? 'up' : delta < 0 ? 'down' : 'neutral';
+      let deltaColor;
+      if (delta > 0)      deltaColor = 'text-acid';
+      else if (delta < 0) deltaColor = 'text-blood';
+      else                deltaColor = 'text-muted';
       const deltaStr = delta === 0 ? '=' : `${delta > 0 ? '+' : ''}${Math.round(delta)}%`;
-      const fmt = v => activeMetric === 'volume' ? Math.round(v) : v.toFixed(1);
+      const fmt = v => activeMetric === 'volume' ? Math.round(v).toLocaleString('fr-FR') : v.toFixed(1);
 
       const card = document.createElement('div');
-      card.className = 'stats-exo-card';
+      card.className = 'flex items-baseline justify-between gap-3 py-3 border-b border-border/70 last:border-b-0';
       card.innerHTML = `
-        <span class="stats-exo-name">${exo.name}</span>
-        <div class="stats-exo-values">
-          <span class="stats-exo-start">${fmt(first)}</span>
-          <span class="stats-exo-arrow">→</span>
-          <span class="stats-exo-end">${fmt(last)} ${unit}</span>
-          <span class="stats-exo-delta ${deltaClass}">${deltaStr}</span>
+        <span class="font-display font-bold italic text-[14px] text-paper truncate flex-1 min-w-0">${exo.name}</span>
+        <div class="flex items-baseline gap-2 shrink-0 font-display num-stat">
+          <span class="text-[12px] text-muted">${fmt(first)}</span>
+          <span class="font-sans text-[10px] text-muted">→</span>
+          <span class="text-[14px] font-bold text-cyan">${fmt(last)}<span class="font-sans font-medium text-[9px] tracking-eyebrow text-muted ml-1">${unit}</span></span>
+          <span class="font-sans text-[10px] uppercase tracking-eyebrow font-semibold ${deltaColor} num-stat min-w-[42px] text-right">${deltaStr}</span>
         </div>
       `;
       cardsGrid.appendChild(card);
@@ -4317,10 +4485,11 @@ function buildStatsProgression(sessions) {
         label: exo.name,
         data: allDates.map(d => dateMap[d] ?? null),
         borderColor: color,
-        backgroundColor: color + '33',
+        backgroundColor: color + '22',
         borderWidth: 2,
         pointRadius: 3,
         pointHoverRadius: 5,
+        pointBackgroundColor: color,
         tension: 0.3,
         spanGaps: true,
       };
@@ -4336,16 +4505,25 @@ function buildStatsProgression(sessions) {
         plugins: {
           legend: {
             position: 'bottom',
-            labels: { color: '#888', font: { family: "'DM Mono', monospace", size: 10 }, boxWidth: 10, padding: 8 },
+            labels: {
+              color: '#888888',
+              font: { family: "'DM Sans', sans-serif", size: 10, weight: '500' },
+              boxWidth: 8,
+              boxHeight: 8,
+              padding: 10,
+              usePointStyle: false,
+            },
           },
           tooltip: {
-            backgroundColor: '#1a1a1a',
-            borderColor: '#2e2e2e',
+            backgroundColor: '#0A0A0A',
+            borderColor: '#2A2A2A',
             borderWidth: 1,
-            titleColor: '#f0f0f0',
-            bodyColor: '#f0f0f0',
-            titleFont: { family: "'DM Mono', monospace", size: 11 },
-            bodyFont: { family: "'DM Mono', monospace", size: 11 },
+            titleColor: '#F5F4F0',
+            bodyColor: '#F5F4F0',
+            titleFont: { family: "'DM Sans', sans-serif", size: 11, weight: '600' },
+            bodyFont: { family: "'DM Sans', sans-serif", size: 11 },
+            cornerRadius: 0,
+            padding: 10,
             callbacks: {
               label: ctx => `${ctx.dataset.label}: ${activeMetric === 'volume' ? Math.round(ctx.parsed.y) : ctx.parsed.y.toFixed(1)} ${unit}`,
             },
@@ -4353,16 +4531,18 @@ function buildStatsProgression(sessions) {
         },
         scales: {
           x: {
-            ticks: { color: '#555', font: { family: "'DM Mono', monospace", size: 9 }, maxRotation: 45 },
-            grid: { color: '#1a1a1a' },
+            ticks: { color: '#888888', font: { family: "'DM Sans', sans-serif", size: 9 }, maxRotation: 45 },
+            grid: { color: '#2A2A2A', drawTicks: false },
+            border: { color: '#2A2A2A' },
           },
           y: {
             ticks: {
-              color: '#555',
-              font: { family: "'DM Mono', monospace", size: 9 },
+              color: '#888888',
+              font: { family: "'DM Sans', sans-serif", size: 9 },
               callback: v => activeMetric === 'volume' ? Math.round(v) : v.toFixed(1),
             },
-            grid: { color: '#1a1a1a' },
+            grid: { color: '#2A2A2A', drawTicks: false },
+            border: { color: '#2A2A2A' },
           },
         },
       },
@@ -4371,22 +4551,26 @@ function buildStatsProgression(sessions) {
 
   render();
 
-  // Programme pill click
+  // Programme pill click — re-render with active state racing
   pills.addEventListener('click', e => {
-    const btn = e.target.closest('.stats-prog-pill');
+    const btn = e.target.closest('button[data-prog]');
     if (!btn) return;
-    pills.querySelectorAll('.stats-prog-pill').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
+    pills.querySelectorAll('button[data-prog]').forEach(b => {
+      b.className = 'shrink-0 px-3 py-2 font-sans text-[10px] uppercase tracking-eyebrow font-semibold border transition border-border text-muted active:border-paper active:text-paper';
+    });
+    btn.className = 'shrink-0 px-3 py-2 font-sans text-[10px] uppercase tracking-eyebrow font-semibold border transition border-racing text-racing bg-racing/[0.08]';
     activeProg = btn.dataset.prog;
     render();
   });
 
-  // Metric toggle click
+  // Metric toggle click — acid active
   toggle.addEventListener('click', e => {
-    const btn = e.target.closest('.stats-metric-btn');
+    const btn = e.target.closest('button[data-metric]');
     if (!btn) return;
-    toggle.querySelectorAll('.stats-metric-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
+    toggle.querySelectorAll('button[data-metric]').forEach(b => {
+      b.className = 'py-3 font-sans text-[11px] uppercase tracking-eyebrow font-semibold border-r border-border last:border-r-0 transition text-muted active:text-paper';
+    });
+    btn.className = 'py-3 font-sans text-[11px] uppercase tracking-eyebrow font-semibold border-r border-border last:border-r-0 transition text-acid bg-acid/[0.06] border-t-2 border-t-acid -mt-px';
     activeMetric = btn.dataset.metric;
     render();
   });
@@ -4401,68 +4585,77 @@ async function renderParams() {
   const tab = document.getElementById('screen-params-body');
   tab.innerHTML = '';
 
-  // Section programmes
-  const progSection = document.createElement('div');
-  progSection.style.display = 'flex';
-  progSection.style.flexDirection = 'column';
-  progSection.style.gap = '8px';
-
-  const progTitle = document.createElement('p');
-  progTitle.className = 'section-title';
-  progTitle.textContent = 'Programmes';
-  progSection.appendChild(progTitle);
+  // Masthead
+  const masthead = document.createElement('section');
+  masthead.className = 'px-5 pt-9 pb-9 accent-line';
+  masthead.innerHTML = `
+    <h1 class="font-display font-black h-display text-paper">
+      Tes<br/>
+      <span class="text-paper/40"><span class="text-acid not-italic font-black">·</span> programmes.</span>
+    </h1>
+  `;
+  tab.appendChild(masthead);
 
   const programmes = await loadProgrammes();
+
   if (!programmes.length) {
     const msg = document.createElement('p');
-    msg.className = 'empty-msg';
+    msg.className = 'font-display italic text-[14px] text-muted px-5 py-4';
     msg.textContent = 'Aucun programme.';
-    progSection.appendChild(msg);
+    tab.appendChild(msg);
   } else {
+    const list = document.createElement('div');
+    list.className = 'border-y border-border';
+
     programmes.forEach((prog, idx) => {
       const row = document.createElement('div');
-      row.className = 'param-row';
+      const isLast = idx === programmes.length - 1;
+      row.className = `flex items-center gap-3 px-5 py-4 ${isLast ? '' : 'border-b border-border/70'}`;
       row.innerHTML = `
-        <div class="param-row-order">
-          <button class="btn-order" data-dir="up" ${idx === 0 ? 'disabled' : ''}>↑</button>
-          <button class="btn-order" data-dir="down" ${idx === programmes.length - 1 ? 'disabled' : ''}>↓</button>
+        <div class="flex flex-col gap-1 shrink-0">
+          <button data-dir="up" ${idx === 0 ? 'disabled' : ''} class="w-7 h-7 flex items-center justify-center border border-border text-paper text-[12px] active:border-acid active:text-acid disabled:opacity-30 disabled:active:border-border disabled:active:text-paper transition">↑</button>
+          <button data-dir="down" ${idx === programmes.length - 1 ? 'disabled' : ''} class="w-7 h-7 flex items-center justify-center border border-border text-paper text-[12px] active:border-acid active:text-acid disabled:opacity-30 disabled:active:border-border disabled:active:text-paper transition">↓</button>
         </div>
-        <span class="param-row-name">${prog.category === 'cardio' ? '🏃' : '🏋️'} ${prog.name}</span>
-        <div class="param-row-actions">
-          <button class="btn-secondary btn-sm">Modifier</button>
-          <button class="btn-danger btn-sm">Suppr.</button>
+        <div class="flex-1 min-w-0">
+          <h4 class="font-display font-bold italic text-[17px] leading-tight text-paper truncate">${prog.name}</h4>
+          <p class="font-sans text-[9px] uppercase tracking-eyebrow text-muted mt-1">${prog.category === 'cardio' ? 'Cardio' : 'Fonte'} · ${prog.exercises.length} exo${prog.exercises.length > 1 ? 's' : ''}</p>
+        </div>
+        <div class="flex flex-col gap-1 shrink-0">
+          <button data-action="edit" class="px-3 py-1.5 border border-border text-paper font-sans text-[10px] uppercase tracking-eyebrow active:border-acid active:text-acid transition">Modifier</button>
+          <button data-action="del" class="px-3 py-1.5 border border-blood text-blood font-sans text-[10px] uppercase tracking-eyebrow active:bg-blood active:text-paper transition">Suppr</button>
         </div>
       `;
       row.querySelector('[data-dir="up"]').addEventListener('click', async () => {
+        if (idx === 0) return;
         const progs = await loadProgrammes();
         [progs[idx - 1], progs[idx]] = [progs[idx], progs[idx - 1]];
         await reorderProgrammesDB(progs);
         await renderParams();
       });
       row.querySelector('[data-dir="down"]').addEventListener('click', async () => {
+        if (idx === programmes.length - 1) return;
         const progs = await loadProgrammes();
         [progs[idx], progs[idx + 1]] = [progs[idx + 1], progs[idx]];
         await reorderProgrammesDB(progs);
         await renderParams();
       });
-      row.querySelector('.btn-secondary').addEventListener('click', () => openProgrammeEditor(prog));
-      row.querySelector('.btn-danger').addEventListener('click', () => {
+      row.querySelector('[data-action="edit"]').addEventListener('click', () => openProgrammeEditor(prog));
+      row.querySelector('[data-action="del"]').addEventListener('click', () => {
         showConfirm(`Supprimer "${prog.name}" ?`, async () => {
           await deleteProgrammeDB(prog.id);
           await renderParams();
         });
       });
-      progSection.appendChild(row);
+      list.appendChild(row);
     });
+    tab.appendChild(list);
   }
 
   const addBtn = document.createElement('button');
-  addBtn.className = 'btn-secondary btn-full';
+  addBtn.className = 'mx-5 mt-6 mb-12 w-[calc(100%-2.5rem)] py-3 border border-border text-paper font-sans text-[11px] uppercase tracking-eyebrow active:border-acid active:text-acid transition';
   addBtn.textContent = '+ Nouveau programme';
   addBtn.addEventListener('click', () => openProgrammeEditor());
-  progSection.appendChild(addBtn);
-
-  tab.appendChild(progSection);
+  tab.appendChild(addBtn);
 }
 
 /* ═══════════════════════════════════════════════════════

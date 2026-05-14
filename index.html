@@ -55,29 +55,38 @@
 
     <!-- PROFIL -->
     <div id="screen-profil" class="screen">
-      <div class="screen-header">
-        <button class="screen-back" id="back-profil">←</button>
-        <span class="screen-title">Profil</span>
-      </div>
-      <div class="screen-body" id="screen-profil-body"></div>
+      <header class="sticky top-0 z-10 bg-ink/96 backdrop-blur-sm border-b border-border px-5 py-4 flex items-center gap-4">
+        <button id="back-profil" class="flex items-center gap-2 font-sans text-[11px] uppercase tracking-eyebrow text-paper active:text-acid transition">
+          <span aria-hidden class="text-[18px] leading-none">←</span>
+          <span>Retour</span>
+        </button>
+        <div class="font-display font-bold italic text-[15px] leading-tight text-paper">Profil</div>
+      </header>
+      <main id="screen-profil-body" class="flex-1 min-h-0 overflow-y-auto"></main>
     </div>
 
     <!-- CLÉ API CLAUDE -->
     <div id="screen-claude-api" class="screen">
-      <div class="screen-header">
-        <button class="screen-back" id="back-claude-api">←</button>
-        <span class="screen-title">Clé API Claude</span>
-      </div>
-      <div class="screen-body" id="screen-claude-api-body"></div>
+      <header class="sticky top-0 z-10 bg-ink/96 backdrop-blur-sm border-b border-border px-5 py-4 flex items-center gap-4">
+        <button id="back-claude-api" class="flex items-center gap-2 font-sans text-[11px] uppercase tracking-eyebrow text-paper active:text-acid transition">
+          <span aria-hidden class="text-[18px] leading-none">←</span>
+          <span>Retour</span>
+        </button>
+        <div class="font-display font-bold italic text-[15px] leading-tight text-paper">Clé API Claude</div>
+      </header>
+      <main id="screen-claude-api-body" class="flex-1 min-h-0 overflow-y-auto"></main>
     </div>
 
     <!-- COMPOSITION CORPORELLE -->
     <div id="screen-corps" class="screen">
-      <div class="screen-header">
-        <button class="screen-back" id="back-corps">←</button>
-        <span class="screen-title">Données corporelles</span>
-      </div>
-      <div class="screen-body" id="screen-corps-body"></div>
+      <header class="sticky top-0 z-10 bg-ink/96 backdrop-blur-sm border-b border-border px-5 py-4 flex items-center gap-4">
+        <button id="back-corps" class="flex items-center gap-2 font-sans text-[11px] uppercase tracking-eyebrow text-paper active:text-acid transition">
+          <span aria-hidden class="text-[18px] leading-none">←</span>
+          <span>Retour</span>
+        </button>
+        <div class="font-display font-bold italic text-[15px] leading-tight text-paper">Corps</div>
+      </header>
+      <main id="screen-corps-body" class="flex-1 min-h-0 overflow-y-auto"></main>
     </div>
 
     <!-- À LA SALLE -->
@@ -105,42 +114,68 @@
 
     <!-- STATS -->
     <div id="screen-stats" class="screen">
-      <div class="screen-header">
-        <button class="screen-back" id="back-stats">←</button>
-        <span class="screen-title">Statistiques</span>
-      </div>
-      <div class="screen-body" id="screen-stats-body"></div>
+      <header class="sticky top-0 z-10 bg-ink/96 backdrop-blur-sm border-b border-border px-5 py-4 flex items-center gap-4">
+        <button id="back-stats" class="flex items-center gap-2 font-sans text-[11px] uppercase tracking-eyebrow text-paper active:text-acid transition">
+          <span aria-hidden class="text-[18px] leading-none">←</span>
+          <span>Retour</span>
+        </button>
+        <div class="font-display font-bold italic text-[15px] leading-tight text-paper">Stats</div>
+      </header>
+      <main id="screen-stats-body" class="flex-1 min-h-0 overflow-y-auto"></main>
     </div>
 
     <!-- ALIMENTATION -->
     <div id="screen-alim" class="screen">
-      <div class="screen-header">
-        <button class="screen-back" id="back-alim">←</button>
-        <span class="screen-title">Alimentation</span>
-      </div>
-      <div class="screen-body" id="screen-alim-body"></div>
+      <header class="sticky top-0 z-10 bg-ink/96 backdrop-blur-sm border-b border-border px-5 py-4 flex items-center gap-4">
+        <button id="back-alim" class="flex items-center gap-2 font-sans text-[11px] uppercase tracking-eyebrow text-paper active:text-acid transition">
+          <span aria-hidden class="text-[18px] leading-none">←</span>
+          <span>Retour</span>
+        </button>
+        <div class="font-display font-bold italic text-[15px] leading-tight text-paper">Alimentation</div>
+      </header>
+      <main id="screen-alim-body" class="flex-1 min-h-0 overflow-y-auto"></main>
     </div>
 
     <!-- PARAMÈTRES -->
     <div id="screen-params" class="screen">
-      <div class="screen-header">
-        <button class="screen-back" id="back-params">←</button>
-        <span class="screen-title">Programmes</span>
-      </div>
-      <div class="screen-body" id="screen-params-body"></div>
+      <header class="sticky top-0 z-10 bg-ink/96 backdrop-blur-sm border-b border-border px-5 py-4 flex items-center gap-4">
+        <button id="back-params" class="flex items-center gap-2 font-sans text-[11px] uppercase tracking-eyebrow text-paper active:text-acid transition">
+          <span aria-hidden class="text-[18px] leading-none">←</span>
+          <span>Retour</span>
+        </button>
+        <div class="font-display font-bold italic text-[15px] leading-tight text-paper">Programmes</div>
+      </header>
+      <main id="screen-params-body" class="flex-1 min-h-0 overflow-y-auto"></main>
     </div>
 
     <!-- LOGIN -->
     <div id="screen-login" class="screen">
-      <div class="login-wrap">
-        <img src="icons/logo.jpg" class="login-logo" />
-        <h1 class="login-title">Coach Mike</h1>
+      <div class="flex-1 flex flex-col justify-center px-6 pt-[env(safe-area-inset-top)]">
+        <!-- Masthead -->
+        <section class="pb-9 accent-line">
+          <p class="font-display italic font-semibold text-[10px] uppercase tracking-eyebrow text-paper mb-4">Build · Fuel · Dominate</p>
+          <h1 class="font-display font-black h-display text-paper">
+            Coach<br/>
+            <span class="text-paper/40"><span class="text-acid not-italic font-black">·</span> Mike.</span>
+          </h1>
+        </section>
 
-        <div id="login-form">
-          <input type="email"    id="login-email"    placeholder="Email"        autocomplete="email"            inputmode="email" />
-          <input type="password" id="login-password" placeholder="Mot de passe" autocomplete="current-password" />
-          <button class="btn-primary btn-full" id="btn-login">Se connecter</button>
-          <p class="auth-error hidden" id="login-error"></p>
+        <!-- Form -->
+        <div id="login-form" class="mt-12 space-y-4">
+          <div>
+            <p class="font-sans text-[9px] uppercase tracking-[0.40em] text-muted mb-1.5">Email</p>
+            <input type="email" id="login-email" autocomplete="email" inputmode="email"
+              class="w-full bg-transparent border-b border-border focus:border-acid font-sans text-[16px] text-paper py-2 outline-none transition" />
+          </div>
+          <div>
+            <p class="font-sans text-[9px] uppercase tracking-[0.40em] text-muted mb-1.5">Mot de passe</p>
+            <input type="password" id="login-password" autocomplete="current-password"
+              class="w-full bg-transparent border-b border-border focus:border-acid font-sans text-[16px] text-paper py-2 outline-none transition" />
+          </div>
+          <p id="login-error" class="hidden font-sans text-[11px] text-blood mt-2"></p>
+          <button id="btn-login" class="w-full mt-6 py-4 bg-acid text-ink font-display font-bold text-[14px] uppercase tracking-eyebrow active:bg-acid/80 transition">
+            Se connecter →
+          </button>
         </div>
       </div>
     </div>
@@ -189,11 +224,11 @@
 
   <!-- DIALOG CUSTOM -->
   <div id="dialog" class="dialog hidden">
-    <div class="dialog-box">
-      <p id="dialog-msg"></p>
-      <div class="dialog-actions">
-        <button id="dialog-cancel" class="btn-secondary">Annuler</button>
-        <button id="dialog-ok" class="btn-primary">OK</button>
+    <div class="!bg-ink !border !border-border !p-6 !rounded-none !max-w-[360px] w-full mx-4 space-y-5" style="background:var(--ink)">
+      <p id="dialog-msg" class="font-display italic font-medium text-[15px] text-paper leading-snug"></p>
+      <div class="grid grid-cols-2 gap-3">
+        <button id="dialog-cancel" class="py-3 border border-border text-paper font-sans text-[11px] uppercase tracking-eyebrow active:border-paper transition">Annuler</button>
+        <button id="dialog-ok" class="py-3 bg-acid text-ink font-display font-bold text-[12px] uppercase tracking-eyebrow active:bg-acid/80 transition">OK</button>
       </div>
     </div>
   </div>
@@ -208,13 +243,14 @@
 
   <!-- MODAL ÉDITION ACTIVITÉ (live) -->
   <div id="live-edit-modal" class="live-edit-modal hidden">
-    <div class="live-edit-modal-overlay"></div>
-    <div class="live-edit-modal-card">
-      <div class="live-edit-modal-title" id="live-edit-modal-title">Activité</div>
-      <div class="live-edit-modal-body" id="live-edit-modal-body"></div>
-      <div class="live-edit-modal-actions">
-        <button class="btn-secondary" id="live-edit-modal-cancel">Annuler</button>
-        <button class="btn-primary" id="live-edit-modal-ok">OK</button>
+    <div class="live-edit-modal-overlay !bg-ink/80"></div>
+    <div class="!relative !bg-ink !border !border-border !rounded-none !p-6 !max-w-[380px] !w-full mx-4 space-y-5" style="background:var(--ink);max-height:90vh;overflow-y:auto">
+      <p class="font-sans text-[9px] uppercase tracking-[0.40em] text-acid font-semibold">Modifier</p>
+      <h2 id="live-edit-modal-title" class="font-display font-bold italic text-[20px] leading-tight text-paper">Activité</h2>
+      <div id="live-edit-modal-body" class="space-y-4"></div>
+      <div class="grid grid-cols-2 gap-3 pt-2">
+        <button id="live-edit-modal-cancel" class="py-3 border border-border text-paper font-sans text-[11px] uppercase tracking-eyebrow active:border-paper transition">Annuler</button>
+        <button id="live-edit-modal-ok" class="py-3 bg-acid text-ink font-display font-bold text-[12px] uppercase tracking-eyebrow active:bg-acid/80 transition">Valider</button>
       </div>
     </div>
   </div>
