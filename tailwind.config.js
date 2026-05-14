@@ -3,7 +3,6 @@ module.exports = {
   content: [
     './index.html',
     './backoffice.html',
-    './watch.html',
     './set-password.html',
     './app.js',
     './backoffice.js',

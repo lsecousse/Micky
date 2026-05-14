@@ -569,40 +569,6 @@ async function renderClaudeApi() {
 }
 
 /* ═══════════════════════════════════════════════════════
-   PAIRING MONTRE (extrait de renderParams)
-═══════════════════════════════════════════════════════ */
-async function startWatchPairing() {
-  if (!currentUser) { showAlert('Connecte-toi d\'abord.'); return; }
-  const modal = document.getElementById('modal');
-  const body = document.getElementById('modal-body');
-  body.innerHTML = `
-    <div style="text-align:center">
-      <p style="font-size:14px;color:var(--text-muted);margin-bottom:12px">Code de liaison montre</p>
-      <p id="watch-code-display" style="font-size:32px;font-weight:700;color:var(--accent);letter-spacing:0.15em">...</p>
-      <p style="font-size:11px;color:var(--text-muted);margin-top:8px">Expire dans 5 minutes</p>
-    </div>
-  `;
-  modal.classList.remove('hidden');
-
-  try {
-    const code = String(Math.floor(1000 + Math.random() * 9000));
-    const { data: { session } } = await db.auth.getSession();
-    if (!session) { document.getElementById('watch-code-display').textContent = 'Erreur session'; return; }
-    await db.from('watch_codes').delete().eq('user_id', currentUser.id);
-    const { error } = await db.from('watch_codes').insert({
-      user_id: currentUser.id,
-      code,
-      refresh_token: session.refresh_token,
-    });
-    if (error) { document.getElementById('watch-code-display').textContent = 'Erreur'; return; }
-    document.getElementById('watch-code-display').textContent = code;
-    setTimeout(() => { if (!modal.classList.contains('hidden')) closeModal(); }, 5 * 60 * 1000);
-  } catch (e) {
-    document.getElementById('watch-code-display').textContent = 'Erreur';
-  }
-}
-
-/* ═══════════════════════════════════════════════════════
    SÉANCE SCREEN
 ═══════════════════════════════════════════════════════ */
 let liveSession = null;
