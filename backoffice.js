@@ -33,7 +33,7 @@ function renderLogin() {
   root.innerHTML = `
     <div class="login-page">
       <div class="login-box">
-        <h1>Coach Mike</h1>
+        <h1>Mike Coach</h1>
         <p class="sub">Espace coach</p>
         <input id="l-email" type="email" placeholder="Email" autocomplete="email" />
         <input id="l-pass"  type="password" placeholder="Mot de passe" autocomplete="current-password" />
@@ -105,7 +105,7 @@ function renderDashboard() {
     <div class="bo-layout">
       <div class="bo-sidebar" id="bo-sidebar">
         <div class="bo-sidebar-header">
-          <span class="bo-logo">Coach Mike</span>
+          <span class="bo-logo">Mike Coach</span>
           <button class="btn-ghost btn-sm" id="bo-logout">Déconnexion</button>
         </div>
         <div class="bo-clients" id="bo-clients-list"></div>

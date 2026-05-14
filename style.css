@@ -36,33 +36,20 @@ html, body {
   position: relative;
 }
 
-/* ── Loading screen ───────────────────────────────────── */
+/* ── Loading screen — positioning only (style via Tailwind dans index.html) ── */
 #loading-screen {
   position: fixed;
   inset: 0;
-  background: var(--bg);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 16px;
   z-index: 999;
   transition: opacity 0.5s ease;
 }
 
 #loading-screen.fade-out { opacity: 0; pointer-events: none; }
 #loading-screen.hidden { display: none; }
-
-#loading-logo { width: 40vw; height: 40vw; max-width: 200px; max-height: 200px; border-radius: 20px; object-fit: cover; }
-
-#loading-title {
-  font-size: clamp(18px, 5vw, 26px);
-  font-weight: 600;
-  color: var(--accent);
-  letter-spacing: 0.05em;
-}
-
-#loading-sub { font-size: clamp(10px, 2.5vw, 12px); color: #444; letter-spacing: 0.05em; }
 
 /* ── Screens ──────────────────────────────────────────── */
 .screen {

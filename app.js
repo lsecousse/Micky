@@ -911,10 +911,9 @@ function renderLiveSession(tab) {
         <button id="finish-session" class="font-semibold text-acid border border-acid bg-acid/[0.10] px-3 py-1.5 active:bg-acid active:text-ink transition text-[10px]">Fin</button>
       </div>
 
-      <!-- Manifesto + counter -->
+      <!-- Counter + progress -->
       <div class="px-5 pb-3">
-        <div class="flex items-baseline justify-between mb-2">
-          <p class="font-display italic font-semibold text-[10px] uppercase tracking-eyebrow text-paper">Build · Fuel · Dominate</p>
+        <div class="flex items-baseline justify-end mb-2">
           <span class="font-display text-[13px] num-stat font-bold leading-none">
             <span class="text-acid">${String(doneSeries).padStart(2, '0')}</span><span class="text-muted">/${String(totalSeries).padStart(2, '0')}</span>
             <span class="font-sans font-medium text-[9px] uppercase tracking-eyebrow text-muted ml-1">séries</span>
@@ -968,10 +967,9 @@ function renderLiveSession(tab) {
         <button id="finish-session" class="font-semibold text-acid border border-acid bg-acid/[0.10] px-3 py-1.5 active:bg-acid active:text-ink transition text-[10px]">Fin</button>
       </div>
 
-      <!-- Manifesto + counter -->
+      <!-- Counter + progress -->
       <div class="px-5 pb-3">
-        <div class="flex items-baseline justify-between mb-2">
-          <p class="font-display italic font-semibold text-[10px] uppercase tracking-eyebrow text-paper">Build · Fuel · Dominate</p>
+        <div class="flex items-baseline justify-end mb-2">
           <span class="font-display text-[13px] num-stat font-bold leading-none">
             <span class="text-acid">${String(doneSeries).padStart(2, '0')}</span><span class="text-muted">/${String(totalSeries).padStart(2, '0')}</span>
             <span class="font-sans font-medium text-[9px] uppercase tracking-eyebrow text-muted ml-1">séries</span>
