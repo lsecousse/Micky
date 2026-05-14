@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#FFFFFF" />
+  <title>05 — Editorial monochrome · Gym Tracker</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,600;9..144,700&family=DM+Sans:wght@300;400;500;600;700&display=swap" />
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            paper: '#FFFFFF',
+            ink:   '#000000',
+            gris:  '#8A8A8A',
+          },
+          fontFamily: {
+            display: ['Fraunces', 'ui-serif', 'Georgia', 'serif'],
+            sans:    ['"DM Sans"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+          },
+        },
+      },
+    };
+  </script>
+
+  <style>
+    html, body { overscroll-behavior: none; -webkit-tap-highlight-color: transparent; }
+    body { background: #FFFFFF; color: #000000; }
+    .eyebrow { letter-spacing: 0.28em; }
+    .eyebrow-wide { letter-spacing: 0.42em; }
+    .num-mega  { font-size: clamp(4rem, 22vw, 6.5rem); line-height: 0.85; letter-spacing: -0.045em; font-variation-settings: "wght" 300, "opsz" 144; }
+    .display-h1 { font-size: clamp(2.75rem, 12vw, 4rem); line-height: 0.92; letter-spacing: -0.025em; font-variation-settings: "wght" 600, "opsz" 144; }
+    .display-h2 { font-size: clamp(1.5rem, 6.6vw, 1.75rem); line-height: 1.05; letter-spacing: -0.01em; font-variation-settings: "wght" 600, "opsz" 144; }
+    .light-italic { font-variation-settings: "wght" 300, "opsz" 144; font-style: italic; }
+    /* Vertical caps label */
+    .vertical-label { writing-mode: vertical-rl; transform: rotate(180deg); }
+  </style>
+</head>
+
+<body class="min-h-[100svh] flex flex-col font-sans antialiased text-ink">
+
+  <div class="mx-auto w-full max-w-[430px] flex-1 flex flex-col">
+
+    <!-- ── HEADER ───────────────────────────────────────── -->
+    <header class="pt-[calc(env(safe-area-inset-top)+18px)] px-7 pb-3 flex items-center justify-between border-b border-ink/85">
+      <button class="font-sans text-[10px] uppercase eyebrow text-ink active:text-gris transition flex items-center gap-2" aria-label="Retour">
+        <span aria-hidden="true">←</span>
+        <span>Sommaire</span>
+      </button>
+      <div class="flex items-center gap-3 font-sans text-[10px] uppercase eyebrow text-ink">
+        <span>Issue 55</span>
+        <span aria-hidden class="w-px h-3 bg-ink/30"></span>
+        <span class="text-gris">13.V.MMXXVI</span>
+      </div>
+    </header>
+
+    <!-- ── MASTHEAD / COVER ─────────────────────────────── -->
+    <section class="px-7 pt-10 pb-12 relative">
+      <div class="grid grid-cols-[auto_1fr] gap-6 items-start">
+        <span class="vertical-label font-sans text-[10px] uppercase eyebrow-wide text-gris self-stretch mt-1">Programme</span>
+        <div class="space-y-5">
+          <p class="font-sans text-[10px] uppercase eyebrow text-gris">Article N°01 — Édition Mai</p>
+          <h1 class="font-display display-h1">Cuisses<br/><span class="text-gris">&amp; Fesses</span></h1>
+          <p class="font-display light-italic text-[16px] text-ink/85 leading-snug max-w-[26ch]">Sept exercices, vingt-huit séries, cinquante minutes — un essai sur la régularité.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Hairline divider with stamp -->
+    <div class="px-7 mb-10 flex items-center gap-4">
+      <span aria-hidden class="flex-1 h-px bg-ink"></span>
+      <!-- Circular validation seal -->
+      <svg viewBox="0 0 120 120" class="w-[88px] h-[88px] shrink-0">
+        <defs>
+          <path id="seal-arc-top"    d="M 60,60 m -46,0 a 46,46 0 1,1 92,0"/>
+          <path id="seal-arc-bottom" d="M 60,60 m -46,0 a 46,46 0 1,0 92,0"/>
+        </defs>
+        <circle cx="60" cy="60" r="55" fill="none" stroke="#000" stroke-width="1"/>
+        <circle cx="60" cy="60" r="49" fill="none" stroke="#000" stroke-width="0.5"/>
+        <text font-family="Fraunces, serif" font-size="9" letter-spacing="3" fill="#000" font-weight="600">
+          <textPath href="#seal-arc-top" startOffset="50%" text-anchor="middle">DERNIÈRE · PECTORAUX BRAS</textPath>
+        </text>
+        <text font-family="Fraunces, serif" font-size="9" letter-spacing="3" fill="#000" font-weight="600">
+          <textPath href="#seal-arc-bottom" startOffset="50%" text-anchor="middle">12 · V · MMXXVI · ACHEVÉE</textPath>
+        </text>
+        <text x="60" y="58" text-anchor="middle" font-family="Fraunces, serif" font-size="18" font-weight="600" fill="#000">№54</text>
+        <text x="60" y="72" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="7" letter-spacing="2" fill="#000">12.V</text>
+      </svg>
+      <span aria-hidden class="flex-1 h-px bg-ink"></span>
+    </div>
+
+    <!-- ── SCROLLABLE MAIN ──────────────────────────────── -->
+    <main class="flex-1 overflow-y-auto px-7 pb-32">
+
+      <!-- Article N°01 — Climb box -->
+      <article class="mb-16">
+
+        <!-- Article header -->
+        <header class="grid grid-cols-[auto_1fr] gap-5 items-baseline mb-9">
+          <span class="font-display display-h2 text-ink leading-none">N°01</span>
+          <div>
+            <h2 class="font-display display-h2 text-ink">— Climb box.</h2>
+            <p class="font-sans text-[10px] uppercase eyebrow text-gris mt-2">Cuisses · Charge libre</p>
+          </div>
+        </header>
+
+        <!-- Series ledger -->
+        <div class="space-y-0">
+
+          <!-- Série 01 -->
+          <div class="grid grid-cols-[auto_1fr_auto] gap-4 items-end py-5 border-t border-ink/85">
+            <span class="font-sans text-[10px] uppercase eyebrow text-gris pb-1">Série 01</span>
+            <span class="font-display num-mega text-ink tabular-nums justify-self-end">10</span>
+            <div class="text-right space-y-1 pb-1 shrink-0">
+              <p class="font-display light-italic text-[14px] text-ink">× 12 reps</p>
+              <p class="font-sans text-[9px] uppercase eyebrow text-gris">Repos 1·45</p>
+            </div>
+          </div>
+
+          <!-- Série 02 -->
+          <div class="grid grid-cols-[auto_1fr_auto] gap-4 items-end py-5 border-t border-ink/20">
+            <span class="font-sans text-[10px] uppercase eyebrow text-gris pb-1">Série 02</span>
+            <span class="font-display num-mega text-ink tabular-nums justify-self-end">10</span>
+            <div class="text-right space-y-1 pb-1 shrink-0">
+              <p class="font-display light-italic text-[14px] text-ink">× 12 reps</p>
+              <p class="font-sans text-[9px] uppercase eyebrow text-gris">Repos 1·45</p>
+            </div>
+          </div>
+
+          <!-- Série 03 -->
+          <div class="grid grid-cols-[auto_1fr_auto] gap-4 items-end py-5 border-t border-ink/20">
+            <span class="font-sans text-[10px] uppercase eyebrow text-gris pb-1">Série 03</span>
+            <span class="font-display num-mega text-ink tabular-nums justify-self-end">10</span>
+            <div class="text-right space-y-1 pb-1 shrink-0">
+              <p class="font-display light-italic text-[14px] text-ink">× 12 reps</p>
+              <p class="font-sans text-[9px] uppercase eyebrow text-gris">Repos 1·45</p>
+            </div>
+          </div>
+
+          <!-- Série 04 -->
+          <div class="grid grid-cols-[auto_1fr_auto] gap-4 items-end py-5 border-t border-ink/20 border-b border-ink/85">
+            <span class="font-sans text-[10px] uppercase eyebrow text-gris pb-1">Série 04</span>
+            <span class="font-display num-mega text-ink tabular-nums justify-self-end">10</span>
+            <div class="text-right space-y-1 pb-1 shrink-0">
+              <p class="font-display light-italic text-[14px] text-ink">× 12 reps</p>
+              <p class="font-sans text-[9px] uppercase eyebrow text-gris">—</p>
+            </div>
+          </div>
+
+        </div>
+
+        <p class="font-display light-italic text-[13px] text-gris mt-5">Note marginale : Cuisses. Charge stable depuis trois cycles.</p>
+      </article>
+
+      <!-- Sommaire à venir -->
+      <section class="mb-2">
+        <header class="flex items-center justify-between mb-6">
+          <h3 class="font-display text-[20px]" style="font-variation-settings:'wght' 600,'opsz' 144;">Sommaire — suite</h3>
+          <span class="font-sans text-[10px] uppercase eyebrow text-gris">06 articles</span>
+        </header>
+
+        <ul class="space-y-0 border-t border-ink/85">
+
+          <li class="grid grid-cols-[auto_1fr_auto] gap-4 items-baseline py-4 border-b border-ink/15">
+            <span class="font-display text-[15px] text-gris tabular-nums" style="font-variation-settings:'wght' 400,'opsz' 144;">N°02</span>
+            <div>
+              <h4 class="font-display text-[17px] leading-tight" style="font-variation-settings:'wght' 600,'opsz' 144;">— Leg extension.</h4>
+              <p class="font-display light-italic text-[12px] text-gris mt-0.5">Cuisses · Réglage dossier 6</p>
+            </div>
+            <p class="font-display text-[18px] tabular-nums" style="font-variation-settings:'wght' 300,'opsz' 144;">41,3<span class="font-sans font-medium text-[9px] eyebrow text-gris ml-1 align-middle">kg</span></p>
+          </li>
+
+          <li class="grid grid-cols-[auto_1fr_auto] gap-4 items-baseline py-4 border-b border-ink/15">
+            <span class="font-display text-[15px] text-gris tabular-nums" style="font-variation-settings:'wght' 400,'opsz' 144;">N°03</span>
+            <div>
+              <h4 class="font-display text-[17px] leading-tight" style="font-variation-settings:'wght' 600,'opsz' 144;">— Seated leg curl.</h4>
+              <p class="font-display light-italic text-[12px] text-gris mt-0.5">Cuisses</p>
+            </div>
+            <p class="font-display text-[18px] tabular-nums" style="font-variation-settings:'wght' 300,'opsz' 144;">45<span class="font-sans font-medium text-[9px] eyebrow text-gris ml-1 align-middle">kg</span></p>
+          </li>
+
+          <li class="grid grid-cols-[auto_1fr_auto] gap-4 items-baseline py-4 border-b border-ink/15">
+            <span class="font-display text-[15px] text-gris tabular-nums" style="font-variation-settings:'wght' 400,'opsz' 144;">N°04</span>
+            <div>
+              <h4 class="font-display text-[17px] leading-tight" style="font-variation-settings:'wght' 600,'opsz' 144;">— Hip abduction.</h4>
+              <p class="font-display light-italic text-[12px] text-gris mt-0.5">Cuisses</p>
+            </div>
+            <p class="font-display text-[18px] tabular-nums" style="font-variation-settings:'wght' 300,'opsz' 144;">42,4<span class="font-sans font-medium text-[9px] eyebrow text-gris ml-1 align-middle">kg</span></p>
+          </li>
+
+          <li class="grid grid-cols-[auto_1fr_auto] gap-4 items-baseline py-4 border-b border-ink/15">
+            <span class="font-display text-[15px] text-gris tabular-nums" style="font-variation-settings:'wght' 400,'opsz' 144;">N°05</span>
+            <div>
+              <h4 class="font-display text-[17px] leading-tight" style="font-variation-settings:'wght' 600,'opsz' 144;">— Hip adduction.</h4>
+              <p class="font-display light-italic text-[12px] text-gris mt-0.5">Cuisses</p>
+            </div>
+            <p class="font-display text-[18px] tabular-nums" style="font-variation-settings:'wght' 300,'opsz' 144;">48,4<span class="font-sans font-medium text-[9px] eyebrow text-gris ml-1 align-middle">kg</span></p>
+          </li>
+
+          <li class="grid grid-cols-[auto_1fr_auto] gap-4 items-baseline py-4 border-b border-ink/15">
+            <span class="font-display text-[15px] text-gris tabular-nums" style="font-variation-settings:'wght' 400,'opsz' 144;">N°06</span>
+            <div>
+              <h4 class="font-display text-[17px] leading-tight" style="font-variation-settings:'wght' 600,'opsz' 144;">— Press.</h4>
+              <p class="font-display light-italic text-[12px] text-gris mt-0.5">Cuisses</p>
+            </div>
+            <p class="font-display text-[18px] tabular-nums" style="font-variation-settings:'wght' 300,'opsz' 144;">53,1<span class="font-sans font-medium text-[9px] eyebrow text-gris ml-1 align-middle">kg</span></p>
+          </li>
+
+          <li class="grid grid-cols-[auto_1fr_auto] gap-4 items-baseline py-4 border-b border-ink/85">
+            <span class="font-display text-[15px] text-gris tabular-nums" style="font-variation-settings:'wght' 400,'opsz' 144;">N°07</span>
+            <div>
+              <h4 class="font-display text-[17px] leading-tight" style="font-variation-settings:'wght' 600,'opsz' 144;">— Glute trainer.</h4>
+              <p class="font-display light-italic text-[12px] text-gris mt-0.5">Fesses</p>
+            </div>
+            <p class="font-display text-[18px] tabular-nums" style="font-variation-settings:'wght' 300,'opsz' 144;">17,5<span class="font-sans font-medium text-[9px] eyebrow text-gris ml-1 align-middle">kg</span></p>
+          </li>
+
+        </ul>
+      </section>
+
+    </main>
+
+    <!-- ── BOTTOM TAB BAR ───────────────────────────────── -->
+    <nav class="sticky bottom-0 bg-paper border-t border-ink/85 pb-[env(safe-area-inset-bottom)]">
+      <div class="grid grid-cols-3 px-7 py-4">
+
+        <button class="flex justify-center active:opacity-70 transition">
+          <span class="font-sans text-[10px] uppercase eyebrow text-ink border-b border-ink pb-1">Séance</span>
+        </button>
+
+        <button class="flex justify-center active:opacity-70 transition">
+          <span class="font-sans text-[10px] uppercase eyebrow text-gris pb-1">Historique</span>
+        </button>
+
+        <button class="flex justify-center active:opacity-70 transition">
+          <span class="font-sans text-[10px] uppercase eyebrow text-gris pb-1">Données</span>
+        </button>
+
+      </div>
+    </nav>
+
+  </div>
+
+</body>
+</html>

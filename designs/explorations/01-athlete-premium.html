@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0A0A0A" />
+  <title>01 — Athlète premium · Gym Tracker</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700;9..144,800;9..144,900&family=DM+Sans:wght@400;500;600;700&display=swap" />
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            ink:    '#0A0A0A',
+            inkAlt: '#141414',
+            paper:  '#F5F4F0',
+            brand:  '#FF6B00',
+          },
+          fontFamily: {
+            display: ['Fraunces', 'ui-serif', 'Georgia', 'serif'],
+            sans:    ['"DM Sans"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+          },
+        },
+      },
+    };
+  </script>
+
+  <style>
+    html, body { overscroll-behavior: none; -webkit-tap-highlight-color: transparent; }
+    body { background: #0A0A0A; color: #F5F4F0; }
+    /* Display headline scaling — works from 320px to 430px */
+    .h-display { font-size: clamp(2.5rem, 11.5vw, 4rem); line-height: 0.92; letter-spacing: -0.025em; }
+    /* Mega weight number — must fit at 320px viewport */
+    .num-mega  { font-size: clamp(2.75rem, 14vw, 4.25rem); line-height: 1; letter-spacing: -0.04em; font-feature-settings: "tnum","lnum"; }
+    /* Subtle texture on the manifesto eyebrow */
+    .eyebrow   { letter-spacing: 0.34em; }
+    /* Faux serif italic underline accent */
+    .accent-line::after {
+      content: ""; display: block; width: 36px; height: 2px; background: #FF6B00; margin-top: 14px;
+    }
+  </style>
+</head>
+
+<body class="min-h-[100svh] flex flex-col font-sans antialiased">
+
+  <div class="mx-auto w-full max-w-[430px] flex-1 flex flex-col">
+
+    <!-- ── HEADER ───────────────────────────────────────── -->
+    <header class="pt-[calc(env(safe-area-inset-top)+18px)] px-6 pb-5 flex items-center justify-between font-sans text-[10px] uppercase eyebrow text-paper/55">
+      <button class="flex items-center gap-2 active:text-paper transition" aria-label="Retour">
+        <span aria-hidden="true">←</span>
+        <span>Retour</span>
+      </button>
+      <div class="flex items-center gap-4">
+        <span>13 mai 2026</span>
+        <span class="text-paper/30">·</span>
+        <span>Séance n°55</span>
+      </div>
+    </header>
+
+    <!-- ── SCROLLABLE MAIN ──────────────────────────────── -->
+    <main class="flex-1 overflow-y-auto px-6 pb-28">
+
+      <!-- Manifesto + program H1 -->
+      <section class="pt-2 pb-10 accent-line">
+        <p class="font-display italic font-semibold text-[11px] eyebrow uppercase text-brand mb-5">Build · Fuel · Dominate</p>
+        <h1 class="font-display font-black h-display">
+          Cuisses<br/>
+          <span class="text-paper/45"><span class="text-brand not-italic font-black">&amp;</span> Fesses.</span>
+        </h1>
+      </section>
+
+      <!-- Meta row -->
+      <section class="grid grid-cols-3 border-y border-paper/15 -mx-6 px-6 py-4 mb-12">
+        <div class="border-r border-paper/15 pr-3">
+          <p class="font-display font-bold text-[26px] text-paper leading-none tabular-nums">07</p>
+          <p class="font-sans text-[10px] uppercase eyebrow text-paper/50 mt-2">Exercices</p>
+        </div>
+        <div class="border-r border-paper/15 px-3">
+          <p class="font-display font-bold text-[26px] text-paper leading-none tabular-nums">28</p>
+          <p class="font-sans text-[10px] uppercase eyebrow text-paper/50 mt-2">Séries</p>
+        </div>
+        <div class="pl-3">
+          <p class="font-display font-bold text-[26px] text-paper leading-none tabular-nums">~50</p>
+          <p class="font-sans text-[10px] uppercase eyebrow text-paper/50 mt-2">Minutes</p>
+        </div>
+      </section>
+
+      <!-- Exercise 01 -->
+      <section class="space-y-7 mb-14">
+        <div class="flex items-start gap-5">
+          <span class="font-display font-black text-[34px] text-brand leading-none tabular-nums tracking-tight">01</span>
+          <div class="flex-1 pt-1 space-y-2">
+            <h2 class="font-display font-bold text-[24px] leading-[1.1] text-paper">Climb box</h2>
+            <p class="font-sans text-[11px] uppercase eyebrow text-paper/45">Cuisses</p>
+          </div>
+        </div>
+
+        <div class="-mx-6 border-y border-paper/15">
+
+          <!-- Série 01 -->
+          <div class="px-6 py-5 border-b border-paper/10 flex items-end gap-5">
+            <div class="flex-1 min-w-0">
+              <p class="font-sans text-[10px] uppercase eyebrow text-paper/50 mb-2">Série 01</p>
+              <div class="flex items-baseline gap-4">
+                <span class="font-display font-black num-mega text-paper tabular-nums">10</span>
+                <div class="space-y-1 leading-tight pb-1">
+                  <p class="font-sans text-[11px] uppercase eyebrow text-paper/45">kg</p>
+                  <p class="font-sans text-[13px] tracking-[0.06em] text-paper/75 tabular-nums">×&nbsp;12&nbsp;reps</p>
+                </div>
+              </div>
+            </div>
+            <p class="font-sans text-[10px] uppercase eyebrow text-brand tabular-nums shrink-0">Repos 1:45</p>
+          </div>
+
+          <!-- Série 02 -->
+          <div class="px-6 py-5 border-b border-paper/10 flex items-end gap-5">
+            <div class="flex-1 min-w-0">
+              <p class="font-sans text-[10px] uppercase eyebrow text-paper/50 mb-2">Série 02</p>
+              <div class="flex items-baseline gap-4">
+                <span class="font-display font-black num-mega text-paper tabular-nums">10</span>
+                <div class="space-y-1 leading-tight pb-1">
+                  <p class="font-sans text-[11px] uppercase eyebrow text-paper/45">kg</p>
+                  <p class="font-sans text-[13px] tracking-[0.06em] text-paper/75 tabular-nums">×&nbsp;12&nbsp;reps</p>
+                </div>
+              </div>
+            </div>
+            <p class="font-sans text-[10px] uppercase eyebrow text-brand tabular-nums shrink-0">Repos 1:45</p>
+          </div>
+
+          <!-- Série 03 -->
+          <div class="px-6 py-5 border-b border-paper/10 flex items-end gap-5">
+            <div class="flex-1 min-w-0">
+              <p class="font-sans text-[10px] uppercase eyebrow text-paper/50 mb-2">Série 03</p>
+              <div class="flex items-baseline gap-4">
+                <span class="font-display font-black num-mega text-paper tabular-nums">10</span>
+                <div class="space-y-1 leading-tight pb-1">
+                  <p class="font-sans text-[11px] uppercase eyebrow text-paper/45">kg</p>
+                  <p class="font-sans text-[13px] tracking-[0.06em] text-paper/75 tabular-nums">×&nbsp;12&nbsp;reps</p>
+                </div>
+              </div>
+            </div>
+            <p class="font-sans text-[10px] uppercase eyebrow text-brand tabular-nums shrink-0">Repos 1:45</p>
+          </div>
+
+          <!-- Série 04 -->
+          <div class="px-6 py-5 flex items-end gap-5">
+            <div class="flex-1 min-w-0">
+              <p class="font-sans text-[10px] uppercase eyebrow text-paper/50 mb-2">Série 04</p>
+              <div class="flex items-baseline gap-4">
+                <span class="font-display font-black num-mega text-paper tabular-nums">10</span>
+                <div class="space-y-1 leading-tight pb-1">
+                  <p class="font-sans text-[11px] uppercase eyebrow text-paper/45">kg</p>
+                  <p class="font-sans text-[13px] tracking-[0.06em] text-paper/75 tabular-nums">×&nbsp;12&nbsp;reps</p>
+                </div>
+              </div>
+            </div>
+            <p class="font-sans text-[10px] uppercase eyebrow text-paper/40 tabular-nums shrink-0">—</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Queued exercises -->
+      <section class="space-y-1 mb-2">
+        <p class="font-sans text-[10px] uppercase eyebrow text-paper/45 mb-5">En attente</p>
+
+        <!-- 02 -->
+        <div class="flex items-start gap-5 py-5 border-t border-paper/10">
+          <span class="font-display font-black text-[26px] text-paper/40 leading-none tabular-nums">02</span>
+          <div class="flex-1 space-y-1.5">
+            <h3 class="font-display font-bold text-[20px] leading-tight text-paper/85">Leg extension</h3>
+            <p class="font-sans text-[10px] uppercase eyebrow text-paper/40">Cuisses · Réglage dossier 6</p>
+          </div>
+          <div class="text-right space-y-1 shrink-0">
+            <p class="font-display font-bold text-[18px] text-paper leading-none tabular-nums">41,3<span class="font-sans font-medium text-[10px] eyebrow text-paper/45 ml-1.5 align-middle">kg</span></p>
+            <p class="font-sans text-[10px] uppercase eyebrow text-paper/45 tabular-nums">4 × 12</p>
+          </div>
+        </div>
+
+        <!-- 03 -->
+        <div class="flex items-start gap-5 py-5 border-t border-paper/10">
+          <span class="font-display font-black text-[26px] text-paper/40 leading-none tabular-nums">03</span>
+          <div class="flex-1 space-y-1.5">
+            <h3 class="font-display font-bold text-[20px] leading-tight text-paper/85">Seated leg curl</h3>
+            <p class="font-sans text-[10px] uppercase eyebrow text-paper/40">Cuisses</p>
+          </div>
+          <div class="text-right space-y-1 shrink-0">
+            <p class="font-display font-bold text-[18px] text-paper leading-none tabular-nums">45<span class="font-sans font-medium text-[10px] eyebrow text-paper/45 ml-1.5 align-middle">kg</span></p>
+            <p class="font-sans text-[10px] uppercase eyebrow text-paper/45 tabular-nums">4 × 12</p>
+          </div>
+        </div>
+
+        <!-- 04 -->
+        <div class="flex items-start gap-5 py-5 border-t border-paper/10">
+          <span class="font-display font-black text-[26px] text-paper/40 leading-none tabular-nums">04</span>
+          <div class="flex-1 space-y-1.5">
+            <h3 class="font-display font-bold text-[20px] leading-tight text-paper/85">Hip abduction</h3>
+            <p class="font-sans text-[10px] uppercase eyebrow text-paper/40">Cuisses</p>
+          </div>
+          <div class="text-right space-y-1 shrink-0">
+            <p class="font-display font-bold text-[18px] text-paper leading-none tabular-nums">42,4<span class="font-sans font-medium text-[10px] eyebrow text-paper/45 ml-1.5 align-middle">kg</span></p>
+            <p class="font-sans text-[10px] uppercase eyebrow text-paper/45 tabular-nums">4 × 12</p>
+          </div>
+        </div>
+
+        <!-- 05 -->
+        <div class="flex items-start gap-5 py-5 border-t border-paper/10">
+          <span class="font-display font-black text-[26px] text-paper/40 leading-none tabular-nums">05</span>
+          <div class="flex-1 space-y-1.5">
+            <h3 class="font-display font-bold text-[20px] leading-tight text-paper/85">Hip adduction</h3>
+            <p class="font-sans text-[10px] uppercase eyebrow text-paper/40">Cuisses</p>
+          </div>
+          <div class="text-right space-y-1 shrink-0">
+            <p class="font-display font-bold text-[18px] text-paper leading-none tabular-nums">48,4<span class="font-sans font-medium text-[10px] eyebrow text-paper/45 ml-1.5 align-middle">kg</span></p>
+            <p class="font-sans text-[10px] uppercase eyebrow text-paper/45 tabular-nums">4 × 12</p>
+          </div>
+        </div>
+
+        <!-- 06 -->
+        <div class="flex items-start gap-5 py-5 border-t border-paper/10">
+          <span class="font-display font-black text-[26px] text-paper/40 leading-none tabular-nums">06</span>
+          <div class="flex-1 space-y-1.5">
+            <h3 class="font-display font-bold text-[20px] leading-tight text-paper/85">Press</h3>
+            <p class="font-sans text-[10px] uppercase eyebrow text-paper/40">Cuisses</p>
+          </div>
+          <div class="text-right space-y-1 shrink-0">
+            <p class="font-display font-bold text-[18px] text-paper leading-none tabular-nums">53,1<span class="font-sans font-medium text-[10px] eyebrow text-paper/45 ml-1.5 align-middle">kg</span></p>
+            <p class="font-sans text-[10px] uppercase eyebrow text-paper/45 tabular-nums">4 × 12</p>
+          </div>
+        </div>
+
+        <!-- 07 -->
+        <div class="flex items-start gap-5 py-5 border-t border-b border-paper/10">
+          <span class="font-display font-black text-[26px] text-paper/40 leading-none tabular-nums">07</span>
+          <div class="flex-1 space-y-1.5">
+            <h3 class="font-display font-bold text-[20px] leading-tight text-paper/85">Glute trainer</h3>
+            <p class="font-sans text-[10px] uppercase eyebrow text-paper/40">Fesses</p>
+          </div>
+          <div class="text-right space-y-1 shrink-0">
+            <p class="font-display font-bold text-[18px] text-paper leading-none tabular-nums">17,5<span class="font-sans font-medium text-[10px] eyebrow text-paper/45 ml-1.5 align-middle">kg</span></p>
+            <p class="font-sans text-[10px] uppercase eyebrow text-paper/45 tabular-nums">4 × 12</p>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- ── BOTTOM TAB BAR ───────────────────────────────── -->
+    <nav class="sticky bottom-0 grid grid-cols-3 border-t border-paper/15 bg-ink/95 backdrop-blur-md pb-[env(safe-area-inset-bottom)]">
+
+      <button class="relative flex flex-col items-center justify-center py-4 active:bg-inkAlt transition">
+        <span aria-hidden="true" class="absolute top-0 left-6 right-6 h-[2px] bg-brand"></span>
+        <span class="font-display italic font-bold text-[11px] uppercase eyebrow text-brand mt-1">Séance</span>
+      </button>
+
+      <button class="flex flex-col items-center justify-center py-4 active:bg-inkAlt transition">
+        <span class="font-sans font-medium text-[11px] uppercase eyebrow text-paper/50">Historique</span>
+      </button>
+
+      <button class="flex flex-col items-center justify-center py-4 active:bg-inkAlt transition">
+        <span class="font-sans font-medium text-[11px] uppercase eyebrow text-paper/50">Données</span>
+      </button>
+
+    </nav>
+
+  </div>
+
+</body>
+</html>

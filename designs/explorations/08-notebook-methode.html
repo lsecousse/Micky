@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#FAFAF7" />
+  <title>08 — Notebook méthode · Gym Tracker</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Manrope:wght@400;500;600;700&display=swap" />
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            paper:  '#FAFAF7',
+            ink:    '#1B2845',
+            valid:  '#4A7C59',
+            inkDim: 'rgba(27,40,69,0.55)',
+          },
+          fontFamily: {
+            display: ['Fraunces', 'ui-serif', 'Georgia', 'serif'],
+            sans:    ['Manrope', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+          },
+        },
+      },
+    };
+  </script>
+
+  <style>
+    html, body { overscroll-behavior: none; -webkit-tap-highlight-color: transparent; }
+    body  { background: #FAFAF7; color: #1B2845; }
+    .eyebrow { letter-spacing: 0.18em; }
+    .eyebrow-wide { letter-spacing: 0.28em; }
+    /* Ruled notebook grid */
+    .ruled {
+      background-image: repeating-linear-gradient(
+        to bottom,
+        transparent 0,
+        transparent 31px,
+        rgba(27,40,69,0.06) 31px,
+        rgba(27,40,69,0.06) 32px
+      );
+      background-position: 0 0;
+    }
+    .tnum { font-variant-numeric: tabular-nums; }
+    .frx  { font-variation-settings: "wght" 500, "opsz" 144; }
+    .frx-r { font-variation-settings: "wght" 400, "opsz" 144; }
+    .frx-b { font-variation-settings: "wght" 600, "opsz" 144; }
+  </style>
+</head>
+
+<body class="min-h-[100svh] flex flex-col font-sans antialiased">
+
+  <div class="mx-auto w-full max-w-[430px] flex-1 flex flex-col">
+
+    <!-- ── STICKY HEADER ────────────────────────────────── -->
+    <header class="sticky top-0 z-20 bg-paper/96 backdrop-blur-sm border-b border-ink/25">
+      <div class="px-5 pt-[calc(env(safe-area-inset-top)+12px)] pb-3">
+
+        <div class="flex items-center justify-between mb-2 font-sans text-[10px] uppercase eyebrow text-inkDim">
+          <button class="active:text-ink transition" aria-label="Retour">← Programmes</button>
+          <span class="tnum">13.05.2026 · Semaine 20</span>
+        </div>
+
+        <div class="flex items-baseline justify-between gap-3 mb-2">
+          <h1 class="font-display text-[22px] frx text-ink leading-none">Cuisses &amp; Fesses</h1>
+          <span class="font-display text-[14px] frx-b text-ink leading-none tnum">
+            <span class="text-valid">04</span><span class="text-inkDim">/28</span>
+            <span class="font-sans text-[9px] uppercase eyebrow text-inkDim ml-1">séries</span>
+          </span>
+        </div>
+
+        <!-- Progress bar -->
+        <div class="h-[3px] bg-ink/10 relative overflow-hidden">
+          <div class="absolute left-0 top-0 h-full bg-valid" style="width:14.28%"></div>
+        </div>
+      </div>
+
+      <!-- Stats strip -->
+      <div class="grid grid-cols-4 border-t border-ink/12">
+        <div class="px-3 py-3 border-r border-ink/12">
+          <p class="font-sans text-[8px] uppercase eyebrow text-inkDim mb-1">Volume</p>
+          <p class="font-display text-[15px] frx-b tnum text-ink leading-none">480<span class="font-sans text-[9px] eyebrow text-inkDim ml-1">kg</span></p>
+        </div>
+        <div class="px-3 py-3 border-r border-ink/12">
+          <p class="font-sans text-[8px] uppercase eyebrow text-inkDim mb-1">Tonnage</p>
+          <p class="font-display text-[15px] frx-b tnum text-ink leading-none">12,4<span class="font-sans text-[9px] eyebrow text-inkDim ml-1">t</span></p>
+        </div>
+        <div class="px-3 py-3 border-r border-ink/12">
+          <p class="font-sans text-[8px] uppercase eyebrow text-inkDim mb-1">Reps</p>
+          <p class="font-display text-[15px] frx-b tnum text-ink leading-none">48<span class="font-sans text-[9px] eyebrow text-inkDim ml-1">/336</span></p>
+        </div>
+        <div class="px-3 py-3">
+          <p class="font-sans text-[8px] uppercase eyebrow text-inkDim mb-1">RPE</p>
+          <p class="font-display text-[15px] frx-b tnum text-ink leading-none">6<span class="font-sans text-[9px] eyebrow text-inkDim ml-1">/10</span></p>
+        </div>
+      </div>
+    </header>
+
+    <!-- ── MAIN ─────────────────────────────────────────── -->
+    <main class="flex-1 overflow-y-auto ruled px-5 pt-6 pb-32 space-y-10">
+
+      <!-- Exercise 01 — active, validated -->
+      <article>
+        <header class="flex items-baseline justify-between mb-2.5">
+          <div class="flex items-baseline gap-3">
+            <span class="font-display text-[13px] frx-r tnum text-inkDim">01</span>
+            <h2 class="font-display text-[19px] frx text-ink leading-none">Climb box</h2>
+          </div>
+          <span class="font-sans text-[9px] uppercase eyebrow text-valid font-semibold flex items-center gap-1.5">
+            <span aria-hidden class="w-1.5 h-1.5 bg-valid rounded-full"></span>
+            4/4 validé
+          </span>
+        </header>
+        <p class="font-sans text-[10px] uppercase eyebrow text-inkDim mb-4">Cuisses · Repos 1:45</p>
+
+        <!-- Series table -->
+        <div class="border border-ink/20 bg-paper">
+
+          <!-- Header row -->
+          <div class="grid grid-cols-[24px_1fr_72px_56px] gap-3 items-center px-3 py-2 border-b border-ink/12 text-[9px] uppercase eyebrow text-inkDim">
+            <span></span>
+            <span>Série</span>
+            <span class="text-right">Charge</span>
+            <span class="text-right">Reps</span>
+          </div>
+
+          <!-- Série 01 (done) -->
+          <div class="grid grid-cols-[24px_1fr_72px_56px] gap-3 items-center px-3 py-2.5 border-b border-ink/10">
+            <span aria-hidden class="w-5 h-5 border border-ink bg-valid flex items-center justify-center">
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" class="text-paper">
+                <path d="M2.5 6.5 L4.8 8.8 L9.5 3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </span>
+            <span class="font-display text-[14px] frx tnum text-ink">01</span>
+            <span class="font-display text-[16px] frx-b tnum text-ink text-right">10 kg</span>
+            <span class="font-display text-[15px] frx tnum text-ink text-right">12</span>
+          </div>
+
+          <!-- Série 02 -->
+          <div class="grid grid-cols-[24px_1fr_72px_56px] gap-3 items-center px-3 py-2.5 border-b border-ink/10">
+            <span aria-hidden class="w-5 h-5 border border-ink bg-valid flex items-center justify-center">
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" class="text-paper">
+                <path d="M2.5 6.5 L4.8 8.8 L9.5 3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </span>
+            <span class="font-display text-[14px] frx tnum text-ink">02</span>
+            <span class="font-display text-[16px] frx-b tnum text-ink text-right">10 kg</span>
+            <span class="font-display text-[15px] frx tnum text-ink text-right">12</span>
+          </div>
+
+          <!-- Série 03 -->
+          <div class="grid grid-cols-[24px_1fr_72px_56px] gap-3 items-center px-3 py-2.5 border-b border-ink/10">
+            <span aria-hidden class="w-5 h-5 border border-ink bg-valid flex items-center justify-center">
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" class="text-paper">
+                <path d="M2.5 6.5 L4.8 8.8 L9.5 3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </span>
+            <span class="font-display text-[14px] frx tnum text-ink">03</span>
+            <span class="font-display text-[16px] frx-b tnum text-ink text-right">10 kg</span>
+            <span class="font-display text-[15px] frx tnum text-ink text-right">12</span>
+          </div>
+
+          <!-- Série 04 -->
+          <div class="grid grid-cols-[24px_1fr_72px_56px] gap-3 items-center px-3 py-2.5">
+            <span aria-hidden class="w-5 h-5 border border-ink bg-valid flex items-center justify-center">
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" class="text-paper">
+                <path d="M2.5 6.5 L4.8 8.8 L9.5 3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </span>
+            <span class="font-display text-[14px] frx tnum text-ink">04</span>
+            <span class="font-display text-[16px] frx-b tnum text-ink text-right">10 kg</span>
+            <span class="font-display text-[15px] frx tnum text-ink text-right">12</span>
+          </div>
+
+          <!-- Footer recap -->
+          <div class="grid grid-cols-[24px_1fr_72px_56px] gap-3 items-center px-3 py-2.5 border-t border-ink/12 bg-ink/[0.03]">
+            <span></span>
+            <span class="font-sans text-[9px] uppercase eyebrow text-inkDim">Σ Volume</span>
+            <span class="font-display text-[14px] frx-b tnum text-ink text-right">480 kg</span>
+            <span class="font-display text-[13px] frx tnum text-ink text-right">48</span>
+          </div>
+        </div>
+
+        <p class="font-sans text-[10px] text-inkDim mt-3 leading-relaxed">
+          Notes : charge stable depuis 3 cycles. Sensation 6/10 RPE. Augmenter charge prochain cycle si RPE ≤ 5.
+        </p>
+      </article>
+
+      <!-- Queued exercises -->
+      <article>
+        <header class="flex items-baseline justify-between mb-4">
+          <h3 class="font-display text-[15px] frx text-ink">Suite — 6 exercices</h3>
+          <span class="font-sans text-[9px] uppercase eyebrow text-inkDim">≈ 42 min restantes</span>
+        </header>
+
+        <ul class="border border-ink/20 bg-paper divide-y divide-ink/10">
+
+          <li class="grid grid-cols-[24px_1fr_auto_56px] gap-3 items-center px-3 py-3">
+            <span aria-hidden class="w-5 h-5 border border-ink bg-paper"></span>
+            <div class="min-w-0">
+              <div class="flex items-baseline gap-2">
+                <span class="font-display text-[11px] frx-r tnum text-inkDim">02</span>
+                <h4 class="font-display text-[15px] frx text-ink leading-tight truncate">Leg extension</h4>
+              </div>
+              <p class="font-sans text-[9px] uppercase eyebrow text-inkDim mt-0.5 truncate">Cuisses · Dossier 6</p>
+            </div>
+            <span class="font-display text-[14px] frx-b tnum text-ink whitespace-nowrap">41,3 kg</span>
+            <span class="font-sans text-[9px] uppercase eyebrow text-inkDim tnum text-right">4 × 12</span>
+          </li>
+
+          <li class="grid grid-cols-[24px_1fr_auto_56px] gap-3 items-center px-3 py-3">
+            <span aria-hidden class="w-5 h-5 border border-ink bg-paper"></span>
+            <div class="min-w-0">
+              <div class="flex items-baseline gap-2">
+                <span class="font-display text-[11px] frx-r tnum text-inkDim">03</span>
+                <h4 class="font-display text-[15px] frx text-ink leading-tight truncate">Seated leg curl</h4>
+              </div>
+              <p class="font-sans text-[9px] uppercase eyebrow text-inkDim mt-0.5">Cuisses</p>
+            </div>
+            <span class="font-display text-[14px] frx-b tnum text-ink whitespace-nowrap">45 kg</span>
+            <span class="font-sans text-[9px] uppercase eyebrow text-inkDim tnum text-right">4 × 12</span>
+          </li>
+
+          <li class="grid grid-cols-[24px_1fr_auto_56px] gap-3 items-center px-3 py-3">
+            <span aria-hidden class="w-5 h-5 border border-ink bg-paper"></span>
+            <div class="min-w-0">
+              <div class="flex items-baseline gap-2">
+                <span class="font-display text-[11px] frx-r tnum text-inkDim">04</span>
+                <h4 class="font-display text-[15px] frx text-ink leading-tight truncate">Hip abduction</h4>
+              </div>
+              <p class="font-sans text-[9px] uppercase eyebrow text-inkDim mt-0.5">Cuisses</p>
+            </div>
+            <span class="font-display text-[14px] frx-b tnum text-ink whitespace-nowrap">42,4 kg</span>
+            <span class="font-sans text-[9px] uppercase eyebrow text-inkDim tnum text-right">4 × 12</span>
+          </li>
+
+          <li class="grid grid-cols-[24px_1fr_auto_56px] gap-3 items-center px-3 py-3">
+            <span aria-hidden class="w-5 h-5 border border-ink bg-paper"></span>
+            <div class="min-w-0">
+              <div class="flex items-baseline gap-2">
+                <span class="font-display text-[11px] frx-r tnum text-inkDim">05</span>
+                <h4 class="font-display text-[15px] frx text-ink leading-tight truncate">Hip adduction</h4>
+              </div>
+              <p class="font-sans text-[9px] uppercase eyebrow text-inkDim mt-0.5">Cuisses</p>
+            </div>
+            <span class="font-display text-[14px] frx-b tnum text-ink whitespace-nowrap">48,4 kg</span>
+            <span class="font-sans text-[9px] uppercase eyebrow text-inkDim tnum text-right">4 × 12</span>
+          </li>
+
+          <li class="grid grid-cols-[24px_1fr_auto_56px] gap-3 items-center px-3 py-3">
+            <span aria-hidden class="w-5 h-5 border border-ink bg-paper"></span>
+            <div class="min-w-0">
+              <div class="flex items-baseline gap-2">
+                <span class="font-display text-[11px] frx-r tnum text-inkDim">06</span>
+                <h4 class="font-display text-[15px] frx text-ink leading-tight truncate">Press</h4>
+              </div>
+              <p class="font-sans text-[9px] uppercase eyebrow text-inkDim mt-0.5">Cuisses</p>
+            </div>
+            <span class="font-display text-[14px] frx-b tnum text-ink whitespace-nowrap">53,1 kg</span>
+            <span class="font-sans text-[9px] uppercase eyebrow text-inkDim tnum text-right">4 × 12</span>
+          </li>
+
+          <li class="grid grid-cols-[24px_1fr_auto_56px] gap-3 items-center px-3 py-3">
+            <span aria-hidden class="w-5 h-5 border border-ink bg-paper"></span>
+            <div class="min-w-0">
+              <div class="flex items-baseline gap-2">
+                <span class="font-display text-[11px] frx-r tnum text-inkDim">07</span>
+                <h4 class="font-display text-[15px] frx text-ink leading-tight truncate">Glute trainer</h4>
+              </div>
+              <p class="font-sans text-[9px] uppercase eyebrow text-inkDim mt-0.5">Fesses</p>
+            </div>
+            <span class="font-display text-[14px] frx-b tnum text-ink whitespace-nowrap">17,5 kg</span>
+            <span class="font-sans text-[9px] uppercase eyebrow text-inkDim tnum text-right">4 × 12</span>
+          </li>
+
+        </ul>
+      </article>
+
+    </main>
+
+    <!-- ── BOTTOM TAB BAR ───────────────────────────────── -->
+    <nav class="sticky bottom-0 bg-paper border-t border-ink/25 pb-[env(safe-area-inset-bottom)]">
+      <div class="grid grid-cols-3">
+
+        <button class="relative py-3 flex flex-col items-center gap-0.5 active:bg-ink/[0.04] transition">
+          <span aria-hidden class="absolute top-0 left-4 right-4 h-[2px] bg-ink"></span>
+          <span class="font-sans text-[12px] font-semibold tracking-[0.06em] text-ink">Séance</span>
+          <span class="font-sans text-[8px] uppercase eyebrow text-inkDim">[s]</span>
+        </button>
+
+        <button class="py-3 flex flex-col items-center gap-0.5 active:bg-ink/[0.04] transition">
+          <span class="font-sans text-[12px] font-medium tracking-[0.06em] text-inkDim">Historique</span>
+          <span class="font-sans text-[8px] uppercase eyebrow text-inkDim/70">[h]</span>
+        </button>
+
+        <button class="py-3 flex flex-col items-center gap-0.5 active:bg-ink/[0.04] transition">
+          <span class="font-sans text-[12px] font-medium tracking-[0.06em] text-inkDim">Données</span>
+          <span class="font-sans text-[8px] uppercase eyebrow text-inkDim/70">[d]</span>
+        </button>
+
+      </div>
+    </nav>
+
+  </div>
+
+</body>
+</html>

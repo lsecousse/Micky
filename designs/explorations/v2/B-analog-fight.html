@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#D9CDB8" />
+  <title>B — Analog · Gym Tracker</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;0,9..144,800;0,9..144,900;1,9..144,700;1,9..144,800;1,9..144,900&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" />
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            kraft:     '#D9CDB8',
+            kraftDark: '#C7BAA0',
+            ink:       '#1A1A1A',
+            blood:     '#A8001A',
+            bloodDark: '#7A0011',
+            ash:       '#6B6B6B',
+          },
+          fontFamily: {
+            display: ['Fraunces', 'ui-serif', 'Georgia', 'serif'],
+            sans:    ['Manrope', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+            mono:    ['"JetBrains Mono"', 'ui-monospace', 'Menlo', 'monospace'],
+          },
+        },
+      },
+    };
+  </script>
+
+  <style>
+    html, body { overscroll-behavior: none; -webkit-tap-highlight-color: transparent; }
+    body {
+      background: #D9CDB8;
+      color: #1A1A1A;
+      /* Heavy kraft grain */
+      background-image:
+        url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.92' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.10  0 0 0 0 0.08  0 0 0 0 0.05  0 0 0 0.16 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"),
+        radial-gradient(circle at 20% 10%, rgba(0,0,0,0.04), transparent 60%),
+        radial-gradient(circle at 80% 90%, rgba(0,0,0,0.05), transparent 55%);
+    }
+    /* Sharp serif Fraunces */
+    .frx-sharp     { font-variation-settings: "opsz" 144, "SOFT" 0, "wght" 800; }
+    .frx-sharp-bk  { font-variation-settings: "opsz" 144, "SOFT" 0, "wght" 900; }
+    .frx-sharp-rg  { font-variation-settings: "opsz" 144, "SOFT" 0, "wght" 600; }
+    .frx-sharp-it-bk { font-variation-settings: "opsz" 144, "SOFT" 0, "wght" 900; font-style: italic; }
+    .frx-sharp-it    { font-variation-settings: "opsz" 144, "SOFT" 0, "wght" 700; font-style: italic; }
+    .eyebrow      { letter-spacing: 0.22em; }
+    .eyebrow-wide { letter-spacing: 0.36em; }
+    .tnum         { font-variant-numeric: tabular-nums; }
+    /* H1 */
+    .h-title      { font-size: clamp(2.5rem, 11.5vw, 3.75rem); line-height: 0.88; letter-spacing: -0.02em; }
+    .num-mega     { font-size: clamp(2.25rem, 12vw, 3.5rem); line-height: 1; letter-spacing: -0.03em; }
+    .num-decor    { font-size: clamp(2.5rem, 12vw, 3.75rem); line-height: 0.85; letter-spacing: -0.01em; }
+
+    /* Rotated VALIDÉ stamp */
+    .stamp-validated {
+      transform: rotate(-7deg);
+      opacity: 0.88;
+      filter: blur(0.15px);
+      mix-blend-mode: multiply;
+    }
+    /* Diagonal hatch on banner */
+    .banner-hatch {
+      background-image:
+        repeating-linear-gradient(135deg, rgba(0,0,0,0.18) 0 2px, transparent 2px 8px),
+        linear-gradient(#A8001A, #A8001A);
+      background-color: #A8001A;
+    }
+    /* Hand-drawn underline */
+    .ink-underline { stroke: #1A1A1A; stroke-width: 2.2; stroke-linecap: round; fill: none; }
+  </style>
+</head>
+
+<body class="min-h-[100svh] flex flex-col font-sans antialiased">
+
+<div class="mx-auto w-full max-w-[430px] flex-1 flex flex-col">
+
+  <!-- ── HEADER ───────────────────────────────────────── -->
+  <header class="pt-[calc(env(safe-area-inset-top)+12px)] px-5 pb-2 flex items-center justify-between font-mono text-[10px] uppercase eyebrow tnum">
+    <button class="flex items-center gap-1.5 active:opacity-70 transition" aria-label="Retour">
+      <span aria-hidden>←</span>
+      <span>Carnet</span>
+    </button>
+    <div class="flex items-center gap-2 text-ink">
+      <span>13 mai 2026</span>
+      <span aria-hidden class="w-px h-3 bg-ink/30"></span>
+      <span class="text-blood font-bold">Séance N°55</span>
+    </div>
+  </header>
+
+  <!-- ── MASTHEAD ─────────────────────────────────────── -->
+  <section class="px-5 pt-4 pb-6 relative">
+
+    <!-- Day banner -->
+    <div class="banner-hatch text-kraft inline-flex items-center gap-2 px-3 py-1 mb-4">
+      <span aria-hidden class="w-1.5 h-1.5 bg-kraft"></span>
+      <span class="font-mono text-[9px] uppercase eyebrow-wide font-bold">Séance du jour</span>
+      <span aria-hidden class="w-1.5 h-1.5 bg-kraft"></span>
+    </div>
+
+    <!-- Title -->
+    <div class="border-y-[3px] border-ink py-3 -mx-5 px-5 relative">
+      <h1 class="font-display frx-sharp-it-bk h-title text-ink">
+        Cuisses<br/>
+        <span class="text-blood not-italic frx-sharp-bk">&amp;</span> Fesses
+      </h1>
+      <!-- Ink underline imperfect -->
+      <svg viewBox="0 0 320 8" class="absolute left-5 right-5 -bottom-[2px] w-[calc(100%-2.5rem)] h-2 pointer-events-none" preserveAspectRatio="none">
+        <path d="M 2 5 C 60 2, 140 7, 200 3 S 300 6, 318 4" class="ink-underline"/>
+      </svg>
+    </div>
+
+    <p class="font-mono text-[10px] uppercase eyebrow text-ink/75 mt-4 flex items-center gap-3 tnum">
+      <span class="font-bold">07 Exercices</span>
+      <span aria-hidden class="w-1 h-1 bg-blood rounded-full"></span>
+      <span>28 Séries</span>
+      <span aria-hidden class="w-1 h-1 bg-blood rounded-full"></span>
+      <span>≈ 50 min</span>
+    </p>
+  </section>
+
+  <!-- ── STATS STRIP ──────────────────────────────────── -->
+  <section class="grid grid-cols-4 border-y-[2px] border-ink mx-5">
+    <div class="px-2.5 py-3 border-r border-ink/55">
+      <p class="font-mono text-[8px] uppercase eyebrow-wide text-ink/60 mb-1.5">Volume</p>
+      <p class="font-mono font-bold text-[15px] tnum text-ink leading-none">480<span class="text-[9px] eyebrow text-ink/55 ml-0.5">KG</span></p>
+    </div>
+    <div class="px-2.5 py-3 border-r border-ink/55">
+      <p class="font-mono text-[8px] uppercase eyebrow-wide text-ink/60 mb-1.5">Tonnage</p>
+      <p class="font-mono font-bold text-[15px] tnum text-ink leading-none">12,4<span class="text-[9px] eyebrow text-ink/55 ml-0.5">T</span></p>
+    </div>
+    <div class="px-2.5 py-3 border-r border-ink/55">
+      <p class="font-mono text-[8px] uppercase eyebrow-wide text-ink/60 mb-1.5">Reps</p>
+      <p class="font-mono font-bold text-[15px] tnum text-ink leading-none">48<span class="text-[9px] eyebrow text-ink/55 ml-0.5">/336</span></p>
+    </div>
+    <div class="px-2.5 py-3">
+      <p class="font-mono text-[8px] uppercase eyebrow-wide text-ink/60 mb-1.5">RPE</p>
+      <p class="font-mono font-bold text-[15px] tnum text-blood leading-none">6<span class="text-[9px] eyebrow text-ink/55 ml-0.5">/10</span></p>
+    </div>
+  </section>
+
+  <!-- Progress strip -->
+  <div class="mx-5 mt-3 mb-6 flex items-center gap-2 font-mono text-[9px] uppercase eyebrow tnum">
+    <span class="font-bold text-blood">04</span>
+    <span class="text-ink/55">/ 28 séries</span>
+    <span class="flex-1 h-[2px] bg-ink/15 relative overflow-hidden">
+      <span aria-hidden class="absolute left-0 top-0 h-full bg-blood" style="width:14.28%"></span>
+    </span>
+    <span class="text-ink/55">14%</span>
+  </div>
+
+  <!-- ── MAIN SCROLL ──────────────────────────────────── -->
+  <main class="flex-1 overflow-y-auto px-5 pb-32">
+
+    <!-- Exercice 01 — actif, validé -->
+    <article class="mb-10 relative">
+
+      <!-- Exercice header -->
+      <header class="flex items-baseline gap-4 mb-3">
+        <span class="font-display frx-sharp-it-bk num-decor text-blood leading-[0.8]">01.</span>
+        <div class="flex-1 pt-2">
+          <div class="flex items-baseline gap-3 flex-wrap">
+            <h2 class="font-display frx-sharp text-[22px] uppercase text-ink leading-tight">Climb Box</h2>
+            <span class="font-mono text-[9px] uppercase eyebrow font-bold text-blood flex items-center gap-1">
+              <span aria-hidden class="w-1.5 h-1.5 bg-blood"></span>
+              4/4 fait
+            </span>
+          </div>
+          <p class="font-mono text-[9px] uppercase eyebrow text-ink/65 mt-1">Cuisses · Repos 1:45</p>
+        </div>
+      </header>
+
+      <!-- Tableau séries -->
+      <div class="border-y-[2px] border-ink relative bg-kraft/45">
+
+        <!-- Header row -->
+        <div class="grid grid-cols-[32px_44px_1fr_56px] gap-2 items-center px-3 py-2 border-b border-ink/45 font-mono text-[8px] uppercase eyebrow-wide text-ink/65">
+          <span></span>
+          <span>Série</span>
+          <span class="text-right">Charge / Reps</span>
+          <span class="text-right">Repos</span>
+        </div>
+
+        <!-- Série 01 -->
+        <div class="grid grid-cols-[32px_44px_1fr_56px] gap-2 items-center px-3 py-3 border-b border-ink/25 relative">
+          <span aria-hidden class="w-5 h-5 border-[1.5px] border-ink bg-blood flex items-center justify-center">
+            <svg width="11" height="11" viewBox="0 0 12 12" fill="none" class="text-kraft">
+              <path d="M2.5 6.5 L4.8 8.8 L9.5 3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </span>
+          <span class="font-mono font-bold text-[16px] tnum text-ink leading-none">01</span>
+          <div class="text-right tnum">
+            <span class="font-mono font-bold text-[18px] text-ink">10<span class="text-[10px] eyebrow text-ink/60 ml-0.5">KG</span></span>
+            <span class="font-mono text-[12px] text-ink/70 ml-2">× 12</span>
+          </div>
+          <span class="font-mono text-[10px] tnum text-blood text-right font-bold">1:45</span>
+
+          <!-- Stamp -->
+          <span aria-hidden class="absolute right-1 top-1 stamp-validated pointer-events-none">
+            <svg width="58" height="32" viewBox="0 0 100 56">
+              <rect x="2" y="2" width="96" height="52" fill="none" stroke="#A8001A" stroke-width="3"/>
+              <rect x="6" y="6" width="88" height="44" fill="none" stroke="#A8001A" stroke-width="1"/>
+              <text x="50" y="36" text-anchor="middle" font-family="Fraunces, serif" font-size="22" font-weight="900" fill="#A8001A" font-style="italic">VALIDÉ</text>
+            </svg>
+          </span>
+        </div>
+
+        <!-- Série 02 -->
+        <div class="grid grid-cols-[32px_44px_1fr_56px] gap-2 items-center px-3 py-3 border-b border-ink/25 relative">
+          <span aria-hidden class="w-5 h-5 border-[1.5px] border-ink bg-blood flex items-center justify-center">
+            <svg width="11" height="11" viewBox="0 0 12 12" fill="none" class="text-kraft">
+              <path d="M2.5 6.5 L4.8 8.8 L9.5 3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </span>
+          <span class="font-mono font-bold text-[16px] tnum text-ink leading-none">02</span>
+          <div class="text-right tnum">
+            <span class="font-mono font-bold text-[18px] text-ink">10<span class="text-[10px] eyebrow text-ink/60 ml-0.5">KG</span></span>
+            <span class="font-mono text-[12px] text-ink/70 ml-2">× 12</span>
+          </div>
+          <span class="font-mono text-[10px] tnum text-blood text-right font-bold">1:45</span>
+          <span aria-hidden class="absolute right-1 top-1 stamp-validated pointer-events-none">
+            <svg width="58" height="32" viewBox="0 0 100 56">
+              <rect x="2" y="2" width="96" height="52" fill="none" stroke="#A8001A" stroke-width="3"/>
+              <rect x="6" y="6" width="88" height="44" fill="none" stroke="#A8001A" stroke-width="1"/>
+              <text x="50" y="36" text-anchor="middle" font-family="Fraunces, serif" font-size="22" font-weight="900" fill="#A8001A" font-style="italic">VALIDÉ</text>
+            </svg>
+          </span>
+        </div>
+
+        <!-- Série 03 -->
+        <div class="grid grid-cols-[32px_44px_1fr_56px] gap-2 items-center px-3 py-3 border-b border-ink/25 relative">
+          <span aria-hidden class="w-5 h-5 border-[1.5px] border-ink bg-blood flex items-center justify-center">
+            <svg width="11" height="11" viewBox="0 0 12 12" fill="none" class="text-kraft">
+              <path d="M2.5 6.5 L4.8 8.8 L9.5 3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </span>
+          <span class="font-mono font-bold text-[16px] tnum text-ink leading-none">03</span>
+          <div class="text-right tnum">
+            <span class="font-mono font-bold text-[18px] text-ink">10<span class="text-[10px] eyebrow text-ink/60 ml-0.5">KG</span></span>
+            <span class="font-mono text-[12px] text-ink/70 ml-2">× 12</span>
+          </div>
+          <span class="font-mono text-[10px] tnum text-blood text-right font-bold">1:45</span>
+          <span aria-hidden class="absolute right-1 top-1 stamp-validated pointer-events-none">
+            <svg width="58" height="32" viewBox="0 0 100 56">
+              <rect x="2" y="2" width="96" height="52" fill="none" stroke="#A8001A" stroke-width="3"/>
+              <rect x="6" y="6" width="88" height="44" fill="none" stroke="#A8001A" stroke-width="1"/>
+              <text x="50" y="36" text-anchor="middle" font-family="Fraunces, serif" font-size="22" font-weight="900" fill="#A8001A" font-style="italic">VALIDÉ</text>
+            </svg>
+          </span>
+        </div>
+
+        <!-- Série 04 -->
+        <div class="grid grid-cols-[32px_44px_1fr_56px] gap-2 items-center px-3 py-3 relative">
+          <span aria-hidden class="w-5 h-5 border-[1.5px] border-ink bg-blood flex items-center justify-center">
+            <svg width="11" height="11" viewBox="0 0 12 12" fill="none" class="text-kraft">
+              <path d="M2.5 6.5 L4.8 8.8 L9.5 3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </span>
+          <span class="font-mono font-bold text-[16px] tnum text-ink leading-none">04</span>
+          <div class="text-right tnum">
+            <span class="font-mono font-bold text-[18px] text-ink">10<span class="text-[10px] eyebrow text-ink/60 ml-0.5">KG</span></span>
+            <span class="font-mono text-[12px] text-ink/70 ml-2">× 12</span>
+          </div>
+          <span class="font-mono text-[10px] tnum text-ink/35 text-right">—</span>
+          <span aria-hidden class="absolute right-1 top-1 stamp-validated pointer-events-none">
+            <svg width="58" height="32" viewBox="0 0 100 56">
+              <rect x="2" y="2" width="96" height="52" fill="none" stroke="#A8001A" stroke-width="3"/>
+              <rect x="6" y="6" width="88" height="44" fill="none" stroke="#A8001A" stroke-width="1"/>
+              <text x="50" y="36" text-anchor="middle" font-family="Fraunces, serif" font-size="22" font-weight="900" fill="#A8001A" font-style="italic">VALIDÉ</text>
+            </svg>
+          </span>
+        </div>
+
+        <!-- Σ Bilan -->
+        <div class="grid grid-cols-[32px_44px_1fr_56px] gap-2 items-center px-3 py-2.5 border-t-[2px] border-ink bg-ink text-kraft">
+          <span class="font-display frx-sharp-bk text-[16px] text-blood leading-none text-center">Σ</span>
+          <span class="font-mono text-[9px] uppercase eyebrow font-bold">Bilan</span>
+          <span class="font-mono font-bold text-[14px] tnum text-right">480 KG · 48 REPS</span>
+          <span class="font-mono text-[9px] uppercase eyebrow text-kraft/70 text-right">4/4 ✓</span>
+        </div>
+      </div>
+
+      <!-- Coach note -->
+      <p class="font-display frx-sharp-it text-[13px] text-ink/70 mt-3 leading-snug">
+        « Charge stable depuis 3 cycles. Si tu fais moins de 5 sur l'échelle, on charge la prochaine fois. »
+      </p>
+    </article>
+
+    <!-- Suite -->
+    <section class="mb-2">
+      <header class="flex items-baseline justify-between mb-3 border-b-[2px] border-ink pb-2">
+        <h3 class="font-display frx-sharp-bk text-[20px] uppercase text-ink leading-none">Suite — 6 exercices</h3>
+        <span class="font-mono text-[9px] uppercase eyebrow font-bold text-blood tnum">06 restants</span>
+      </header>
+
+      <ul class="divide-y divide-ink/25 border-b-[2px] border-ink">
+
+        <li class="grid grid-cols-[28px_auto_1fr_auto] gap-3 items-center py-3">
+          <span class="font-mono font-bold text-[18px] tnum text-blood leading-none">02</span>
+          <span aria-hidden class="w-4 h-4 border-[1.5px] border-ink bg-kraft"></span>
+          <div class="min-w-0 space-y-0.5">
+            <h4 class="font-display frx-sharp text-[15px] uppercase text-ink leading-tight truncate">Leg Extension</h4>
+            <p class="font-mono text-[8px] uppercase eyebrow text-ink/60 truncate">Cuisses · Dossier 6</p>
+          </div>
+          <div class="text-right shrink-0">
+            <p class="font-mono font-bold text-[13px] tnum text-ink leading-none">41,3 KG</p>
+            <p class="font-mono text-[8px] uppercase eyebrow text-ink/55 tnum mt-0.5">04 × 12</p>
+          </div>
+        </li>
+
+        <li class="grid grid-cols-[28px_auto_1fr_auto] gap-3 items-center py-3">
+          <span class="font-mono font-bold text-[18px] tnum text-blood leading-none">03</span>
+          <span aria-hidden class="w-4 h-4 border-[1.5px] border-ink bg-kraft"></span>
+          <div class="min-w-0 space-y-0.5">
+            <h4 class="font-display frx-sharp text-[15px] uppercase text-ink leading-tight truncate">Seated Leg Curl</h4>
+            <p class="font-mono text-[8px] uppercase eyebrow text-ink/60">Cuisses</p>
+          </div>
+          <div class="text-right shrink-0">
+            <p class="font-mono font-bold text-[13px] tnum text-ink leading-none">45 KG</p>
+            <p class="font-mono text-[8px] uppercase eyebrow text-ink/55 tnum mt-0.5">04 × 12</p>
+          </div>
+        </li>
+
+        <li class="grid grid-cols-[28px_auto_1fr_auto] gap-3 items-center py-3">
+          <span class="font-mono font-bold text-[18px] tnum text-blood leading-none">04</span>
+          <span aria-hidden class="w-4 h-4 border-[1.5px] border-ink bg-kraft"></span>
+          <div class="min-w-0 space-y-0.5">
+            <h4 class="font-display frx-sharp text-[15px] uppercase text-ink leading-tight truncate">Hip Abduction</h4>
+            <p class="font-mono text-[8px] uppercase eyebrow text-ink/60">Cuisses</p>
+          </div>
+          <div class="text-right shrink-0">
+            <p class="font-mono font-bold text-[13px] tnum text-ink leading-none">42,4 KG</p>
+            <p class="font-mono text-[8px] uppercase eyebrow text-ink/55 tnum mt-0.5">04 × 12</p>
+          </div>
+        </li>
+
+        <li class="grid grid-cols-[28px_auto_1fr_auto] gap-3 items-center py-3">
+          <span class="font-mono font-bold text-[18px] tnum text-blood leading-none">05</span>
+          <span aria-hidden class="w-4 h-4 border-[1.5px] border-ink bg-kraft"></span>
+          <div class="min-w-0 space-y-0.5">
+            <h4 class="font-display frx-sharp text-[15px] uppercase text-ink leading-tight truncate">Hip Adduction</h4>
+            <p class="font-mono text-[8px] uppercase eyebrow text-ink/60">Cuisses</p>
+          </div>
+          <div class="text-right shrink-0">
+            <p class="font-mono font-bold text-[13px] tnum text-ink leading-none">48,4 KG</p>
+            <p class="font-mono text-[8px] uppercase eyebrow text-ink/55 tnum mt-0.5">04 × 12</p>
+          </div>
+        </li>
+
+        <li class="grid grid-cols-[28px_auto_1fr_auto] gap-3 items-center py-3">
+          <span class="font-mono font-bold text-[18px] tnum text-blood leading-none">06</span>
+          <span aria-hidden class="w-4 h-4 border-[1.5px] border-ink bg-kraft"></span>
+          <div class="min-w-0 space-y-0.5">
+            <h4 class="font-display frx-sharp text-[15px] uppercase text-ink leading-tight truncate">Press</h4>
+            <p class="font-mono text-[8px] uppercase eyebrow text-ink/60">Cuisses</p>
+          </div>
+          <div class="text-right shrink-0">
+            <p class="font-mono font-bold text-[13px] tnum text-ink leading-none">53,1 KG</p>
+            <p class="font-mono text-[8px] uppercase eyebrow text-ink/55 tnum mt-0.5">04 × 12</p>
+          </div>
+        </li>
+
+        <li class="grid grid-cols-[28px_auto_1fr_auto] gap-3 items-center py-3">
+          <span class="font-mono font-bold text-[18px] tnum text-blood leading-none">07</span>
+          <span aria-hidden class="w-4 h-4 border-[1.5px] border-ink bg-kraft"></span>
+          <div class="min-w-0 space-y-0.5">
+            <h4 class="font-display frx-sharp text-[15px] uppercase text-ink leading-tight truncate">Glute Trainer</h4>
+            <p class="font-mono text-[8px] uppercase eyebrow text-ink/60">Fesses</p>
+          </div>
+          <div class="text-right shrink-0">
+            <p class="font-mono font-bold text-[13px] tnum text-ink leading-none">17,5 KG</p>
+            <p class="font-mono text-[8px] uppercase eyebrow text-ink/55 tnum mt-0.5">04 × 12</p>
+          </div>
+        </li>
+
+      </ul>
+
+      <p class="font-mono text-[9px] uppercase eyebrow text-ink/60 text-right mt-3">≈ 42 min restantes</p>
+    </section>
+
+  </main>
+
+  <!-- ── BOTTOM TAB BAR ───────────────────────────────── -->
+  <nav class="sticky bottom-0 bg-kraft/96 backdrop-blur-sm border-t-[3px] border-ink pb-[env(safe-area-inset-bottom)]">
+    <div class="grid grid-cols-3">
+
+      <button class="relative py-3.5 flex flex-col items-center gap-0.5 active:bg-ink/[0.04] transition">
+        <span aria-hidden class="absolute top-0 left-4 right-4 h-[3px] bg-blood"></span>
+        <span class="font-display frx-sharp text-[14px] uppercase text-ink leading-none">Séance</span>
+        <span class="font-mono text-[8px] uppercase eyebrow text-blood font-bold">en cours</span>
+      </button>
+
+      <button class="py-3.5 flex flex-col items-center gap-0.5 active:bg-ink/[0.04] transition">
+        <span class="font-display frx-sharp-rg text-[14px] uppercase text-ink/70 leading-none">Archives</span>
+        <span class="font-mono text-[8px] uppercase eyebrow text-ink/45 tnum">54 séances</span>
+      </button>
+
+      <button class="py-3.5 flex flex-col items-center gap-0.5 active:bg-ink/[0.04] transition">
+        <span class="font-display frx-sharp-rg text-[14px] uppercase text-ink/70 leading-none">Mesures</span>
+        <span class="font-mono text-[8px] uppercase eyebrow text-ink/45">corps</span>
+      </button>
+
+    </div>
+  </nav>
+
+</div>
+
+</body>
+</html>

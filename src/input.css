@@ -1,0 +1,55 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Direction A — locked tokens */
+    --ink:    #0A0A0A;
+    --inkAlt: #141414;
+    --paper:  #F5F4F0;
+    --muted:  #888888;
+    --border: #2A2A2A;
+    --todo:   #444444;
+    --cyan:   #06B6D4;
+    --acid:   #84CC16;
+    --racing: #FACC15;
+    --blood:  #DC2626;
+    --radius: 0.375rem;
+  }
+
+  /* Preflight is disabled — minimal reset for interactive elements so
+     they inherit the dark Direction A surface instead of the UA defaults. */
+  button {
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+  }
+  input, select, textarea {
+    background: transparent;
+    color: inherit;
+    font: inherit;
+  }
+}
+
+@layer utilities {
+  /* Fluid set numerals — Direction A */
+  .num-set {
+    font-size: clamp(2.375rem, 10.5vw, 2.625rem);
+    line-height: 1;
+    letter-spacing: -0.04em;
+    font-feature-settings: "tnum", "lnum";
+  }
+  .num-set-hot {
+    font-size: clamp(2.75rem, 12.2vw, 3rem);
+    line-height: 1;
+    letter-spacing: -0.04em;
+    font-feature-settings: "tnum", "lnum";
+  }
+  .num-stat { font-feature-settings: "tnum", "lnum"; }
+  .h-display { font-size: clamp(2.5rem, 11.5vw, 3.75rem); line-height: 0.92; letter-spacing: -0.025em; }
+  .accent-line::after { content:""; display:block; width:36px; height:2px; background: var(--acid); margin-top: 14px; }
+}

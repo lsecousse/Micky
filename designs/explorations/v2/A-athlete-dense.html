@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0A0A0A" />
+  <title>A — Athlete dense · Gym Tracker</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700;9..144,800;9..144,900&family=DM+Sans:wght@400;500;600;700&display=swap" />
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            ink:     '#0A0A0A',
+            inkAlt:  '#141414',
+            paper:   '#F5F4F0',
+            muted:   '#888888',
+            border:  '#2A2A2A',
+            todo:    '#444444',
+            // Semantic accents
+            cyan:    '#06B6D4',
+            acid:    '#84CC16',
+            racing:  '#FACC15',
+            blood:   '#DC2626',
+          },
+          fontFamily: {
+            display: ['Fraunces', 'ui-serif', 'Georgia', 'serif'],
+            sans:    ['"DM Sans"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+          },
+        },
+      },
+    };
+  </script>
+
+  <style>
+    html, body { overscroll-behavior: none; -webkit-tap-highlight-color: transparent; }
+    body { background: #0A0A0A; color: #F5F4F0; }
+    .eyebrow      { letter-spacing: 0.28em; }
+    .eyebrow-wide { letter-spacing: 0.40em; }
+    .h-display    { font-size: clamp(2.5rem, 11.5vw, 3.75rem); line-height: 0.92; letter-spacing: -0.025em; }
+    .num-set      { font-size: clamp(2.375rem, 10.5vw, 2.625rem); line-height: 1; letter-spacing: -0.04em; font-feature-settings: "tnum","lnum"; }
+    .num-set-hot  { font-size: clamp(2.75rem, 12.2vw, 3rem); line-height: 1; letter-spacing: -0.04em; font-feature-settings: "tnum","lnum"; }
+    .num-stat     { font-feature-settings: "tnum","lnum"; }
+    .accent-line::after { content:""; display:block; width:36px; height:2px; background:#84CC16; margin-top:14px; }
+  </style>
+</head>
+
+<body class="min-h-[100svh] flex flex-col font-sans antialiased">
+
+<div class="mx-auto w-full max-w-[430px] flex-1 flex flex-col">
+
+  <!-- ══ STICKY HEADER ════════════════════════════════════ -->
+  <header class="sticky top-0 z-20 bg-ink/96 backdrop-blur-sm border-b border-border">
+
+    <!-- Top status row -->
+    <div class="pt-[calc(env(safe-area-inset-top)+14px)] px-6 pb-3 flex items-center justify-between font-sans text-[10px] uppercase eyebrow text-muted">
+      <button class="flex items-center gap-2 active:text-paper transition" aria-label="Retour">
+        <span aria-hidden="true">←</span>
+        <span>Retour</span>
+      </button>
+      <div class="flex items-center gap-3">
+        <span>13 mai 2026</span>
+        <span class="text-muted/50">·</span>
+        <span>Session N°55</span>
+      </div>
+    </div>
+
+    <!-- Counter + progress -->
+    <div class="px-6 pb-3">
+      <div class="flex items-baseline justify-between mb-2">
+        <p class="font-display italic font-semibold text-[10px] eyebrow uppercase text-paper">Build · Fuel · Dominate</p>
+        <span class="font-display text-[13px] num-stat font-bold leading-none">
+          <span class="text-acid">04</span><span class="text-muted">/28</span>
+          <span class="font-sans font-medium text-[9px] eyebrow uppercase text-muted ml-1">séries</span>
+        </span>
+      </div>
+      <div class="h-[3px] bg-border relative overflow-hidden">
+        <div class="absolute left-0 top-0 h-full bg-acid" style="width:14.28%"></div>
+      </div>
+    </div>
+
+    <!-- Stats strip 4 cols — chiffres en CYAN -->
+    <div class="grid grid-cols-4 border-t border-border">
+      <div class="px-3 py-3 border-r border-border">
+        <p class="font-sans text-[8px] uppercase eyebrow-wide text-muted mb-1.5">Volume</p>
+        <p class="font-display font-bold text-[18px] num-stat text-cyan leading-none">480<span class="font-sans text-[9px] eyebrow text-muted ml-1">kg</span></p>
+      </div>
+      <div class="px-3 py-3 border-r border-border">
+        <p class="font-sans text-[8px] uppercase eyebrow-wide text-muted mb-1.5">Tonnage</p>
+        <p class="font-display font-bold text-[18px] num-stat text-cyan leading-none">12,4<span class="font-sans text-[9px] eyebrow text-muted ml-1">t</span></p>
+      </div>
+      <div class="px-3 py-3 border-r border-border">
+        <p class="font-sans text-[8px] uppercase eyebrow-wide text-muted mb-1.5">Reps</p>
+        <p class="font-display font-bold text-[18px] num-stat text-cyan leading-none">48<span class="font-sans text-[9px] eyebrow text-muted ml-1">/336</span></p>
+      </div>
+      <div class="px-3 py-3">
+        <p class="font-sans text-[8px] uppercase eyebrow-wide text-muted mb-1.5">RPE</p>
+        <p class="font-display font-bold text-[18px] num-stat text-cyan leading-none">6<span class="font-sans text-[9px] eyebrow text-muted ml-1">/10</span></p>
+      </div>
+    </div>
+  </header>
+
+  <!-- ══ MAIN ══════════════════════════════════════════════ -->
+  <main class="flex-1 overflow-y-auto pb-32">
+
+    <!-- Masthead title -->
+    <section class="px-6 pt-9 pb-9 accent-line">
+      <h1 class="font-display font-black h-display">
+        Cuisses<br/>
+        <span class="text-paper/40"><span class="text-acid not-italic font-black">&amp;</span> Fesses.</span>
+      </h1>
+      <p class="font-sans text-[10px] uppercase eyebrow text-muted mt-5">07 exercices · 28 séries · ≈ 50 min</p>
+    </section>
+
+    <!-- ── EXERCISE 01 — Climb box (in progress) ─────────── -->
+    <article class="mb-12">
+
+      <!-- Exercise header -->
+      <header class="px-6 mb-5">
+        <div class="flex items-baseline gap-5">
+          <span class="font-display font-black text-[34px] text-racing leading-none num-stat tracking-tight">01</span>
+          <div class="flex-1 pt-1 space-y-2">
+            <div class="flex items-baseline gap-3 flex-wrap">
+              <h2 class="font-display font-bold text-[24px] leading-[1.1] text-paper">Climb box</h2>
+              <span class="font-sans text-[9px] uppercase eyebrow text-acid font-semibold flex items-center gap-1.5 shrink-0">
+                <span aria-hidden class="w-1.5 h-1.5 bg-acid"></span>
+                02/04 fait
+              </span>
+            </div>
+            <p class="font-sans text-[11px] uppercase eyebrow text-muted">Cuisses · Repos 1:45</p>
+          </div>
+        </div>
+      </header>
+
+      <!-- Series ledger table — 3 cols : Charge / Reps / Repos -->
+      <div class="border-y border-border">
+
+        <!-- Header row -->
+        <div class="grid grid-cols-[1fr_60px_80px] gap-4 items-center px-6 py-2.5 border-l-[3px] border-l-transparent border-b border-border font-sans text-[9px] uppercase eyebrow-wide text-muted">
+          <span>Charge</span>
+          <span class="text-right">Reps</span>
+          <span class="text-right">Repos</span>
+        </div>
+
+        <!-- Série 01 — VALIDATED -->
+        <div class="grid grid-cols-[1fr_60px_80px] gap-4 items-end px-6 py-4 border-l-[3px] border-l-acid border-b border-border/70">
+          <span class="font-display font-black num-set text-paper">10<span class="font-sans font-medium text-[11px] eyebrow text-muted ml-2 align-baseline">kg</span></span>
+          <span class="font-display font-bold text-[18px] num-stat text-paper text-right pb-1.5">× 12</span>
+          <span class="font-sans text-[10px] uppercase eyebrow text-acid num-stat text-right pb-1.5 font-semibold">1:45</span>
+        </div>
+
+        <!-- Série 02 — VALIDATED -->
+        <div class="grid grid-cols-[1fr_60px_80px] gap-4 items-end px-6 py-4 border-l-[3px] border-l-acid border-b border-border/70">
+          <span class="font-display font-black num-set text-paper">10<span class="font-sans font-medium text-[11px] eyebrow text-muted ml-2 align-baseline">kg</span></span>
+          <span class="font-display font-bold text-[18px] num-stat text-paper text-right pb-1.5">× 12</span>
+          <span class="font-sans text-[10px] uppercase eyebrow text-acid num-stat text-right pb-1.5 font-semibold">1:45</span>
+        </div>
+
+        <!-- Série 03 — ACTIVE (PR) -->
+        <div class="grid grid-cols-[1fr_60px_80px] gap-4 items-end px-6 py-4 border-l-[3px] border-l-racing bg-racing/[0.07] border-b border-border/70">
+          <span class="font-display font-black num-set-hot text-racing">12<span class="font-sans font-medium text-[12px] eyebrow text-racing/80 ml-2 align-baseline">kg</span></span>
+          <span class="font-display font-bold text-[20px] num-stat text-racing text-right pb-1.5">× 12</span>
+          <div class="text-right pb-1.5 flex flex-col items-end gap-1">
+            <span class="font-sans font-bold text-[8px] uppercase eyebrow tracking-[0.18em] text-paper bg-blood px-1.5 py-0.5 leading-none">PR</span>
+            <span class="font-sans text-[9px] uppercase eyebrow text-racing font-semibold">En cours</span>
+          </div>
+        </div>
+
+        <!-- Série 04 — TODO -->
+        <div class="grid grid-cols-[1fr_60px_80px] gap-4 items-end px-6 py-4 border-l-[3px] border-l-transparent border-b border-border/70 opacity-50">
+          <span class="font-display font-black num-set text-todo">10<span class="font-sans font-medium text-[11px] eyebrow text-todo ml-2 align-baseline">kg</span></span>
+          <span class="font-display font-bold text-[18px] num-stat text-todo text-right pb-1.5">× 12</span>
+          <span class="font-sans text-[10px] uppercase eyebrow text-todo num-stat text-right pb-1.5">—</span>
+        </div>
+
+        <!-- Σ Cumul — CYAN, séparateur clair -->
+        <div class="flex items-baseline justify-between px-6 py-3.5 bg-inkAlt border-l-[3px] border-l-transparent border-t-[2px] border-t-cyan">
+          <span class="font-sans font-bold text-[10px] uppercase eyebrow text-cyan">Σ Cumul</span>
+          <div class="flex items-baseline gap-3 font-display font-bold num-stat text-cyan">
+            <span class="text-[20px]">240 kg</span>
+            <span class="text-[14px] text-cyan/75">· 24 reps</span>
+          </div>
+        </div>
+      </div>
+
+      <p class="font-display italic font-medium text-[12px] text-muted mt-4 px-6">
+        Note : charge montée à 12 kg sur la série 03. Si RPE ≤ 7, on garde pour le prochain cycle.
+      </p>
+    </article>
+
+    <!-- ── QUEUED EXERCISES ──────────────────────────────── -->
+    <section class="mb-2">
+      <header class="flex items-baseline justify-between mb-5 px-6">
+        <h3 class="font-display font-bold text-[18px] text-paper">Suite — 6 exercices</h3>
+        <span class="font-sans text-[10px] uppercase eyebrow text-muted">≈ 42 min restantes</span>
+      </header>
+
+      <ul class="border-y border-border">
+
+        <li class="grid grid-cols-[36px_auto_1fr_auto] gap-3 items-center px-6 py-4 border-b border-border/70">
+          <span aria-hidden class="w-6 h-6 border border-todo bg-transparent"></span>
+          <span class="font-display font-black text-[20px] num-stat text-muted leading-none">02</span>
+          <div class="min-w-0 space-y-1">
+            <h4 class="font-display font-bold text-[16px] leading-tight text-paper truncate">Leg extension</h4>
+            <p class="font-sans text-[9px] uppercase eyebrow text-muted truncate">Cuisses · Dossier 6</p>
+          </div>
+          <div class="text-right space-y-0.5 shrink-0">
+            <p class="font-display font-bold text-[16px] num-stat text-paper leading-none">41,3<span class="font-sans font-medium text-[9px] eyebrow text-muted ml-1.5 align-middle">kg</span></p>
+            <p class="font-sans text-[9px] uppercase eyebrow text-muted num-stat">4 × 12</p>
+          </div>
+        </li>
+
+        <li class="grid grid-cols-[36px_auto_1fr_auto] gap-3 items-center px-6 py-4 border-b border-border/70">
+          <span aria-hidden class="w-6 h-6 border border-todo bg-transparent"></span>
+          <span class="font-display font-black text-[20px] num-stat text-muted leading-none">03</span>
+          <div class="min-w-0 space-y-1">
+            <h4 class="font-display font-bold text-[16px] leading-tight text-paper truncate">Seated leg curl</h4>
+            <p class="font-sans text-[9px] uppercase eyebrow text-muted">Cuisses</p>
+          </div>
+          <div class="text-right space-y-0.5 shrink-0">
+            <p class="font-display font-bold text-[16px] num-stat text-paper leading-none">45<span class="font-sans font-medium text-[9px] eyebrow text-muted ml-1.5 align-middle">kg</span></p>
+            <p class="font-sans text-[9px] uppercase eyebrow text-muted num-stat">4 × 12</p>
+          </div>
+        </li>
+
+        <li class="grid grid-cols-[36px_auto_1fr_auto] gap-3 items-center px-6 py-4 border-b border-border/70">
+          <span aria-hidden class="w-6 h-6 border border-todo bg-transparent"></span>
+          <span class="font-display font-black text-[20px] num-stat text-muted leading-none">04</span>
+          <div class="min-w-0 space-y-1">
+            <h4 class="font-display font-bold text-[16px] leading-tight text-paper truncate">Hip abduction</h4>
+            <p class="font-sans text-[9px] uppercase eyebrow text-muted">Cuisses</p>
+          </div>
+          <div class="text-right space-y-0.5 shrink-0">
+            <p class="font-display font-bold text-[16px] num-stat text-paper leading-none">42,4<span class="font-sans font-medium text-[9px] eyebrow text-muted ml-1.5 align-middle">kg</span></p>
+            <p class="font-sans text-[9px] uppercase eyebrow text-muted num-stat">4 × 12</p>
+          </div>
+        </li>
+
+        <li class="grid grid-cols-[36px_auto_1fr_auto] gap-3 items-center px-6 py-4 border-b border-border/70">
+          <span aria-hidden class="w-6 h-6 border border-todo bg-transparent"></span>
+          <span class="font-display font-black text-[20px] num-stat text-muted leading-none">05</span>
+          <div class="min-w-0 space-y-1">
+            <h4 class="font-display font-bold text-[16px] leading-tight text-paper truncate">Hip adduction</h4>
+            <p class="font-sans text-[9px] uppercase eyebrow text-muted">Cuisses</p>
+          </div>
+          <div class="text-right space-y-0.5 shrink-0">
+            <p class="font-display font-bold text-[16px] num-stat text-paper leading-none">48,4<span class="font-sans font-medium text-[9px] eyebrow text-muted ml-1.5 align-middle">kg</span></p>
+            <p class="font-sans text-[9px] uppercase eyebrow text-muted num-stat">4 × 12</p>
+          </div>
+        </li>
+
+        <li class="grid grid-cols-[36px_auto_1fr_auto] gap-3 items-center px-6 py-4 border-b border-border/70">
+          <span aria-hidden class="w-6 h-6 border border-todo bg-transparent"></span>
+          <span class="font-display font-black text-[20px] num-stat text-muted leading-none">06</span>
+          <div class="min-w-0 space-y-1">
+            <h4 class="font-display font-bold text-[16px] leading-tight text-paper truncate">Press</h4>
+            <p class="font-sans text-[9px] uppercase eyebrow text-muted">Cuisses</p>
+          </div>
+          <div class="text-right space-y-0.5 shrink-0">
+            <p class="font-display font-bold text-[16px] num-stat text-paper leading-none">53,1<span class="font-sans font-medium text-[9px] eyebrow text-muted ml-1.5 align-middle">kg</span></p>
+            <p class="font-sans text-[9px] uppercase eyebrow text-muted num-stat">4 × 12</p>
+          </div>
+        </li>
+
+        <li class="grid grid-cols-[36px_auto_1fr_auto] gap-3 items-center px-6 py-4">
+          <span aria-hidden class="w-6 h-6 border border-todo bg-transparent"></span>
+          <span class="font-display font-black text-[20px] num-stat text-muted leading-none">07</span>
+          <div class="min-w-0 space-y-1">
+            <h4 class="font-display font-bold text-[16px] leading-tight text-paper truncate">Glute trainer</h4>
+            <p class="font-sans text-[9px] uppercase eyebrow text-muted">Fesses</p>
+          </div>
+          <div class="text-right space-y-0.5 shrink-0">
+            <p class="font-display font-bold text-[16px] num-stat text-paper leading-none">17,5<span class="font-sans font-medium text-[9px] eyebrow text-muted ml-1.5 align-middle">kg</span></p>
+            <p class="font-sans text-[9px] uppercase eyebrow text-muted num-stat">4 × 12</p>
+          </div>
+        </li>
+
+      </ul>
+    </section>
+
+  </main>
+
+  <!-- ══ BOTTOM TAB BAR ════════════════════════════════════ -->
+  <nav class="sticky bottom-0 grid grid-cols-3 border-t border-border bg-ink/95 backdrop-blur-md pb-[env(safe-area-inset-bottom)]">
+
+    <button class="relative flex flex-col items-center justify-center py-4 active:bg-inkAlt transition">
+      <span aria-hidden class="absolute top-0 left-6 right-6 h-[2px] bg-racing"></span>
+      <span class="font-display italic font-bold text-[11px] uppercase eyebrow text-racing mt-1">Séance</span>
+    </button>
+
+    <button class="flex flex-col items-center justify-center py-4 active:bg-inkAlt transition">
+      <span class="font-sans font-medium text-[11px] uppercase eyebrow text-muted">Historique</span>
+    </button>
+
+    <button class="flex flex-col items-center justify-center py-4 active:bg-inkAlt transition">
+      <span class="font-sans font-medium text-[11px] uppercase eyebrow text-muted">Données</span>
+    </button>
+
+  </nav>
+
+</div>
+
+</body>
+</html>

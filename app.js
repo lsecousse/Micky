@@ -1,7 +1,7 @@
 /* ═══════════════════════════════════════════════════════
    VERSION
 ═══════════════════════════════════════════════════════ */
-const APP_VERSION = '2026.mai.06';
+const APP_VERSION = '2026.mai.14';
 document.querySelectorAll('.app-version').forEach(el => el.textContent = APP_VERSION);
 
 /* ═══════════════════════════════════════════════════════
@@ -187,140 +187,120 @@ async function renderHome() {
 
   const prenom = currentProfile?.prenom;
   if (prenom) {
-    const greeting = document.createElement('p');
-    greeting.className = 'home-greeting';
-    greeting.textContent = `Bonjour ${prenom} 👋`;
+    const greeting = document.createElement('div');
+    greeting.className = 'space-y-1';
+    greeting.innerHTML = `
+      <p class="font-sans text-[10px] uppercase tracking-eyebrow text-muted">Bonjour</p>
+      <p class="font-display text-3xl font-semibold leading-tight text-paper">${prenom}.</p>
+      <span class="block w-10 h-px bg-acid mt-2"></span>
+    `;
     main.appendChild(greeting);
   }
 
   const programmes = await loadProgrammes();
 
   if (!programmes.length) {
-    const msg = document.createElement('p');
-    msg.className = 'home-empty';
-    msg.textContent = 'Aucun programme.\nCrées-en un dans Programmes ⚙';
+    const msg = document.createElement('div');
+    msg.className = 'text-center py-16 space-y-2';
+    msg.innerHTML = `
+      <p class="font-display text-xl text-paper">Aucun programme.</p>
+      <p class="font-sans text-[13px] text-muted">Crées-en un dans Programmes.</p>
+    `;
     main.appendChild(msg);
     return;
   }
 
   const liveCat = liveSession?.category || null;
-
-  const fonteProgrammes = programmes.filter(p => (p.category || 'fonte') === 'fonte');
+  const fonteProgrammes  = programmes.filter(p => (p.category || 'fonte') === 'fonte');
   const cardioProgrammes = programmes.filter(p => p.category === 'cardio');
 
-  // ── Section Fonte ──
-  if (fonteProgrammes.length) {
-    if (liveCat === 'fonte') {
-      const card = document.createElement('div');
-      card.className = 'home-resume-card';
-      card.innerHTML = `
-        <button class="home-resume-icon home-resume-icon--delete" title="Supprimer">🗑</button>
-        <div class="home-resume-center">
-          <span class="home-resume-label">🏋️ Séance en cours</span>
-          <span class="home-resume-name">${liveSession.programmeName}</span>
-        </div>
-        <button class="home-resume-icon home-resume-icon--finish" title="Terminer">✅</button>
-      `;
-      card.querySelector('.home-resume-center').addEventListener('click', () => showScreen('seance'));
-      card.querySelector('.home-resume-icon--delete').addEventListener('click', (e) => {
-        e.stopPropagation();
-        showConfirm('Supprimer cette séance ?', async () => {
-          await deleteSessionDB(liveSession.id);
-          liveSession = null;
-          liveFocus = null;
-          liveRest = null;
-          showScreen('home');
-        });
-      });
-      card.querySelector('.home-resume-icon--finish').addEventListener('click', (e) => {
-        e.stopPropagation();
-        finishSession();
-      });
-      main.appendChild(card);
-    } else {
-      const { ordered } = await cyclicProgrammes(fonteProgrammes);
-      const next = ordered[0];
-      const seriesCount = next.exercises.reduce((s, e) => s + (e.sets || e.count || e.series?.length || 3), 0);
-      const muscles = [...new Set(next.exercises.flatMap(e => migrateExercise(e).activities.map(a => a.name).filter(Boolean)))];
+  if (fonteProgrammes.length)  await renderHomeSection(main, 'fonte',  fonteProgrammes,  liveCat === 'fonte');
+  if (cardioProgrammes.length) await renderHomeSection(main, 'cardio', cardioProgrammes, liveCat === 'cardio');
+}
 
-      const card = document.createElement('div');
-      card.className = 'home-next-card';
-      card.innerHTML = `
-        <span class="home-next-label">🏋️ Fonte</span>
-        <span class="home-next-name">${next.name}</span>
-        ${muscles.length ? `<span class="home-next-muscles">${muscles.join(' · ')}</span>` : ''}
-        <span class="home-next-meta">${next.exercises.length} exercice${next.exercises.length > 1 ? 's' : ''} · ${seriesCount} séries</span>
-      `;
-      card.addEventListener('click', async () => {
-        await startSession(next);
-        showScreen('seance');
+async function renderHomeSection(main, category, programmes, isLive) {
+  const labelMap = { fonte: 'Fonte', cardio: 'Cardio' };
+  const section = document.createElement('section');
+  section.className = 'space-y-4';
+
+  if (isLive) {
+    section.innerHTML = `
+      <p class="font-sans text-[10px] uppercase tracking-eyebrow text-racing flex items-center gap-3 font-semibold">
+        <span>${labelMap[category]} · Séance en cours</span>
+        <span class="flex-1 h-px bg-border"></span>
+      </p>
+      <div class="flex items-center gap-3 bg-inkAlt border-l-[3px] border-l-racing border-y border-r border-border p-5">
+        <button data-role="resume-delete" class="w-11 h-11 flex items-center justify-center text-[18px] text-muted border border-border active:text-blood active:border-blood transition" aria-label="Supprimer">🗑</button>
+        <button data-role="resume-center" class="flex-1 text-left">
+          <p class="font-sans text-[10px] uppercase tracking-eyebrow text-muted">En cours</p>
+          <p class="font-display text-[22px] font-semibold leading-tight text-racing mt-1">${liveSession.programmeName}</p>
+        </button>
+        <button data-role="resume-finish" class="w-11 h-11 flex items-center justify-center text-[18px] text-acid border border-acid bg-acid/[0.12] active:bg-acid active:text-ink transition" aria-label="Terminer">✅</button>
+      </div>
+    `;
+    section.querySelector('[data-role="resume-center"]').addEventListener('click', () => showScreen('seance'));
+    section.querySelector('[data-role="resume-delete"]').addEventListener('click', (e) => {
+      e.stopPropagation();
+      showConfirm('Supprimer cette séance ?', async () => {
+        await deleteSessionDB(liveSession.id);
+        liveSession = null;
+        liveFocus = null;
+        liveRest = null;
+        showScreen('home');
       });
-      main.appendChild(card);
-    }
-    if (fonteProgrammes.length > 1) {
+    });
+    section.querySelector('[data-role="resume-finish"]').addEventListener('click', (e) => {
+      e.stopPropagation();
+      finishSession();
+    });
+  } else {
+    const { ordered } = await cyclicProgrammes(programmes);
+    const next = ordered[0];
+    const isFonte = category === 'fonte';
+    const seriesCount = isFonte
+      ? next.exercises.reduce((s, e) => s + (e.sets || e.count || e.series?.length || 3), 0)
+      : 0;
+    const totalDur = !isFonte
+      ? next.exercises.reduce((s, e) => s + (e.duration || 0), 0)
+      : 0;
+    const muscles = isFonte
+      ? [...new Set(next.exercises.flatMap(e => migrateExercise(e).activities.map(a => a.name).filter(Boolean)))]
+      : [];
+
+    const meta = isFonte
+      ? `${next.exercises.length} exercice${next.exercises.length > 1 ? 's' : ''} · ${seriesCount} séries`
+      : `${next.exercises.length} machine${next.exercises.length > 1 ? 's' : ''} · ${totalDur} min`;
+
+    section.innerHTML = `
+      <p class="font-sans text-[10px] uppercase tracking-eyebrow text-acid flex items-center gap-3 font-semibold">
+        <span>${labelMap[category]} · Prochaine séance</span>
+        <span class="flex-1 h-px bg-border"></span>
+      </p>
+      <button data-role="next-card" class="block w-full text-left bg-inkAlt border border-border p-5 active:border-acid transition">
+        <h2 class="font-display text-[26px] font-semibold leading-tight text-paper">${next.name}</h2>
+        <span class="block w-12 h-px bg-acid my-3"></span>
+        ${muscles.length ? `<p class="font-sans text-[12px] text-acid leading-relaxed">${muscles.join(' · ')}</p>` : ''}
+        <div class="mt-4 flex items-center justify-between">
+          <p class="font-sans text-[10px] uppercase tracking-eyebrow text-muted">${meta}</p>
+          <span class="font-sans text-[10px] uppercase tracking-eyebrow text-acid font-semibold">Démarrer →</span>
+        </div>
+      </button>
+    `;
+    section.querySelector('[data-role="next-card"]').addEventListener('click', async () => {
+      await startSession(next);
+      showScreen('seance');
+    });
+
+    if (programmes.length > 1) {
       const other = document.createElement('button');
-      other.className = 'home-other-btn';
-      other.textContent = '🏋️ Choisir un autre programme fonte';
-      other.addEventListener('click', () => { pendingSelectionCategory = 'fonte'; showScreen('seance'); });
-      main.appendChild(other);
+      other.className = 'block w-full text-left py-3 px-4 border border-border font-sans text-[11px] uppercase tracking-eyebrow text-paper active:border-acid active:text-acid transition';
+      other.textContent = `Choisir un autre programme ${category}`;
+      other.addEventListener('click', () => { pendingSelectionCategory = category; showScreen('seance'); });
+      section.appendChild(other);
     }
   }
 
-  // ── Section Cardio ──
-  if (cardioProgrammes.length) {
-    if (liveCat === 'cardio') {
-      const card = document.createElement('div');
-      card.className = 'home-resume-card';
-      card.innerHTML = `
-        <button class="home-resume-icon home-resume-icon--delete" title="Supprimer">🗑</button>
-        <div class="home-resume-center">
-          <span class="home-resume-label">🏃 Séance en cours</span>
-          <span class="home-resume-name">${liveSession.programmeName}</span>
-        </div>
-        <button class="home-resume-icon home-resume-icon--finish" title="Terminer">✅</button>
-      `;
-      card.querySelector('.home-resume-center').addEventListener('click', () => showScreen('seance'));
-      card.querySelector('.home-resume-icon--delete').addEventListener('click', (e) => {
-        e.stopPropagation();
-        showConfirm('Supprimer cette séance ?', async () => {
-          await deleteSessionDB(liveSession.id);
-          liveSession = null;
-          liveFocus = null;
-          liveRest = null;
-          showScreen('home');
-        });
-      });
-      card.querySelector('.home-resume-icon--finish').addEventListener('click', (e) => {
-        e.stopPropagation();
-        finishSession();
-      });
-      main.appendChild(card);
-    } else {
-      const { ordered } = await cyclicProgrammes(cardioProgrammes);
-      const next = ordered[0];
-      const totalDur = next.exercises.reduce((s, e) => s + (e.duration || 0), 0);
-
-      const card = document.createElement('div');
-      card.className = 'home-next-card home-next-cardio';
-      card.innerHTML = `
-        <span class="home-next-label">🏃 Cardio</span>
-        <span class="home-next-name">${next.name}</span>
-        <span class="home-next-meta">${next.exercises.length} machine${next.exercises.length > 1 ? 's' : ''} · ${totalDur} min</span>
-      `;
-      card.addEventListener('click', async () => {
-        await startSession(next);
-        showScreen('seance');
-      });
-      main.appendChild(card);
-    }
-    if (cardioProgrammes.length > 1) {
-      const other = document.createElement('button');
-      other.className = 'home-other-btn';
-      other.textContent = '🏃 Choisir un autre programme cardio';
-      other.addEventListener('click', () => { pendingSelectionCategory = 'cardio'; showScreen('seance'); });
-      main.appendChild(other);
-    }
-  }
+  main.appendChild(section);
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -345,12 +325,12 @@ function buildUserDropdown() {
   dropdown.innerHTML = '';
 
   const items = [
-    { label: 'Profil',          icon: '👤', action: () => { dropdown.classList.add('hidden'); showScreen('profil'); } },
-    { label: 'Clé API Claude',  icon: '🔑', action: () => { dropdown.classList.add('hidden'); showScreen('claude-api'); } },
-    { label: 'Historique',      icon: '📋', action: () => { dropdown.classList.add('hidden'); showScreen('history'); } },
-    { label: 'Stats',           icon: '📈', action: () => { dropdown.classList.add('hidden'); showScreen('stats'); } },
-    { label: 'Programmes',      icon: '⚙️', action: () => { dropdown.classList.add('hidden'); showScreen('params'); } },
-    { label: 'Déconnexion',     icon: '🚪', danger: true, action: () => {
+    { label: 'Profil',         action: () => { dropdown.classList.add('hidden'); showScreen('profil'); } },
+    { label: 'Clé API Claude', action: () => { dropdown.classList.add('hidden'); showScreen('claude-api'); } },
+    { label: 'Historique',     action: () => { dropdown.classList.add('hidden'); showScreen('history'); } },
+    { label: 'Stats',          action: () => { dropdown.classList.add('hidden'); showScreen('stats'); } },
+    { label: 'Programmes',     action: () => { dropdown.classList.add('hidden'); showScreen('params'); } },
+    { label: 'Déconnexion',    danger: true, action: () => {
       dropdown.classList.add('hidden');
       showConfirm('Se déconnecter ?', async () => {
         await db.auth.signOut();
@@ -361,10 +341,12 @@ function buildUserDropdown() {
     }},
   ];
 
-  items.forEach(({ label, icon, danger, action }) => {
+  const baseClass = 'w-full text-left px-4 py-3 font-sans text-[12px] uppercase tracking-[0.20em] border-b border-border last:border-b-0 transition active:bg-[rgba(255,255,255,0.04)]';
+  items.forEach(({ label, danger, action }) => {
     const btn = document.createElement('button');
-    btn.className = 'user-dropdown-item' + (danger ? ' user-dropdown-item--danger' : '');
-    btn.textContent = `${icon}  ${label}`;
+    const colorClass = danger ? 'text-blood' : 'text-paper';
+    btn.className = `${baseClass} ${colorClass}`;
+    btn.textContent = label;
     btn.addEventListener('click', action);
     dropdown.appendChild(btn);
   });
@@ -675,34 +657,38 @@ async function renderProgrammeSelection(tab) {
   }
 
   if (!programmes.length) {
-    const msg = document.createElement('p');
-    msg.className = 'empty-msg';
-    msg.textContent = 'Aucun programme. Crées-en un dans Programmes.';
+    const wrap = document.createElement('div');
+    wrap.className = 'px-5 pt-10 space-y-4 text-center';
+    wrap.innerHTML = `
+      <p class="font-display text-xl text-paper">Aucun programme.</p>
+      <p class="font-sans text-[13px] text-muted">Crées-en un dans Programmes.</p>
+    `;
     const btn = document.createElement('button');
-    btn.className = 'btn-secondary btn-full';
+    btn.className = 'mt-6 w-full py-3 px-4 border border-border font-sans text-[11px] uppercase tracking-eyebrow text-paper active:border-acid active:text-acid transition';
     btn.textContent = '→ Programmes';
     btn.addEventListener('click', () => showScreen('params'));
-    tab.appendChild(msg);
-    tab.appendChild(btn);
+    wrap.appendChild(btn);
+    tab.appendChild(wrap);
     return;
   }
 
-  const title = document.createElement('p');
-  title.className = 'section-title';
-  title.textContent = 'Choisir un programme';
-  tab.appendChild(title);
+  const wrap = document.createElement('div');
+  wrap.className = 'px-5 py-6';
+
+  const eyebrow = document.createElement('p');
+  eyebrow.className = 'font-sans text-[10px] uppercase tracking-eyebrow text-muted mb-5 flex items-center gap-3';
+  eyebrow.innerHTML = `<span>Choisir un programme</span><span class="flex-1 h-px bg-border"></span>`;
+  wrap.appendChild(eyebrow);
+
+  const list = document.createElement('div');
+  list.className = 'border-y border-border';
+  wrap.appendChild(list);
 
   const { ordered, lastDoneId, lastSession } = await cyclicProgrammes(programmes);
-  const total = ordered.length;
 
   ordered.forEach((prog, displayIdx) => {
     const isNext = displayIdx === 0;
     const isDone = prog.id === lastDoneId;
-
-    const card = document.createElement('div');
-    card.className = 'programme-card';
-    if (isNext) card.classList.add('programme-card--next');
-    if (isDone) card.classList.add('programme-card--done');
 
     const seriesCount = prog.exercises.reduce((s, e) => s + (e.sets || e.count || e.series?.length || 3), 0);
 
@@ -715,13 +701,26 @@ async function renderProgrammeSelection(tab) {
       meta = `${prog.exercises.length} exercice${prog.exercises.length > 1 ? 's' : ''} · ${seriesCount} séries`;
     }
 
+    const card = document.createElement('button');
+    const borderLeft = isNext ? 'border-l-[3px] border-l-acid' : (isDone ? 'border-l-[3px] border-l-muted opacity-60' : 'border-l-[3px] border-l-transparent');
+    card.className = `w-full text-left flex items-center gap-4 px-5 py-4 border-b border-border/70 ${borderLeft} active:bg-inkAlt transition`;
+
+    const status = isDone ? '<span class="font-sans text-[9px] uppercase tracking-eyebrow text-muted">Fait</span>'
+                  : isNext ? '<span class="font-sans text-[9px] uppercase tracking-eyebrow text-acid font-semibold">Suivant →</span>'
+                  : '';
+
     card.innerHTML = `
-      <span class="programme-name">${prog.name}</span>
-      <span class="programme-meta">${meta}</span>
+      <div class="flex-1 min-w-0">
+        <h3 class="font-display font-bold italic text-[18px] leading-tight text-paper truncate">${prog.name}</h3>
+        <p class="font-sans text-[10px] uppercase tracking-eyebrow text-muted mt-1 truncate">${meta}</p>
+      </div>
+      <div class="shrink-0">${status}</div>
     `;
     card.addEventListener('click', () => startSession(prog));
-    tab.appendChild(card);
+    list.appendChild(card);
   });
+
+  tab.appendChild(wrap);
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -872,44 +871,202 @@ document.getElementById('live-edit-modal-ok').addEventListener('click', () => {
   if (liveEditModalCtx?.onOk) liveEditModalCtx.onOk();
 });
 
-function renderLiveSession(tab) {
-  const header = document.createElement('div');
-  header.className = 'live-header';
-  header.innerHTML = `
-    <div>
-      <div class="live-title">${liveSession.programmeName}</div>
-      <div class="live-date">${formatDate(liveSession.date)}</div>
-    </div>
-    <button class="btn-danger" id="finish-session">Terminer</button>
-  `;
-  tab.appendChild(header);
-  document.getElementById('finish-session').addEventListener('click', finishSession);
+// Split programme title sur premier séparateur " / ", " & " ou " - " pour mise en
+// page éditoriale (signature Direction A : line1 paper + line2 paper/40 avec sep acid)
+function splitProgrammeTitle(raw) {
+  const s = (raw || '').trim();
+  const m = s.match(/^(.+?)\s+([\/&\-])\s+(.+)$/);
+  if (!m) return { line1: s, sep: null, rest: '' };
+  const sepDisplay = m[2] === '-' ? '—' : (m[2] === '&' ? '&amp;' : m[2]);
+  return { line1: m[1], sep: sepDisplay, rest: m[3] };
+}
 
-  if (liveSession.category === 'cardio') {
+function renderLiveSession(tab) {
+  const inDetail = liveFocus && liveSession.category !== 'cardio';
+  const isCardio = liveSession.category === 'cardio';
+
+  // Compute session totals (utilisés dans le sticky + masthead pour la liste)
+  let totalSeries = 0, doneSeries = 0, totalVolume = 0, doneVolume = 0, totalReps = 0, doneReps = 0;
+  if (!isCardio) {
+    liveSession.exercises.forEach(ex => {
+      if (ex.type === 'cardio') return;
+      ex.series.forEach((s) => {
+        totalSeries++;
+        const allDone = ex.activities.every((_, a) => s.activityStates?.[a] === 'done');
+        if (allDone) doneSeries++;
+        ex.activities.forEach((act, a) => {
+          if (act.type !== 'weight') return;
+          const v = s.values?.[a] || {};
+          const reps = v.reps ?? act.reps ?? 0;
+          const weight = v.weight ?? act.weight ?? 0;
+          totalVolume += reps * weight;
+          totalReps += reps;
+          if (s.activityStates?.[a] === 'done') {
+            doneVolume += reps * weight;
+            doneReps += reps;
+          }
+        });
+      });
+    });
+  }
+  const pct      = totalSeries > 0 ? Math.round((doneSeries / totalSeries) * 100) : 0;
+  const tonnage  = (doneVolume / 1000).toFixed(1).replace('.', ',');
+  const cibleTon = (totalVolume / 1000).toFixed(1).replace('.', ',');
+
+  const header = document.createElement('header');
+  header.className = 'sticky top-0 z-10 bg-ink/96 backdrop-blur-sm border-b border-border';
+
+  if (inDetail) {
+    header.innerHTML = `
+      <!-- Status row : back + date + En cours + Fin -->
+      <div class="px-5 pt-4 pb-3 flex items-center justify-between font-sans text-[10px] uppercase tracking-eyebrow text-muted">
+        <button id="back-to-list" class="flex items-center gap-2 active:text-paper transition">
+          <span aria-hidden>←</span><span>Liste</span>
+        </button>
+        <div class="flex items-center gap-2">
+          <span>${formatDate(liveSession.date)}</span>
+          <span class="text-muted/50">·</span>
+          <span class="text-racing">En cours</span>
+        </div>
+        <button id="finish-session" class="font-semibold text-acid border border-acid bg-acid/[0.10] px-3 py-1.5 active:bg-acid active:text-ink transition text-[10px]">Fin</button>
+      </div>
+
+      <!-- Manifesto + counter -->
+      <div class="px-5 pb-3">
+        <div class="flex items-baseline justify-between mb-2">
+          <p class="font-display italic font-semibold text-[10px] uppercase tracking-eyebrow text-paper">Build · Fuel · Dominate</p>
+          <span class="font-display text-[13px] num-stat font-bold leading-none">
+            <span class="text-acid">${String(doneSeries).padStart(2, '0')}</span><span class="text-muted">/${String(totalSeries).padStart(2, '0')}</span>
+            <span class="font-sans font-medium text-[9px] uppercase tracking-eyebrow text-muted ml-1">séries</span>
+          </span>
+        </div>
+        <div class="h-[3px] bg-border relative overflow-hidden">
+          <div class="absolute left-0 top-0 h-full bg-acid" style="width:${pct}%"></div>
+        </div>
+      </div>
+
+      <!-- Stats strip 4 cols cyan -->
+      <div class="grid grid-cols-4 border-t border-border">
+        <div class="px-2.5 py-3 border-r border-border min-w-0">
+          <p class="font-sans text-[8px] uppercase tracking-[0.40em] text-muted mb-1.5">Volume</p>
+          <p class="font-display font-bold text-[17px] num-stat text-cyan leading-none truncate">${Math.round(doneVolume)}<span class="font-sans text-[9px] uppercase tracking-eyebrow text-muted ml-1">kg</span></p>
+        </div>
+        <div class="px-2.5 py-3 border-r border-border min-w-0">
+          <p class="font-sans text-[8px] uppercase tracking-[0.40em] text-muted mb-1.5">Tonnage</p>
+          <p class="font-display font-bold text-[17px] num-stat text-cyan leading-none truncate">${tonnage}<span class="font-sans text-[9px] uppercase tracking-eyebrow text-muted ml-1">t</span></p>
+        </div>
+        <div class="px-2.5 py-3 border-r border-border min-w-0">
+          <p class="font-sans text-[8px] uppercase tracking-[0.40em] text-muted mb-1.5">Reps</p>
+          <p class="font-display font-bold text-[17px] num-stat text-cyan leading-none truncate">${doneReps}<span class="font-sans text-[9px] uppercase tracking-eyebrow text-muted ml-1">/${totalReps}</span></p>
+        </div>
+        <div class="px-2.5 py-3 min-w-0">
+          <p class="font-sans text-[8px] uppercase tracking-[0.40em] text-muted mb-1.5">Cible</p>
+          <p class="font-display font-bold text-[17px] num-stat text-cyan leading-none truncate">${cibleTon}<span class="font-sans text-[9px] uppercase tracking-eyebrow text-muted ml-1">t</span></p>
+        </div>
+      </div>
+    `;
+  } else if (isCardio) {
+    header.innerHTML = `
+      <div class="px-5 py-4 flex items-center justify-between gap-3">
+        <div class="min-w-0">
+          <div class="font-display font-bold text-[20px] leading-tight text-paper truncate">${liveSession.programmeName}</div>
+          <div class="font-sans text-[10px] uppercase tracking-eyebrow text-muted mt-1">${formatDate(liveSession.date)} · En cours</div>
+        </div>
+        <button id="finish-session" class="shrink-0 font-sans text-[11px] uppercase tracking-eyebrow font-semibold text-acid border border-acid bg-acid/[0.10] px-4 py-2 active:bg-acid active:text-ink transition">Terminer</button>
+      </div>
+    `;
+  } else {
+    // Sticky riche pour la vue liste — calque le mock Direction A
+    header.innerHTML = `
+      <!-- Status row : date · En cours + Terminer -->
+      <div class="px-5 pt-4 pb-3 flex items-center justify-between font-sans text-[10px] uppercase tracking-eyebrow text-muted">
+        <div class="flex items-center gap-2">
+          <span>${formatDate(liveSession.date)}</span>
+          <span class="text-muted/50">·</span>
+          <span class="text-racing">En cours</span>
+        </div>
+        <button id="finish-session" class="font-semibold text-acid border border-acid bg-acid/[0.10] px-3 py-1.5 active:bg-acid active:text-ink transition text-[10px]">Fin</button>
+      </div>
+
+      <!-- Manifesto + counter -->
+      <div class="px-5 pb-3">
+        <div class="flex items-baseline justify-between mb-2">
+          <p class="font-display italic font-semibold text-[10px] uppercase tracking-eyebrow text-paper">Build · Fuel · Dominate</p>
+          <span class="font-display text-[13px] num-stat font-bold leading-none">
+            <span class="text-acid">${String(doneSeries).padStart(2, '0')}</span><span class="text-muted">/${String(totalSeries).padStart(2, '0')}</span>
+            <span class="font-sans font-medium text-[9px] uppercase tracking-eyebrow text-muted ml-1">séries</span>
+          </span>
+        </div>
+        <div class="h-[3px] bg-border relative overflow-hidden">
+          <div class="absolute left-0 top-0 h-full bg-acid" style="width:${pct}%"></div>
+        </div>
+      </div>
+
+      <!-- Stats strip 4 cols cyan -->
+      <div class="grid grid-cols-4 border-t border-border">
+        <div class="px-2.5 py-3 border-r border-border min-w-0">
+          <p class="font-sans text-[8px] uppercase tracking-[0.40em] text-muted mb-1.5">Volume</p>
+          <p class="font-display font-bold text-[17px] num-stat text-cyan leading-none truncate">${Math.round(doneVolume)}<span class="font-sans text-[9px] uppercase tracking-eyebrow text-muted ml-1">kg</span></p>
+        </div>
+        <div class="px-2.5 py-3 border-r border-border min-w-0">
+          <p class="font-sans text-[8px] uppercase tracking-[0.40em] text-muted mb-1.5">Tonnage</p>
+          <p class="font-display font-bold text-[17px] num-stat text-cyan leading-none truncate">${tonnage}<span class="font-sans text-[9px] uppercase tracking-eyebrow text-muted ml-1">t</span></p>
+        </div>
+        <div class="px-2.5 py-3 border-r border-border min-w-0">
+          <p class="font-sans text-[8px] uppercase tracking-[0.40em] text-muted mb-1.5">Reps</p>
+          <p class="font-display font-bold text-[17px] num-stat text-cyan leading-none truncate">${doneReps}<span class="font-sans text-[9px] uppercase tracking-eyebrow text-muted ml-1">/${totalReps}</span></p>
+        </div>
+        <div class="px-2.5 py-3 min-w-0">
+          <p class="font-sans text-[8px] uppercase tracking-[0.40em] text-muted mb-1.5">Cible</p>
+          <p class="font-display font-bold text-[17px] num-stat text-cyan leading-none truncate">${cibleTon}<span class="font-sans text-[9px] uppercase tracking-eyebrow text-muted ml-1">t</span></p>
+        </div>
+      </div>
+    `;
+  }
+  tab.appendChild(header);
+
+  document.getElementById('finish-session')?.addEventListener('click', finishSession);
+  document.getElementById('back-to-list')?.addEventListener('click', () => { liveFocus = null; renderSeanceScreen(); });
+  document.getElementById('back-home')?.addEventListener('click', () => showScreen('home'));
+
+  if (isCardio) {
     renderLiveCardio(tab);
     return;
   }
 
-  // Toggle bandeau countdown sticky / mode split-repos
-  const cdBar = document.getElementById('countdown-bar');
-  if (cdBar) cdBar.classList.toggle('in-rest-split', liveRest !== null);
-
-  // Si on n'est plus en repos, nettoyer l'éventuel sync interval orphelin
-  if (!liveRest && window.__restSyncId) {
-    clearInterval(window.__restSyncId);
-    window.__restSyncId = null;
-  }
-
-  if (liveRest)        renderRestSplit(tab);
-  else if (liveFocus)  renderActivityFocus(tab);
-  else                 renderExerciseList(tab);
+  if (liveFocus) renderExerciseDetail(tab);
+  else           renderExerciseList(tab, { totalSeries, doneSeries, totalVolume, doneVolume, totalReps, doneReps });
 }
 
-function renderExerciseList(tab) {
-  const list = document.createElement('div');
-  list.className = 'live-exo-list';
+function renderExerciseList(tab, totals = {}) {
+  const { totalSeries = 0 } = totals;
 
-  // Trier : exos terminés en bas
+  // Compteurs pour le sous-titre du masthead
+  const exoCount = liveSession.exercises.filter(ex => ex.type !== 'cardio').length;
+  // Estim durée moyenne : ~1.5min par série + repos moyen ~75s par série
+  const avgRest = liveSession.exercises.reduce((s, ex) => {
+    return s + ex.series.length * (ex.activities[0]?.rest || 60);
+  }, 0);
+  const estimMin = Math.round((totalSeries * 30 + avgRest) / 60);
+
+  const wrap = document.createElement('div');
+  wrap.className = '';
+
+  // Masthead H1 — split title sur premier sep, ligne 2 paper/40 avec sep acid
+  const { line1, sep, rest } = splitProgrammeTitle(liveSession.programmeName);
+  const masthead = document.createElement('section');
+  masthead.className = 'px-5 pt-9 pb-9 accent-line';
+  masthead.innerHTML = `
+    <h1 class="font-display font-black h-display text-paper">
+      ${line1}${sep ? `<br/><span class="text-paper/40"><span class="text-acid not-italic font-black">${sep}</span> ${rest}.</span>` : ''}
+    </h1>
+    <p class="font-sans text-[10px] uppercase tracking-eyebrow text-muted mt-5">
+      ${String(exoCount).padStart(2, '0')} exercice${exoCount > 1 ? 's' : ''} · ${String(totalSeries).padStart(2, '0')} séries${estimMin ? ` · ≈ ${estimMin} min` : ''}
+    </p>
+  `;
+  wrap.appendChild(masthead);
+
+  // Exercise list — done at the bottom
   const indexed = liveSession.exercises.map((ex, exIdx) => {
     const totalSets = ex.series.length;
     const doneSets = ex.series.filter(s =>
@@ -923,139 +1080,404 @@ function renderExerciseList(tab) {
     return aDone - bDone;
   });
 
+  const list = document.createElement('div');
+  list.className = 'border-y border-border';
+
   indexed.forEach(({ ex, exIdx, totalSets, doneSets }) => {
     const startedSets = ex.series.filter(s =>
       ex.activities.some((_, a) => s.activityStates?.[a])
     ).length;
 
-    let badge = '○ À faire';
-    let badgeCls = 'pending';
-    if (doneSets === totalSets) { badge = '✓ Fait'; badgeCls = 'done'; }
-    else if (startedSets > 0)   { badge = '▶ En cours'; badgeCls = 'partial'; }
+    const isDone    = doneSets === totalSets;
+    const isStarted = !isDone && startedSets > 0;
 
-    const card = document.createElement('div');
-    card.className = `live-exo-row live-exo-row--${badgeCls}`;
+    let statusHtml, borderLeft, nameColor, weightColor, unitColor, repsColor, muscleColor, xColor, dotColor;
+    if (isDone) {
+      statusHtml  = `<span class="font-display italic font-semibold text-[10px] uppercase tracking-eyebrow text-acid">Fait</span>`;
+      borderLeft  = 'border-l-[3px] border-l-acid bg-acid/[0.03]';
+      nameColor   = 'text-muted';
+      weightColor = 'text-muted';
+      unitColor   = 'text-muted';
+      repsColor   = 'text-muted';
+      muscleColor = 'text-acid/70';
+      xColor      = 'text-acid/60';
+      dotColor    = 'bg-acid';
+    } else if (isStarted) {
+      statusHtml  = `<span class="font-display italic font-semibold text-[10px] uppercase tracking-eyebrow text-racing flex items-center gap-1.5"><span aria-hidden class="w-1.5 h-1.5 bg-racing animate-pulse"></span>${doneSets}/${totalSets}</span>`;
+      borderLeft  = 'border-l-[3px] border-l-racing bg-racing/[0.07]';
+      nameColor   = 'text-paper';
+      weightColor = 'text-racing';
+      unitColor   = 'text-muted';
+      repsColor   = 'text-paper';
+      muscleColor = 'text-racing';
+      xColor      = 'text-racing';
+      dotColor    = 'bg-racing';
+    } else {
+      statusHtml  = '';
+      borderLeft  = 'border-l-[3px] border-l-transparent';
+      nameColor   = 'text-paper';
+      weightColor = 'text-paper';
+      unitColor   = 'text-muted';
+      repsColor   = 'text-paper';
+      muscleColor = 'text-paper';
+      xColor      = 'text-acid';
+      dotColor    = 'bg-paper';
+    }
+
+    const muscle = (ex.activities?.[0]?.name) || '';
+    const wActIdx = ex.activities.findIndex(a => a.type === 'weight');
+    const wAct = wActIdx >= 0 ? ex.activities[wActIdx] : null;
+    // Affiche la dernière valeur saisie (sinon le planifié)
+    const latestVal = (() => {
+      if (wActIdx < 0) return null;
+      for (let i = ex.series.length - 1; i >= 0; i--) {
+        const v = ex.series[i]?.values?.[wActIdx];
+        if (v && (v.weight != null || v.reps != null)) return v;
+      }
+      return null;
+    })();
+    const dispWeight = latestVal?.weight ?? wAct?.weight ?? 0;
+    const dispReps   = latestVal?.reps   ?? wAct?.reps   ?? 0;
+    const weightTxt  = wAct ? `${dispWeight}` : '';
+    const repsTxt    = wAct
+      ? `${totalSets}<span class="${xColor} mx-1 font-display font-black not-italic">×</span>${dispReps}`
+      : `${totalSets} série${totalSets > 1 ? 's' : ''}`;
+
+    const card = document.createElement('button');
+    card.className = `w-full text-left flex items-center gap-4 px-5 py-5 border-b border-border/70 ${borderLeft} active:bg-inkAlt transition`;
     card.innerHTML = `
-      <div class="live-exo-row-main">
-        <div class="live-exo-row-name">${ex.name}</div>
-        <div class="live-exo-row-meta">${doneSets}/${totalSets} séries</div>
+      <div class="flex-1 min-w-0">
+        <h3 class="font-display font-black italic text-[22px] leading-[1.05] ${nameColor} truncate">${ex.name}</h3>
+        <p class="font-sans text-[9px] uppercase tracking-eyebrow ${muscleColor} mt-1.5 flex items-center gap-2 truncate">
+          ${muscle ? `<span aria-hidden class="w-1 h-1 ${dotColor} shrink-0"></span><span class="truncate">${muscle}</span>` : ''}
+          ${statusHtml ? `<span aria-hidden class="w-2 h-px ${isDone ? 'bg-acid/40' : 'bg-racing/40'}"></span>${statusHtml}` : ''}
+        </p>
       </div>
-      <div class="live-exo-row-badge">${badge}</div>
+      <div class="text-right shrink-0 leading-none">
+        ${weightTxt ? `<p class="font-display font-black text-[26px] num-stat ${weightColor} leading-none tracking-tight">${weightTxt}<span class="font-sans font-medium text-[10px] tracking-eyebrow ${unitColor} ml-1 align-baseline">kg</span></p>` : ''}
+        <p class="font-sans font-medium text-[11px] uppercase tracking-eyebrow ${repsColor} num-stat mt-1.5">${repsTxt}</p>
+      </div>
     `;
     card.addEventListener('click', () => {
-      const next = nextUndoneActivity(exIdx);
-      if (!next) return; // tout est fait, rien à faire
-      liveFocus = next;
+      liveFocus = { exIdx };
       renderSeanceScreen();
     });
     list.appendChild(card);
   });
 
-  tab.appendChild(list);
+  wrap.appendChild(list);
+  tab.appendChild(wrap);
 }
 
-function renderActivityFocus(tab) {
-  const { exIdx, sIdx, actIdx } = liveFocus;
+function renderExerciseDetail(tab) {
+  const exIdx = liveFocus.exIdx;
   const ex = liveSession.exercises[exIdx];
-  const act = ex.activities[actIdx];
-  const v = ex.series[sIdx].values?.[actIdx] || {};
-  const totalSets = ex.series.length;
 
-  // Header retour
-  const back = document.createElement('button');
-  back.className = 'live-focus-back';
-  back.textContent = '← Retour à la liste';
-  back.addEventListener('click', () => { liveFocus = null; renderSeanceScreen(); });
-  tab.appendChild(back);
+  // Active activity = next undone (null si exo entièrement validé)
+  const next = nextUndoneActivity(exIdx);
+  const activeS = next?.sIdx;
+  const activeA = next?.actIdx;
 
-  // Bloc focus
+  // Compute exo totals
+  let doneSeries = 0;
+  let totalSeries = ex.series.length;
+  let volume = 0, repsAccum = 0;
+  ex.series.forEach((s) => {
+    const allDone = ex.activities.every((_, a) => s.activityStates?.[a] === 'done');
+    if (allDone) doneSeries++;
+    ex.activities.forEach((act, a) => {
+      if (act.type !== 'weight') return;
+      const v = s.values?.[a] || {};
+      const r = v.reps ?? act.reps ?? 0;
+      const w = v.weight ?? act.weight ?? 0;
+      if (s.activityStates?.[a] === 'done') {
+        volume += r * w;
+        repsAccum += r;
+      }
+    });
+  });
+
   const wrap = document.createElement('div');
-  wrap.className = 'live-focus';
+  wrap.className = 'pb-8';
 
-  const subParts = [`Série ${sIdx + 1} / ${totalSets}`];
-  if (ex.activities.length > 1) subParts.push(act.label || act.name || `Activité ${actIdx + 1}`);
-  else if (act.name) subParts.push(act.name);
+  // Session masthead — H1 mock-style avec sep acid (Dos & Abdominaux.)
+  const { line1, sep, rest } = splitProgrammeTitle(liveSession.programmeName);
+  const sessionMast = document.createElement('section');
+  sessionMast.className = 'px-5 pt-9 pb-9 accent-line';
+  const exoCount = liveSession.exercises.filter(e => e.type !== 'cardio').length;
+  const totalSeriesAll = liveSession.exercises.reduce((s, e) => e.type === 'cardio' ? s : s + e.series.length, 0);
+  sessionMast.innerHTML = `
+    <h1 class="font-display font-black h-display text-paper">
+      ${line1}${sep ? `<br/><span class="text-paper/40"><span class="text-acid not-italic font-black">${sep}</span> ${rest}.</span>` : ''}
+    </h1>
+    <p class="font-sans text-[10px] uppercase tracking-eyebrow text-muted mt-5">
+      ${String(exoCount).padStart(2, '0')} exercices · ${String(totalSeriesAll).padStart(2, '0')} séries
+    </p>
+  `;
+  wrap.appendChild(sessionMast);
 
-  let valuesHtml;
-  if (act.type === 'weight') {
-    const reps = v.reps ?? act.reps ?? 0;
-    const kg   = v.weight ?? act.weight ?? 0;
-    valuesHtml = `<b>${reps}</b> reps × <b>${kg}</b> kg`;
-  } else if (act.type === 'countdown') {
-    const dur = v.duration ?? act.duration ?? 0;
-    valuesHtml = `<b>${dur}</b> s`;
-  } else {
-    valuesHtml = `<b>Chrono</b>`;
+  // Exercise header — name 24px bold + badge acid + muscle/repos eyebrow (mock-style, sans numero)
+  const muscle = ex.activities?.[0]?.name || '';
+  const restSecs = ex.activities?.[0]?.rest || 0;
+  const restStr = restSecs > 0 ? `Repos ${Math.floor(restSecs / 60)}:${String(restSecs % 60).padStart(2, '0')}` : '';
+  const exoHead = document.createElement('header');
+  exoHead.className = 'px-5 mb-5';
+  exoHead.innerHTML = `
+    <div class="flex items-baseline gap-3 flex-wrap">
+      <h2 class="font-display font-bold text-[24px] leading-[1.1] text-paper">${ex.name}</h2>
+      <span class="font-sans text-[9px] uppercase tracking-eyebrow text-acid font-semibold flex items-center gap-1.5 shrink-0">
+        <span aria-hidden class="w-1.5 h-1.5 bg-acid"></span>
+        ${String(doneSeries).padStart(2, '0')}/${String(totalSeries).padStart(2, '0')} fait
+      </span>
+    </div>
+    ${(muscle || restStr) ? `<p class="font-sans text-[11px] uppercase tracking-eyebrow text-muted mt-2">${[muscle, restStr].filter(Boolean).join(' · ')}</p>` : ''}
+  `;
+  wrap.appendChild(exoHead);
+
+  // Suggestion IA (weight only, current active)
+  if (next && ex.activities[activeA].type === 'weight') {
+    const sug = document.createElement('div');
+    sug.id = 'focus-suggestion';
+    sug.className = 'hidden font-sans text-[12px] text-muted italic mx-5 mb-4 px-3 py-2 border border-border bg-inkAlt';
+    wrap.appendChild(sug);
   }
 
-  let prevHtml = '';
-  const prevVal = ex.prevSeries?.[sIdx]?.values?.[actIdx];
-  if (act.type === 'weight' && (prevVal?.reps || prevVal?.weight)) {
-    prevHtml = `<div class="live-focus-prev">Préc : ${prevVal.reps ?? '—'} × ${prevVal.weight ?? '—'} kg</div>`;
-  } else if (act.type === 'countdown' && prevVal?.duration) {
-    prevHtml = `<div class="live-focus-prev">Préc : ${prevVal.duration} s</div>`;
-  } else if (act.type === 'stopwatch' && prevVal?.duration) {
-    prevHtml = `<div class="live-focus-prev">Préc : ${formatSeconds(prevVal.duration)}</div>`;
-  }
+  // Series ledger table — 3 cols (Charge / Reps / Repos)
+  const tbl = document.createElement('div');
+  tbl.className = 'border-y border-border';
 
-  // Pour stopwatch / countdown, on cache le bouton Modifier (countdown éditable, stopwatch non)
-  // mais surtout on remplace Valider par "Démarrer" qui lance l'overlay
-  const isTimed = (act.type === 'stopwatch' || act.type === 'countdown');
-  const editBtnHtml = (act.type === 'stopwatch')
-    ? ''
-    : `<button class="btn-secondary live-focus-edit" id="focus-edit">✎ Modifier</button>`;
-  const validateLabel = isTimed ? '▶ Démarrer' : '✓ Valider';
+  const hdr = document.createElement('div');
+  hdr.className = 'grid grid-cols-[1fr_60px_80px_20px] gap-4 items-center px-5 py-2.5 border-l-[3px] border-l-transparent border-b border-border font-sans text-[9px] uppercase tracking-[0.40em] text-muted';
+  hdr.innerHTML = `<span>Charge</span><span class="text-right">Reps</span><span class="text-right">Repos</span><span></span>`;
+  tbl.appendChild(hdr);
 
-  // Bloc suggestion IA (uniquement pour les activités weight, affiché à l'ouverture de l'exo)
-  const sugHtml = (act.type === 'weight')
-    ? `<div class="live-edit-suggestion hidden" id="focus-suggestion"></div>`
-    : '';
+  ex.series.forEach((set, sIdx) => {
+    ex.activities.forEach((act, actIdx) => {
+      const isDone   = set.activityStates?.[actIdx] === 'done';
+      const isActive = sIdx === activeS && actIdx === activeA;
 
-  wrap.innerHTML = `
-    <div class="live-focus-name">${ex.name}</div>
-    <div class="live-focus-sub">${subParts.join(' · ')}</div>
-    ${sugHtml}
-    <div class="live-focus-target">${valuesHtml}</div>
-    ${prevHtml}
-    <div class="live-focus-actions">
-      ${editBtnHtml}
-      <button class="btn-primary live-focus-validate" id="focus-validate">${validateLabel}</button>
+      let borderLeftCls, opacityCls, valColor, secondColor, restColor, setSizeCls, unitColor;
+      if (isDone) {
+        borderLeftCls = 'border-l-[3px] border-l-acid bg-acid/[0.04]';
+        opacityCls = '';
+        valColor = 'text-paper';
+        secondColor = 'text-paper';
+        restColor = 'text-acid';
+        setSizeCls = 'num-set';
+        unitColor = 'text-acid/70';
+      } else if (isActive) {
+        borderLeftCls = 'border-l-[3px] border-l-racing bg-racing/[0.10]';
+        opacityCls = '';
+        valColor = 'text-racing';
+        secondColor = 'text-racing';
+        restColor = 'text-racing';
+        setSizeCls = 'num-set-hot';
+        unitColor = 'text-racing/80';
+      } else {
+        borderLeftCls = 'border-l-[3px] border-l-transparent';
+        opacityCls = 'opacity-50';
+        valColor = 'text-todo';
+        secondColor = 'text-todo';
+        restColor = 'text-todo';
+        setSizeCls = 'num-set';
+        unitColor = 'text-todo';
+      }
+
+      const v = set.values?.[actIdx] || {};
+
+      // Col 1 — Charge
+      let chargeHtml;
+      // Col 2 — Reps / unit
+      let secondHtml;
+      if (act.type === 'weight') {
+        const w = v.weight ?? act.weight ?? 0;
+        const r = v.reps ?? act.reps ?? 0;
+        chargeHtml = `<span class="font-display font-black ${setSizeCls} ${valColor}">${w}<span class="font-sans font-medium text-[11px] tracking-eyebrow ${unitColor} ml-2 align-baseline">kg</span></span>`;
+        secondHtml = `<span class="font-display font-bold text-[18px] num-stat ${secondColor} text-right pb-1.5">× ${r}</span>`;
+      } else if (act.type === 'countdown') {
+        const d = v.duration ?? act.duration ?? 0;
+        chargeHtml = `<span class="font-display font-black ${setSizeCls} ${valColor}">${d}<span class="font-sans font-medium text-[11px] tracking-eyebrow ${unitColor} ml-2 align-baseline">s</span></span>`;
+        secondHtml = `<span class="text-right pb-1.5 font-sans text-[10px] uppercase tracking-eyebrow ${secondColor}">${act.label || 'min.'}</span>`;
+      } else {
+        const d = v.duration ?? 0;
+        chargeHtml = `<span class="font-display font-black ${setSizeCls} ${valColor}">${d > 0 ? formatSeconds(d) : '—'}</span>`;
+        secondHtml = `<span class="text-right pb-1.5 font-sans text-[10px] uppercase tracking-eyebrow ${secondColor}">chrono</span>`;
+      }
+
+      // Col 3 — Repos
+      const restSecs = act.rest || 0;
+      const restLabel = restSecs > 0 ? `${Math.floor(restSecs / 60)}:${String(restSecs % 60).padStart(2, '0')}` : '—';
+      let restHtml;
+      if (isActive) {
+        restHtml = `<span class="font-sans text-[9px] uppercase tracking-eyebrow ${restColor} font-semibold text-right pb-1.5">En cours</span>`;
+      } else {
+        const weight = isDone ? 'font-semibold' : '';
+        restHtml = `<span class="font-sans text-[10px] uppercase tracking-eyebrow ${restColor} num-stat text-right pb-1.5 ${weight}">${restLabel}</span>`;
+      }
+
+      const editable = act.type !== 'stopwatch';
+      const editIcon = editable
+        ? `<span aria-hidden class="text-[14px] leading-none pb-1.5 text-right ${isActive ? 'text-racing/70' : (isDone ? 'text-acid/40' : 'text-muted/40')}">✎</span>`
+        : `<span></span>`;
+
+      const row = document.createElement('button');
+      row.className = `w-full text-left grid grid-cols-[1fr_60px_80px_20px] gap-4 items-end px-5 py-4 ${borderLeftCls} ${opacityCls} border-b border-border/70 active:bg-inkAlt transition`;
+      row.innerHTML = chargeHtml + secondHtml + restHtml + editIcon;
+
+      if (editable) {
+        row.addEventListener('click', () => openEditModalForActivity(exIdx, sIdx, actIdx));
+      }
+      tbl.appendChild(row);
+    });
+  });
+
+  // Σ Cumul row — cyan
+  const sigma = document.createElement('div');
+  sigma.className = 'flex items-baseline justify-between px-5 py-2.5 bg-inkAlt border-l-[3px] border-l-transparent border-t-[2px] border-t-cyan';
+  sigma.innerHTML = `
+    <span class="font-sans font-bold text-[10px] uppercase tracking-eyebrow text-cyan">Σ Cumul</span>
+    <div class="flex items-baseline gap-3 font-display font-bold num-stat text-cyan">
+      <span class="text-[20px]">${Math.round(volume)} kg</span>
+      <span class="text-[14px] text-cyan/75">· ${repsAccum} reps</span>
     </div>
   `;
+  tbl.appendChild(sigma);
+  wrap.appendChild(tbl);
+
+  // Note italic
+  if (ex.comment) {
+    const note = document.createElement('p');
+    note.className = 'font-display italic font-medium text-[12px] text-muted mt-4 px-5';
+    note.textContent = ex.comment;
+    wrap.appendChild(note);
+  }
+
+  // CTA bar — Valider current activity
+  if (next) {
+    const curAct = ex.activities[activeA];
+    const isStopwatch = curAct.type === 'stopwatch';
+    const isCountdown = curAct.type === 'countdown';
+    let validateLabel;
+    if (isStopwatch)      validateLabel = `▶ Démarrer chrono`;
+    else if (isCountdown) validateLabel = `▶ Démarrer minuterie`;
+    else                  validateLabel = `✓ Valider série ${activeS + 1}`;
+
+    const cta = document.createElement('div');
+    cta.className = 'mt-8 px-5 grid grid-cols-1 gap-3';
+    cta.innerHTML = `
+      <button id="ed-validate" class="py-4 bg-acid text-ink font-display font-bold text-[14px] uppercase tracking-eyebrow active:bg-acid/80 transition">${validateLabel}</button>
+    `;
+    wrap.appendChild(cta);
+  }
+
+  // Suite — queued (autres exos non finis)
+  const queued = liveSession.exercises
+    .map((e, i) => ({ e, i }))
+    .filter(({ e, i }) => {
+      if (i === exIdx) return false;
+      if (e.type === 'cardio') return false;
+      const allDone = e.series.every(s => e.activities.every((_, a) => s.activityStates?.[a] === 'done'));
+      return !allDone;
+    });
+
+  if (queued.length > 0) {
+    const queuedSec = document.createElement('section');
+    queuedSec.className = 'mt-12';
+    const hdrTxt = `Suite — ${queued.length} exercice${queued.length > 1 ? 's' : ''}`;
+    // Estim minutes restantes : sum(undone series * (avg time per série + rest))
+    const remainMin = Math.round(queued.reduce((acc, { e }) => {
+      const undoneSeries = e.series.filter(s => !e.activities.every((_, a) => s.activityStates?.[a] === 'done')).length;
+      const restPerSet = e.activities[0]?.rest || 60;
+      return acc + undoneSeries * (30 + restPerSet) / 60;
+    }, 0));
+    queuedSec.innerHTML = `
+      <header class="flex items-baseline justify-between mb-5 px-5">
+        <h3 class="font-display font-bold text-[18px] text-paper">${hdrTxt}</h3>
+        ${remainMin > 0 ? `<span class="font-sans text-[10px] uppercase tracking-eyebrow text-muted">≈ ${remainMin} min restantes</span>` : ''}
+      </header>
+    `;
+    const ul = document.createElement('ul');
+    ul.className = 'border-y border-border';
+    queued.forEach(({ e, i }, idx) => {
+      const m = e.activities?.[0]?.name || '';
+      const wActIdx = e.activities.findIndex(a => a.type === 'weight');
+      const wAct = wActIdx >= 0 ? e.activities[wActIdx] : null;
+      const latestVal = (() => {
+        if (wActIdx < 0) return null;
+        for (let k = e.series.length - 1; k >= 0; k--) {
+          const v = e.series[k]?.values?.[wActIdx];
+          if (v && (v.weight != null || v.reps != null)) return v;
+        }
+        return null;
+      })();
+      const dispW = latestVal?.weight ?? wAct?.weight ?? 0;
+      const dispR = latestVal?.reps   ?? wAct?.reps   ?? 0;
+      const wTxt = wAct ? `${dispW}` : '';
+      const repsTxt = wAct
+        ? `${e.series.length} × ${dispR}`
+        : `${e.series.length} série${e.series.length > 1 ? 's' : ''}`;
+      const isLast = idx === queued.length - 1;
+
+      const li = document.createElement('li');
+      li.innerHTML = `
+        <button class="w-full text-left flex items-center gap-4 px-5 py-4 ${isLast ? '' : 'border-b border-border/70'} active:bg-inkAlt transition">
+          <div class="flex-1 min-w-0">
+            <h4 class="font-display font-bold italic text-[18px] leading-tight text-paper truncate">${e.name}</h4>
+            ${m ? `<p class="font-sans text-[9px] uppercase tracking-eyebrow text-muted mt-1 truncate">${m}</p>` : ''}
+          </div>
+          <div class="text-right shrink-0 leading-none">
+            ${wTxt ? `<p class="font-display font-black text-[20px] num-stat text-paper leading-none">${wTxt}<span class="font-sans font-medium text-[9px] tracking-eyebrow text-muted ml-1.5 align-baseline">kg</span></p>` : ''}
+            <p class="font-sans font-medium text-[10px] uppercase tracking-eyebrow text-muted num-stat mt-1.5">${repsTxt}</p>
+          </div>
+        </button>
+      `;
+      li.querySelector('button').addEventListener('click', () => {
+        liveFocus = { exIdx: i };
+        renderSeanceScreen();
+      });
+      ul.appendChild(li);
+    });
+    queuedSec.appendChild(ul);
+    wrap.appendChild(queuedSec);
+  }
+
   tab.appendChild(wrap);
 
-  // Suggestion IA : déclenchée à l'ouverture de l'exo (pas pendant l'édition)
-  if (act.type === 'weight') {
+  // Suggestion IA — déclenchée à l'ouverture
+  if (next && ex.activities[activeA].type === 'weight') {
     const sugEl = document.getElementById('focus-suggestion');
-    sugEl.innerHTML = `<div class="live-edit-suggestion-spinner"></div><span>Suggestion…</span>`;
-    sugEl.classList.remove('hidden');
-    const targetExName = ex.name;
-    generateWeightSuggestion(targetExName).then(text => {
-      // Vérifier qu'on est toujours sur la même activité (sinon focus a changé)
-      if (!liveFocus || liveSession.exercises[liveFocus.exIdx]?.name !== targetExName) return;
-      if (!text) { sugEl.classList.add('hidden'); return; }
-      sugEl.innerHTML = `💡 ${text}`;
-    }).catch(() => { sugEl.classList.add('hidden'); });
+    if (sugEl) {
+      sugEl.innerHTML = `<div class="live-edit-suggestion-spinner"></div><span>Suggestion…</span>`;
+      sugEl.classList.remove('hidden');
+      const targetExName = ex.name;
+      generateWeightSuggestion(targetExName).then(text => {
+        if (!liveFocus || liveSession.exercises[liveFocus.exIdx]?.name !== targetExName) return;
+        const el = document.getElementById('focus-suggestion');
+        if (!el) return;
+        if (!text) { el.classList.add('hidden'); return; }
+        el.innerHTML = `💡 ${text}`;
+      }).catch(() => {
+        const el = document.getElementById('focus-suggestion');
+        if (el) el.classList.add('hidden');
+      });
+    }
   }
 
-  // Modifier : ouvre le modal existant pour CETTE activité
-  const editEl = document.getElementById('focus-edit');
-  if (editEl) {
-    editEl.addEventListener('click', () => {
-      openEditModalForActivity(exIdx, sIdx, actIdx);
+  // Wire CTA — valider / chrono / minuterie
+  const validateBtn = document.getElementById('ed-validate');
+  if (validateBtn && next) {
+    validateBtn.addEventListener('click', () => {
+      const curAct = ex.activities[activeA];
+      if (curAct.type === 'stopwatch') {
+        openChronoOverlay(exIdx, activeS, activeA, null);
+      } else if (curAct.type === 'countdown') {
+        openMinuterieOverlay(exIdx, activeS, activeA, null);
+      } else {
+        liveFocus = { exIdx, sIdx: activeS, actIdx: activeA };
+        completeFocusedActivity();
+      }
     });
   }
-
-  // Valider : marque done + déclenche repos (ou lance overlay pour stopwatch/countdown)
-  document.getElementById('focus-validate').addEventListener('click', () => {
-    if (act.type === 'stopwatch') {
-      openChronoOverlay(exIdx, sIdx, actIdx, null);
-    } else if (act.type === 'countdown') {
-      openMinuterieOverlay(exIdx, sIdx, actIdx, null);
-    } else {
-      completeFocusedActivity();
-    }
-  });
 }
 
 function completeFocusedActivity() {
@@ -1070,41 +1492,29 @@ function completeFocusedActivity() {
   const act = ex.activities[actIdx];
   const restSecs = act.rest || 0;
 
-  // On enchaîne dans le même exercice (séries suivantes, activités suivantes).
-  // Quand l'exercice est entièrement fini, retour à la liste (null) pour choisir le suivant.
-  const next = nextUndoneActivity(exIdx);
+  // On reste sur la vue détail de l'exo en cours. La série suivante devient active
+  // automatiquement (calculée à chaque render). Le repos vit dans la sticky bar.
+  // Quand l'exo est entièrement fini → retour à la liste pour choisir le suivant.
+  const nextInSame = nextUndoneActivity(exIdx);
 
-  // Pas de repos après la dernière activité de l'exercice → retour direct à la liste
-  if (!next) {
+  if (!nextInSame) {
     liveFocus = null;
     liveRest = null;
+    stopCountdown();
     renderSeanceScreen();
     return;
   }
 
+  liveFocus = { exIdx };
+  liveRest = null;
+  renderSeanceScreen();
+
   if (restSecs > 0) {
-    liveRest = { exIdx, sIdx, actIdx };
-    liveFocus = null;
-    renderSeanceScreen();
-    const nextLabel = next ? labelOfActivity(next) : 'Choisir un exercice';
+    const nextLabel = labelOfActivity(nextInSame);
     startCountdown(restSecs, nextLabel, () => {
-      liveRest = null;
-      liveFocus = next; // null = retour liste
       renderSeanceScreen();
     });
-  } else {
-    liveFocus = next; // null = retour liste
-    renderSeanceScreen();
   }
-}
-
-function nextExerciseFirst(currentExIdx) {
-  for (let i = 0; i < liveSession.exercises.length; i++) {
-    if (i === currentExIdx) continue;
-    const cand = nextUndoneActivity(i);
-    if (cand) return cand;
-  }
-  return null;
 }
 
 function labelOfActivity({ exIdx, sIdx, actIdx }) {
@@ -1113,83 +1523,6 @@ function labelOfActivity({ exIdx, sIdx, actIdx }) {
   const parts = [ex.name, `Série ${sIdx + 1}`];
   if (ex.activities.length > 1) parts.push(act.label || act.name || `Activité ${actIdx + 1}`);
   return parts.join(' · ');
-}
-
-function renderRestSplit(tab) {
-  const { exIdx, sIdx, actIdx } = liveRest;
-  const ex = liveSession.exercises[exIdx];
-  const act = ex.activities[actIdx];
-  const v = ex.series[sIdx].values?.[actIdx] || {};
-
-  // Header retour
-  const back = document.createElement('button');
-  back.className = 'live-focus-back';
-  back.textContent = '← Retour à la liste';
-  back.addEventListener('click', () => {
-    liveRest = null;
-    renderSeanceScreen();
-    // countdown continue à tourner et le bandeau sticky reprend (classe in-rest-split retirée)
-  });
-  tab.appendChild(back);
-
-  const split = document.createElement('div');
-  split.className = 'live-rest-split';
-
-  let valHtml;
-  if (act.type === 'weight') {
-    valHtml = `<b>${v.reps ?? 0}</b> × <b>${v.weight ?? 0}</b> kg`;
-  } else {
-    valHtml = `<b>${v.duration ?? 0}</b> s`;
-  }
-
-  // Bouton Modifier seulement si activité éditable (pas pour stopwatch)
-  const editBtnHtml = (act.type === 'stopwatch')
-    ? ''
-    : `<button class="btn-secondary" id="rest-edit">✎ Modifier</button>`;
-
-  split.innerHTML = `
-    <div class="live-rest-split-top" id="rest-split-top">
-      <div class="live-rest-split-label">Repos</div>
-      <div class="live-rest-split-time" id="rest-split-time">--:--</div>
-      <div class="live-rest-split-next" id="rest-split-next"></div>
-      <button class="btn-secondary live-rest-split-skip" id="rest-split-skip">⏭ Passer le repos</button>
-    </div>
-    <div class="live-rest-split-bottom">
-      <div class="live-rest-split-recap">
-        <div class="live-rest-split-exo">${ex.name} · Série ${sIdx + 1} ✓</div>
-        <div class="live-rest-split-val">${valHtml}</div>
-      </div>
-      ${editBtnHtml}
-    </div>
-  `;
-  tab.appendChild(split);
-
-  // Mirror du countdown du bandeau sticky : on lit la valeur affichée toutes les 200ms
-  // (le bandeau est masqué via la classe in-rest-split, mais le timer tourne)
-  const sync = () => {
-    const cdDisplay = document.getElementById('countdown-display');
-    const splitTime = document.getElementById('rest-split-time');
-    const nextLabel = document.getElementById('countdown-exercise-name');
-    const splitNext = document.getElementById('rest-split-next');
-    if (cdDisplay && splitTime) splitTime.textContent = cdDisplay.textContent;
-    if (nextLabel && splitNext) splitNext.textContent = nextLabel.textContent;
-  };
-  sync();
-  const restSyncId = setInterval(sync, 200);
-  // Stocker pour clear quand on quitte
-  if (window.__restSyncId) clearInterval(window.__restSyncId);
-  window.__restSyncId = restSyncId;
-
-  const restEditEl = document.getElementById('rest-edit');
-  if (restEditEl) {
-    restEditEl.addEventListener('click', () => {
-      openEditModalForActivity(exIdx, sIdx, actIdx);
-    });
-  }
-
-  document.getElementById('rest-split-skip').addEventListener('click', () => {
-    showConfirm('Passer le repos ?', finishCountdown);
-  });
 }
 
 function openEditModalForActivity(exIdx, sIdx, actIdx) {
@@ -1276,121 +1609,110 @@ function openEditModalForActivity(exIdx, sIdx, actIdx) {
 }
 
 function renderLiveCardio(tab) {
+  const wrap = document.createElement('div');
+  wrap.className = 'py-5';
+
   liveSession.exercises.forEach((ex, exIdx) => {
-    const exDiv = document.createElement('div');
-    exDiv.className = 'live-exercise live-cardio-exercise';
+    const isDone = ex.state === 'done';
+    const ord = String(exIdx + 1).padStart(2, '0');
 
-    const nameRow = document.createElement('div');
-    nameRow.className = 'live-exercise-name';
-    nameRow.textContent = ex.name;
-    exDiv.appendChild(nameRow);
+    const article = document.createElement('article');
+    article.className = 'mb-10';
 
-    if (ex.comment) {
-      const exComment = document.createElement('div');
-      exComment.className = 'live-exercise-comment';
-      exComment.textContent = ex.comment;
-      exDiv.appendChild(exComment);
-    }
+    // Header — numero + nom + status
+    const header = document.createElement('header');
+    header.className = 'px-5 mb-4';
+    header.innerHTML = `
+      <div class="flex items-baseline gap-5">
+        <span class="font-display font-black text-[34px] ${isDone ? 'text-muted' : 'text-racing'} leading-none num-stat tracking-tight">${ord}</span>
+        <div class="flex-1 pt-1 space-y-2">
+          <div class="flex items-baseline gap-3 flex-wrap">
+            <h2 class="font-display font-bold text-[24px] leading-[1.1] text-paper">${ex.name}</h2>
+            <span class="font-sans text-[9px] uppercase tracking-eyebrow ${isDone ? 'text-acid' : 'text-muted'} font-semibold flex items-center gap-1.5 shrink-0">
+              <span aria-hidden class="w-1.5 h-1.5 ${isDone ? 'bg-acid' : 'bg-muted'}"></span>
+              ${isDone ? 'Fait' : 'À faire'}
+            </span>
+          </div>
+          ${ex.comment ? `<p class="font-sans text-[11px] uppercase tracking-eyebrow text-muted">${ex.comment}</p>` : ''}
+        </div>
+      </div>
+    `;
+    article.appendChild(header);
 
-    const fieldsRow = document.createElement('div');
-    fieldsRow.className = 'live-cardio-fields';
+    // Fields — 3 inputs (Temps / Puissance / Distance)
+    const fields = document.createElement('div');
+    fields.className = 'grid grid-cols-3 border-y border-border';
 
-    // Temps effectué
-    const durWrap = document.createElement('div');
-    durWrap.className = 'live-cardio-field';
-    const durLabel = document.createElement('span');
-    durLabel.className = 'live-cardio-label';
-    durLabel.textContent = 'Temps';
-    const durInput = document.createElement('input');
-    durInput.type = 'number';
-    durInput.inputMode = 'numeric';
-    durInput.className = 'live-cardio-input';
-    durInput.value = ex.done.duration || '';
-    durInput.min = '0';
-    durInput.addEventListener('input', e => {
+    const makeField = (label, unit, value, type, step, onChange) => {
+      const wrap = document.createElement('div');
+      wrap.className = 'px-3 py-3 border-r border-border last:border-r-0';
+      wrap.innerHTML = `
+        <p class="font-sans text-[8px] uppercase tracking-[0.40em] text-muted mb-1.5">${label}</p>
+        <div class="flex items-baseline gap-1.5">
+          <input type="number" inputmode="${type}" ${step ? `step="${step}"` : ''} min="0" value="${value || ''}"
+            class="font-display font-bold text-[20px] num-stat text-cyan leading-none bg-transparent w-full min-w-0 outline-none focus:text-paper" />
+          <span class="font-sans text-[9px] uppercase tracking-eyebrow text-muted shrink-0">${unit}</span>
+        </div>
+      `;
+      const inp = wrap.querySelector('input');
+      inp.addEventListener('input', onChange);
+      return wrap;
+    };
+
+    fields.appendChild(makeField('Temps', 'min', ex.done.duration, 'numeric', null, e => {
       const v = parseInt(e.target.value) || 0;
       liveSession.exercises[exIdx].done.duration = v;
       updateCardioTemplate(exIdx, 'duration', v);
-    });
-    const durUnit = document.createElement('span');
-    durUnit.className = 'live-cardio-unit';
-    durUnit.textContent = 'min';
-    durWrap.append(durLabel, durInput, durUnit);
-
-    // Puissance
-    const powWrap = document.createElement('div');
-    powWrap.className = 'live-cardio-field';
-    const powLabel = document.createElement('span');
-    powLabel.className = 'live-cardio-label';
-    powLabel.textContent = 'Puissance';
-    const powInput = document.createElement('input');
-    powInput.type = 'number';
-    powInput.inputMode = 'numeric';
-    powInput.className = 'live-cardio-input';
-    powInput.value = ex.done.power || '';
-    powInput.min = '0';
-    powInput.addEventListener('input', e => {
+    }));
+    fields.appendChild(makeField('Puissance', 'W', ex.done.power, 'numeric', null, e => {
       const v = parseInt(e.target.value) || 0;
       liveSession.exercises[exIdx].done.power = v;
       updateCardioTemplate(exIdx, 'power', v);
-    });
-    const powUnit = document.createElement('span');
-    powUnit.className = 'live-cardio-unit';
-    powUnit.textContent = 'W';
-    powWrap.append(powLabel, powInput, powUnit);
-
-    // Distance km
-    const kmWrap = document.createElement('div');
-    kmWrap.className = 'live-cardio-field';
-    const kmLabel = document.createElement('span');
-    kmLabel.className = 'live-cardio-label';
-    kmLabel.textContent = 'Distance';
-    const kmInput = document.createElement('input');
-    kmInput.type = 'number';
-    kmInput.inputMode = 'decimal';
-    kmInput.step = '0.1';
-    kmInput.className = 'live-cardio-input';
-    kmInput.value = ex.done.km || '';
-    kmInput.min = '0';
-    kmInput.addEventListener('input', e => {
+    }));
+    fields.appendChild(makeField('Distance', 'km', ex.done.km, 'decimal', '0.1', e => {
       const v = parseFloat(e.target.value) || 0;
       liveSession.exercises[exIdx].done.km = v;
       updateCardioTemplate(exIdx, 'km', v);
-    });
-    const kmUnit = document.createElement('span');
-    kmUnit.className = 'live-cardio-unit';
-    kmUnit.textContent = 'km';
-    kmWrap.append(kmLabel, kmInput, kmUnit);
+    }));
+    article.appendChild(fields);
 
-    fieldsRow.append(durWrap, powWrap, kmWrap);
-    exDiv.appendChild(fieldsRow);
-
-    // Valeurs précédentes
+    // Prev — eyebrow muted
     if (ex.prev) {
-      const prevSpan = document.createElement('div');
-      prevSpan.className = 'live-cardio-prev';
       const parts = [
         `${ex.prev.duration || '—'} min`,
         `${ex.prev.power || '—'} W`,
       ];
       if (ex.prev.km) parts.push(`${ex.prev.km} km`);
-      prevSpan.textContent = `Précédent : ${parts.join(' · ')}`;
-      exDiv.appendChild(prevSpan);
+      const prev = document.createElement('p');
+      prev.className = 'font-sans text-[10px] uppercase tracking-eyebrow text-muted mt-3 px-5';
+      prev.textContent = `Préc : ${parts.join(' · ')}`;
+      article.appendChild(prev);
     }
 
-    // Bouton état
+    // State btn
+    const btnWrap = document.createElement('div');
+    btnWrap.className = 'mt-4 px-5';
     const stateBtn = document.createElement('button');
-    stateBtn.className = `btn-sm live-cardio-state ${ex.state}`;
-    stateBtn.textContent = ex.state === 'done' ? '✓ Fait' : '○ À faire';
+    const refreshStateBtn = () => {
+      const done = ex.state === 'done';
+      stateBtn.className = done
+        ? 'w-full py-4 border border-acid text-acid font-display font-bold text-[14px] uppercase tracking-eyebrow active:bg-acid/[0.08] transition'
+        : 'w-full py-4 bg-acid text-ink font-display font-bold text-[14px] uppercase tracking-eyebrow active:bg-acid/80 transition';
+      stateBtn.textContent = done ? '✓ Fait' : '✓ Valider';
+    };
+    refreshStateBtn();
     stateBtn.addEventListener('click', () => {
       ex.state = ex.state === 'done' ? 'pending' : 'done';
-      stateBtn.textContent = ex.state === 'done' ? '✓ Fait' : '○ À faire';
-      stateBtn.className = `btn-sm live-cardio-state ${ex.state}`;
+      refreshStateBtn();
+      pushSession(liveSessionSnapshot()).catch(() => {});
     });
-    exDiv.appendChild(stateBtn);
+    btnWrap.appendChild(stateBtn);
+    article.appendChild(btnWrap);
 
-    tab.appendChild(exDiv);
+    wrap.appendChild(article);
   });
+
+  tab.appendChild(wrap);
 }
 
 /* ── Chrono / Minuterie overlays ───────────────────── */

@@ -110,9 +110,9 @@ Après création du script, exécuter : `node generate-assets.js`
 ## Design
 
 - Thème sombre, minimaliste, mobile-first
-- Police monospace (DM Mono, fallback Courier New)
-- Couleur d'accent : #FF6B00
-- Pas de framework CSS
+- Typography: serif display + clean sans body (jamais Inter seul)
+- Couleur d'accent : HSL `14 100% 60%` (micky orange)
+- CSS via Tailwind CLI (no bundler)
 - `overscroll-behavior: none` sur body (anti-bounce iOS)
 - `viewport-fit=cover` dans la balise meta viewport
 - Safe area insets pour iPhone avec encoche (`env(safe-area-inset-*)`)
@@ -128,3 +128,133 @@ Après création du script, exécuter : `node generate-assets.js`
 3. Exécute `node generate-assets.js` pour générer icônes et splashscreens
 4. Vérifie que tous les PNG sont bien générés dans `icons/`
 5. À la fin, affiche les étapes pour déployer sur Netlify (drag & drop du dossier)
+
+# Frontend (HTML vanilla)
+
+## Stack
+- Pure HTML + Tailwind CSS (via Tailwind CLI, no bundler)
+- Optional: Alpine.js for light interactivity
+- NO React, Vue, Svelte, or framework JS
+- Design generation: AIDesigner MCP
+
+## Design workflow (NON-NEGOTIABLE)
+
+For ANY new UI screen, page, or significant component:
+
+1. **Always start with AIDesigner**. Never write UI from scratch.
+2. Check if a brand kit is active: `list_brand_kits` → `set_editor_brand_kit` if needed.
+   Active kit should be `main`.
+3. Generate via `generate_design` with desktop viewport by default.
+4. Iterate via `refine_design` — never regenerate from zero unless the user asks.
+5. Retrieve final HTML via `get_canvas`, save under `./designs/<feature>.html`.
+6. Adapt to project structure only after the design is validated.
+
+## When NOT to use AIDesigner
+- Pure logic, scripts, backend tasks
+- Tiny tweaks (text change, single class adjustment)
+- Bug fixes on existing markup
+
+## Design philosophy (NON-NEGOTIABLE)
+
+Aim for an **editorial / print-inspired** aesthetic. References: Tracksmith, Stripe Press, Linear (early), Basecamp, Pitch, Vercel docs. Assume an identity — don't default to "modern SaaS".
+
+## Anti-patterns to REFUSE
+
+### Colors
+- ❌ Tailwind default palettes on key elements (`bg-slate-*`, `text-indigo-*`, `bg-blue-600`, `text-gray-500`) — use custom hex codes
+- ❌ Purple/blue/indigo gradients (mesh, radial, or linear)
+- ❌ Neon dark mode (cyan/magenta on black)
+- ❌ More than 3 colors per screen (excluding pure black/white)
+- ❌ Any gradient on hero backgrounds — flat colors only
+
+### Typography
+- ❌ Inter alone (or any single sans serif everywhere)
+- ❌ All caps in body text
+- ❌ Centered body paragraphs
+- ❌ Same font-weight for H1 and body
+- ✅ Always pair a strong serif display (Fraunces, Recoleta, GT Sectra, Söhne Breit) with a precise sans (DM Sans, Manrope, Inter Tight)
+- ✅ Strong typographic hierarchy: H1 should be at least 3× body size, use `clamp()` for fluid sizing
+
+### Layout & components
+- ❌ Three rounded cards in a row (the "features grid")
+- ❌ Centered hero with single CTA button below subtitle
+- ❌ Lucide/Heroicons in every card header
+- ❌ Flat white cards on flat gray background
+- ❌ `rounded-2xl shadow-xl` cards (the SaaS card look)
+- ❌ Glassmorphism / backdrop-blur on cards
+- ❌ Emojis in CTAs or section titles ("✨ Get started")
+- ❌ "Trusted by" logo grids by default
+- ✅ Assume a grid, generous whitespace (py-24+ on sections, gap-12+ on grids)
+- ✅ Asymmetric layouts welcome (editorial-style off-center heroes)
+
+### Copy
+- ❌ "Built for the modern X"
+- ❌ "The all-in-one platform for..."
+- ❌ "Supercharge your..."
+- ❌ Generic AI-flavored taglines
+
+## Design system — Direction A (Athlete dense) — LOCKED
+
+Validée le 2026-05-13. Tout l'app passe à ces tokens. **Aucune autre couleur d'accent autorisée hors anti-patterns ci-dessus.**
+
+### Typo
+- **Display** : Fraunces (variable, opsz 9..144, weights 400/600/700/800/900) — H1, chiffres mega de séries, numéros d'exercices
+- **Sans** : DM Sans (400/500/600/700) — body, eyebrow, labels, tabular metrics
+- Pair Fraunces + DM Sans. **Jamais Manrope dans cette direction.**
+- Eyebrows : `letter-spacing: 0.28em` (eyebrow), `0.40em` (eyebrow-wide), `font-sans`, `text-[8-10px]`, uppercase
+- Chiffres de séries : `clamp(2.375rem, 10.5vw, 2.625rem)` (validée/todo), `clamp(2.75rem, 12.2vw, 3rem)` (active)
+
+### Palette base (inchangée)
+| Token | Hex | Usage |
+|---|---|---|
+| `ink` | `#0A0A0A` | Fond principal |
+| `inkAlt` | `#141414` | Surfaces secondaires (Σ row, recap blocks) |
+| `paper` | `#F5F4F0` | Texte principal |
+| `muted` | `#888888` | Labels, texte secondaire, inactif |
+| `border` | `#2A2A2A` | Séparateurs, bordures subtiles |
+| `todo` | `#444444` | Chiffres planifiés non encore exécutés |
+
+### Accents sémantiques — chaque couleur a UN rôle unique
+
+| Token | Hex | Rôle | Usage strict |
+|---|---|---|---|
+| `cyan` | `#06B6D4` | Mesure / donnée neutre | Bandeau métriques (Volume, Tonnage, Reps, RPE), totaux Σ, stats, séparateur Σ |
+| `acid` | `#84CC16` | Validé / accompli | Checkbox cochées (si présentes), badge "X/Y fait", barre progression remplie, "REPOS 1:45" des séries terminées, `&` du titre programme, `border-l-3` des lignes validées |
+| `racing` | `#FACC15` | Action en cours / focus | Série active uniquement (border-left 3px + bg-racing/[0.07] + chiffres jaunes), tab actif, numéro d'exercice en cours, repos qui tourne en live |
+| `blood` | `#DC2626` | Événement marquant / record | Badge "PR" (personal record), RPE ≥ 9, échec de série, charge max. **Ponctuel** — jamais en grande surface |
+
+### Règles d'usage strictes
+1. **Une seule ligne en `racing` à la fois** — la série active. Quand la 03 devient active, la 02 passe en `acid`.
+2. **Le `blood` n'apparaît que sur événement** — pas pour décorer. Si rien d'exceptionnel, aucun rouge visible.
+3. **Le `cyan` reste constant et calme** — pas d'animation, pas de variation.
+4. **L'`acid` doit dominer en fin de séance** — écran "respire le vert" sourd quand tout est validé.
+5. **Plus d'orange `#FF6B00` nulle part.** Manifeste et accents : en `paper` ou semantic tokens.
+
+### Layout signature (Direction A)
+- Sticky header dense : status row + manifesto + compteur "X/Y séries" + barre progression `acid` + strip 4 stats `cyan`
+- H1 énorme Fraunces Black `clamp(2.5rem, 11.5vw, 3.75rem)`
+- Accent-line 36×2px `acid` sous H1
+- Tableau séries 3 colonnes (Charge / Reps / Repos), border-left 3px pour statut, **pas de checkbox ni de numéro de série dans le tableau** (l'ordre des lignes = numéro)
+- Mega numbers Fraunces black à gauche, repos eyebrow à droite
+- Σ row cyan avec separator `border-t-2 border-t-cyan`, fond `inkAlt`
+- Liste "Suite — X exercices" avec poids cible à droite
+- Tab bar 3 colonnes, indicateur `racing` 2px top sur actif, label Fraunces italique
+
+### Radius
+- `--radius: 0.375rem` — jamais `rounded-2xl`
+
+### Spacing rhythm
+- 6 / 12 / 24 / 48 / 96 px
+
+### Référence canonique
+Le mock `./designs/explorations/v2/A-athlete-dense.html` est la source de vérité visuelle. Toute discordance entre le code et ce fichier → revenir au mock.
+
+## Output structure
+- `./designs/` — raw HTML from AIDesigner canvas exports
+- `./src/` — production HTML/CSS/JS, adapted from designs/
+- `./src/assets/` — extracted images, logos, icons
+
+## Language
+- UI copy in French (Micky is FR-first)
+- Code comments in English
+- Variable names in English
