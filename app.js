@@ -1040,7 +1040,7 @@ function renderLiveSession(tab) {
   tab.appendChild(header);
 
   document.getElementById('finish-session')?.addEventListener('click', finishSession);
-  document.getElementById('back-to-list')?.addEventListener('click', () => { liveFocus = null; renderSeanceScreen(); });
+  document.getElementById('back-to-list')?.addEventListener('click', () => { liveFocus = null; liveRest = null; renderSeanceScreen(); });
   document.getElementById('back-home')?.addEventListener('click', () => showScreen('home'));
 
   if (isCardio) {
@@ -1048,8 +1048,13 @@ function renderLiveSession(tab) {
     return;
   }
 
-  if (liveFocus) renderExerciseDetail(tab);
-  else           renderExerciseList(tab, { totalSeries, doneSeries, totalVolume, doneVolume, totalReps, doneReps });
+  // Masque la sticky countdown bar quand on est en rest split (chrono mid-screen visible)
+  const cdBar = document.getElementById('countdown-bar');
+  if (cdBar) cdBar.classList.toggle('in-rest-split', liveRest !== null);
+
+  if (liveRest)       renderRestSplit(tab);
+  else if (liveFocus) renderSeriesFocus(tab);
+  else                renderExerciseList(tab, { totalSeries, doneSeries, totalVolume, doneVolume, totalReps, doneReps });
 }
 
 function renderExerciseList(tab, totals = {}) {
@@ -1173,7 +1178,9 @@ function renderExerciseList(tab, totals = {}) {
       </div>
     `;
     card.addEventListener('click', () => {
-      liveFocus = { exIdx };
+      const next = nextUndoneActivity(exIdx);
+      // Si exo entièrement fait, on ouvre la première activité de la première série pour permettre l'édition
+      liveFocus = next || { exIdx, sIdx: 0, actIdx: 0 };
       renderSeanceScreen();
     });
     list.appendChild(card);
@@ -1183,38 +1190,17 @@ function renderExerciseList(tab, totals = {}) {
   tab.appendChild(wrap);
 }
 
-function renderExerciseDetail(tab) {
-  const exIdx = liveFocus.exIdx;
+// Header commun (masthead session + exo header) — utilisé par focus et rest split
+function renderExoMasthead(wrap, exIdx) {
   const ex = liveSession.exercises[exIdx];
-
-  // Active activity = next undone (null si exo entièrement validé)
-  const next = nextUndoneActivity(exIdx);
-  const activeS = next?.sIdx;
-  const activeA = next?.actIdx;
-
-  // Compute exo totals
   let doneSeries = 0;
-  let totalSeries = ex.series.length;
-  let volume = 0, repsAccum = 0;
+  const totalSeries = ex.series.length;
   ex.series.forEach((s) => {
     const allDone = ex.activities.every((_, a) => s.activityStates?.[a] === 'done');
     if (allDone) doneSeries++;
-    ex.activities.forEach((act, a) => {
-      if (act.type !== 'weight') return;
-      const v = s.values?.[a] || {};
-      const r = v.reps ?? act.reps ?? 0;
-      const w = v.weight ?? act.weight ?? 0;
-      if (s.activityStates?.[a] === 'done') {
-        volume += r * w;
-        repsAccum += r;
-      }
-    });
   });
 
-  const wrap = document.createElement('div');
-  wrap.className = 'pb-8';
-
-  // Session masthead — H1 mock-style avec sep acid (Dos & Abdominaux.)
+  // Session masthead
   const { line1, sep, rest } = splitProgrammeTitle(liveSession.programmeName);
   const sessionMast = document.createElement('section');
   sessionMast.className = 'px-5 pt-9 pb-9 accent-line';
@@ -1230,7 +1216,7 @@ function renderExerciseDetail(tab) {
   `;
   wrap.appendChild(sessionMast);
 
-  // Exercise header — name 24px bold + badge acid + muscle/repos eyebrow (mock-style, sans numero)
+  // Exercise header
   const muscle = ex.activities?.[0]?.name || '';
   const restSecs = ex.activities?.[0]?.rest || 0;
   const restStr = restSecs > 0 ? `Repos ${Math.floor(restSecs / 60)}:${String(restSecs % 60).padStart(2, '0')}` : '';
@@ -1247,232 +1233,96 @@ function renderExerciseDetail(tab) {
     ${(muscle || restStr) ? `<p class="font-sans text-[11px] uppercase tracking-eyebrow text-muted mt-2">${[muscle, restStr].filter(Boolean).join(' · ')}</p>` : ''}
   `;
   wrap.appendChild(exoHead);
+}
 
-  // Suggestion IA (weight only, current active)
-  if (next && ex.activities[activeA].type === 'weight') {
+// Vue focus série — affiche UNE seule série à valider, avec mega values
+function renderSeriesFocus(tab) {
+  const { exIdx, sIdx, actIdx } = liveFocus;
+  const ex = liveSession.exercises[exIdx];
+  const act = ex.activities[actIdx];
+  const v = ex.series[sIdx].values?.[actIdx] || {};
+  const totalSets = ex.series.length;
+
+  const wrap = document.createElement('div');
+  wrap.className = 'pb-8';
+
+  renderExoMasthead(wrap, exIdx);
+
+  // Bloc focus série — eyebrow racing + mega values + accent line racing
+  const focus = document.createElement('section');
+  focus.className = 'px-5 mt-8';
+  const subParts = [`Série ${sIdx + 1} / ${totalSets}`];
+  if (ex.activities.length > 1) subParts.push(act.label || act.name || `Activité ${actIdx + 1}`);
+
+  let valuesHtml;
+  if (act.type === 'weight') {
+    const reps = v.reps ?? act.reps ?? 0;
+    const kg   = v.weight ?? act.weight ?? 0;
+    valuesHtml = `
+      <span class="font-display font-black num-set-hot text-racing">${kg}<span class="font-sans font-medium text-[14px] uppercase tracking-eyebrow text-racing/80 ml-2 align-baseline">kg</span></span>
+      <span class="font-display font-bold text-[28px] num-stat text-paper pb-3">× ${reps}</span>
+    `;
+  } else if (act.type === 'countdown') {
+    const dur = v.duration ?? act.duration ?? 0;
+    valuesHtml = `<span class="font-display font-black num-set-hot text-racing">${dur}<span class="font-sans font-medium text-[14px] uppercase tracking-eyebrow text-racing/80 ml-2 align-baseline">s</span></span>`;
+  } else {
+    valuesHtml = `<span class="font-display font-black num-set-hot text-racing">Chrono</span>`;
+  }
+
+  // Préc
+  const prevVal = ex.prevSeries?.[sIdx]?.values?.[actIdx];
+  let prevText = '';
+  if (act.type === 'weight' && (prevVal?.reps || prevVal?.weight)) {
+    prevText = `Préc : ${prevVal.weight ?? '—'}×${prevVal.reps ?? '—'} kg`;
+  } else if (act.type === 'countdown' && prevVal?.duration) {
+    prevText = `Préc : ${prevVal.duration}s`;
+  } else if (act.type === 'stopwatch' && prevVal?.duration) {
+    prevText = `Préc : ${formatSeconds(prevVal.duration)}`;
+  }
+
+  focus.innerHTML = `
+    <p class="font-sans text-[10px] uppercase tracking-eyebrow text-racing font-semibold mb-4 flex items-center gap-2">
+      <span aria-hidden class="w-1.5 h-1.5 bg-racing animate-pulse"></span>
+      ${subParts.join(' · ')}
+    </p>
+    <div class="flex items-end gap-5 mb-3">
+      ${valuesHtml}
+    </div>
+    <span aria-hidden class="block w-10 h-px bg-racing mt-3"></span>
+    ${prevText ? `<p class="font-sans text-[11px] uppercase tracking-eyebrow text-muted mt-5">${prevText}</p>` : ''}
+  `;
+  wrap.appendChild(focus);
+
+  // Suggestion IA placeholder
+  if (act.type === 'weight') {
     const sug = document.createElement('div');
     sug.id = 'focus-suggestion';
-    sug.className = 'hidden font-sans text-[12px] text-muted italic mx-5 mb-4 px-3 py-2 border border-border bg-inkAlt';
+    sug.className = 'hidden font-sans text-[12px] text-muted italic mx-5 mt-5 mb-2 px-3 py-2 border border-border bg-inkAlt';
     wrap.appendChild(sug);
   }
 
-  // Series ledger table — 3 cols (Charge / Reps / Repos)
-  const tbl = document.createElement('div');
-  tbl.className = 'border-y border-border';
+  // Actions — Modifier border + Valider/Démarrer acid
+  const isTimed = (act.type === 'stopwatch' || act.type === 'countdown');
+  const validateLabel = act.type === 'stopwatch'
+    ? '▶ Démarrer chrono'
+    : (act.type === 'countdown' ? '▶ Démarrer minuterie' : '✓ Valider');
 
-  const hdr = document.createElement('div');
-  hdr.className = 'grid grid-cols-[1fr_60px_80px_20px] gap-4 items-center px-5 py-2.5 border-l-[3px] border-l-transparent border-b border-border font-sans text-[9px] uppercase tracking-[0.40em] text-muted';
-  hdr.innerHTML = `<span>Charge</span><span class="text-right">Reps</span><span class="text-right">Repos</span><span></span>`;
-  tbl.appendChild(hdr);
-
-  ex.series.forEach((set, sIdx) => {
-    ex.activities.forEach((act, actIdx) => {
-      const isDone   = set.activityStates?.[actIdx] === 'done';
-      const isActive = sIdx === activeS && actIdx === activeA;
-
-      let borderLeftCls, opacityCls, valColor, secondColor, restColor, setSizeCls, unitColor;
-      if (isDone) {
-        borderLeftCls = 'border-l-[3px] border-l-acid bg-acid/[0.04]';
-        opacityCls = '';
-        valColor = 'text-paper';
-        secondColor = 'text-paper';
-        restColor = 'text-acid';
-        setSizeCls = 'num-set';
-        unitColor = 'text-acid/70';
-      } else if (isActive) {
-        borderLeftCls = 'border-l-[3px] border-l-racing bg-racing/[0.10]';
-        opacityCls = '';
-        valColor = 'text-racing';
-        secondColor = 'text-racing';
-        restColor = 'text-racing';
-        setSizeCls = 'num-set-hot';
-        unitColor = 'text-racing/80';
-      } else {
-        borderLeftCls = 'border-l-[3px] border-l-transparent';
-        opacityCls = 'opacity-50';
-        valColor = 'text-todo';
-        secondColor = 'text-todo';
-        restColor = 'text-todo';
-        setSizeCls = 'num-set';
-        unitColor = 'text-todo';
-      }
-
-      const v = set.values?.[actIdx] || {};
-      const prevVal = ex.prevSeries?.[sIdx]?.values?.[actIdx] || null;
-
-      // Col 1 — Charge (+ Préc inline si dispo)
-      let chargeHtml;
-      // Col 2 — Reps / unit
-      let secondHtml;
-      // Préc eyebrow (sous la charge) — affiché si prev existe
-      let prevHtml = '';
-      if (act.type === 'weight') {
-        const w = v.weight ?? act.weight ?? 0;
-        const r = v.reps ?? act.reps ?? 0;
-        chargeHtml = `<span class="font-display font-black ${setSizeCls} ${valColor}">${w}<span class="font-sans font-medium text-[11px] tracking-eyebrow ${unitColor} ml-2 align-baseline">kg</span></span>`;
-        secondHtml = `<span class="font-display font-bold text-[18px] num-stat ${secondColor} text-right pb-1.5">× ${r}</span>`;
-        if (prevVal && (prevVal.weight != null || prevVal.reps != null)) {
-          prevHtml = `<p class="font-sans text-[9px] uppercase tracking-eyebrow text-muted/70 num-stat mt-1.5">Préc ${prevVal.weight ?? '—'}×${prevVal.reps ?? '—'}</p>`;
-        }
-      } else if (act.type === 'countdown') {
-        const d = v.duration ?? act.duration ?? 0;
-        chargeHtml = `<span class="font-display font-black ${setSizeCls} ${valColor}">${d}<span class="font-sans font-medium text-[11px] tracking-eyebrow ${unitColor} ml-2 align-baseline">s</span></span>`;
-        secondHtml = `<span class="text-right pb-1.5 font-sans text-[10px] uppercase tracking-eyebrow ${secondColor}">${act.label || 'min.'}</span>`;
-        if (prevVal?.duration) {
-          prevHtml = `<p class="font-sans text-[9px] uppercase tracking-eyebrow text-muted/70 num-stat mt-1.5">Préc ${prevVal.duration}s</p>`;
-        }
-      } else {
-        const d = v.duration ?? 0;
-        chargeHtml = `<span class="font-display font-black ${setSizeCls} ${valColor}">${d > 0 ? formatSeconds(d) : '—'}</span>`;
-        secondHtml = `<span class="text-right pb-1.5 font-sans text-[10px] uppercase tracking-eyebrow ${secondColor}">chrono</span>`;
-        if (prevVal?.duration) {
-          prevHtml = `<p class="font-sans text-[9px] uppercase tracking-eyebrow text-muted/70 num-stat mt-1.5">Préc ${formatSeconds(prevVal.duration)}</p>`;
-        }
-      }
-
-      // Col 3 — Repos
-      const restSecs = act.rest || 0;
-      const restLabel = restSecs > 0 ? `${Math.floor(restSecs / 60)}:${String(restSecs % 60).padStart(2, '0')}` : '—';
-      let restHtml;
-      if (isActive) {
-        restHtml = `<span class="font-sans text-[9px] uppercase tracking-eyebrow ${restColor} font-semibold text-right pb-1.5">En cours</span>`;
-      } else {
-        const weight = isDone ? 'font-semibold' : '';
-        restHtml = `<span class="font-sans text-[10px] uppercase tracking-eyebrow ${restColor} num-stat text-right pb-1.5 ${weight}">${restLabel}</span>`;
-      }
-
-      const editable = act.type !== 'stopwatch';
-      const editIcon = editable
-        ? `<span aria-hidden class="text-[14px] leading-none pb-1.5 text-right ${isActive ? 'text-racing/70' : (isDone ? 'text-acid/40' : 'text-muted/40')}">✎</span>`
-        : `<span></span>`;
-
-      const row = document.createElement('button');
-      row.className = `w-full text-left grid grid-cols-[1fr_60px_80px_20px] gap-4 items-end px-5 py-4 ${borderLeftCls} ${opacityCls} border-b border-border/70 active:bg-inkAlt transition`;
-      // Col 1 contient charge + prev sub-line si prev existe
-      const col1 = prevHtml ? `<div>${chargeHtml}${prevHtml}</div>` : chargeHtml;
-      row.innerHTML = col1 + secondHtml + restHtml + editIcon;
-
-      if (editable) {
-        row.addEventListener('click', () => openEditModalForActivity(exIdx, sIdx, actIdx));
-      }
-      tbl.appendChild(row);
-    });
-  });
-
-  // Σ Cumul row — cyan
-  const sigma = document.createElement('div');
-  sigma.className = 'flex items-baseline justify-between px-5 py-2.5 bg-inkAlt border-l-[3px] border-l-transparent border-t-[2px] border-t-cyan';
-  sigma.innerHTML = `
-    <span class="font-sans font-bold text-[10px] uppercase tracking-eyebrow text-cyan">Σ Cumul</span>
-    <div class="flex items-baseline gap-3 font-display font-bold num-stat text-cyan">
-      <span class="text-[20px]">${Math.round(volume)} kg</span>
-      <span class="text-[14px] text-cyan/75">· ${repsAccum} reps</span>
-    </div>
-  `;
-  tbl.appendChild(sigma);
-  wrap.appendChild(tbl);
-
-  // Note italic
-  if (ex.comment) {
-    const note = document.createElement('p');
-    note.className = 'font-display italic font-medium text-[12px] text-muted mt-4 px-5';
-    note.textContent = ex.comment;
-    wrap.appendChild(note);
+  const actions = document.createElement('div');
+  actions.className = 'mt-10 px-5 grid grid-cols-2 gap-3';
+  let actionsHtml = '';
+  if (act.type !== 'stopwatch') {
+    actionsHtml += `<button id="focus-edit" class="py-4 border border-border text-paper font-sans text-[12px] uppercase tracking-eyebrow active:border-acid active:text-acid transition">✎ Modifier</button>`;
+  } else {
+    actionsHtml += `<span></span>`;
   }
-
-  // CTA bar — Valider current activity
-  if (next) {
-    const curAct = ex.activities[activeA];
-    const isStopwatch = curAct.type === 'stopwatch';
-    const isCountdown = curAct.type === 'countdown';
-    let validateLabel;
-    if (isStopwatch)      validateLabel = `▶ Démarrer chrono`;
-    else if (isCountdown) validateLabel = `▶ Démarrer minuterie`;
-    else                  validateLabel = `✓ Valider série ${activeS + 1}`;
-
-    const cta = document.createElement('div');
-    cta.className = 'mt-8 px-5 grid grid-cols-1 gap-3';
-    cta.innerHTML = `
-      <button id="ed-validate" class="py-4 bg-acid text-ink font-display font-bold text-[14px] uppercase tracking-eyebrow active:bg-acid/80 transition">${validateLabel}</button>
-    `;
-    wrap.appendChild(cta);
-  }
-
-  // Suite — queued (autres exos non finis)
-  const queued = liveSession.exercises
-    .map((e, i) => ({ e, i }))
-    .filter(({ e, i }) => {
-      if (i === exIdx) return false;
-      if (e.type === 'cardio') return false;
-      const allDone = e.series.every(s => e.activities.every((_, a) => s.activityStates?.[a] === 'done'));
-      return !allDone;
-    });
-
-  if (queued.length > 0) {
-    const queuedSec = document.createElement('section');
-    queuedSec.className = 'mt-12';
-    const hdrTxt = `Suite — ${queued.length} exercice${queued.length > 1 ? 's' : ''}`;
-    // Estim minutes restantes : sum(undone series * (avg time per série + rest))
-    const remainMin = Math.round(queued.reduce((acc, { e }) => {
-      const undoneSeries = e.series.filter(s => !e.activities.every((_, a) => s.activityStates?.[a] === 'done')).length;
-      const restPerSet = e.activities[0]?.rest || 60;
-      return acc + undoneSeries * (30 + restPerSet) / 60;
-    }, 0));
-    queuedSec.innerHTML = `
-      <header class="flex items-baseline justify-between mb-5 px-5">
-        <h3 class="font-display font-bold text-[18px] text-paper">${hdrTxt}</h3>
-        ${remainMin > 0 ? `<span class="font-sans text-[10px] uppercase tracking-eyebrow text-muted">≈ ${remainMin} min restantes</span>` : ''}
-      </header>
-    `;
-    const ul = document.createElement('ul');
-    ul.className = 'border-y border-border';
-    queued.forEach(({ e, i }, idx) => {
-      const m = e.activities?.[0]?.name || '';
-      const wActIdx = e.activities.findIndex(a => a.type === 'weight');
-      const wAct = wActIdx >= 0 ? e.activities[wActIdx] : null;
-      const latestVal = (() => {
-        if (wActIdx < 0) return null;
-        for (let k = e.series.length - 1; k >= 0; k--) {
-          const v = e.series[k]?.values?.[wActIdx];
-          if (v && (v.weight != null || v.reps != null)) return v;
-        }
-        return null;
-      })();
-      const dispW = latestVal?.weight ?? wAct?.weight ?? 0;
-      const dispR = latestVal?.reps   ?? wAct?.reps   ?? 0;
-      const wTxt = wAct ? `${dispW}` : '';
-      const repsTxt = wAct
-        ? `${e.series.length} × ${dispR}`
-        : `${e.series.length} série${e.series.length > 1 ? 's' : ''}`;
-      const isLast = idx === queued.length - 1;
-
-      const li = document.createElement('li');
-      li.innerHTML = `
-        <button class="w-full text-left flex items-center gap-4 px-5 py-4 ${isLast ? '' : 'border-b border-border/70'} active:bg-inkAlt transition">
-          <div class="flex-1 min-w-0">
-            <h4 class="font-display font-bold italic text-[18px] leading-tight text-paper truncate">${e.name}</h4>
-            ${m ? `<p class="font-sans text-[9px] uppercase tracking-eyebrow text-muted mt-1 truncate">${m}</p>` : ''}
-          </div>
-          <div class="text-right shrink-0 leading-none">
-            ${wTxt ? `<p class="font-display font-black text-[20px] num-stat text-paper leading-none">${wTxt}<span class="font-sans font-medium text-[9px] tracking-eyebrow text-muted ml-1.5 align-baseline">kg</span></p>` : ''}
-            <p class="font-sans font-medium text-[10px] uppercase tracking-eyebrow text-muted num-stat mt-1.5">${repsTxt}</p>
-          </div>
-        </button>
-      `;
-      li.querySelector('button').addEventListener('click', () => {
-        liveFocus = { exIdx: i };
-        renderSeanceScreen();
-      });
-      ul.appendChild(li);
-    });
-    queuedSec.appendChild(ul);
-    wrap.appendChild(queuedSec);
-  }
+  actionsHtml += `<button id="focus-validate" class="py-4 bg-acid text-ink font-display font-bold text-[14px] uppercase tracking-eyebrow active:bg-acid/80 transition">${validateLabel}</button>`;
+  actions.innerHTML = actionsHtml;
+  wrap.appendChild(actions);
 
   tab.appendChild(wrap);
 
-  // Suggestion IA — déclenchée à l'ouverture
-  if (next && ex.activities[activeA].type === 'weight') {
+  // Suggestion IA — async
+  if (act.type === 'weight') {
     const sugEl = document.getElementById('focus-suggestion');
     if (sugEl) {
       sugEl.innerHTML = `<div class="live-edit-suggestion-spinner"></div><span>Suggestion…</span>`;
@@ -1491,21 +1341,133 @@ function renderExerciseDetail(tab) {
     }
   }
 
-  // Wire CTA — valider / chrono / minuterie
-  const validateBtn = document.getElementById('ed-validate');
-  if (validateBtn && next) {
-    validateBtn.addEventListener('click', () => {
-      const curAct = ex.activities[activeA];
-      if (curAct.type === 'stopwatch') {
-        openChronoOverlay(exIdx, activeS, activeA, null);
-      } else if (curAct.type === 'countdown') {
-        openMinuterieOverlay(exIdx, activeS, activeA, null);
-      } else {
-        liveFocus = { exIdx, sIdx: activeS, actIdx: activeA };
-        completeFocusedActivity();
+  document.getElementById('focus-edit')?.addEventListener('click', () => {
+    openEditModalForActivity(exIdx, sIdx, actIdx);
+  });
+  document.getElementById('focus-validate').addEventListener('click', () => {
+    if (act.type === 'stopwatch') {
+      openChronoOverlay(exIdx, sIdx, actIdx, null);
+    } else if (act.type === 'countdown') {
+      openMinuterieOverlay(exIdx, sIdx, actIdx, null);
+    } else {
+      completeFocusedActivity();
+    }
+  });
+}
+
+// Vue repos split — mega chrono central + recap série modifiable
+function renderRestSplit(tab) {
+  const { exIdx, sIdx, actIdx } = liveRest;
+  const ex = liveSession.exercises[exIdx];
+  const act = ex.activities[actIdx];
+  const v = ex.series[sIdx].values?.[actIdx] || {};
+  const totalSets = ex.series.length;
+
+  const wrap = document.createElement('div');
+  wrap.className = 'flex flex-col min-h-[calc(100svh-180px)] pb-8';
+
+  // Top mini header — exo name + série done badge
+  const muscle = ex.activities?.[0]?.name || '';
+  const topHeader = document.createElement('header');
+  topHeader.className = 'px-5 pt-6 pb-3';
+  topHeader.innerHTML = `
+    <p class="font-sans text-[9px] uppercase tracking-eyebrow text-acid font-semibold mb-1.5 flex items-center gap-2">
+      <span aria-hidden class="w-1.5 h-1.5 bg-acid"></span>
+      Série ${sIdx + 1} / ${totalSets} validée
+    </p>
+    <h2 class="font-display font-bold italic text-[20px] leading-tight text-paper truncate">${ex.name}</h2>
+    ${muscle ? `<p class="font-sans text-[9px] uppercase tracking-eyebrow text-muted mt-1">${muscle}</p>` : ''}
+  `;
+  wrap.appendChild(topHeader);
+
+  // Mega chrono central
+  const center = document.createElement('div');
+  center.className = 'flex-1 flex flex-col items-center justify-center text-center px-6 py-10 gap-5';
+  center.innerHTML = `
+    <p class="font-sans text-[10px] uppercase tracking-[0.40em] text-racing font-semibold flex items-center gap-2">
+      <span aria-hidden class="w-1.5 h-1.5 bg-racing animate-pulse"></span>
+      Repos
+    </p>
+    <div id="rest-split-time" class="font-display font-black num-stat text-racing leading-none tracking-tight" style="font-size:clamp(4.5rem, 24vw, 7.5rem)">--:--</div>
+    <p id="rest-split-next" class="font-sans text-[11px] uppercase tracking-eyebrow text-muted max-w-[30ch]"></p>
+    <button id="rest-split-skip" class="mt-2 py-3 px-6 border border-border text-paper font-sans text-[11px] uppercase tracking-eyebrow active:border-acid active:text-acid transition">⏭ Passer le repos</button>
+  `;
+  wrap.appendChild(center);
+
+  // Recap série juste validée — modifiable
+  let valHtml;
+  if (act.type === 'weight') {
+    valHtml = `
+      <span class="font-display font-bold text-[26px] num-stat text-paper">${v.weight ?? 0}<span class="font-sans font-medium text-[11px] uppercase tracking-eyebrow text-muted ml-1.5 align-baseline">kg</span></span>
+      <span class="font-display font-bold text-[18px] num-stat text-paper">× ${v.reps ?? 0}</span>
+    `;
+  } else {
+    valHtml = `<span class="font-display font-bold text-[26px] num-stat text-paper">${v.duration ?? 0}<span class="font-sans font-medium text-[11px] uppercase tracking-eyebrow text-muted ml-1.5 align-baseline">s</span></span>`;
+  }
+  const editBtn = act.type === 'stopwatch'
+    ? ''
+    : `<button id="rest-edit" class="shrink-0 py-2 px-4 border border-border text-paper font-sans text-[10px] uppercase tracking-eyebrow active:border-acid active:text-acid transition">✎ Modifier</button>`;
+
+  const recap = document.createElement('div');
+  recap.className = 'border-y border-border border-l-[3px] border-l-acid bg-acid/[0.04] px-5 py-4 mt-6 mx-5 flex items-center justify-between gap-4';
+  recap.innerHTML = `
+    <div class="min-w-0 space-y-1">
+      <p class="font-sans text-[9px] uppercase tracking-eyebrow text-acid font-semibold">Série ${sIdx + 1} ✓</p>
+      <div class="flex items-baseline gap-3 flex-wrap">${valHtml}</div>
+    </div>
+    ${editBtn}
+  `;
+  wrap.appendChild(recap);
+
+  tab.appendChild(wrap);
+
+  // Mirror du countdown du bandeau sticky (qui est masqué via .in-rest-split)
+  const sync = () => {
+    const cdDisplay = document.getElementById('countdown-display');
+    const splitTime = document.getElementById('rest-split-time');
+    const nextLabel = document.getElementById('countdown-exercise-name');
+    const splitNext = document.getElementById('rest-split-next');
+    if (cdDisplay && splitTime) splitTime.textContent = cdDisplay.textContent;
+    if (nextLabel && splitNext) splitNext.textContent = nextLabel.textContent ? `À suivre : ${nextLabel.textContent.replace(/^À suivre :\s*/, '')}` : '';
+  };
+  sync();
+  const restSyncId = setInterval(sync, 200);
+  if (window.__restSyncId) clearInterval(window.__restSyncId);
+  window.__restSyncId = restSyncId;
+
+  document.getElementById('rest-edit')?.addEventListener('click', () => {
+    openEditModalForActivity(exIdx, sIdx, actIdx);
+  });
+  document.getElementById('rest-split-skip').addEventListener('click', () => {
+    showConfirm('Passer le repos ?', finishCountdown);
+  });
+}
+
+// Stub kept for backwards-compat references — no longer called directly
+function renderExerciseDetail(tab) {
+  return renderSeriesFocus(tab);
+}
+
+// Compute exo totals helper (kept for any future use, was inlined)
+function _computeExoTotalsLegacy(ex) {
+  let doneSeries = 0;
+  const totalSeries = ex.series.length;
+  let volume = 0, repsAccum = 0;
+  ex.series.forEach((s) => {
+    const allDone = ex.activities.every((_, a) => s.activityStates?.[a] === 'done');
+    if (allDone) doneSeries++;
+    ex.activities.forEach((act, a) => {
+      if (act.type !== 'weight') return;
+      const v = s.values?.[a] || {};
+      const r = v.reps ?? act.reps ?? 0;
+      const w = v.weight ?? act.weight ?? 0;
+      if (s.activityStates?.[a] === 'done') {
+        volume += r * w;
+        repsAccum += r;
       }
     });
-  }
+  });
+  return { doneSeries, totalSeries, volume, repsAccum };
 }
 
 function completeFocusedActivity() {
@@ -1520,11 +1482,9 @@ function completeFocusedActivity() {
   const act = ex.activities[actIdx];
   const restSecs = act.rest || 0;
 
-  // On reste sur la vue détail de l'exo en cours. La série suivante devient active
-  // automatiquement (calculée à chaque render). Le repos vit dans la sticky bar.
-  // Quand l'exo est entièrement fini → retour à la liste pour choisir le suivant.
   const nextInSame = nextUndoneActivity(exIdx);
 
+  // Plus aucune série non faite dans cet exo → retour à la liste
   if (!nextInSame) {
     liveFocus = null;
     liveRest = null;
@@ -1533,15 +1493,22 @@ function completeFocusedActivity() {
     return;
   }
 
-  liveFocus = { exIdx };
-  liveRest = null;
-  renderSeanceScreen();
-
   if (restSecs > 0) {
+    // Mode rest split : chrono mega + recap série juste faite + Modifier
+    liveRest = { exIdx, sIdx, actIdx };
+    liveFocus = null;
+    renderSeanceScreen();
     const nextLabel = labelOfActivity(nextInSame);
     startCountdown(restSecs, nextLabel, () => {
+      liveRest = null;
+      liveFocus = nextInSame; // bascule sur la série suivante
       renderSeanceScreen();
     });
+  } else {
+    // Pas de repos → direct série suivante
+    liveRest = null;
+    liveFocus = nextInSame;
+    renderSeanceScreen();
   }
 }
 
@@ -2597,10 +2564,14 @@ async function renderCorps() {
 
   // ── Historique ────────────────────────────────────────
   const histSection = document.createElement('section');
-  histSection.className = 'mt-4';
+  histSection.className = 'mt-12';
   histSection.innerHTML = `
-    <header class="px-5 mb-3">
-      <h3 class="font-display italic font-bold text-[14px] uppercase tracking-eyebrow text-paper">Historique</h3>
+    <header class="px-5 pb-6 accent-line mb-4">
+      <h2 class="font-display font-black text-paper" style="font-size:clamp(2rem, 9vw, 2.75rem); line-height:0.92; letter-spacing:-0.025em">
+        Tes<br/>
+        <span class="text-paper/40"><span class="text-acid not-italic font-black">·</span> mesures.</span>
+      </h2>
+      <p class="font-sans text-[10px] uppercase tracking-eyebrow text-muted mt-5">${measurements.length} entrée${measurements.length > 1 ? 's' : ''}</p>
     </header>
   `;
   body.appendChild(histSection);
@@ -2665,11 +2636,15 @@ function openBodyAnalysisPopupLoading() {
   const modal = document.getElementById('modal');
   const modalBody = document.getElementById('modal-body');
   modalBody.innerHTML = `
-    <div class="feedback-ia-modal" id="body-analysis-popup">
-      <div class="modal-title" style="color:#5abe78">🌱 Ton évolution</div>
-      <div class="feedback-ia-loading">
-        <div class="feedback-ia-spinner"></div>
-        <p>Analyse en cours…</p>
+    <div id="body-analysis-popup" class="px-5 py-9">
+      <p class="font-sans text-[10px] uppercase tracking-eyebrow text-acid font-semibold mb-3">Ton évolution</p>
+      <h2 class="font-display font-black h-display text-paper mb-6">
+        Analyse<br/>
+        <span class="text-paper/40"><span class="text-acid not-italic font-black">·</span> en cours.</span>
+      </h2>
+      <div class="flex items-center gap-3 mt-8">
+        <span aria-hidden class="w-1.5 h-1.5 bg-acid animate-pulse"></span>
+        <p class="font-sans text-[11px] uppercase tracking-eyebrow text-muted">Patiente…</p>
       </div>
     </div>
   `;
@@ -2680,8 +2655,12 @@ function fillBodyAnalysisPopup(text) {
   const popup = document.getElementById('body-analysis-popup');
   if (!popup) return;
   popup.innerHTML = `
-    <div class="modal-title" style="color:#5abe78">🌱 Ton évolution</div>
-    <div class="corps-analysis-content">${formatFeedback(text)}</div>
+    <p class="font-sans text-[10px] uppercase tracking-eyebrow text-acid font-semibold mb-3">Ton évolution</p>
+    <h2 class="font-display font-black h-display text-paper accent-line pb-7">
+      Le<br/>
+      <span class="text-paper/40"><span class="text-acid not-italic font-black">·</span> bilan.</span>
+    </h2>
+    <div class="font-sans text-[14px] text-paper leading-relaxed mt-8 space-y-3">${formatFeedback(text)}</div>
   `;
 }
 

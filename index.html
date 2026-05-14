@@ -19,10 +19,16 @@
 <body>
 
   <!-- LOADING SCREEN -->
-  <div id="loading-screen">
-    <img src="icons/logo.jpg" id="loading-logo" />
-    <p id="loading-title">Coach Mike</p>
-    <p id="loading-sub" class="app-version"></p>
+  <div id="loading-screen" class="!bg-ink">
+    <div class="text-center px-6">
+      <p class="font-display italic font-semibold text-[10px] uppercase tracking-eyebrow text-paper mb-6">Build · Fuel · Dominate</p>
+      <h1 id="loading-title" class="font-display font-black h-display text-paper leading-[0.92]">
+        Coach<br/>
+        <span class="text-paper/40"><span class="text-acid not-italic font-black">·</span> Mike.</span>
+      </h1>
+      <span aria-hidden class="block w-9 h-[2px] bg-acid mx-auto mt-6"></span>
+      <p id="loading-sub" class="app-version font-sans text-[9px] uppercase tracking-eyebrow text-muted mt-4"></p>
+    </div>
   </div>
 
   <div id="app">
@@ -183,23 +189,29 @@
   </div>
 
   <!-- CHRONO FULLSCREEN -->
-  <div id="chrono-overlay" class="hidden">
-    <span class="countdown-label">⏱ Chrono en cours</span>
-    <span id="chrono-exercise-name" class="overlay-exercise-name"></span>
-    <div class="countdown-ring-wrap">
+  <div id="chrono-overlay" class="hidden fixed inset-0 z-[200] bg-ink flex flex-col items-center justify-center px-6 text-center">
+    <p class="font-sans text-[10px] uppercase tracking-[0.40em] text-racing font-semibold mb-3 flex items-center gap-2">
+      <span aria-hidden class="w-1.5 h-1.5 bg-racing animate-pulse"></span>
+      Chrono en cours
+    </p>
+    <p id="chrono-exercise-name" class="font-display font-bold italic text-[16px] text-paper mb-10 max-w-[28ch]"></p>
+    <div class="font-display font-black num-stat text-racing leading-none tracking-tight" style="font-size:clamp(4rem, 22vw, 7rem)">
       <span id="chrono-display">00:00</span>
     </div>
-    <button id="chrono-stop">Stop</button>
+    <button id="chrono-stop" class="mt-12 py-4 px-10 bg-blood text-paper font-display font-bold text-[14px] uppercase tracking-eyebrow active:bg-blood/80 transition">Stop</button>
   </div>
 
   <!-- MINUTERIE FULLSCREEN -->
-  <div id="minuterie-overlay" class="hidden">
-    <span class="countdown-label">⏳ Minuterie</span>
-    <span id="minuterie-exercise-name" class="overlay-exercise-name"></span>
-    <div class="countdown-ring-wrap">
+  <div id="minuterie-overlay" class="hidden fixed inset-0 z-[200] bg-ink flex flex-col items-center justify-center px-6 text-center">
+    <p class="font-sans text-[10px] uppercase tracking-[0.40em] text-racing font-semibold mb-3 flex items-center gap-2">
+      <span aria-hidden class="w-1.5 h-1.5 bg-racing animate-pulse"></span>
+      Minuterie
+    </p>
+    <p id="minuterie-exercise-name" class="font-display font-bold italic text-[16px] text-paper mb-10 max-w-[28ch]"></p>
+    <div class="font-display font-black num-stat text-racing leading-none tracking-tight" style="font-size:clamp(4rem, 22vw, 7rem)">
       <span id="minuterie-display">00:00</span>
     </div>
-    <button id="minuterie-stop" class="overlay-stop-btn">Stop</button>
+    <button id="minuterie-stop" class="mt-12 py-4 px-10 bg-blood text-paper font-display font-bold text-[14px] uppercase tracking-eyebrow active:bg-blood/80 transition">Stop</button>
   </div>
 
 
@@ -257,33 +269,45 @@
 
   <!-- MODAL AJOUTER REPAS -->
   <div id="add-meal-modal" class="live-edit-modal hidden">
-    <div class="live-edit-modal-overlay"></div>
-    <div class="live-edit-modal-card">
-      <div class="live-edit-modal-title">Ajouter un repas</div>
-      <textarea id="meal-text" placeholder="3 weetabix, miel, banane…" rows="3"
-                style="width:100%;padding:12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--font);font-size:15px;resize:vertical"></textarea>
-      <input type="file" id="meal-photo" accept="image/*" capture="environment" style="display:none" />
-      <button type="button" id="meal-photo-btn" class="btn-secondary">📸 Joindre une photo</button>
-      <div id="meal-photo-preview" class="hidden" style="text-align:center"></div>
-      <p id="meal-error" class="error-msg hidden"></p>
-      <div class="live-edit-modal-actions">
-        <button class="btn-secondary" id="meal-cancel">Annuler</button>
-        <button class="btn-primary"   id="meal-save">Estimer & sauvegarder</button>
+    <div class="live-edit-modal-overlay !bg-ink/80"></div>
+    <div class="!relative !bg-ink !border !border-border !rounded-none !p-6 !max-w-[400px] !w-full mx-4 space-y-5" style="background:var(--ink);max-height:90vh;overflow-y:auto">
+      <div>
+        <p class="font-sans text-[9px] uppercase tracking-[0.40em] text-acid font-semibold mb-2">Repas</p>
+        <h2 class="font-display font-bold italic text-[20px] leading-tight text-paper">Ajouter</h2>
+      </div>
+      <div>
+        <p class="font-sans text-[9px] uppercase tracking-[0.40em] text-muted mb-1.5">Description</p>
+        <textarea id="meal-text" placeholder="3 weetabix, miel, banane…" rows="3"
+          class="w-full bg-transparent border border-border focus:border-acid font-sans text-[14px] text-paper p-3 outline-none transition resize-y"></textarea>
+      </div>
+      <input type="file" id="meal-photo" accept="image/*" capture="environment" class="hidden" />
+      <button type="button" id="meal-photo-btn" class="w-full py-3 border border-border text-paper font-sans text-[11px] uppercase tracking-eyebrow active:border-acid active:text-acid transition">📸 Joindre une photo</button>
+      <div id="meal-photo-preview" class="hidden text-center"></div>
+      <p id="meal-error" class="hidden font-sans text-[11px] text-blood"></p>
+      <div class="grid grid-cols-2 gap-3">
+        <button id="meal-cancel" class="py-3 border border-border text-paper font-sans text-[11px] uppercase tracking-eyebrow active:border-paper transition">Annuler</button>
+        <button id="meal-save" class="py-3 bg-acid text-ink font-display font-bold text-[12px] uppercase tracking-eyebrow active:bg-acid/80 transition">Estimer →</button>
       </div>
     </div>
   </div>
 
   <!-- MODAL PRESET PETIT-DEJ -->
   <div id="meal-preset-modal" class="live-edit-modal hidden">
-    <div class="live-edit-modal-overlay"></div>
-    <div class="live-edit-modal-card">
-      <div class="live-edit-modal-title" id="meal-preset-title">Définir petit-dej</div>
-      <textarea id="meal-preset-text" placeholder="3 weetabix, miel, banane…" rows="3"
-                style="width:100%;padding:12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--font);font-size:15px;resize:vertical"></textarea>
-      <p id="meal-preset-error" class="error-msg hidden"></p>
-      <div class="live-edit-modal-actions">
-        <button class="btn-secondary" id="meal-preset-cancel">Annuler</button>
-        <button class="btn-primary"   id="meal-preset-save">Estimer & sauvegarder</button>
+    <div class="live-edit-modal-overlay !bg-ink/80"></div>
+    <div class="!relative !bg-ink !border !border-border !rounded-none !p-6 !max-w-[400px] !w-full mx-4 space-y-5" style="background:var(--ink)">
+      <div>
+        <p class="font-sans text-[9px] uppercase tracking-[0.40em] text-acid font-semibold mb-2">Preset</p>
+        <h2 id="meal-preset-title" class="font-display font-bold italic text-[20px] leading-tight text-paper">Définir petit-dej</h2>
+      </div>
+      <div>
+        <p class="font-sans text-[9px] uppercase tracking-[0.40em] text-muted mb-1.5">Description</p>
+        <textarea id="meal-preset-text" placeholder="3 weetabix, miel, banane…" rows="3"
+          class="w-full bg-transparent border border-border focus:border-acid font-sans text-[14px] text-paper p-3 outline-none transition resize-y"></textarea>
+      </div>
+      <p id="meal-preset-error" class="hidden font-sans text-[11px] text-blood"></p>
+      <div class="grid grid-cols-2 gap-3">
+        <button id="meal-preset-cancel" class="py-3 border border-border text-paper font-sans text-[11px] uppercase tracking-eyebrow active:border-paper transition">Annuler</button>
+        <button id="meal-preset-save" class="py-3 bg-acid text-ink font-display font-bold text-[12px] uppercase tracking-eyebrow active:bg-acid/80 transition">Estimer →</button>
       </div>
     </div>
   </div>

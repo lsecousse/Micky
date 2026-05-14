@@ -34,8 +34,8 @@ Tokens lockés dans `CLAUDE.md` + `tailwind.config.js`:
   - **Claude API** (`renderClaudeApi`): masthead "Clé · Claude." + input password border-b avec toggle 👁 border + CTA acid.
   - **Corps** (`renderCorps`): masthead "Ton · corps." + grid 2 cols champs num avec border-b + diff acid/blood. Trend strip 2x2 cyan avec badge IMG. Charts ineline + historique cards inline.
   - **Params** (`renderParams`): masthead "Tes · programmes." + liste avec ↑↓ reorder border + Modifier/Suppr inline + Nouveau programme border.
-- [ ] **A8** — Modals & overlays: loading screen + dialog + modal détail + live-edit-modal + meal modals + chrono / minuterie / countdown fullscreen.
-- [ ] **A9** — Cleanup `style.css`: purger règles orphelines (`.home-*`, `.btn-*`, `.screen-*`, `.live-*`, `.dialog-*`, `.modal-*`, `.programme-*`, `.section-title`, `.empty-msg`, etc.). Conserver routing (`.screen` / `.screen.active`) et resets globaux.
+- [x] **A8** — Modals & overlays tokens A: loading splash H1 + dialog + live-edit + add-meal + meal-preset + chrono/minuterie fullscreen + body-analysis popup + corps historique masthead.
+- [x] **A9** — Cleanup `style.css`: 1860 → 839 lignes. Suppressions: Home / screen-header / Misc / Programme selection / Live session / Historique / Paramètres / Feedback IA / Données / Stats / Login / Composition corporelle / Live états A/B/C / Alimentation. Conserve: Reset & base + Loading positioning + .screen routing + Shared inputs + Buttons legacy (prog editor) + Chrono overlay positioning + Countdown sticky bar + Toast + Programme editor + Modal positioning + Dialog positioning + Exercise sets + Activities list + Live edit modal positioning.
 
 ## Commandes utiles
 
