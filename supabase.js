@@ -102,22 +102,54 @@ async function reorderProgrammesDB(programmes) {
   if (err) console.error('reorderProgrammesDB error:', err.error);
 }
 
-/* Envoie une séance terminée vers Supabase */
+/* Envoie une séance (en cours ou terminée) vers Supabase
+   en passant par la RPC atomique qui met à jour sessions + session_exercises. */
 async function pushSession(session) {
   const { data: { user } } = await db.auth.getUser();
   if (!user) return;
-  await db.from('sessions').upsert({
+
+  // Construit le payload jsonb attendu par la RPC.
+  // Chaque exercice est dé-composé en (activities, execution) — execution
+  // contient tout ce qui n'est pas template (séries exécutées pour fonte,
+  // état + done pour cardio).
+  const exercises = (session.exercises || []).map(ex => {
+    const isCardio = (ex.type === 'cardio') || (session.category === 'cardio');
+    const execution = isCardio
+      ? {
+          type:     'cardio',
+          duration: ex.duration ?? 0,
+          power:    ex.power    ?? 0,
+          done:     ex.done     ?? null,
+          state:    ex.state    ?? 'pending',
+        }
+      : { series: ex.series };
+
+    return {
+      name:            ex.name || '',
+      normalized_name: normalizeExerciseName(ex.name || ''),
+      comment:         ex.comment || '',
+      activities:      ex.activities || [],
+      execution,
+    };
+  });
+
+  const payload = {
     id:             session.id,
-    client_id:      user.id,
     programme_name: session.programmeName,
     programme_id:   session.programmeId || null,
     date:           session.date,
     started_at:     session.startedAt,
     duration:       session.duration,
-    exercises:      session.exercises,
     category:       session.category || 'fonte',
     sync:           session.sync || null,
-  });
+    exercises,
+  };
+
+  const { error } = await db.rpc('upsert_session_with_exercises', { p_session: payload });
+  if (error) {
+    console.error('pushSession RPC error:', error);
+    throw error;  // propagé pour que pushSessionSafe attrape et tombe en localStorage
+  }
 }
 
 /* ── Composition corporelle ──────────────────────────────── */
