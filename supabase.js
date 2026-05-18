@@ -22,23 +22,33 @@ async function loadProgrammesDB() {
   return (data || []).map(row => ({ id: row.id, name: row.name, category: row.category || 'fonte', exercises: row.exercises || [] }));
 }
 
-/* Charge les séances depuis Supabase */
+/* Charge les séances depuis Supabase
+   Fait 2 queries (sessions + session_exercises) puis recompose côté JS. */
 async function loadSessionsDB() {
   const { data: { user } } = await db.auth.getUser();
   if (!user) return [];
-  const { data } = await db.from('sessions').select('*').eq('client_id', user.id).order('date', { ascending: false });
-  return (data || []).map(row => ({
-    id:            row.id,
-    programmeName: row.programme_name,
-    programmeId:   row.programme_id || null,
-    category:      row.category || 'fonte',
-    date:          row.date,
-    startedAt:     row.started_at,
-    duration:      row.duration,
-    exercises:     row.exercises || [],
-    sync:          row.sync || null,
-    feedbackIa:    row.feedback_ia || null,
-  }));
+
+  const { data: sessions, error: sErr } = await db.from('sessions')
+    .select('*')
+    .eq('client_id', user.id)
+    .order('date', { ascending: false });
+  if (sErr) { console.error('loadSessionsDB sessions:', sErr); return []; }
+  if (!sessions || sessions.length === 0) return [];
+
+  const ids = sessions.map(s => s.id);
+  const { data: exos, error: eErr } = await db.from('session_exercises')
+    .select('*')
+    .in('session_id', ids);
+  if (eErr) { console.error('loadSessionsDB exos:', eErr); return []; }
+
+  // Group exo rows by session_id
+  const exosBySession = new Map();
+  for (const row of (exos || [])) {
+    if (!exosBySession.has(row.session_id)) exosBySession.set(row.session_id, []);
+    exosBySession.get(row.session_id).push(row);
+  }
+
+  return sessions.map(s => recomposeSession(s, exosBySession.get(s.id) || []));
 }
 
 /* Upsert un programme (créé ou modifié par le client) */
