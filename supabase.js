@@ -162,6 +162,20 @@ async function pushSession(session) {
   }
 }
 
+/* Pour chaque nom normalisé fourni, retourne la dernière exécution
+   toutes séances confondues. Utilisé par attachPrevValues.
+   Retourne un Map<normalized_name, { name, category, activities, execution }>. */
+async function loadLastExercisesByNamesDB(normalizedNames) {
+  if (!normalizedNames || normalizedNames.length === 0) return new Map();
+  const { data, error } = await db.rpc('load_last_exercises_by_names', { p_names: normalizedNames });
+  if (error) { console.error('loadLastExercisesByNamesDB:', error); return new Map(); }
+  const map = new Map();
+  for (const row of (data || [])) {
+    map.set(row.normalized_name, row);
+  }
+  return map;
+}
+
 /* ── Composition corporelle ──────────────────────────────── */
 
 async function loadBodyMeasurementsDB() {

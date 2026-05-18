@@ -787,21 +787,27 @@ function liveSessionSnapshot(durationSecs = 0) {
   };
 }
 
-async function attachPrevValues(exercises, programmeId, category, excludeSessionId) {
-  const sessions   = await loadSessions();
-  const prevSession = sessions
-    .filter(s => s.programmeId === programmeId && s.id !== excludeSessionId)
-    .sort((a, b) => (b.startedAt || b.date).localeCompare(a.startedAt || a.date))[0] || null;
+/* Pour chaque exercice de la séance live, attache la dernière exécution
+   du même nom (toutes séances confondues). Robuste si l'exercice a été
+   déplacé d'un programme à un autre. */
+async function attachPrevValues(exercises, _programmeId, category, _excludeSessionId) {
+  const normalizedNames = exercises
+    .map(ex => normalizeExerciseName(ex.name))
+    .filter(n => n.length > 0);
+
+  if (normalizedNames.length === 0) return;
+
+  const lastByName = await loadLastExercisesByNamesDB(normalizedNames);
 
   if (category === 'cardio') {
     exercises.forEach(ex => {
-      const prevEx = prevSession?.exercises?.find(e => e.name === ex.name) || null;
-      ex.prev = prevEx?.done || null;
+      const key = normalizeExerciseName(ex.name);
+      ex.prev = lastByName.get(key)?.execution?.done || null;
     });
   } else {
     exercises.forEach(ex => {
-      const prevEx = prevSession?.exercises?.find(e => e.name === ex.name) || null;
-      ex.prevSeries = prevEx?.series || null;
+      const key = normalizeExerciseName(ex.name);
+      ex.prevSeries = lastByName.get(key)?.execution?.series || null;
     });
   }
 }
