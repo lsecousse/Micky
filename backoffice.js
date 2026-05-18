@@ -325,64 +325,113 @@ function showCopyProgrammeModal(prog) {
   });
 }
 
-function renderProgrammeEditor(existingProg) {
+let _progEditorState = null; // { existingId, name, category, exercises, estOverride, catalog, avgMap }
+
+async function renderProgrammeEditor(existingProg) {
   const body = document.getElementById('bo-detail-body');
+  const category = existingProg?.category || 'fonte';
+
+  _progEditorState = {
+    existingId:  existingProg?.id || null,
+    name:        existingProg?.name || '',
+    category,
+    exercises:   (existingProg?.exercises || []).map(e => ({ ...e })),
+    estOverride: existingProg?.estimated_duration_seconds ?? null,
+    catalog:     [],
+    avgMap:      new Map(),
+  };
 
   body.innerHTML = `
-    <div class="bo-editor">
-      <div class="flex-row">
+    <div class="bo-editor flex flex-col h-full">
+      <header class="bo-editor-header p-4 border-b border-border flex items-center gap-4">
         <button class="btn-ghost btn-sm" id="ed-back">← Retour</button>
-        <span class="bo-editor-title">${existingProg ? 'Modifier' : 'Nouveau'} programme</span>
-      </div>
-      <input type="text" id="ed-name" placeholder="Nom du programme" value="${existingProg?.name || ''}" />
-      <p class="section-title">Exercices</p>
-      <div id="ed-exos"></div>
-      <button class="btn-secondary btn-sm" id="ed-add-ex">+ Exercice</button>
-      <div class="flex-row" style="margin-top:8px">
+        <input type="text" id="ed-name" class="flex-1 bg-transparent border-b border-border focus:border-acid text-paper font-display italic text-[18px] py-2 outline-none"
+               placeholder="Nom du programme" value="${_progEditorState.name}">
+        <div class="text-paper text-[12px] font-sans tracking-eyebrow uppercase">
+          Estimé : <span id="ed-est">—</span>
+          <button id="ed-est-edit" class="btn-ghost btn-sm ml-2">✎</button>
+        </div>
         <button class="btn-primary" id="ed-save">Enregistrer</button>
+      </header>
+      <div class="flex flex-1 overflow-hidden">
+        <aside id="ed-sidebar" class="w-[35%] border-r border-border flex flex-col"></aside>
+        <section id="ed-zone" class="w-[65%] flex flex-col overflow-y-auto"></section>
       </div>
-      <p class="error-msg hidden" id="ed-err"></p>
+      <p class="error-msg hidden p-2" id="ed-err"></p>
     </div>`;
 
-  const exosContainer = document.getElementById('ed-exos');
-  const exos = existingProg?.exercises || [{}];
-  exos.forEach(ex => {
-    const m    = migrateExercise(ex);
-    const acts = m.activities.map(act => ({
-      type:     act.type,
-      name:     act.name     || '',
-      reps:     act.type === 'weight' ? (act.reps     ?? '') : '',
-      weight:   act.type === 'weight' ? (act.weight   ?? '') : '',
-      duration: act.type !== 'weight' ? (act.duration ?? '') : '',
-      rest:     act.rest ?? '',
-    }));
-    exosContainer.appendChild(makeExerciseCard({
-      name:       ex.name    || '',
-      sets:       ex.sets    || m.series?.length || ex.count || 3,
-      activities: acts,
-      comment:    ex.comment || '',
-    }));
-  });
-
   document.getElementById('ed-back').addEventListener('click', () => renderDetailBody());
-  document.getElementById('ed-add-ex').addEventListener('click', () => exosContainer.appendChild(makeExerciseCard()));
-  document.getElementById('ed-save').addEventListener('click', () => saveProgramme(existingProg?.id || null));
+  document.getElementById('ed-save').addEventListener('click', () => saveProgramme());
+  document.getElementById('ed-name').addEventListener('input', e => { _progEditorState.name = e.target.value; });
+  document.getElementById('ed-est-edit').addEventListener('click', () => promptEstOverride());
+
+  // Chargement parallèle catalogue + moyennes durée
+  const normalizedNames = _progEditorState.exercises
+    .map(e => normalizeExerciseName(e.name || ''))
+    .filter(n => n);
+
+  const [catalog, avgMap] = await Promise.all([
+    loadExerciseCatalogDB(),
+    loadAvgExerciseDurationsDB(selClient.id, normalizedNames),
+  ]);
+  _progEditorState.catalog = catalog.filter(c => c.category === category);
+  _progEditorState.avgMap  = avgMap;
+
+  renderCatalogSidebar();
+  renderProgrammeZone();
+  refreshEstimateHeader();
 }
 
-async function saveProgramme(existingId) {
-  const name  = document.getElementById('ed-name').value.trim();
+function refreshEstimateHeader() {
+  const el = document.getElementById('ed-est');
+  if (!el) return;
+  const override = _progEditorState.estOverride;
+  const total = override != null
+    ? override
+    : computeEstimatedDuration(
+        { exercises: _progEditorState.exercises },
+        _progEditorState.avgMap
+      );
+  el.textContent = `${Math.round(total / 60)} min${override != null ? ' (manuel)' : ''}`;
+}
+
+function promptEstOverride() {
+  const current = _progEditorState.estOverride;
+  const raw = prompt('Durée estimée en minutes (laisser vide pour calcul auto) :', current != null ? Math.round(current / 60) : '');
+  if (raw === null) return;
+  const v = raw.trim();
+  _progEditorState.estOverride = v === '' ? null : Math.max(1, parseInt(v, 10) * 60);
+  refreshEstimateHeader();
+}
+
+function renderCatalogSidebar() {
+  const aside = document.getElementById('ed-sidebar');
+  aside.innerHTML = `<p class="text-muted text-[10px] tracking-eyebrow uppercase p-4">Catalogue (à brancher T11)</p>`;
+}
+
+function renderProgrammeZone() {
+  const zone = document.getElementById('ed-zone');
+  zone.innerHTML = `<p class="text-muted text-[10px] tracking-eyebrow uppercase p-4">Programme : ${_progEditorState.exercises.length} exo(s) (à brancher T12)</p>`;
+}
+
+async function saveProgramme() {
   const errEl = document.getElementById('ed-err');
   errEl.classList.add('hidden');
+  const name = _progEditorState.name.trim();
   if (!name) { errEl.textContent = 'Donne un nom au programme.'; errEl.classList.remove('hidden'); return; }
 
-  const cards    = document.querySelectorAll('#ed-exos .exercise-card');
-  const exercises = Array.from(cards).map(readExerciseCard);
-
-  const payload = { name, exercises, client_id: selClient.id, coach_id: coachId };
+  const payload = {
+    name,
+    exercises:                  _progEditorState.exercises,
+    category:                   _progEditorState.category,
+    client_id:                  selClient.id,
+    coach_id:                   coachId,
+    estimated_duration_seconds: _progEditorState.estOverride,
+  };
 
   let error;
-  if (existingId) {
-    ({ error } = await db.from('programmes').update(payload).eq('id', existingId));
+  if (_progEditorState.existingId) {
+    ({ error } = await db.from('programmes').update(payload).eq('id', _progEditorState.existingId));
   } else {
     const progs = await loadProgrammes(selClient.id);
     payload.ordre = progs.length;
