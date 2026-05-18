@@ -2962,7 +2962,7 @@ async function openModal(session) {
           ${muscle ? `<p class="font-sans text-[10px] uppercase tracking-eyebrow text-muted mt-1.5">${muscle}</p>` : ''}
         </header>
         <div class="border-y border-border">
-          ${e.series.map((s, i) => {
+          ${(e.series || []).map((s, i) => {
             const allDone = (e.activities || []).every((_, a) => s.activityStates?.[a] === 'done' || s.done !== false);
             const borderLeft = allDone ? 'border-l-[3px] border-l-acid' : 'border-l-[3px] border-l-transparent opacity-50';
             const restColor = allDone ? 'text-acid' : 'text-muted';
