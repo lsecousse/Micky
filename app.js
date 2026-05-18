@@ -856,6 +856,7 @@ async function startSession(programme) {
         }),
   };
   await attachPrevValues(liveSession.exercises, programme.id, liveSession.category, liveSession.id);
+  prefillSeriesFromPrev(liveSession.exercises);
   pushSessionSafe(liveSessionSnapshot()).catch(() => {});
   startSyncPolling();
   renderSeanceScreen();
