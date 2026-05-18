@@ -28,6 +28,51 @@ let currentProfile = null;
 async function loadSessions()   { return loadSessionsDB();   }
 async function loadProgrammes() { return loadProgrammesDB(); }
 
+/* ── Filet de sécurité localStorage pour live session ────
+   Persiste chaque snapshot en local + tente Supabase.
+   En cas d'échec réseau (gym basement), les données sont
+   préservées et seront pushées au prochain succès / relance. */
+const LIVE_LS_KEY = (id) => `live-session:${id}`;
+const LIVE_PENDING_KEY = 'live-session:pending';
+
+function persistSnapshotLocal(snap) {
+  try {
+    localStorage.setItem(LIVE_LS_KEY(snap.id), JSON.stringify({ snap, savedAt: Date.now() }));
+    localStorage.setItem(LIVE_PENDING_KEY, snap.id);
+  } catch (_) {}
+}
+
+function clearSnapshotLocal(id) {
+  try {
+    localStorage.removeItem(LIVE_LS_KEY(id));
+    const pending = localStorage.getItem(LIVE_PENDING_KEY);
+    if (pending === id) localStorage.removeItem(LIVE_PENDING_KEY);
+  } catch (_) {}
+}
+
+function readSnapshotLocal(id) {
+  try {
+    const raw = localStorage.getItem(LIVE_LS_KEY(id));
+    return raw ? JSON.parse(raw) : null;
+  } catch (_) { return null; }
+}
+
+let _pushFailureShown = false;
+async function pushSessionSafe(snap) {
+  persistSnapshotLocal(snap);
+  try {
+    await pushSession(snap);
+    _pushFailureShown = false;
+  } catch (e) {
+    console.error('[pushSession] échec, snapshot gardé en localStorage', e);
+    if (!_pushFailureShown) {
+      _pushFailureShown = true;
+      showToast?.('⚠ Connexion perdue — sauvegarde locale active');
+    }
+    throw e;
+  }
+}
+
 /* ═══════════════════════════════════════════════════════
    HELPERS
 ═══════════════════════════════════════════════════════ */
@@ -170,7 +215,7 @@ document.getElementById('back-seance').addEventListener('click', () => {
   if (liveSession) {
     stopAllChronos();
     stopCountdown();
-    pushSession(liveSessionSnapshot()).catch(() => {});
+    pushSessionSafe(liveSessionSnapshot()).catch(() => {});
     showScreen('home');
   } else {
     showScreen('home');
@@ -805,7 +850,7 @@ async function startSession(programme) {
         }),
   };
   await attachPrevValues(liveSession.exercises, programme.id, liveSession.category, liveSession.id);
-  pushSession(liveSessionSnapshot()).catch(() => {});
+  pushSessionSafe(liveSessionSnapshot()).catch(() => {});
   startSyncPolling();
   renderSeanceScreen();
 }
@@ -1441,7 +1486,7 @@ function completeFocusedActivity() {
   const set = ex.series[sIdx];
   if (!set.activityStates) set.activityStates = {};
   set.activityStates[actIdx] = 'done';
-  pushSession(liveSessionSnapshot()).catch(() => {});
+  pushSessionSafe(liveSessionSnapshot()).catch(() => {});
 
   const act = ex.activities[actIdx];
   const restSecs = act.rest || 0;
@@ -1541,7 +1586,7 @@ function openEditModalForActivity(exIdx, sIdx, actIdx) {
       updateProgrammeTemplate(exIdx, actIdx, 'rest', restVal);
 
       closeLiveEditModal();
-      pushSession(liveSessionSnapshot()).catch(() => {});
+      pushSessionSafe(liveSessionSnapshot()).catch(() => {});
       renderSeanceScreen();
     };
 
@@ -1598,7 +1643,7 @@ function openEditModalForActivity(exIdx, sIdx, actIdx) {
         liveSession.exercises[exIdx].activities[actIdx].rest = restVal;
         updateProgrammeTemplate(exIdx, actIdx, 'rest', restVal);
         closeLiveEditModal();
-        pushSession(liveSessionSnapshot()).catch(() => {});
+        pushSessionSafe(liveSessionSnapshot()).catch(() => {});
         renderSeanceScreen();
       },
     });
@@ -1701,7 +1746,7 @@ function renderLiveCardio(tab) {
     stateBtn.addEventListener('click', () => {
       ex.state = ex.state === 'done' ? 'pending' : 'done';
       refreshStateBtn();
-      pushSession(liveSessionSnapshot()).catch(() => {});
+      pushSessionSafe(liveSessionSnapshot()).catch(() => {});
     });
     btnWrap.appendChild(stateBtn);
     article.appendChild(btnWrap);
@@ -1921,7 +1966,12 @@ function finishSession() {
     stopSyncPolling();
     const durationSecs = Math.round((Date.now() - new Date(liveSession.startedAt).getTime()) / 1000);
     const snapshot = liveSessionSnapshot(durationSecs);
-    await pushSession(snapshot);
+    try {
+      await pushSessionSafe(snapshot);
+      clearSnapshotLocal(snapshot.id);
+    } catch (_) {
+      // Réseau KO : on garde le backup local, sera repush au prochain init
+    }
 
     // Auto-injection de la dépense calorique dans le suivi alimentaire (fire-and-forget)
     (async () => {
@@ -2135,7 +2185,7 @@ function startCountdown(seconds, nextLabel, onFinish) {
   // Sync countdown to watch
   if (liveSession) {
     liveSession.sync = { type: 'rest', startedAt: new Date().toISOString(), duration: seconds, label: nextLabel || '' };
-    pushSession(liveSessionSnapshot()).catch(() => {});
+    pushSessionSafe(liveSessionSnapshot()).catch(() => {});
   }
 
   document.getElementById('countdown-bar').classList.remove('hidden');
@@ -2188,7 +2238,7 @@ function stopCountdown() {
   bar.classList.remove('urgent');
   if (liveSession?.sync?.type === 'rest') {
     liveSession.sync = null;
-    pushSession(liveSessionSnapshot()).catch(() => {});
+    pushSessionSafe(liveSessionSnapshot()).catch(() => {});
   }
 }
 
@@ -4802,8 +4852,28 @@ function renderLogin() {
     if (profile?.role === 'coach') { window.location.href = 'backoffice.html'; return; }
     currentProfile = profile;
 
-    const sessions = await loadSessions();
-    const inProgress = sessions.find(s => s.duration === 0 || s.duration == null);
+    let sessions = [];
+    try { sessions = await loadSessions(); } catch (_) { sessions = []; }
+    let inProgress = sessions.find(s => s.duration === 0 || s.duration == null);
+
+    // Filet de sécurité : si localStorage a un snapshot plus récent que Supabase
+    // (réseau coupé en salle), on l'utilise comme source de vérité + repush.
+    try {
+      const pendingId = localStorage.getItem(LIVE_PENDING_KEY);
+      if (pendingId) {
+        const local = readSnapshotLocal(pendingId);
+        if (local?.snap) {
+          const supaUpdatedAt = inProgress?.exercises ? Date.parse(inProgress?.startedAt || 0) : 0;
+          // On préfère le local si même session OU si pas de inProgress en Supabase
+          if (!inProgress || inProgress.id === local.snap.id) {
+            inProgress = local.snap;
+            // Retente le push silencieusement (le toast s'affichera si encore offline)
+            pushSessionSafe(local.snap).catch(() => {});
+          }
+        }
+      }
+    } catch (_) {}
+
     if (inProgress?.exercises?.length) {
       liveFocus = null;
       liveRest = null;
