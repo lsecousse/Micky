@@ -80,12 +80,27 @@ async function loadProgrammes(clientId) {
 }
 
 async function loadSessions(clientId) {
-  const { data } = await db.from('sessions')
+  const { data: sessions, error: sErr } = await db.from('sessions')
     .select('*')
     .eq('client_id', clientId)
     .order('date', { ascending: false })
     .limit(50);
-  return data || [];
+  if (sErr) { console.error('loadSessions sessions:', sErr); return []; }
+  if (!sessions || sessions.length === 0) return [];
+
+  const ids = sessions.map(s => s.id);
+  const { data: exos, error: eErr } = await db.from('session_exercises')
+    .select('*')
+    .in('session_id', ids);
+  if (eErr) { console.error('loadSessions exos:', eErr); return []; }
+
+  const exosBySession = new Map();
+  for (const row of (exos || [])) {
+    if (!exosBySession.has(row.session_id)) exosBySession.set(row.session_id, []);
+    exosBySession.get(row.session_id).push(row);
+  }
+
+  return sessions.map(s => recomposeSession(s, exosBySession.get(s.id) || []));
 }
 
 async function loadBodyMeasurements(clientId) {
@@ -397,7 +412,7 @@ async function renderSessionList(body) {
     return `
       <div class="session-row">
         <div class="session-row-header">
-          <span class="session-prog">${s.programme_name || 'Séance libre'}</span>
+          <span class="session-prog">${s.programmeName || 'Séance libre'}</span>
           <span class="session-date">${s.date || ''}</span>
         </div>
         <div class="session-meta">${exCount} exercice(s)${dur ? ' · ' + dur : ''}</div>
@@ -710,7 +725,7 @@ function boStatsProgression(sessions) {
   const section = boStatsSection('Progression');
 
   // Collect distinct programmes
-  const progNames = [...new Set(sessions.map(s => s.programme_name).filter(Boolean))].sort();
+  const progNames = [...new Set(sessions.map(s => s.programmeName).filter(Boolean))].sort();
   if (!progNames.length) return section;
 
   // Programme pills
@@ -754,7 +769,7 @@ function boStatsProgression(sessions) {
   let chartInstance = null;
 
   function buildExoData(progName) {
-    const progSessions = sessions.filter(s => s.programme_name === progName);
+    const progSessions = sessions.filter(s => s.programmeName === progName);
     const exoNames = [...new Set(progSessions.flatMap(s => (s.exercises || []).map(e => e.name)))].sort();
 
     return exoNames.map(name => {
