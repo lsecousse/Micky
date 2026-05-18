@@ -176,6 +176,70 @@ async function loadLastExercisesByNamesDB(normalizedNames) {
   return map;
 }
 
+/* ── Catalogue d'exercices (par coach) ─────────────────── */
+
+async function loadExerciseCatalogDB() {
+  const { data: { user } } = await db.auth.getUser();
+  if (!user) return [];
+  const { data, error } = await db.from('exercise_catalog')
+    .select('*')
+    .eq('coach_id', user.id)
+    .order('name');
+  if (error) { console.error('loadExerciseCatalogDB:', error); return []; }
+  return data || [];
+}
+
+async function upsertExerciseCatalogEntryDB(entry) {
+  const { data: { user } } = await db.auth.getUser();
+  if (!user) throw new Error('unauthenticated');
+  const payload = {
+    id:                 entry.id ?? crypto.randomUUID(),
+    coach_id:           user.id,
+    name:               entry.name,
+    normalized_name:    normalizeExerciseName(entry.name),
+    category:           entry.category,
+    muscle_groups:      entry.muscle_groups || [],
+    default_activities: entry.default_activities || [{ type: 'weight' }],
+    notes:              entry.notes || null,
+    updated_at:         new Date().toISOString(),
+  };
+  const { data, error } = await db.from('exercise_catalog')
+    .upsert(payload, { onConflict: 'coach_id,normalized_name' })
+    .select()
+    .single();
+  if (error) { console.error('upsertExerciseCatalogEntryDB:', error); throw error; }
+  return data;
+}
+
+async function deleteExerciseCatalogEntryDB(id) {
+  const { error } = await db.from('exercise_catalog').delete().eq('id', id);
+  if (error) { console.error('deleteExerciseCatalogEntryDB:', error); throw error; }
+}
+
+async function loadLastExercisesForClientDB(clientId, normalizedNames) {
+  if (!clientId || !normalizedNames || normalizedNames.length === 0) return new Map();
+  const { data, error } = await db.rpc('load_last_exercises_for_client', {
+    p_client_id: clientId,
+    p_names:     normalizedNames,
+  });
+  if (error) { console.error('loadLastExercisesForClientDB:', error); return new Map(); }
+  const map = new Map();
+  for (const row of (data || [])) map.set(row.normalized_name, row);
+  return map;
+}
+
+async function loadAvgExerciseDurationsDB(clientId, normalizedNames) {
+  if (!clientId || !normalizedNames || normalizedNames.length === 0) return new Map();
+  const { data, error } = await db.rpc('load_avg_exercise_durations', {
+    p_client_id: clientId,
+    p_names:     normalizedNames,
+  });
+  if (error) { console.error('loadAvgExerciseDurationsDB:', error); return new Map(); }
+  const map = new Map();
+  for (const row of (data || [])) map.set(row.normalized_name, Number(row.avg_seconds));
+  return map;
+}
+
 /* ── Composition corporelle ──────────────────────────────── */
 
 async function loadBodyMeasurementsDB() {
