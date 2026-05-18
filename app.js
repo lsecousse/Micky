@@ -4608,38 +4608,75 @@ function openProgrammeEditor(programme = null) {
   const tab = document.getElementById('screen-params-body');
   tab.innerHTML = '';
 
-  const backBtn = document.createElement('button');
-  backBtn.className = 'btn-secondary btn-sm back-btn';
-  backBtn.textContent = '← Retour';
-  backBtn.addEventListener('click', renderParams);
-  tab.appendChild(backBtn);
+  const isEdit = !!programme;
 
-  const nameInput = document.createElement('input');
-  nameInput.type = 'text';
-  nameInput.placeholder = 'Nom du programme';
-  nameInput.maxLength = 60;
-  nameInput.value = programme ? programme.name : '';
-  nameInput.id = 'prog-name-input';
-  tab.appendChild(nameInput);
+  // Masthead
+  const masthead = document.createElement('section');
+  masthead.className = 'px-5 pt-9 pb-9 accent-line';
+  masthead.innerHTML = `
+    <h1 class="font-display font-black h-display text-paper">
+      ${isEdit ? 'Édite' : 'Crée'}<br/>
+      <span class="text-paper/40"><span class="text-acid not-italic font-black">·</span> ton programme.</span>
+    </h1>
+    <button id="prog-back" class="font-sans text-[10px] uppercase tracking-eyebrow text-muted active:text-paper transition flex items-center gap-2 mt-5">
+      <span aria-hidden>←</span><span>Retour</span>
+    </button>
+  `;
+  tab.appendChild(masthead);
+  masthead.querySelector('#prog-back').addEventListener('click', renderParams);
 
+  const form = document.createElement('div');
+  form.className = 'px-5 pt-6 pb-12 space-y-6';
+  tab.appendChild(form);
+
+  // Nom programme
+  const nameBlock = document.createElement('div');
+  nameBlock.innerHTML = `
+    <p class="font-sans text-[9px] uppercase tracking-[0.40em] text-muted mb-1.5">Nom du programme</p>
+    <input id="prog-name-input" type="text" maxlength="60" placeholder="Pectoraux & Bras" value="${programme?.name || ''}"
+      class="w-full bg-transparent border-b border-border focus:border-acid font-display font-black italic text-[22px] text-paper py-2 outline-none transition" />
+  `;
+  form.appendChild(nameBlock);
+
+  // Toggle catégorie (segmented)
   const currentCat = programme?.category || 'fonte';
-
+  const catBlock = document.createElement('div');
+  catBlock.innerHTML = `<p class="font-sans text-[9px] uppercase tracking-[0.40em] text-muted mb-1.5">Catégorie</p>`;
   const catWrap = document.createElement('div');
-  catWrap.className = 'prog-category-toggle';
-
-  const exercisesList = document.createElement('div');
-  exercisesList.id = 'prog-exercises-list';
-  exercisesList.style.display = 'flex';
-  exercisesList.style.flexDirection = 'column';
-  exercisesList.style.gap = '12px';
-
-  const addExBtn = document.createElement('button');
-  addExBtn.className = 'btn-secondary btn-full';
-  addExBtn.textContent = '+ Exercice';
+  catWrap.className = 'prog-category-toggle grid grid-cols-2 gap-2';
+  const renderCatBtn = (cat, isActive) => `<button type="button" data-cat="${cat}" class="prog-cat-btn py-3 border ${isActive ? 'border-acid bg-acid/[0.10] text-acid' : 'border-border text-paper active:border-paper'} font-sans text-[11px] uppercase tracking-eyebrow font-semibold transition">${cat === 'fonte' ? 'Fonte' : 'Cardio'}</button>`;
+  catWrap.innerHTML = renderCatBtn('fonte', currentCat === 'fonte') + renderCatBtn('cardio', currentCat === 'cardio');
+  catBlock.appendChild(catWrap);
+  form.appendChild(catBlock);
 
   function getActiveCat() {
-    return catWrap.querySelector('.prog-cat-btn.active')?.dataset.cat || 'fonte';
+    return catWrap.querySelector('.prog-cat-btn[data-cat][data-active="1"]')?.dataset.cat
+      || (catWrap.querySelector('.prog-cat-btn.border-acid')?.dataset.cat)
+      || currentCat;
   }
+
+  // Re-style les boutons cat selon le cat actif
+  function refreshCatBtns(active) {
+    catWrap.innerHTML = renderCatBtn('fonte', active === 'fonte') + renderCatBtn('cardio', active === 'cardio');
+    catWrap.querySelectorAll('.prog-cat-btn').forEach(b => {
+      b.addEventListener('click', () => {
+        const cat = b.dataset.cat;
+        if (cat === active) return;
+        refreshCatBtns(cat);
+        fillExercises(cat, null);
+      });
+    });
+  }
+  refreshCatBtns(currentCat);
+
+  // Section exercices
+  const exoSec = document.createElement('div');
+  exoSec.innerHTML = `<p class="font-sans text-[9px] uppercase tracking-[0.40em] text-muted mb-3">Exercices</p>`;
+  const exercisesList = document.createElement('div');
+  exercisesList.id = 'prog-exercises-list';
+  exercisesList.className = 'space-y-4';
+  exoSec.appendChild(exercisesList);
+  form.appendChild(exoSec);
 
   function fillExercises(cat, exercises) {
     exercisesList.innerHTML = '';
@@ -4672,36 +4709,23 @@ function openProgrammeEditor(programme = null) {
       }
     }
   }
-
-  ['fonte', 'cardio'].forEach(cat => {
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'prog-cat-btn' + (currentCat === cat ? ' active' : '');
-    btn.dataset.cat = cat;
-    btn.textContent = cat === 'fonte' ? '🏋️ Fonte' : '🏃 Cardio';
-    btn.addEventListener('click', () => {
-      if (getActiveCat() === cat) return;
-      catWrap.querySelectorAll('.prog-cat-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      fillExercises(cat, null);
-    });
-    catWrap.appendChild(btn);
-  });
-  tab.appendChild(catWrap);
-
   fillExercises(currentCat, programme?.exercises);
-  tab.appendChild(exercisesList);
 
+  // CTAs : + Exercice / Enregistrer
+  const addExBtn = document.createElement('button');
+  addExBtn.className = 'w-full py-3 border border-border text-paper font-sans text-[11px] uppercase tracking-eyebrow active:border-acid active:text-acid transition';
+  addExBtn.textContent = '+ Exercice';
   addExBtn.addEventListener('click', () => {
-    exercisesList.appendChild(getActiveCat() === 'cardio' ? makeCardioExerciseCard() : makeExerciseCard());
+    const cat = catWrap.querySelector('.prog-cat-btn.border-acid')?.dataset.cat || currentCat;
+    exercisesList.appendChild(cat === 'cardio' ? makeCardioExerciseCard() : makeExerciseCard());
   });
-  tab.appendChild(addExBtn);
+  form.appendChild(addExBtn);
 
   const saveBtn = document.createElement('button');
-  saveBtn.className = 'btn-primary btn-full';
-  saveBtn.textContent = 'Enregistrer le programme';
+  saveBtn.className = 'w-full py-4 bg-acid text-ink font-display font-bold text-[14px] uppercase tracking-eyebrow active:bg-acid/80 transition';
+  saveBtn.textContent = isEdit ? 'Mettre à jour' : 'Créer le programme';
   saveBtn.addEventListener('click', () => saveProgrammeFromEditor(programme ? programme.id : null));
-  tab.appendChild(saveBtn);
+  form.appendChild(saveBtn);
 }
 
 async function saveProgrammeFromEditor(existingId) {
@@ -4711,7 +4735,7 @@ async function saveProgrammeFromEditor(existingId) {
   const cards = document.querySelectorAll('#prog-exercises-list .exercise-card');
   if (!cards.length) { showAlert('Ajoute au moins un exercice.'); return; }
 
-  const category = document.querySelector('.prog-cat-btn.active')?.dataset.cat || 'fonte';
+  const category = document.querySelector('.prog-cat-btn.border-acid')?.dataset.cat || 'fonte';
   const exercises = Array.from(cards).map(category === 'cardio' ? readCardioExerciseCard : readExerciseCard);
 
   const programmes = await loadProgrammes();
