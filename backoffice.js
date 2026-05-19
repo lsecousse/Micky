@@ -574,10 +574,10 @@ function openCatalogForm(existing) {
 function renderProgrammeZone() {
   const zone = document.getElementById('ed-zone');
   const exos = _progEditorState.exercises;
+  const isEmpty = exos.length === 0;
   zone.innerHTML = `
-    <div id="pz-list" class="p-4 space-y-2"></div>
-    <div id="pz-drop-hint" class="m-4 p-6 border border-dashed border-acid text-acid text-[10px] uppercase tracking-eyebrow text-center">
-      ↓ Glisse un exo du catalogue ici
+    <div id="pz-list" class="m-4 p-4 border border-dashed ${isEmpty ? 'border-acid' : 'border-border'} space-y-2 min-h-[160px]" style="min-height:160px">
+      ${isEmpty ? '<p class="text-acid text-[10px] uppercase tracking-eyebrow text-center py-12">↓ Glisse un exo du catalogue ici</p>' : ''}
     </div>`;
   const list = document.getElementById('pz-list');
   exos.forEach((ex, idx) => list.appendChild(makeProgrammeCard(ex, idx)));
@@ -591,7 +591,9 @@ function renderProgrammeZone() {
       evt.item.remove();
       const entry = _progEditorState.catalog.find(c => c.id === catalogId);
       if (!entry) return;
-      const insertAt = evt.newIndex;
+      // Cap newIndex à la longueur actuelle pour ignorer le placeholder
+      // <p> qui s'affiche quand le programme est vide.
+      const insertAt = Math.min(evt.newIndex, _progEditorState.exercises.length);
       await openExoModal(entry, insertAt, true);
     },
     onUpdate: (evt) => {
