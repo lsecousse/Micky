@@ -473,7 +473,12 @@ function renderCatalogList() {
       openCatalogForm(entry);
     });
   });
-  // SortableJS wiring : BO-T13.
+  if (list._sortable) list._sortable.destroy();
+  list._sortable = new Sortable(list, {
+    group: { name: 'exos', pull: 'clone', put: false },
+    sort: false,
+    animation: 150,
+  });
 }
 
 function openCatalogForm(existing) {
@@ -575,7 +580,29 @@ function renderProgrammeZone() {
     </div>`;
   const list = document.getElementById('pz-list');
   exos.forEach((ex, idx) => list.appendChild(makeProgrammeCard(ex, idx)));
-  // SortableJS wiring : BO-T13.
+  if (list._sortable) list._sortable.destroy();
+  list._sortable = new Sortable(list, {
+    group: { name: 'exos', pull: false, put: true },
+    animation: 150,
+    handle: '.cursor-grab',
+    onAdd: async (evt) => {
+      const catalogId = evt.item.dataset.id;
+      evt.item.remove();
+      const entry = _progEditorState.catalog.find(c => c.id === catalogId);
+      if (!entry) return;
+      const insertAt = evt.newIndex;
+      await openExoModal(entry, insertAt, true);
+    },
+    onUpdate: (evt) => {
+      const oldIdx = evt.oldIndex;
+      const newIdx = evt.newIndex;
+      const exos = _progEditorState.exercises;
+      const [moved] = exos.splice(oldIdx, 1);
+      exos.splice(newIdx, 0, moved);
+      renderProgrammeZone();
+      refreshEstimateHeader();
+    },
+  });
 }
 
 function makeProgrammeCard(ex, idx) {
