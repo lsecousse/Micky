@@ -76,7 +76,20 @@ describe('recomposeSession', () => {
     const exoRows = [{ ordre: 0, name: 'X', comment: null, activities: null, execution: null }];
     const result = recomposeSession(baseRow, exoRows);
     expect(result.exercises[0]).toEqual({
-      name: 'X', comment: '', activities: [], series: undefined, prevSeries: null,
+      name: 'X', comment: '', activities: [], series: undefined, prevSeries: null, duration_seconds: null,
     });
+  });
+
+  it('preserves per-exercise duration_seconds when present', () => {
+    const exoRows = [
+      {
+        ordre: 0, name: 'Squat', comment: '',
+        activities: [{ type: 'weight' }],
+        execution:  { series: [] },
+        duration_seconds: 720,
+      },
+    ];
+    const result = recomposeSession(baseRow, exoRows);
+    expect(result.exercises[0].duration_seconds).toBe(720);
   });
 });

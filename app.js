@@ -761,7 +761,8 @@ function liveSessionSnapshot(durationSecs = 0) {
     startedAt:     liveSession.startedAt,
     duration:      durationSecs,
     sync:          liveSession.sync || null,
-    exercises:     liveSession.exercises.map(ex => {
+    exoDurations:  liveSession.exoDurations || {},
+    exercises:     liveSession.exercises.map((ex, exIdx) => {
       if (ex.type === 'cardio') {
         return {
           name:    ex.name,
@@ -773,14 +774,16 @@ function liveSessionSnapshot(durationSecs = 0) {
           state:    ex.state,
         };
       }
+      const serieDurs = liveSession.serieDurations?.[exIdx] || {};
       return {
         name:       ex.name,
         comment:    ex.comment || '',
         activities: ex.activities,
-        series:     ex.series.map(s => ({
+        series:     ex.series.map((s, sIdx) => ({
           done: ex.activities.every((_, i) => s.activityStates?.[i] === 'done'),
-          activityStates: s.activityStates || {},
-          values: s.values,
+          activityStates:   s.activityStates || {},
+          values:           s.values,
+          duration_seconds: serieDurs[sIdx] ?? null,
         })),
       };
     }),
@@ -855,8 +858,7 @@ async function startSession(programme) {
           };
         }),
   };
-  liveSession.exoStartedAt = {};
-  liveSession.exoDurations = {};
+  initLiveTimingMaps(null);
   await attachPrevValues(liveSession.exercises, programme.id, liveSession.category, liveSession.id);
   prefillSeriesFromPrev(liveSession.exercises);
   pushSessionSafe(liveSessionSnapshot()).catch(() => {});
@@ -1199,6 +1201,7 @@ function renderExerciseList(tab, totals = {}) {
       const next = nextUndoneActivity(exIdx);
       // Si exo entièrement fait, on ouvre la première activité de la première série pour permettre l'édition
       liveFocus = next || { exIdx, sIdx: 0, actIdx: 0 };
+      if (next) markExoSerieStart(next.exIdx, next.sIdx);
       renderSeanceScreen();
     });
     list.appendChild(card);
@@ -1488,6 +1491,54 @@ function _computeExoTotalsLegacy(ex) {
   return { doneSeries, totalSeries, volume, repsAccum };
 }
 
+// Réinitialise les maps de timing sur liveSession, en restaurant les durées
+// déjà enregistrées si on reprend une séance existante (snapshot localStorage ou row Supabase recomposée).
+function initLiveTimingMaps(source) {
+  liveSession.exoStartedAt   = {};
+  liveSession.exoDurations   = {};
+  liveSession.serieStartedAt = {};
+  liveSession.serieDurations = {};
+  if (!source) return;
+
+  if (source.exoDurations && typeof source.exoDurations === 'object') {
+    Object.assign(liveSession.exoDurations, source.exoDurations);
+  }
+  (source.exercises || []).forEach((ex, exIdx) => {
+    if (ex?.duration_seconds != null && liveSession.exoDurations[exIdx] == null) {
+      liveSession.exoDurations[exIdx] = ex.duration_seconds;
+    }
+    (ex?.series || []).forEach((s, sIdx) => {
+      if (s?.duration_seconds != null) {
+        if (!liveSession.serieDurations[exIdx]) liveSession.serieDurations[exIdx] = {};
+        liveSession.serieDurations[exIdx][sIdx] = s.duration_seconds;
+      }
+    });
+  });
+}
+
+// Durée réelle d'une séance, source de vérité = valeur saisie quand elle existe.
+// Cardio : somme des durées saisies par activité (done.duration en min, fallback ex.duration).
+// Fonte  : wall clock (du début de séance à maintenant).
+function computeSessionDurationSecs() {
+  if (liveSession.category === 'cardio') {
+    const totalMin = (liveSession.exercises || []).reduce((acc, ex) => {
+      const d = ex.done?.duration ?? ex.duration ?? 0;
+      return acc + (Number(d) || 0);
+    }, 0);
+    return Math.round(totalMin * 60);
+  }
+  return Math.round((Date.now() - new Date(liveSession.startedAt).getTime()) / 1000);
+}
+
+// Stamp les timestamps de début quand l'utilisateur entre dans une (exo, série).
+// Idempotent : ne réécrase pas une valeur déjà posée.
+function markExoSerieStart(exIdx, sIdx) {
+  const now = Date.now();
+  if (!liveSession.exoStartedAt[exIdx]) liveSession.exoStartedAt[exIdx] = now;
+  if (!liveSession.serieStartedAt[exIdx]) liveSession.serieStartedAt[exIdx] = {};
+  if (liveSession.serieStartedAt[exIdx][sIdx] == null) liveSession.serieStartedAt[exIdx][sIdx] = now;
+}
+
 function completeFocusedActivity() {
   if (!liveFocus) return;
   const { exIdx, sIdx, actIdx } = liveFocus;
@@ -1496,10 +1547,19 @@ function completeFocusedActivity() {
   if (!set.activityStates) set.activityStates = {};
   set.activityStates[actIdx] = 'done';
 
-  // Track per-exo duration (BO-T15)
-  if (!liveSession.exoStartedAt[exIdx]) {
-    liveSession.exoStartedAt[exIdx] = Date.now();
+  // Filet de sécurité si l'utilisateur a tapé "done" sans passer par le flow nominal
+  markExoSerieStart(exIdx, sIdx);
+
+  // Per-series duration : si tous les actes de CETTE série sont done
+  const setAllDone = ex.activities.every((_, a) => set.activityStates?.[a] === 'done');
+  if (setAllDone) {
+    if (!liveSession.serieDurations[exIdx]) liveSession.serieDurations[exIdx] = {};
+    if (liveSession.serieDurations[exIdx][sIdx] == null) {
+      const startTs = liveSession.serieStartedAt[exIdx]?.[sIdx] ?? liveSession.exoStartedAt[exIdx];
+      liveSession.serieDurations[exIdx][sIdx] = Math.max(1, Math.round((Date.now() - startTs) / 1000));
+    }
   }
+
   const allDone = ex.series.every(s => ex.activities.every((_, a) => s.activityStates?.[a] === 'done'));
   if (allDone && !liveSession.exoDurations[exIdx]) {
     liveSession.exoDurations[exIdx] = Math.max(1, Math.round((Date.now() - liveSession.exoStartedAt[exIdx]) / 1000));
@@ -1530,12 +1590,14 @@ function completeFocusedActivity() {
     startCountdown(restSecs, nextLabel, () => {
       liveRest = null;
       liveFocus = nextInSame; // bascule sur la série suivante
+      markExoSerieStart(nextInSame.exIdx, nextInSame.sIdx);
       renderSeanceScreen();
     });
   } else {
     // Pas de repos → direct série suivante
     liveRest = null;
     liveFocus = nextInSame;
+    markExoSerieStart(nextInSame.exIdx, nextInSame.sIdx);
     renderSeanceScreen();
   }
 }
@@ -1983,12 +2045,12 @@ function finishSession() {
   showConfirm('Terminer et enregistrer la séance ?', async () => {
     stopAllChronos();
     stopSyncPolling();
-    const durationSecs = Math.round((Date.now() - new Date(liveSession.startedAt).getTime()) / 1000);
     liveSession.exercises.forEach((ex, exIdx) => {
       if (!liveSession.exoDurations[exIdx] && liveSession.exoStartedAt[exIdx]) {
         liveSession.exoDurations[exIdx] = Math.max(1, Math.round((Date.now() - liveSession.exoStartedAt[exIdx]) / 1000));
       }
     });
+    const durationSecs = computeSessionDurationSecs();
     const snapshot = liveSessionSnapshot(durationSecs);
     try {
       await pushSessionSafe(snapshot);
@@ -2905,6 +2967,7 @@ async function resumeSessionFromHistory(session) {
       };
     }),
   };
+  initLiveTimingMaps(session);
   await attachPrevValues(liveSession.exercises, liveSession.programmeId, liveSession.category, liveSession.id);
   closeModal();
   startSyncPolling();
@@ -4922,6 +4985,7 @@ function renderLogin() {
           };
         }),
       };
+      initLiveTimingMaps(inProgress);
       await attachPrevValues(liveSession.exercises, liveSession.programmeId, liveSession.category, liveSession.id);
       startSyncPolling();
     }

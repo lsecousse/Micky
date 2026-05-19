@@ -128,12 +128,12 @@ function makeActivityRow({ type = 'weight', label = '', name = '', reps = '', we
   fieldsDiv.className = 'activity-fields flex-1 flex items-baseline gap-2';
 
   const restWrap = document.createElement('div');
-  restWrap.className = 'flex items-baseline gap-2 border-b border-border focus-within:border-acid transition shrink-0 w-[100px]';
+  restWrap.className = 'flex items-baseline gap-2 border-b border-border focus-within:border-acid transition shrink-0 w-[160px] px-2';
   restWrap.innerHTML = `
-    <span class="font-sans text-[9px] uppercase tracking-eyebrow text-muted shrink-0">repos</span>
+    <span class="font-sans text-[10px] uppercase tracking-eyebrow text-muted shrink-0">repos</span>
     <input type="number" inputmode="numeric" min="0" placeholder="0" value="${rest}"
-      class="activity-rest ${_INPUT_NUM} text-center" />
-    <span class="font-sans text-[10px] uppercase tracking-eyebrow text-muted shrink-0">s</span>
+      class="activity-rest ${_INPUT_NUM} text-center text-[20px] py-2" />
+    <span class="font-sans text-[11px] uppercase tracking-eyebrow text-muted shrink-0">s</span>
   `;
 
   bottomRow.append(fieldsDiv, restWrap);

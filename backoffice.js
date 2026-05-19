@@ -228,22 +228,35 @@ async function renderDetailBody() {
 /* ─── PROGRAMMES ────────────────────────────────────── */
 async function renderProgrammeList(body) {
   const progs = await loadProgrammes(selClient.id);
+
+  // Durées moyennes par exo (pour estimer la durée des programmes)
+  const normalizedNames = [...new Set(
+    progs.flatMap(p => (p.exercises || []).map(e => e.normalized_name).filter(Boolean))
+  )];
+  const avgMap = await loadAvgExerciseDurationsDB(selClient.id, normalizedNames);
+
   let html = `<button class="btn-primary btn-sm" id="new-prog" style="margin-bottom:16px">+ Nouveau programme</button>`;
   if (!progs.length) {
     html += '<p style="color:var(--muted);font-size:13px">Aucun programme pour ce client.</p>';
   } else {
-    html += progs.map(p => `
+    html += progs.map(p => {
+      const total = p.estimated_duration_seconds != null
+        ? p.estimated_duration_seconds
+        : computeEstimatedDuration({ exercises: p.exercises || [] }, avgMap);
+      const minutes = Math.round(total / 60);
+      return `
       <div class="prog-row">
         <div>
           <div class="prog-row-name">${p.name}</div>
-          <div class="prog-row-count">${(p.exercises || []).length} exercice(s)</div>
+          <div class="prog-row-count">${(p.exercises || []).length} exercice(s) · ~${minutes} min</div>
         </div>
         <div class="prog-row-actions">
           <button class="btn-secondary btn-sm" data-edit="${p.id}">Modifier</button>
           <button class="btn-secondary btn-sm" data-copy="${p.id}">Copier</button>
           <button class="btn-danger btn-sm" data-del="${p.id}">Suppr.</button>
         </div>
-      </div>`).join('');
+      </div>`;
+    }).join('');
   }
   body.innerHTML = html;
   document.getElementById('new-prog').addEventListener('click', () => renderProgrammeEditor(null));
@@ -347,27 +360,31 @@ async function renderProgrammeEditor(existingProg) {
 
   body.innerHTML = `
     <div class="bo-editor" style="display:flex;flex-direction:column;height:100%;gap:0;min-height:0">
-      <header class="bo-editor-header border-b border-border" style="display:flex;align-items:center;gap:1rem;padding:1rem;flex:0 0 auto">
-        <button class="btn-ghost btn-sm" id="ed-back">← Retour</button>
-        <input type="text" id="ed-name" class="bg-transparent border-b border-border focus:border-acid text-paper font-display italic text-[18px] outline-none"
-               style="flex:1 1 auto;min-width:0;padding:0.5rem 0"
-               placeholder="Nom du programme" value="${_progEditorState.name}">
-        <div class="text-paper text-[12px] font-sans tracking-eyebrow uppercase" style="flex:0 0 auto;white-space:nowrap">
-          Estimé : <span id="ed-est">—</span>
-          <button id="ed-est-edit" class="btn-ghost btn-sm" style="margin-left:0.5rem">✎</button>
+      <header class="bo-editor-header border-b border-border" style="display:flex;flex-direction:column;gap:0.5rem;padding:1rem;flex:0 0 auto">
+        <div style="display:flex;align-items:center;gap:1rem">
+          <button class="btn-ghost btn-sm" id="ed-back">← Retour</button>
+          <input type="text" id="ed-name" class="bg-transparent border-b border-border focus:border-acid text-paper font-display italic text-[18px] outline-none"
+                 style="flex:1 1 auto;min-width:0;padding:0.5rem 0"
+                 placeholder="Nom du programme" value="${_progEditorState.name}">
+          <div class="text-paper text-[12px] font-sans tracking-eyebrow uppercase" style="flex:0 0 auto;white-space:nowrap">
+            Estimé : <span id="ed-est">—</span>
+            <button id="ed-est-edit" class="btn-ghost btn-sm" style="margin-left:0.5rem">✎</button>
+          </div>
+          <button class="btn-primary" id="ed-save" style="flex:0 0 auto">Enregistrer</button>
         </div>
-        <button class="btn-primary" id="ed-save" style="flex:0 0 auto">Enregistrer</button>
+        <p class="error-msg hidden" id="ed-err" style="margin:0"></p>
       </header>
       <div style="display:grid;grid-template-columns:35% 65%;flex:1 1 auto;min-height:0;overflow:hidden">
         <aside id="ed-sidebar" class="border-r border-border" style="display:flex;flex-direction:column;min-height:0;min-width:0;overflow:hidden"></aside>
         <section id="ed-zone" style="display:flex;flex-direction:column;min-height:0;min-width:0;overflow-y:auto"></section>
       </div>
-      <p class="error-msg hidden p-2" id="ed-err"></p>
     </div>`;
 
   document.getElementById('ed-back').addEventListener('click', () => renderDetailBody());
   document.getElementById('ed-save').addEventListener('click', () => saveProgramme());
-  document.getElementById('ed-name').addEventListener('input', e => { _progEditorState.name = e.target.value; });
+  const nameInput = document.getElementById('ed-name');
+  nameInput.addEventListener('input', e => { _progEditorState.name = e.target.value; });
+  if (!_progEditorState.existingId) nameInput.focus();
   document.getElementById('ed-est-edit').addEventListener('click', () => promptEstOverride());
 
   // Chargement parallèle catalogue + moyennes durée
@@ -594,6 +611,19 @@ function renderProgrammeZone() {
       // Cap newIndex à la longueur actuelle pour ignorer le placeholder
       // <p> qui s'affiche quand le programme est vide.
       const insertAt = Math.min(evt.newIndex, _progEditorState.exercises.length);
+
+      // Si le client a déjà exécuté cet exo, on a tout : on ajoute direct.
+      const normName = normalizeExerciseName(entry.name);
+      const prevMap = await loadLastExercisesForClientDB(selClient.id, [normName]);
+      const prev = prevMap.get(normName) || null;
+      if (prev?.activities?.length && prev?.execution?.series?.length) {
+        const exo = buildProgrammeExerciseFromCatalog(entry, prev);
+        _progEditorState.exercises.splice(insertAt, 0, exo);
+        renderProgrammeZone();
+        refreshEstimateHeader();
+        return;
+      }
+
       await openExoModal(entry, insertAt, true);
     },
     onUpdate: (evt) => {
@@ -617,11 +647,13 @@ function makeProgrammeCard(ex, idx) {
   const setsCount = ex.sets || (ex.series || []).length || 0;
   const repsLabel = isWeight ? (ex.series?.[0]?.values?.[0]?.reps ?? '?') : '—';
   const weightLabel = isWeight ? `${ex.series?.[0]?.values?.[0]?.weight ?? 0} kg` : '';
+  const restSec = firstAct?.rest ?? 0;
+  const restLabel = restSec > 0 ? ` · repos ${restSec}s` : '';
   card.innerHTML = `
     <span class="cursor-grab text-muted">≡</span>
     <div class="flex-1">
       <p class="text-paper text-[13px]">${String(idx + 1).padStart(2, '0')}. ${ex.name || '—'}</p>
-      <p class="text-muted text-[10px] uppercase tracking-eyebrow">${setsCount} × ${repsLabel} ${weightLabel}</p>
+      <p class="text-muted text-[10px] uppercase tracking-eyebrow">${setsCount} × ${repsLabel} ${weightLabel}${restLabel}</p>
     </div>
     <button class="pz-up btn-ghost btn-sm" title="Monter">↑</button>
     <button class="pz-down btn-ghost btn-sm" title="Descendre">↓</button>
@@ -740,9 +772,16 @@ async function openExoModal(entryOrExo, idx, isNew = false) {
 
 async function saveProgramme() {
   const errEl = document.getElementById('ed-err');
+  const nameEl = document.getElementById('ed-name');
   errEl.classList.add('hidden');
+  if (nameEl) nameEl.style.borderColor = '';
   const name = _progEditorState.name.trim();
-  if (!name) { errEl.textContent = 'Donne un nom au programme.'; errEl.classList.remove('hidden'); return; }
+  if (!name) {
+    errEl.textContent = 'Donne un nom au programme.';
+    errEl.classList.remove('hidden');
+    if (nameEl) { nameEl.style.borderColor = '#DC2626'; nameEl.focus(); }
+    return;
+  }
 
   const payload = {
     name,
