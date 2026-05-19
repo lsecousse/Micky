@@ -649,9 +649,88 @@ function deleteExoFromProgramme(idx) {
   refreshEstimateHeader();
 }
 
-// Stub : remplacé par BO-T14
-async function openExoModal(entryOrExo, idx, isNew) {
-  alert('Modale d\'édition exo : à brancher BO-T14');
+async function openExoModal(entryOrExo, idx, isNew = false) {
+  const clientPrev = await loadLastExercisesForClientDB(
+    selClient.id,
+    [normalizeExerciseName(entryOrExo.name)]
+  );
+  const prev = clientPrev.get(normalizeExerciseName(entryOrExo.name)) || null;
+
+  const seed = isNew
+    ? buildProgrammeExerciseFromCatalog(entryOrExo, prev)
+    : entryOrExo;
+
+  const overlay = document.createElement('div');
+  overlay.className = 'fixed inset-0 bg-black/70 flex items-center justify-center z-50';
+  overlay.innerHTML = `
+    <div class="bg-inkAlt p-5 max-w-lg w-full max-h-[90vh] overflow-y-auto border border-border space-y-4">
+      <header class="flex items-center justify-between">
+        <h3 class="text-paper font-display italic text-[18px]">${isNew ? 'Ajouter' : 'Modifier'} : ${seed.name}</h3>
+        <button id="mx-close" class="btn-ghost btn-sm">✕</button>
+      </header>
+      <div id="mx-card-wrap"></div>
+      <div class="flex gap-2 justify-end">
+        <button id="mx-cancel" class="btn-ghost">Annuler</button>
+        <button id="mx-ok" class="btn-primary">${isNew ? 'Ajouter au programme' : 'Enregistrer'}</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+
+  const wrap = overlay.querySelector('#mx-card-wrap');
+  wrap.appendChild(makeExerciseCard({
+    name:       seed.name,
+    sets:       seed.sets,
+    activities: (seed.activities || []).map((a, i) => {
+      const v = seed.series?.[0]?.values?.[i] || {};
+      return {
+        type:     a.type,
+        reps:     a.type === 'weight'    ? (v.reps     ?? '') : '',
+        weight:   a.type === 'weight'    ? (v.weight   ?? '') : '',
+        duration: a.type === 'countdown' ? (v.duration ?? a.duration ?? '') : '',
+        rest:     a.rest ?? '',
+      };
+    }),
+    comment:    seed.comment || '',
+  }));
+
+  const close = () => overlay.remove();
+  overlay.querySelector('#mx-close').addEventListener('click', close);
+  overlay.querySelector('#mx-cancel').addEventListener('click', close);
+
+  overlay.querySelector('#mx-ok').addEventListener('click', () => {
+    const card = wrap.querySelector('.exercise-card');
+    const readBack = readExerciseCard(card);
+    const exo = {
+      name:            readBack.name,
+      normalized_name: normalizeExerciseName(readBack.name),
+      category:        _progEditorState.category,
+      comment:         readBack.comment || '',
+      sets:            readBack.sets,
+      activities:      readBack.activities.map(a => ({
+        type: a.type,
+        ...(a.type === 'countdown' ? { duration: parseInt(a.duration, 10) || 0 } : {}),
+        rest: parseInt(a.rest, 10) || 0,
+      })),
+      series:          Array.from({ length: readBack.sets }, () => ({
+        activityStates: {},
+        values: readBack.activities.map(a =>
+          a.type === 'weight'
+            ? { reps: parseInt(a.reps, 10) || 0, weight: parseFloat(a.weight) || 0 }
+            : a.type === 'countdown'
+              ? { duration: parseInt(a.duration, 10) || 0 }
+              : {}),
+      })),
+    };
+
+    if (isNew) {
+      _progEditorState.exercises.splice(idx, 0, exo);
+    } else {
+      _progEditorState.exercises[idx] = exo;
+    }
+    renderProgrammeZone();
+    refreshEstimateHeader();
+    close();
+  });
 }
 
 async function saveProgramme() {
