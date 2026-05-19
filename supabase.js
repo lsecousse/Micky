@@ -122,7 +122,7 @@ async function pushSession(session) {
   // Chaque exercice est dé-composé en (activities, execution) — execution
   // contient tout ce qui n'est pas template (séries exécutées pour fonte,
   // état + done pour cardio).
-  const exercises = (session.exercises || []).map(ex => {
+  const exercises = (session.exercises || []).map((ex, idx) => {
     const isCardio = (ex.type === 'cardio') || (session.category === 'cardio');
     const execution = isCardio
       ? {
@@ -135,11 +135,12 @@ async function pushSession(session) {
       : { series: ex.series };
 
     return {
-      name:            ex.name || '',
-      normalized_name: normalizeExerciseName(ex.name || ''),
-      comment:         ex.comment || '',
-      activities:      ex.activities || [],
+      name:             ex.name || '',
+      normalized_name:  normalizeExerciseName(ex.name || ''),
+      comment:          ex.comment || '',
+      activities:       ex.activities || [],
       execution,
+      duration_seconds: session.exoDurations?.[idx] ?? null,
     };
   });
 

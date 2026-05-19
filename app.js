@@ -855,6 +855,8 @@ async function startSession(programme) {
           };
         }),
   };
+  liveSession.exoStartedAt = {};
+  liveSession.exoDurations = {};
   await attachPrevValues(liveSession.exercises, programme.id, liveSession.category, liveSession.id);
   prefillSeriesFromPrev(liveSession.exercises);
   pushSessionSafe(liveSessionSnapshot()).catch(() => {});
@@ -1493,6 +1495,16 @@ function completeFocusedActivity() {
   const set = ex.series[sIdx];
   if (!set.activityStates) set.activityStates = {};
   set.activityStates[actIdx] = 'done';
+
+  // Track per-exo duration (BO-T15)
+  if (!liveSession.exoStartedAt[exIdx]) {
+    liveSession.exoStartedAt[exIdx] = Date.now();
+  }
+  const allDone = ex.series.every(s => ex.activities.every((_, a) => s.activityStates?.[a] === 'done'));
+  if (allDone && !liveSession.exoDurations[exIdx]) {
+    liveSession.exoDurations[exIdx] = Math.max(1, Math.round((Date.now() - liveSession.exoStartedAt[exIdx]) / 1000));
+  }
+
   pushSessionSafe(liveSessionSnapshot()).catch(() => {});
 
   const act = ex.activities[actIdx];
@@ -1972,6 +1984,11 @@ function finishSession() {
     stopAllChronos();
     stopSyncPolling();
     const durationSecs = Math.round((Date.now() - new Date(liveSession.startedAt).getTime()) / 1000);
+    liveSession.exercises.forEach((ex, exIdx) => {
+      if (!liveSession.exoDurations[exIdx] && liveSession.exoStartedAt[exIdx]) {
+        liveSession.exoDurations[exIdx] = Math.max(1, Math.round((Date.now() - liveSession.exoStartedAt[exIdx]) / 1000));
+      }
+    });
     const snapshot = liveSessionSnapshot(durationSecs);
     try {
       await pushSessionSafe(snapshot);
