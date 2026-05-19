@@ -567,7 +567,64 @@ function openCatalogForm(existing) {
 
 function renderProgrammeZone() {
   const zone = document.getElementById('ed-zone');
-  zone.innerHTML = `<p class="text-muted text-[10px] tracking-eyebrow uppercase p-4">Programme : ${_progEditorState.exercises.length} exo(s) (à brancher T12)</p>`;
+  const exos = _progEditorState.exercises;
+  zone.innerHTML = `
+    <div id="pz-list" class="p-4 space-y-2"></div>
+    <div id="pz-drop-hint" class="m-4 p-6 border border-dashed border-acid text-acid text-[10px] uppercase tracking-eyebrow text-center">
+      ↓ Glisse un exo du catalogue ici
+    </div>`;
+  const list = document.getElementById('pz-list');
+  exos.forEach((ex, idx) => list.appendChild(makeProgrammeCard(ex, idx)));
+  // SortableJS wiring : BO-T13.
+}
+
+function makeProgrammeCard(ex, idx) {
+  const card = document.createElement('div');
+  card.className = 'pz-card flex items-center gap-3 p-3 border border-border bg-inkAlt/30';
+  card.dataset.idx = idx;
+  const firstAct = ex.activities?.[0];
+  const isWeight = firstAct?.type === 'weight';
+  const setsCount = ex.sets || (ex.series || []).length || 0;
+  const repsLabel = isWeight ? (ex.series?.[0]?.values?.[0]?.reps ?? '?') : '—';
+  const weightLabel = isWeight ? `${ex.series?.[0]?.values?.[0]?.weight ?? 0} kg` : '';
+  card.innerHTML = `
+    <span class="cursor-grab text-muted">≡</span>
+    <div class="flex-1">
+      <p class="text-paper text-[13px]">${String(idx + 1).padStart(2, '0')}. ${ex.name || '—'}</p>
+      <p class="text-muted text-[10px] uppercase tracking-eyebrow">${setsCount} × ${repsLabel} ${weightLabel}</p>
+    </div>
+    <button class="pz-up btn-ghost btn-sm" title="Monter">↑</button>
+    <button class="pz-down btn-ghost btn-sm" title="Descendre">↓</button>
+    <button class="pz-edit btn-ghost btn-sm" title="Éditer">✎</button>
+    <button class="pz-del btn-danger btn-sm" title="Supprimer">🗑</button>`;
+  card.querySelector('.pz-up').addEventListener('click', () => moveExo(idx, -1));
+  card.querySelector('.pz-down').addEventListener('click', () => moveExo(idx, +1));
+  card.querySelector('.pz-edit').addEventListener('click', () => openExoModal(_progEditorState.exercises[idx], idx, false));
+  card.querySelector('.pz-del').addEventListener('click', () => deleteExoFromProgramme(idx));
+  return card;
+}
+
+function moveExo(idx, delta) {
+  const exos = _progEditorState.exercises;
+  const target = idx + delta;
+  if (target < 0 || target >= exos.length) return;
+  const tmp = exos[idx];
+  exos[idx] = exos[target];
+  exos[target] = tmp;
+  renderProgrammeZone();
+  refreshEstimateHeader();
+}
+
+function deleteExoFromProgramme(idx) {
+  if (!confirm('Retirer cet exo du programme ?')) return;
+  _progEditorState.exercises.splice(idx, 1);
+  renderProgrammeZone();
+  refreshEstimateHeader();
+}
+
+// Stub : remplacé par BO-T14
+async function openExoModal(entryOrExo, idx, isNew) {
+  alert('Modale d\'édition exo : à brancher BO-T14');
 }
 
 async function saveProgramme() {
