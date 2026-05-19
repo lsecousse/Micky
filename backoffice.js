@@ -326,6 +326,10 @@ function showCopyProgrammeModal(prog) {
 }
 
 let _progEditorState = null; // { existingId, name, category, exercises, estOverride, catalog, avgMap }
+let _sidebarFilters = { search: '', muscles: new Set() };
+let _editingCatalogId = null;
+
+const MUSCLE_OPTIONS = ['Pec', 'Dos', 'Jambes', 'Épaules', 'Bras', 'Abdos'];
 
 async function renderProgrammeEditor(existingProg) {
   const body = document.getElementById('bo-detail-body');
@@ -406,7 +410,159 @@ function promptEstOverride() {
 
 function renderCatalogSidebar() {
   const aside = document.getElementById('ed-sidebar');
-  aside.innerHTML = `<p class="text-muted text-[10px] tracking-eyebrow uppercase p-4">Catalogue (à brancher T11)</p>`;
+  aside.innerHTML = `
+    <div class="p-3 border-b border-border space-y-2">
+      <button id="cat-new" class="w-full py-2 border border-acid text-acid font-sans text-[10px] uppercase tracking-eyebrow active:bg-acid active:text-ink">+ Nouvel exo</button>
+      <input id="cat-search" type="text" placeholder="Rechercher…"
+             class="w-full bg-transparent border-b border-border focus:border-acid text-paper py-1 text-[12px] outline-none"/>
+      <div id="cat-chips" class="flex flex-wrap gap-1"></div>
+    </div>
+    <div id="cat-list" class="flex-1 overflow-y-auto p-2 space-y-1"></div>
+    <div id="cat-form" class="hidden border-t border-border p-3"></div>`;
+
+  document.getElementById('cat-new').addEventListener('click', () => openCatalogForm(null));
+  document.getElementById('cat-search').addEventListener('input', e => {
+    _sidebarFilters.search = e.target.value;
+    renderCatalogList();
+  });
+  renderMuscleChips();
+  renderCatalogList();
+}
+
+function renderMuscleChips() {
+  const wrap = document.getElementById('cat-chips');
+  wrap.innerHTML = MUSCLE_OPTIONS.map(m => {
+    const active = _sidebarFilters.muscles.has(m);
+    return `<button data-m="${m}" class="px-2 py-0.5 border ${active ? 'border-acid text-acid' : 'border-border text-muted'} text-[10px] uppercase tracking-eyebrow">${m}</button>`;
+  }).join('');
+  wrap.querySelectorAll('button').forEach(b => {
+    b.addEventListener('click', () => {
+      const m = b.dataset.m;
+      if (_sidebarFilters.muscles.has(m)) _sidebarFilters.muscles.delete(m);
+      else _sidebarFilters.muscles.add(m);
+      renderMuscleChips();
+      renderCatalogList();
+    });
+  });
+}
+
+function renderCatalogList() {
+  const list = document.getElementById('cat-list');
+  const term = normalizeExerciseName(_sidebarFilters.search);
+  const muscles = _sidebarFilters.muscles;
+  const filtered = _progEditorState.catalog.filter(c => {
+    if (term && !c.normalized_name.includes(term)) return false;
+    if (muscles.size > 0) {
+      const has = (c.muscle_groups || []).some(m => muscles.has(m));
+      if (!has) return false;
+    }
+    return true;
+  });
+  list.innerHTML = filtered.map(c => `
+    <div data-id="${c.id}" class="cat-item flex items-center gap-2 p-2 border border-border hover:border-acid cursor-grab"
+         draggable="true">
+      <span class="text-muted">≡</span>
+      <span class="flex-1 text-paper text-[12px]">${c.name}</span>
+      <button class="cat-edit text-muted hover:text-acid" data-id="${c.id}">✎</button>
+    </div>`).join('') || `<p class="text-muted text-[10px] uppercase tracking-eyebrow p-2">Catalogue vide.</p>`;
+  list.querySelectorAll('.cat-edit').forEach(b => {
+    b.addEventListener('click', e => {
+      e.stopPropagation();
+      const id = b.dataset.id;
+      const entry = _progEditorState.catalog.find(c => c.id === id);
+      openCatalogForm(entry);
+    });
+  });
+  // SortableJS wiring : BO-T13.
+}
+
+function openCatalogForm(existing) {
+  _editingCatalogId = existing?.id || null;
+  const form = document.getElementById('cat-form');
+  form.classList.remove('hidden');
+  const isEdit = !!existing;
+  form.innerHTML = `
+    <p class="text-[9px] uppercase tracking-[0.4em] text-muted mb-2">${isEdit ? 'Modifier' : 'Nouvel'} exo</p>
+    <input id="cf-name" type="text" placeholder="Nom" value="${existing?.name || ''}"
+           class="w-full bg-transparent border-b border-border focus:border-acid text-paper py-1 text-[13px] outline-none mb-2"/>
+    <p class="text-[9px] uppercase tracking-[0.4em] text-muted mb-1">Groupes musculaires</p>
+    <div id="cf-muscles" class="flex flex-wrap gap-1 mb-2">${
+      MUSCLE_OPTIONS.map(m => {
+        const active = (existing?.muscle_groups || []).includes(m);
+        return `<button data-m="${m}" type="button" class="px-2 py-0.5 border ${active ? 'border-acid text-acid' : 'border-border text-muted'} text-[10px] uppercase tracking-eyebrow">${m}</button>`;
+      }).join('')
+    }</div>
+    <p class="text-[9px] uppercase tracking-[0.4em] text-muted mb-1">Type d'activité par défaut</p>
+    <select id="cf-acttype" class="w-full bg-transparent border border-border text-paper py-1 px-2 text-[12px] mb-2">
+      <option value="weight"    ${(existing?.default_activities?.[0]?.type === 'weight'    || !existing) ? 'selected' : ''}>Poids</option>
+      <option value="countdown" ${ existing?.default_activities?.[0]?.type === 'countdown' ? 'selected' : ''}>Minuterie</option>
+      <option value="stopwatch" ${ existing?.default_activities?.[0]?.type === 'stopwatch' ? 'selected' : ''}>Chrono</option>
+    </select>
+    <textarea id="cf-notes" placeholder="Notes (consignes…)"
+              class="w-full bg-transparent border border-border focus:border-acid text-paper p-2 text-[12px] outline-none mb-2 h-16">${existing?.notes || ''}</textarea>
+    <div class="flex gap-2">
+      <button id="cf-save" class="btn-primary btn-sm flex-1">${isEdit ? 'Mettre à jour' : 'Créer'}</button>
+      <button id="cf-cancel" class="btn-ghost btn-sm">Annuler</button>
+      ${isEdit ? '<button id="cf-delete" class="btn-danger btn-sm">Suppr</button>' : ''}
+    </div>`;
+
+  form.querySelectorAll('#cf-muscles button').forEach(b => {
+    b.addEventListener('click', () => {
+      b.classList.toggle('border-acid');
+      b.classList.toggle('text-acid');
+      b.classList.toggle('border-border');
+      b.classList.toggle('text-muted');
+    });
+  });
+
+  document.getElementById('cf-cancel').addEventListener('click', () => {
+    form.classList.add('hidden');
+    _editingCatalogId = null;
+  });
+
+  document.getElementById('cf-save').addEventListener('click', async () => {
+    const name = document.getElementById('cf-name').value.trim();
+    if (!name) return alert('Nom obligatoire');
+    const muscle_groups = Array.from(form.querySelectorAll('#cf-muscles button.border-acid')).map(b => b.dataset.m);
+    const acttype = document.getElementById('cf-acttype').value;
+    const default_activities = [{ type: acttype }];
+    const notes = document.getElementById('cf-notes').value.trim();
+    try {
+      const saved = await upsertExerciseCatalogEntryDB({
+        id: _editingCatalogId,
+        name,
+        category: _progEditorState.category,
+        muscle_groups,
+        default_activities,
+        notes,
+      });
+      const idx = _progEditorState.catalog.findIndex(c => c.id === saved.id);
+      if (idx >= 0) _progEditorState.catalog[idx] = saved;
+      else _progEditorState.catalog.push(saved);
+      _progEditorState.catalog.sort((a, b) => a.name.localeCompare(b.name));
+      form.classList.add('hidden');
+      _editingCatalogId = null;
+      renderCatalogList();
+    } catch (e) {
+      alert('Erreur sauvegarde : ' + e.message);
+    }
+  });
+
+  const delBtn = document.getElementById('cf-delete');
+  if (delBtn) {
+    delBtn.addEventListener('click', async () => {
+      if (!confirm('Supprimer cet exo du catalogue ?')) return;
+      try {
+        await deleteExerciseCatalogEntryDB(_editingCatalogId);
+        _progEditorState.catalog = _progEditorState.catalog.filter(c => c.id !== _editingCatalogId);
+        form.classList.add('hidden');
+        _editingCatalogId = null;
+        renderCatalogList();
+      } catch (e) {
+        alert('Erreur suppression : ' + e.message);
+      }
+    });
+  }
 }
 
 function renderProgrammeZone() {
