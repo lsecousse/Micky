@@ -346,20 +346,21 @@ async function renderProgrammeEditor(existingProg) {
   };
 
   body.innerHTML = `
-    <div class="bo-editor flex flex-col h-full">
-      <header class="bo-editor-header p-4 border-b border-border flex items-center gap-4">
+    <div class="bo-editor" style="display:flex;flex-direction:column;height:100%;gap:0;min-height:0">
+      <header class="bo-editor-header border-b border-border" style="display:flex;align-items:center;gap:1rem;padding:1rem;flex:0 0 auto">
         <button class="btn-ghost btn-sm" id="ed-back">← Retour</button>
-        <input type="text" id="ed-name" class="flex-1 bg-transparent border-b border-border focus:border-acid text-paper font-display italic text-[18px] py-2 outline-none"
+        <input type="text" id="ed-name" class="bg-transparent border-b border-border focus:border-acid text-paper font-display italic text-[18px] outline-none"
+               style="flex:1 1 auto;min-width:0;padding:0.5rem 0"
                placeholder="Nom du programme" value="${_progEditorState.name}">
-        <div class="text-paper text-[12px] font-sans tracking-eyebrow uppercase">
+        <div class="text-paper text-[12px] font-sans tracking-eyebrow uppercase" style="flex:0 0 auto;white-space:nowrap">
           Estimé : <span id="ed-est">—</span>
-          <button id="ed-est-edit" class="btn-ghost btn-sm ml-2">✎</button>
+          <button id="ed-est-edit" class="btn-ghost btn-sm" style="margin-left:0.5rem">✎</button>
         </div>
-        <button class="btn-primary" id="ed-save">Enregistrer</button>
+        <button class="btn-primary" id="ed-save" style="flex:0 0 auto">Enregistrer</button>
       </header>
-      <div class="flex flex-1 overflow-hidden">
-        <aside id="ed-sidebar" class="w-[35%] border-r border-border flex flex-col"></aside>
-        <section id="ed-zone" class="w-[65%] flex flex-col overflow-y-auto"></section>
+      <div style="display:grid;grid-template-columns:35% 65%;flex:1 1 auto;min-height:0;overflow:hidden">
+        <aside id="ed-sidebar" class="border-r border-border" style="display:flex;flex-direction:column;min-height:0;min-width:0;overflow:hidden"></aside>
+        <section id="ed-zone" style="display:flex;flex-direction:column;min-height:0;min-width:0;overflow-y:auto"></section>
       </div>
       <p class="error-msg hidden p-2" id="ed-err"></p>
     </div>`;
