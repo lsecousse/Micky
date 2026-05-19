@@ -707,9 +707,11 @@ async function openExoModal(entryOrExo, idx, isNew = false) {
       comment:         readBack.comment || '',
       sets:            readBack.sets,
       activities:      readBack.activities.map(a => ({
-        type: a.type,
+        type:  a.type,
+        label: a.label,
+        name:  a.name,
         ...(a.type === 'countdown' ? { duration: parseInt(a.duration, 10) || 0 } : {}),
-        rest: parseInt(a.rest, 10) || 0,
+        rest:  parseInt(a.rest, 10) || 0,
       })),
       series:          Array.from({ length: readBack.sets }, () => ({
         activityStates: {},
