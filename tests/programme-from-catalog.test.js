@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildProgrammeExerciseFromCatalog } from '../lib/programme-from-catalog.js';
+import { buildProgrammeExerciseFromCatalog, ensureSeries } from '../lib/programme-from-catalog.js';
 
 describe('buildProgrammeExerciseFromCatalog', () => {
   const catalogEntry = {
@@ -77,5 +77,58 @@ describe('buildProgrammeExerciseFromCatalog', () => {
       { reps: 0, weight: 0 },
       { duration: 30 },
     ]);
+  });
+});
+
+describe('ensureSeries', () => {
+  it('passes through when series already present', () => {
+    const ex = {
+      name: 'X',
+      sets: 4,
+      activities: [{ type: 'weight', reps: 10, weight: 20 }],
+      series: [{ activityStates: {}, values: [{ reps: 8, weight: 15 }] }],
+    };
+    const result = ensureSeries(ex);
+    expect(result.series).toBe(ex.series);
+  });
+
+  it('builds series from activity-level reps/weight when series missing (legacy)', () => {
+    const legacy = {
+      name: 'Climb box',
+      sets: 4,
+      activities: [{ type: 'weight', reps: 8, weight: 18, rest: 150 }],
+    };
+    const result = ensureSeries(legacy);
+    expect(result.series).toHaveLength(4);
+    expect(result.series[0]).toEqual({
+      activityStates: {},
+      values: [{ reps: 8, weight: 18 }],
+    });
+    expect(result.series[3].values[0]).toEqual({ reps: 8, weight: 18 });
+  });
+
+  it('builds series for countdown activities using duration default', () => {
+    const legacy = {
+      name: 'Plank',
+      sets: 3,
+      activities: [{ type: 'countdown', duration: 45 }],
+    };
+    const result = ensureSeries(legacy);
+    expect(result.series).toHaveLength(3);
+    expect(result.series[0].values).toEqual([{ duration: 45 }]);
+  });
+
+  it('defaults sets to 4 when missing', () => {
+    const legacy = { name: 'X', activities: [{ type: 'weight' }] };
+    const result = ensureSeries(legacy);
+    expect(result.series).toHaveLength(4);
+    expect(result.series[0].values).toEqual([{ reps: 0, weight: 0 }]);
+  });
+
+  it('handles series=[] as missing', () => {
+    const ex = { name: 'X', sets: 2, activities: [{ type: 'weight', reps: 5, weight: 10 }], series: [] };
+    const result = ensureSeries(ex);
+    expect(result.series).toHaveLength(2);
+    expect(result.series[0].values[0]).toEqual({ reps: 5, weight: 10 });
   });
 });

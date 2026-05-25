@@ -33,6 +33,23 @@
     color: inherit;
     font: inherit;
   }
+
+  /* Neutralise @tailwindcss/forms (strategy 'base') sur les number inputs
+     pour rendre la main aux utilities (bg-transparent, text-paper, py-*).
+     Sinon : fond blanc forcé + grosse padding qui rognent la zone visible.
+     :where() garde la spécificité à 1 pour ne pas écraser les utilities. */
+  input:where([type="number"]) {
+    -moz-appearance: textfield;
+    background-color: transparent;
+    border: none;
+    padding: 0;
+    color: inherit;
+  }
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
 }
 
 @layer utilities {

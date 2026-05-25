@@ -352,7 +352,9 @@ async function renderProgrammeEditor(existingProg) {
     existingId:  existingProg?.id || null,
     name:        existingProg?.name || '',
     category,
-    exercises:   (existingProg?.exercises || []).map(e => ({ ...e })),
+    // ensureSeries migre les vieux programmes (qui ne stockaient reps/weight
+    // qu'au niveau activity) vers la forme moderne avec series[].values[]
+    exercises:   (existingProg?.exercises || []).map(e => ensureSeries({ ...e })),
     estOverride: existingProg?.estimated_duration_seconds ?? null,
     catalog:     [],
     avgMap:      new Map(),
@@ -719,6 +721,8 @@ async function openExoModal(entryOrExo, idx, isNew = false) {
       const v = seed.series?.[0]?.values?.[i] || {};
       return {
         type:     a.type,
+        label:    a.label ?? '',
+        name:     a.name  ?? '',
         reps:     a.type === 'weight'    ? (v.reps     ?? '') : '',
         weight:   a.type === 'weight'    ? (v.weight   ?? '') : '',
         duration: a.type === 'countdown' ? (v.duration ?? a.duration ?? '') : '',
