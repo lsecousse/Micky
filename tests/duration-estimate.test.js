@@ -61,4 +61,28 @@ describe('computeEstimatedDuration', () => {
     };
     expect(computeEstimatedDuration(programme, new Map())).toBe(405);
   });
+
+  it('sums per-series countdown durations when series values differ', () => {
+    const programme = {
+      exercises: [{
+        name: 'Plank',
+        activities: [{ type: 'countdown', rest: 15 }],
+        sets: 3,
+        series: [30, 30, 60].map(d => ({ activityStates: {}, values: [{ duration: d }] })),
+      }],
+    };
+    expect(computeEstimatedDuration(programme, new Map())).toBe(165);
+  });
+
+  it('keeps 45s per series for weight even when series values are present', () => {
+    const programme = {
+      exercises: [{
+        name: 'Curl',
+        activities: [{ type: 'weight', rest: 60 }],
+        sets: 2,
+        series: [{ values: [{ reps: 10, weight: 20 }] }, { values: [{ reps: 8, weight: 22 }] }],
+      }],
+    };
+    expect(computeEstimatedDuration(programme, new Map())).toBe(210);
+  });
 });
