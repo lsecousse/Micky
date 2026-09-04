@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  plannedSeries, resizeValues, seriesFromColumns, blankValueFor, fillDown,
+  plannedSeries, resizeValues, seriesFromColumns, blankValueFor, fillDown, formatSeriesSummary,
 } from '../lib/planned-series.js';
 
 describe('blankValueFor', () => {
@@ -224,5 +224,53 @@ describe('fillDown', () => {
   it('mutates in place and returns the same array', () => {
     const values = col(10, 10);
     expect(fillDown(values, 0, 'reps', 9)).toBe(values);
+  });
+
+  it('is a no-op when the new value equals the old one', () => {
+    const values = col(10, 10, 8);
+    fillDown(values, 0, 'reps', 10);
+    expect(values.map(v => v.reps)).toEqual([10, 10, 8]);
+  });
+});
+
+describe('formatSeriesSummary', () => {
+  const weightEx = (...pairs) => ({
+    sets: pairs.length,
+    activities: [{ type: 'weight' }],
+    series: pairs.map(([reps, weight]) => ({ values: [{ reps, weight }] })),
+  });
+
+  it('formats uniform reps and weight as "n × reps · kg"', () => {
+    expect(formatSeriesSummary(weightEx([10, 40], [10, 40], [10, 40], [10, 40]))).toBe('4 × 10 · 40 kg');
+  });
+
+  it('lists reps when they vary', () => {
+    expect(formatSeriesSummary(weightEx([10, 40], [10, 40], [8, 40], [8, 40]))).toBe('10/10/8/8 × 40 kg');
+  });
+
+  it('lists weights when they vary', () => {
+    expect(formatSeriesSummary(weightEx([10, 40], [10, 40], [10, 45], [10, 45]))).toBe('4 × 10 · 40/40/45/45 kg');
+  });
+
+  it('lists both when both vary', () => {
+    expect(formatSeriesSummary(weightEx([10, 40], [8, 45]))).toBe('10/8 × 40/45 kg');
+  });
+
+  it('formats uniform countdown durations', () => {
+    const ex = { sets: 3, activities: [{ type: 'countdown' }], series: [45, 45, 45].map(d => ({ values: [{ duration: d }] })) };
+    expect(formatSeriesSummary(ex)).toBe('3 × 45 s');
+  });
+
+  it('lists countdown durations when they vary', () => {
+    const ex = { sets: 3, activities: [{ type: 'countdown' }], series: [45, 45, 60].map(d => ({ values: [{ duration: d }] })) };
+    expect(formatSeriesSummary(ex)).toBe('45/45/60 s');
+  });
+
+  it('formats stopwatch as a dash', () => {
+    expect(formatSeriesSummary({ sets: 3, activities: [{ type: 'stopwatch' }] })).toBe('3 × —');
+  });
+
+  it('falls back to legacy activity values when series is missing', () => {
+    expect(formatSeriesSummary({ sets: 4, activities: [{ type: 'weight', reps: 8, weight: 18 }] })).toBe('4 × 8 · 18 kg');
   });
 });
