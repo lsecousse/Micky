@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  plannedSeries, resizeValues, seriesFromColumns, blankValueFor,
+  plannedSeries, resizeValues, seriesFromColumns, blankValueFor, fillDown,
 } from '../lib/planned-series.js';
 
 describe('blankValueFor', () => {
@@ -162,5 +162,67 @@ describe('plannedSeries', () => {
       ],
     };
     expect(plannedSeries(ex)[1].values).toEqual([{ reps: 8, weight: 40 }, { duration: 45 }]);
+  });
+
+  it('treats sets=0 as missing', () => {
+    const ex = { sets: 0, activities: [{ type: 'weight' }], series: [{ values: [{ reps: 10, weight: 40 }] }, { values: [{ reps: 8, weight: 40 }] }] };
+    expect(plannedSeries(ex)).toHaveLength(2);
+  });
+
+  it('returns empty value lists when there are no activities', () => {
+    expect(plannedSeries({ sets: 2, activities: [] })).toEqual([
+      { activityStates: {}, values: [] },
+      { activityStates: {}, values: [] },
+    ]);
+  });
+
+  it('falls back to the activity value for a series entry without values', () => {
+    const ex = { sets: 1, activities: [{ type: 'weight', reps: 8, weight: 18 }], series: [{}] };
+    expect(plannedSeries(ex)[0].values[0]).toEqual({ reps: 8, weight: 18 });
+  });
+});
+
+describe('fillDown', () => {
+  const col = (...reps) => reps.map(r => ({ reps: r }));
+
+  it('propagates to the contiguous block of following rows with the same old value', () => {
+    const values = col(10, 10, 10, 10);
+    fillDown(values, 2, 'reps', 8);
+    expect(values.map(v => v.reps)).toEqual([10, 10, 8, 8]);
+  });
+
+  it('stops at the first following row with a different value', () => {
+    const values = col(10, 10, 8, 8);
+    fillDown(values, 0, 'reps', 12);
+    expect(values.map(v => v.reps)).toEqual([12, 12, 8, 8]);
+  });
+
+  it('leaves a later equal row untouched when the block is broken', () => {
+    const values = col(10, 10, 8, 10);
+    fillDown(values, 0, 'reps', 12);
+    expect(values.map(v => v.reps)).toEqual([12, 12, 8, 10]);
+  });
+
+  it('changes only the edited row when the next row differs', () => {
+    const values = col(10, 8, 8);
+    fillDown(values, 0, 'reps', 12);
+    expect(values.map(v => v.reps)).toEqual([12, 8, 8]);
+  });
+
+  it('works on the last row', () => {
+    const values = col(10, 10);
+    fillDown(values, 1, 'reps', 8);
+    expect(values.map(v => v.reps)).toEqual([10, 8]);
+  });
+
+  it('compares string values strictly (DOM inputs)', () => {
+    const values = [{ reps: '10' }, { reps: '10' }, { reps: '' }];
+    fillDown(values, 0, 'reps', '12');
+    expect(values.map(v => v.reps)).toEqual(['12', '12', '']);
+  });
+
+  it('mutates in place and returns the same array', () => {
+    const values = col(10, 10);
+    expect(fillDown(values, 0, 'reps', 9)).toBe(values);
   });
 });
