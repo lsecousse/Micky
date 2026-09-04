@@ -273,4 +273,12 @@ describe('formatSeriesSummary', () => {
   it('falls back to legacy activity values when series is missing', () => {
     expect(formatSeriesSummary({ sets: 4, activities: [{ type: 'weight', reps: 8, weight: 18 }] })).toBe('4 × 8 · 18 kg');
   });
+
+  it('formats an unknown activity type as a dash', () => {
+    expect(formatSeriesSummary({ sets: 4, activities: [{ type: 'mystery' }] })).toBe('4 × —');
+  });
+
+  it('formats an exercise without activities as a dash', () => {
+    expect(formatSeriesSummary({ sets: 3 })).toBe('3 × —');
+  });
 });
