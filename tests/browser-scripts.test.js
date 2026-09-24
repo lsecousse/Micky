@@ -28,4 +28,10 @@ describe('browser lib scripts', () => {
 
     expect(typeof context.plannedSeries).toBe('function');
   });
+
+  it('expose watch sync guards in index.html shared global scope', () => {
+    const context = loadInSharedScope(libScriptsOf('index.html'));
+
+    expect(typeof context.createLocalWriteTracker).toBe('function');
+  });
 });

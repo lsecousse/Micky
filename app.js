@@ -58,10 +58,11 @@ function readSnapshotLocal(id) {
 }
 
 let _pushFailureShown = false;
+const localWrites = createLocalWriteTracker(Date.now);
 async function pushSessionSafe(snap) {
   persistSnapshotLocal(snap);
   try {
-    await pushSession(snap);
+    await localWrites.track(pushSession(snap));
     _pushFailureShown = false;
   } catch (e) {
     console.error('[pushSession] échec, snapshot gardé en localStorage', e);
@@ -2092,17 +2093,22 @@ let syncPollTimer = null;
 
 function startSyncPolling() {
   stopSyncPolling();
-  syncPollTimer = setInterval(syncFromDB, 500);
+  syncPollTimer = setInterval(syncFromDBOnce, 500);
 }
 
 function stopSyncPolling() {
   if (syncPollTimer) { clearInterval(syncPollTimer); syncPollTimer = null; }
 }
 
+const syncFromDBOnce = createSingleFlight(syncFromDB);
+
 async function syncFromDB() {
   if (!liveSession) return;
   try {
+    const requestedAt = Date.now();
     const sessions = await loadSessions();
+    // Local push pending or newer than this read: the phone wins.
+    if (!liveSession || !localWrites.isRemoteFresh(requestedAt)) return;
     const remote = sessions.find(s => s.id === liveSession.id);
     if (!remote) return;
 
