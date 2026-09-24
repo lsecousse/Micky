@@ -155,8 +155,8 @@ function renderClientList() {
     const s = STATE_META[c.state || 'new'];
     return `
     <div class="bo-client-item ${selClient?.id === c.id ? 'active' : ''}" data-id="${c.id}">
-      <div class="bo-client-name">${c.prenom || ''} ${c.nom || ''} <span class="bo-state-dot bo-state--${c.state || 'new'}" title="${s.label}">${s.icon}</span></div>
-      <div class="bo-client-email">${c.email || ''}</div>
+      <div class="bo-client-name">${escapeHtml(c.prenom || '')} ${escapeHtml(c.nom || '')} <span class="bo-state-dot bo-state--${c.state || 'new'}" title="${s.label}">${s.icon}</span></div>
+      <div class="bo-client-email">${escapeHtml(c.email || '')}</div>
     </div>`;
   }).join('');
   el.querySelectorAll('.bo-client-item').forEach(el => {
@@ -184,8 +184,8 @@ async function renderClientDetail() {
     <div class="bo-detail">
       <div class="bo-detail-header">
         <div class="bo-detail-title">
-          ${selClient.prenom || ''} ${selClient.nom || ''}
-          <span style="font-size:12px;color:var(--muted);font-weight:normal">${selClient.email || ''}</span>
+          ${escapeHtml(selClient.prenom || '')} ${escapeHtml(selClient.nom || '')}
+          <span style="font-size:12px;color:var(--muted);font-weight:normal">${escapeHtml(selClient.email || '')}</span>
           <span class="bo-state bo-state--${selClient.state || 'new'}">${stateLabel(selClient.state)}</span>
           ${(selClient.state || 'new') === 'new' ? '<button class="btn-primary btn-sm" id="send-invite">✉ Envoyer l\'invitation</button>' : ''}
           <button class="btn-danger btn-sm" id="del-client">Supprimer</button>
@@ -247,7 +247,7 @@ async function renderProgrammeList(body) {
       return `
       <div class="prog-row">
         <div>
-          <div class="prog-row-name">${p.name}</div>
+          <div class="prog-row-name">${escapeHtml(p.name)}</div>
           <div class="prog-row-count">${(p.exercises || []).length} exercice(s) · ~${minutes} min</div>
         </div>
         <div class="prog-row-actions">
@@ -284,7 +284,7 @@ function showCopyProgrammeModal(prog) {
   if (!targets.length) {
     overlay.innerHTML = `
       <div class="modal">
-        <h2>Copier "${prog.name}"</h2>
+        <h2>Copier "${escapeHtml(prog.name)}"</h2>
         <p style="color:var(--muted);font-size:13px">Aucun autre client à qui copier ce programme.</p>
         <div class="flex-row" style="justify-content:flex-end">
           <button class="btn-secondary" id="cp-close">Fermer</button>
@@ -296,11 +296,11 @@ function showCopyProgrammeModal(prog) {
   }
   overlay.innerHTML = `
     <div class="modal">
-      <h2>Copier "${prog.name}" vers :</h2>
+      <h2>Copier "${escapeHtml(prog.name)}" vers :</h2>
       <div id="cp-targets" style="display:flex;flex-direction:column;gap:6px;max-height:50vh;overflow-y:auto">
         ${targets.map(c => `
           <button class="btn-secondary" data-target="${c.id}" style="text-align:left">
-            ${(c.prenom || '') + ' ' + (c.nom || '')} <span style="color:var(--muted);font-size:12px">${c.email || ''}</span>
+            ${escapeHtml((c.prenom || '') + ' ' + (c.nom || ''))} <span style="color:var(--muted);font-size:12px">${escapeHtml(c.email || '')}</span>
           </button>
         `).join('')}
       </div>
@@ -367,7 +367,7 @@ async function renderProgrammeEditor(existingProg) {
           <button class="btn-ghost btn-sm" id="ed-back">← Retour</button>
           <input type="text" id="ed-name" class="bg-transparent border-b border-border focus:border-acid text-paper font-display italic text-[18px] outline-none"
                  style="flex:1 1 auto;min-width:0;padding:0.5rem 0"
-                 placeholder="Nom du programme" value="${_progEditorState.name}">
+                 placeholder="Nom du programme" value="${escapeHtml(_progEditorState.name)}">
           <div class="text-paper text-[12px] font-sans tracking-eyebrow uppercase" style="flex:0 0 auto;white-space:nowrap">
             Estimé : <span id="ed-est">—</span>
             <button id="ed-est-edit" class="btn-ghost btn-sm" style="margin-left:0.5rem">✎</button>
@@ -482,7 +482,7 @@ function renderCatalogList() {
     <div data-id="${c.id}" class="cat-item flex items-center gap-2 p-2 border border-border hover:border-acid cursor-grab"
          draggable="true">
       <span class="text-muted">≡</span>
-      <span class="flex-1 text-paper text-[12px]">${c.name}</span>
+      <span class="flex-1 text-paper text-[12px]">${escapeHtml(c.name)}</span>
       <button class="cat-edit text-muted hover:text-acid" data-id="${c.id}">✎</button>
     </div>`).join('') || `<p class="text-muted text-[10px] uppercase tracking-eyebrow p-2">Catalogue vide.</p>`;
   list.querySelectorAll('.cat-edit').forEach(b => {
@@ -508,7 +508,7 @@ function openCatalogForm(existing) {
   const isEdit = !!existing;
   form.innerHTML = `
     <p class="text-[9px] uppercase tracking-[0.4em] text-muted mb-2">${isEdit ? 'Modifier' : 'Nouvel'} exo</p>
-    <input id="cf-name" type="text" placeholder="Nom" value="${existing?.name || ''}"
+    <input id="cf-name" type="text" placeholder="Nom" value="${escapeHtml(existing?.name || '')}"
            class="w-full bg-transparent border-b border-border focus:border-acid text-paper py-1 text-[13px] outline-none mb-2"/>
     <p class="text-[9px] uppercase tracking-[0.4em] text-muted mb-1">Groupes musculaires</p>
     <div id="cf-muscles" class="flex flex-wrap gap-1 mb-2">${
@@ -524,7 +524,7 @@ function openCatalogForm(existing) {
       <option value="stopwatch" ${ existing?.default_activities?.[0]?.type === 'stopwatch' ? 'selected' : ''}>Chrono</option>
     </select>
     <textarea id="cf-notes" placeholder="Notes (consignes…)"
-              class="w-full bg-transparent border border-border focus:border-acid text-paper p-2 text-[12px] outline-none mb-2 h-16">${existing?.notes || ''}</textarea>
+              class="w-full bg-transparent border border-border focus:border-acid text-paper p-2 text-[12px] outline-none mb-2 h-16">${escapeHtml(existing?.notes || '')}</textarea>
     <div class="flex gap-2">
       <button id="cf-save" class="btn-primary btn-sm flex-1">${isEdit ? 'Mettre à jour' : 'Créer'}</button>
       <button id="cf-cancel" class="btn-ghost btn-sm">Annuler</button>
@@ -654,7 +654,7 @@ function makeProgrammeCard(ex, idx) {
   card.innerHTML = `
     <span class="cursor-grab text-muted">≡</span>
     <div class="flex-1">
-      <p class="text-paper text-[13px]">${String(idx + 1).padStart(2, '0')}. ${ex.name || '—'}</p>
+      <p class="text-paper text-[13px]">${String(idx + 1).padStart(2, '0')}. ${escapeHtml(ex.name || '—')}</p>
       <p class="text-muted text-[10px] uppercase tracking-eyebrow">${setsCount} × ${repsLabel} ${weightLabel}${restLabel}</p>
     </div>
     <button class="pz-up btn-ghost btn-sm" title="Monter">↑</button>
@@ -702,7 +702,7 @@ async function openExoModal(entryOrExo, idx, isNew = false) {
   overlay.innerHTML = `
     <div class="bg-inkAlt p-5 max-w-lg w-full max-h-[90vh] overflow-y-auto border border-border space-y-4">
       <header class="flex items-center justify-between">
-        <h3 class="text-paper font-display italic text-[18px]">${isNew ? 'Ajouter' : 'Modifier'} : ${seed.name}</h3>
+        <h3 class="text-paper font-display italic text-[18px]">${isNew ? 'Ajouter' : 'Modifier'} : ${escapeHtml(seed.name)}</h3>
         <button id="mx-close" class="btn-ghost btn-sm">✕</button>
       </header>
       <div id="mx-card-wrap"></div>
@@ -828,7 +828,7 @@ async function renderSessionList(body) {
     return `
       <div class="session-row">
         <div class="session-row-header">
-          <span class="session-prog">${s.programmeName || 'Séance libre'}</span>
+          <span class="session-prog">${escapeHtml(s.programmeName || 'Séance libre')}</span>
           <span class="session-date">${s.date || ''}</span>
         </div>
         <div class="session-meta">${exCount} exercice(s)${dur ? ' · ' + dur : ''}</div>
@@ -854,9 +854,9 @@ async function renderUserData(body) {
     <div class="bo-compact-section">
       <p class="section-title">Identité</p>
       <div class="bo-id-row">
-        <span class="bo-id-tag"><span class="bo-id-label">Prénom</span> ${selClient.prenom || '—'}</span>
-        <span class="bo-id-tag"><span class="bo-id-label">Nom</span> ${selClient.nom || '—'}</span>
-        <span class="bo-id-tag"><span class="bo-id-label">Email</span> ${selClient.email || '—'}</span>
+        <span class="bo-id-tag"><span class="bo-id-label">Prénom</span> ${escapeHtml(selClient.prenom || '—')}</span>
+        <span class="bo-id-tag"><span class="bo-id-label">Nom</span> ${escapeHtml(selClient.nom || '—')}</span>
+        <span class="bo-id-tag"><span class="bo-id-label">Email</span> ${escapeHtml(selClient.email || '—')}</span>
         <span class="bo-id-tag"><span class="bo-id-label">Statut</span> <span class="bo-state bo-state--${selClient.state || 'new'}">${stateLabel(selClient.state)}</span></span>
         <span class="bo-id-tag"><span class="bo-id-label">Inscrit</span> ${createdAt}</span>
         <span class="bo-id-tag"><span class="bo-id-label">Séances</span> ${sessions.filter(s => s.duration > 0).length}</span>
@@ -1216,7 +1216,7 @@ function boStatsProgression(sessions) {
       const card = document.createElement('div');
       card.className = 'stats-exo-card';
       card.innerHTML = `
-        <span class="stats-exo-name">${exo.name}</span>
+        <span class="stats-exo-name">${escapeHtml(exo.name)}</span>
         <div class="stats-exo-values">
           <span class="stats-exo-start">${fmt(first)} ${unit}</span>
           <span class="stats-exo-arrow">→</span>
@@ -1370,7 +1370,7 @@ function showSuccessModal(email) {
       <h2>Compte créé !</h2>
       <p style="color:var(--muted);font-size:13px;line-height:1.6">
         Un email d'invitation a été envoyé à<br>
-        <strong style="color:var(--text)">${email}</strong><br>
+        <strong style="color:var(--text)">${escapeHtml(email)}</strong><br>
         pour que le client définisse son mot de passe.
       </p>
       <button class="btn-primary btn-full" id="sm-ok">Fermer</button>

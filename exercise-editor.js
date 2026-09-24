@@ -83,7 +83,7 @@ function makeActivityRow({ type = 'weight', label = '', name = '', reps = '', we
   const labelRow = document.createElement('div');
   labelRow.className = 'activity-row-label flex items-center gap-3';
   labelRow.innerHTML = `
-    <input type="text" maxlength="60" placeholder="Nom de l'activité" value="${label}"
+    <input type="text" maxlength="60" placeholder="Nom de l'activité" value="${escapeHtml(label)}"
       class="activity-label ${_INPUT_TXT} font-display italic font-bold" />
     <button type="button" class="activity-remove-btn shrink-0 w-8 h-8 flex items-center justify-center text-muted active:text-blood transition">×</button>
   `;
@@ -152,7 +152,7 @@ function makeExerciseCard({ name = '', sets = 3, activities = null, comment = ''
   const header = document.createElement('div');
   header.className = 'flex items-baseline gap-2';
   header.innerHTML = `
-    <input type="text" maxlength="60" placeholder="Nom de l'exercice" value="${name}"
+    <input type="text" maxlength="60" placeholder="Nom de l'exercice" value="${escapeHtml(name)}"
       class="exercise-name flex-1 bg-transparent border-b border-border focus:border-acid font-display font-bold italic text-[18px] text-paper py-2 outline-none transition" />
     <button type="button" class="exercise-move-btn ${_BTN_GHOST}" data-dir="up" title="Monter">↑</button>
     <button type="button" class="exercise-move-btn ${_BTN_GHOST}" data-dir="down" title="Descendre">↓</button>
@@ -247,7 +247,7 @@ function makeCardioExerciseCard({ name = '', duration = '', power = '', comment 
   const header = document.createElement('div');
   header.className = 'flex items-baseline gap-2';
   header.innerHTML = `
-    <input type="text" maxlength="60" placeholder="Nom de la machine" value="${name}"
+    <input type="text" maxlength="60" placeholder="Nom de la machine" value="${escapeHtml(name)}"
       class="exercise-name flex-1 bg-transparent border-b border-border focus:border-acid font-display font-bold italic text-[18px] text-paper py-2 outline-none transition" />
     <button type="button" class="exercise-del-btn ${_BTN_DEL}">Suppr</button>
   `;
