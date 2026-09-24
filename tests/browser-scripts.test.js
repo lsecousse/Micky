@@ -21,12 +21,14 @@ describe('browser lib scripts', () => {
     const context = loadInSharedScope(libScriptsOf('backoffice.html'));
 
     expect(typeof context.buildProgrammeExerciseFromCatalog).toBe('function');
+    expect(typeof context.escapeHtml).toBe('function');
   });
 
   it('load together in index.html shared global scope', () => {
     const context = loadInSharedScope(libScriptsOf('index.html'));
 
     expect(typeof context.plannedSeries).toBe('function');
+    expect(typeof context.escapeHtml).toBe('function');
   });
 
   it('expose watch sync guards in index.html shared global scope', () => {

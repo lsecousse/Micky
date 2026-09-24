@@ -237,7 +237,7 @@ async function renderHome() {
     greeting.className = 'space-y-1';
     greeting.innerHTML = `
       <p class="font-sans text-[10px] uppercase tracking-eyebrow text-muted">Bonjour</p>
-      <p class="font-display text-3xl font-semibold leading-tight text-paper">${prenom}.</p>
+      <p class="font-display text-3xl font-semibold leading-tight text-paper">${escapeHtml(prenom)}.</p>
       <span class="block w-10 h-px bg-acid mt-2"></span>
     `;
     main.appendChild(greeting);
@@ -279,7 +279,7 @@ async function renderHomeSection(main, category, programmes, isLive) {
         <button data-role="resume-delete" class="w-11 h-11 flex items-center justify-center text-[18px] text-muted border border-border active:text-blood active:border-blood transition" aria-label="Supprimer">🗑</button>
         <button data-role="resume-center" class="flex-1 text-left">
           <p class="font-sans text-[10px] uppercase tracking-eyebrow text-muted">En cours</p>
-          <p class="font-display text-[22px] font-semibold leading-tight text-racing mt-1">${liveSession.programmeName}</p>
+          <p class="font-display text-[22px] font-semibold leading-tight text-racing mt-1">${escapeHtml(liveSession.programmeName)}</p>
         </button>
         <button data-role="resume-finish" class="w-11 h-11 flex items-center justify-center text-[18px] text-acid border border-acid bg-acid/[0.12] active:bg-acid active:text-ink transition" aria-label="Terminer">✅</button>
       </div>
@@ -324,9 +324,9 @@ async function renderHomeSection(main, category, programmes, isLive) {
         <span class="flex-1 h-px bg-border"></span>
       </p>
       <button data-role="next-card" class="block w-full text-left bg-inkAlt border border-border p-5 active:border-acid transition">
-        <h2 class="font-display text-[26px] font-semibold leading-tight text-paper">${next.name}</h2>
+        <h2 class="font-display text-[26px] font-semibold leading-tight text-paper">${escapeHtml(next.name)}</h2>
         <span class="block w-12 h-px bg-acid my-3"></span>
-        ${muscles.length ? `<p class="font-sans text-[12px] text-acid leading-relaxed">${muscles.join(' · ')}</p>` : ''}
+        ${muscles.length ? `<p class="font-sans text-[12px] text-acid leading-relaxed">${muscles.map(escapeHtml).join(' · ')}</p>` : ''}
         <div class="mt-4 flex items-center justify-between">
           <p class="font-sans text-[10px] uppercase tracking-eyebrow text-muted">${meta}</p>
           <span class="font-sans text-[10px] uppercase tracking-eyebrow text-acid font-semibold">Démarrer →</span>
@@ -738,7 +738,7 @@ async function renderProgrammeSelection(tab) {
 
     card.innerHTML = `
       <div class="flex-1 min-w-0">
-        <h3 class="font-display font-bold italic text-[18px] leading-tight text-paper truncate">${prog.name}</h3>
+        <h3 class="font-display font-bold italic text-[18px] leading-tight text-paper truncate">${escapeHtml(prog.name)}</h3>
         <p class="font-sans text-[10px] uppercase tracking-eyebrow text-muted mt-1 truncate">${meta}</p>
       </div>
       <div class="shrink-0">${status}</div>
@@ -1006,7 +1006,7 @@ function renderLiveSession(tab) {
     header.innerHTML = `
       <div class="px-5 py-4 flex items-center justify-between gap-3">
         <div class="min-w-0">
-          <div class="font-display font-bold text-[20px] leading-tight text-paper truncate">${liveSession.programmeName}</div>
+          <div class="font-display font-bold text-[20px] leading-tight text-paper truncate">${escapeHtml(liveSession.programmeName)}</div>
           <div class="font-sans text-[10px] uppercase tracking-eyebrow text-muted mt-1">${formatDate(liveSession.date)} · En cours</div>
         </div>
         <button id="finish-session" class="shrink-0 font-sans text-[11px] uppercase tracking-eyebrow font-semibold text-acid border border-acid bg-acid/[0.10] px-4 py-2 active:bg-acid active:text-ink transition">Terminer</button>
@@ -1099,7 +1099,7 @@ function renderExerciseList(tab, totals = {}) {
   masthead.className = 'px-5 pt-9 pb-9 accent-line';
   masthead.innerHTML = `
     <h1 class="font-display font-black h-display text-paper">
-      ${line1}${sep ? `<br/><span class="text-paper/40"><span class="text-acid not-italic font-black">${sep}</span> ${rest}.</span>` : ''}
+      ${escapeHtml(line1)}${sep ? `<br/><span class="text-paper/40"><span class="text-acid not-italic font-black">${escapeHtml(sep)}</span> ${escapeHtml(rest)}.</span>` : ''}
     </h1>
     <p class="font-sans text-[10px] uppercase tracking-eyebrow text-muted mt-5">
       ${String(exoCount).padStart(2, '0')} exercice${exoCount > 1 ? 's' : ''} · ${String(totalSeries).padStart(2, '0')} séries${estimMin ? ` · ≈ ${estimMin} min` : ''}
@@ -1188,9 +1188,9 @@ function renderExerciseList(tab, totals = {}) {
     card.className = `w-full text-left flex items-center gap-4 px-5 py-5 border-b border-border/70 ${borderLeft} active:bg-inkAlt transition`;
     card.innerHTML = `
       <div class="flex-1 min-w-0">
-        <h3 class="font-display font-black italic text-[22px] leading-[1.05] ${nameColor} truncate">${ex.name}</h3>
+        <h3 class="font-display font-black italic text-[22px] leading-[1.05] ${nameColor} truncate">${escapeHtml(ex.name)}</h3>
         <p class="font-sans text-[9px] uppercase tracking-eyebrow ${muscleColor} mt-1.5 flex items-center gap-2 truncate">
-          ${muscle ? `<span aria-hidden class="w-1 h-1 ${dotColor} shrink-0"></span><span class="truncate">${muscle}</span>` : ''}
+          ${muscle ? `<span aria-hidden class="w-1 h-1 ${dotColor} shrink-0"></span><span class="truncate">${escapeHtml(muscle)}</span>` : ''}
           ${statusHtml ? `<span aria-hidden class="w-2 h-px ${isDone ? 'bg-acid/40' : 'bg-racing/40'}"></span>${statusHtml}` : ''}
         </p>
       </div>
@@ -1231,7 +1231,7 @@ function renderExoMasthead(wrap, exIdx) {
   const totalSeriesAll = liveSession.exercises.reduce((s, e) => e.type === 'cardio' ? s : s + e.series.length, 0);
   sessionMast.innerHTML = `
     <h1 class="font-display font-black h-display text-paper">
-      ${line1}${sep ? `<br/><span class="text-paper/40"><span class="text-acid not-italic font-black">${sep}</span> ${rest}.</span>` : ''}
+      ${escapeHtml(line1)}${sep ? `<br/><span class="text-paper/40"><span class="text-acid not-italic font-black">${escapeHtml(sep)}</span> ${escapeHtml(rest)}.</span>` : ''}
     </h1>
     <p class="font-sans text-[10px] uppercase tracking-eyebrow text-muted mt-5">
       ${String(exoCount).padStart(2, '0')} exercices · ${String(totalSeriesAll).padStart(2, '0')} séries
@@ -1247,13 +1247,13 @@ function renderExoMasthead(wrap, exIdx) {
   exoHead.className = 'px-5 mb-5';
   exoHead.innerHTML = `
     <div class="flex items-baseline gap-3 flex-wrap">
-      <h2 class="font-display font-bold text-[24px] leading-[1.1] text-paper">${ex.name}</h2>
+      <h2 class="font-display font-bold text-[24px] leading-[1.1] text-paper">${escapeHtml(ex.name)}</h2>
       <span class="font-sans text-[9px] uppercase tracking-eyebrow text-acid font-semibold flex items-center gap-1.5 shrink-0">
         <span aria-hidden class="w-1.5 h-1.5 bg-acid"></span>
         ${String(doneSeries).padStart(2, '0')}/${String(totalSeries).padStart(2, '0')} fait
       </span>
     </div>
-    ${(muscle || restStr) ? `<p class="font-sans text-[11px] uppercase tracking-eyebrow text-muted mt-2">${[muscle, restStr].filter(Boolean).join(' · ')}</p>` : ''}
+    ${(muscle || restStr) ? `<p class="font-sans text-[11px] uppercase tracking-eyebrow text-muted mt-2">${escapeHtml([muscle, restStr].filter(Boolean).join(' · '))}</p>` : ''}
   `;
   wrap.appendChild(exoHead);
 }
@@ -1356,7 +1356,7 @@ function renderSeriesFocus(tab) {
         const el = document.getElementById('focus-suggestion');
         if (!el) return;
         if (!text) { el.classList.add('hidden'); return; }
-        el.innerHTML = `💡 ${text}`;
+        el.innerHTML = `💡 ${escapeHtml(text)}`;
       }).catch(() => {
         const el = document.getElementById('focus-suggestion');
         if (el) el.classList.add('hidden');
@@ -1398,8 +1398,8 @@ function renderRestSplit(tab) {
       <span aria-hidden class="w-1.5 h-1.5 bg-acid"></span>
       Série ${sIdx + 1} / ${totalSets} validée
     </p>
-    <h2 class="font-display font-bold italic text-[20px] leading-tight text-paper truncate">${ex.name}</h2>
-    ${muscle ? `<p class="font-sans text-[9px] uppercase tracking-eyebrow text-muted mt-1">${muscle}</p>` : ''}
+    <h2 class="font-display font-bold italic text-[20px] leading-tight text-paper truncate">${escapeHtml(ex.name)}</h2>
+    ${muscle ? `<p class="font-sans text-[9px] uppercase tracking-eyebrow text-muted mt-1">${escapeHtml(muscle)}</p>` : ''}
   `;
   wrap.appendChild(topHeader);
 
@@ -1752,13 +1752,13 @@ function renderLiveCardio(tab) {
         <span class="font-display font-black text-[34px] ${isDone ? 'text-muted' : 'text-racing'} leading-none num-stat tracking-tight">${ord}</span>
         <div class="flex-1 pt-1 space-y-2">
           <div class="flex items-baseline gap-3 flex-wrap">
-            <h2 class="font-display font-bold text-[24px] leading-[1.1] text-paper">${ex.name}</h2>
+            <h2 class="font-display font-bold text-[24px] leading-[1.1] text-paper">${escapeHtml(ex.name)}</h2>
             <span class="font-sans text-[9px] uppercase tracking-eyebrow ${isDone ? 'text-acid' : 'text-muted'} font-semibold flex items-center gap-1.5 shrink-0">
               <span aria-hidden class="w-1.5 h-1.5 ${isDone ? 'bg-acid' : 'bg-muted'}"></span>
               ${isDone ? 'Fait' : 'À faire'}
             </span>
           </div>
-          ${ex.comment ? `<p class="font-sans text-[11px] uppercase tracking-eyebrow text-muted">${ex.comment}</p>` : ''}
+          ${ex.comment ? `<p class="font-sans text-[11px] uppercase tracking-eyebrow text-muted">${escapeHtml(ex.comment)}</p>` : ''}
         </div>
       </div>
     `;
@@ -2927,7 +2927,7 @@ async function renderHistory() {
       li.innerHTML = `
         <button class="w-full text-left flex items-start gap-4 px-5 py-4 ${isLast ? '' : 'border-b border-border/70'} ${borderLeft} active:bg-inkAlt transition">
           <div class="flex-1 min-w-0">
-            <h4 class="font-display font-bold italic text-[18px] leading-tight text-paper truncate">${name}</h4>
+            <h4 class="font-display font-bold italic text-[18px] leading-tight text-paper truncate">${escapeHtml(name)}</h4>
             <p class="font-sans text-[9px] uppercase tracking-eyebrow text-muted mt-1.5 flex items-center gap-2 flex-wrap">
               <span>${formatDate(session.date)}</span>
               ${session.duration ? `<span class="text-muted/50">·</span><span>${formatDuration(session.duration)}</span>` : `<span class="text-muted/50">·</span><span class="text-racing">En cours</span>`}
@@ -3006,7 +3006,7 @@ async function openModal(session) {
     <!-- Masthead H1 -->
     <section class="px-5 pt-2 pb-7 accent-line">
       <h1 class="font-display font-black h-display text-paper">
-        ${line1}${sep ? `<br/><span class="text-paper/40"><span class="text-acid not-italic font-black">${sep}</span> ${rest}.</span>` : ''}
+        ${escapeHtml(line1)}${sep ? `<br/><span class="text-paper/40"><span class="text-acid not-italic font-black">${escapeHtml(sep)}</span> ${escapeHtml(rest)}.</span>` : ''}
       </h1>
     </section>
 
@@ -3034,8 +3034,8 @@ async function openModal(session) {
     html += `
       <article class="mt-6">
         <header class="px-5 mb-3">
-          <h2 class="font-display font-bold text-[20px] leading-[1.1] text-paper">${e.name}</h2>
-          ${muscle ? `<p class="font-sans text-[10px] uppercase tracking-eyebrow text-muted mt-1.5">${muscle}</p>` : ''}
+          <h2 class="font-display font-bold text-[20px] leading-[1.1] text-paper">${escapeHtml(e.name)}</h2>
+          ${muscle ? `<p class="font-sans text-[10px] uppercase tracking-eyebrow text-muted mt-1.5">${escapeHtml(muscle)}</p>` : ''}
         </header>
         <div class="border-y border-border">
           ${(e.series || []).map((s, i) => {
@@ -3054,7 +3054,7 @@ async function openModal(session) {
               return `
                 <div class="grid grid-cols-[1fr_60px_70px] gap-4 items-baseline px-5 py-3 ${borderLeft} border-b border-border/70 last:border-b-0">
                   <span class="font-display font-bold text-[20px] num-stat text-paper">${charge}</span>
-                  <span class="font-display font-bold text-[14px] num-stat text-paper text-right">${second}</span>
+                  <span class="font-display font-bold text-[14px] num-stat text-paper text-right">${escapeHtml(second)}</span>
                   <span class="font-sans text-[9px] uppercase tracking-eyebrow ${restColor} num-stat text-right font-semibold">${restLabel}</span>
                 </div>
               `;
@@ -3133,7 +3133,7 @@ async function openModal(session) {
           wrap.innerHTML = `
             <div class="feedback-ia-card" style="border-color:#ff5c5c">
               <div class="feedback-ia-title" style="color:#ff5c5c">Erreur</div>
-              <div class="feedback-ia-content">${e.message}</div>
+              <div class="feedback-ia-content">${escapeHtml(e.message)}</div>
             </div>
           `;
         }
@@ -3377,7 +3377,7 @@ async function showPostSessionFeedback(session) {
 
   body.innerHTML = `
     <div class="feedback-ia-modal">
-      <div class="modal-title">${name}</div>
+      <div class="modal-title">${escapeHtml(name)}</div>
       <div class="modal-date">${formatDate(session.date)}${durStr ? ' · ' + durStr : ''} · ${vol.toLocaleString('fr-FR')} kg</div>
       <div class="feedback-ia-loading">
         <div class="feedback-ia-spinner"></div>
@@ -3391,7 +3391,7 @@ async function showPostSessionFeedback(session) {
     const feedback = await generateAndPersistFeedback(session);
     body.innerHTML = `
       <div class="feedback-ia-modal">
-        <div class="modal-title">${name}</div>
+        <div class="modal-title">${escapeHtml(name)}</div>
         <div class="modal-date">${formatDate(session.date)}${durStr ? ' · ' + durStr : ''} · ${vol.toLocaleString('fr-FR')} kg</div>
         <div class="feedback-ia-card">
           <div class="feedback-ia-title">🤖 Feedback IA</div>
@@ -3402,10 +3402,10 @@ async function showPostSessionFeedback(session) {
   } catch (e) {
     body.innerHTML = `
       <div class="feedback-ia-modal">
-        <div class="modal-title">${name}</div>
+        <div class="modal-title">${escapeHtml(name)}</div>
         <div class="feedback-ia-card" style="border-color:#ff5c5c">
           <div class="feedback-ia-title" style="color:#ff5c5c">Erreur</div>
-          <div class="feedback-ia-content">${e.message}</div>
+          <div class="feedback-ia-content">${escapeHtml(e.message)}</div>
         </div>
       </div>
     `;
@@ -3454,7 +3454,7 @@ function formatSessionForAI(session) {
 }
 
 function formatFeedback(text) {
-  return text
+  return escapeHtml(text)
     .replace(/\n/g, '<br>')
     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
 }
@@ -3754,7 +3754,7 @@ async function renderAlimentation() {
           <p class="font-display font-bold text-[14px] num-stat text-paper leading-none">${time}</p>
         </div>
         <div class="flex-1 min-w-0 ${photoClickable}" data-photo="${e.photo_path || ''}">
-          <p class="font-display font-bold italic text-[15px] leading-tight text-paper">${e.description}</p>
+          <p class="font-display font-bold italic text-[15px] leading-tight text-paper">${escapeHtml(e.description)}</p>
           ${macros}
         </div>
         <div class="text-right shrink-0 leading-none">
@@ -4163,7 +4163,7 @@ async function openEveningAdviceModal(dateIso) {
       conversation.push({ role: 'assistant', content: reply });
       loadingBubble.innerHTML = formatFeedback(reply);
     } catch (e) {
-      loadingBubble.innerHTML = `<span style="color:#ff5c5c">${e.message}</span>`;
+      loadingBubble.innerHTML = `<span style="color:#ff5c5c">${escapeHtml(e.message)}</span>`;
     }
     sendBtn.disabled = false;
     sendBtn.textContent = 'Envoyer';
@@ -4307,7 +4307,7 @@ async function openAskQuestionModal(dateIso) {
       textEl.value = '';
       textEl.focus();
     } catch (e) {
-      responseEl.innerHTML = `<div class="corps-analysis-content" style="color:#ff5c5c">${e.message}</div>`;
+      responseEl.innerHTML = `<div class="corps-analysis-content" style="color:#ff5c5c">${escapeHtml(e.message)}</div>`;
       sendBtn.disabled = false;
       sendBtn.textContent = 'Envoyer';
     }
@@ -4529,7 +4529,7 @@ function buildStatsProgression(sessions) {
       const card = document.createElement('div');
       card.className = 'flex items-baseline justify-between gap-3 py-3 border-b border-border/70 last:border-b-0';
       card.innerHTML = `
-        <span class="font-display font-bold italic text-[14px] text-paper truncate flex-1 min-w-0">${exo.name}</span>
+        <span class="font-display font-bold italic text-[14px] text-paper truncate flex-1 min-w-0">${escapeHtml(exo.name)}</span>
         <div class="flex items-baseline gap-2 shrink-0 font-display num-stat">
           <span class="text-[12px] text-muted">${fmt(first)}</span>
           <span class="font-sans text-[10px] text-muted">→</span>
@@ -4692,7 +4692,7 @@ async function renderParams() {
           <button data-dir="down" ${idx === programmes.length - 1 ? 'disabled' : ''} class="w-7 h-7 flex items-center justify-center border border-border text-paper text-[12px] active:border-acid active:text-acid disabled:opacity-30 disabled:active:border-border disabled:active:text-paper transition">↓</button>
         </div>
         <div class="flex-1 min-w-0">
-          <h4 class="font-display font-bold italic text-[17px] leading-tight text-paper truncate">${prog.name}</h4>
+          <h4 class="font-display font-bold italic text-[17px] leading-tight text-paper truncate">${escapeHtml(prog.name)}</h4>
           <p class="font-sans text-[9px] uppercase tracking-eyebrow text-muted mt-1">${prog.category === 'cardio' ? 'Cardio' : 'Fonte'} · ${prog.exercises.length} exo${prog.exercises.length > 1 ? 's' : ''}</p>
         </div>
         <div class="flex flex-col gap-1 shrink-0">
@@ -4765,7 +4765,7 @@ function openProgrammeEditor(programme = null) {
   const nameBlock = document.createElement('div');
   nameBlock.innerHTML = `
     <p class="font-sans text-[9px] uppercase tracking-[0.40em] text-muted mb-1.5">Nom du programme</p>
-    <input id="prog-name-input" type="text" maxlength="60" placeholder="Pectoraux & Bras" value="${programme?.name || ''}"
+    <input id="prog-name-input" type="text" maxlength="60" placeholder="Pectoraux & Bras" value="${escapeHtml(programme?.name)}"
       class="w-full bg-transparent border-b border-border focus:border-acid font-display font-black italic text-[22px] text-paper py-2 outline-none transition" />
   `;
   form.appendChild(nameBlock);
