@@ -288,6 +288,7 @@ async function renderHomeSection(main, category, programmes, isLive) {
       e.stopPropagation();
       showConfirm('Supprimer cette séance ?', async () => {
         await deleteSessionDB(liveSession.id);
+        clearSnapshotLocal(liveSession.id);
         liveSession = null;
         liveFocus = null;
         liveRest = null;
@@ -2953,19 +2954,7 @@ async function resumeSessionFromHistory(session) {
     category:      session.category || 'fonte',
     date:          session.date,
     startedAt:     session.startedAt,
-    exercises:     session.exercises.map(ex => {
-      const e = migrateExercise(ex);
-      return {
-        name:       e.name,
-        comment:    e.comment || '',
-        activities: e.activities,
-        series:     e.series.map(s => ({
-          state: s.state || (s.done ? 'done' : 'pending'),
-          activityStates: s.activityStates || {},
-          values: s.values,
-        })),
-      };
-    }),
+    exercises:     restoreLiveExercises(session.exercises, session.category, migrateExercise),
   };
   initLiveTimingMaps(session);
   await attachPrevValues(liveSession.exercises, liveSession.programmeId, liveSession.category, liveSession.id);
@@ -4948,15 +4937,13 @@ function renderLogin() {
     try {
       const pendingId = localStorage.getItem(LIVE_PENDING_KEY);
       if (pendingId) {
-        const local = readSnapshotLocal(pendingId);
-        if (local?.snap) {
-          const supaUpdatedAt = inProgress?.exercises ? Date.parse(inProgress?.startedAt || 0) : 0;
-          // On préfère le local si même session OU si pas de inProgress en Supabase
-          if (!inProgress || inProgress.id === local.snap.id) {
-            inProgress = local.snap;
-            // Retente le push silencieusement (le toast s'affichera si encore offline)
-            pushSessionSafe(local.snap).catch(() => {});
-          }
+        const { session, repush } = resolveResumeSession(inProgress, readSnapshotLocal(pendingId)?.snap);
+        inProgress = session;
+        // Retente le push silencieusement (le toast s'affichera si encore offline)
+        if (repush) {
+          pushSessionSafe(repush)
+            .then(() => { if (repush.duration > 0) clearSnapshotLocal(repush.id); })
+            .catch(() => {});
         }
       }
     } catch (_) {}
@@ -4971,19 +4958,7 @@ function renderLogin() {
         category:      inProgress.category || 'fonte',
         date:          inProgress.date,
         startedAt:     inProgress.startedAt,
-        exercises:     inProgress.exercises.map(ex => {
-          const e = migrateExercise(ex);
-          return {
-            name:       e.name,
-            comment:    e.comment || '',
-            activities: e.activities,
-            series:     e.series.map(s => ({
-              state: s.state || (s.done ? 'done' : 'pending'),
-              activityStates: s.activityStates || {},
-              values: s.values,
-            })),
-          };
-        }),
+        exercises:     restoreLiveExercises(inProgress.exercises, inProgress.category, migrateExercise),
       };
       initLiveTimingMaps(inProgress);
       await attachPrevValues(liveSession.exercises, liveSession.programmeId, liveSession.category, liveSession.id);
