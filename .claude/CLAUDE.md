@@ -202,6 +202,7 @@ Validée le 2026-05-13. Tout l'app passe à ces tokens. **Aucune autre couleur d
 - **Sans** : DM Sans (400/500/600/700) — body, eyebrow, labels, tabular metrics
 - Pair Fraunces + DM Sans. **Jamais Manrope dans cette direction.**
 - Eyebrows : `letter-spacing: 0.28em` (eyebrow), `0.40em` (eyebrow-wide), `font-sans`, `text-[8-10px]`, uppercase
+  - **Exception séance live** (décision 2026-09-24) : aucun texte < 10px sur les écrans de séance en cours (lisibilité en salle).
 - Chiffres de séries : `clamp(2.375rem, 10.5vw, 2.625rem)` (validée/todo), `clamp(2.75rem, 12.2vw, 3rem)` (active)
 
 ### Palette base (inchangée)

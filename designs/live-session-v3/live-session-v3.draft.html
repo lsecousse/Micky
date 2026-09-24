@@ -1,0 +1,1182 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0A0A0A" />
+  <title>Séance live v3 — brouillon</title>
+  <!--
+    BROUILLON — pas un export AIDesigner (MCP non connecté le 2026-09-24).
+    Dérivé du mock canonique designs/explorations/v2/A-athlete-dense.html + BRIEF.md.
+    À régénérer via AIDesigner (refine_design sur ce fichier) quand le MCP sera connecté.
+  -->
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;0,9..144,800;0,9..144,900;1,9..144,600;1,9..144,700;1,9..144,900&family=DM+Sans:wght@400;500;600;700&display=swap" />
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            ink: '#0A0A0A', inkAlt: '#141414', paper: '#F5F4F0', muted: '#888888', border: '#2A2A2A', todo: '#444444',
+            cyan: '#06B6D4', acid: '#84CC16', racing: '#FACC15', blood: '#DC2626',
+          },
+          fontFamily: {
+            display: ['Fraunces', 'ui-serif', 'Georgia', 'serif'],
+            sans: ['"DM Sans"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+          },
+          letterSpacing: { eyebrow: '0.28em', 'eyebrow-wide': '0.40em' },
+          borderRadius: { DEFAULT: '0.375rem' },
+        },
+      },
+    };
+  </script>
+
+  <style>
+    html, body { overscroll-behavior: none; -webkit-tap-highlight-color: transparent; }
+    body { background: #0A0A0A; color: #F5F4F0; }
+    .h-display   { font-size: clamp(2.5rem, 11.5vw, 3.75rem); line-height: 0.92; letter-spacing: -0.025em; }
+    .num-set     { font-size: clamp(2.375rem, 10.5vw, 2.625rem); line-height: 1; letter-spacing: -0.04em; font-feature-settings: "tnum","lnum"; }
+    .num-set-hot { font-size: clamp(2.75rem, 12.2vw, 3rem); line-height: 1; letter-spacing: -0.04em; font-feature-settings: "tnum","lnum"; }
+    .num-stat    { font-feature-settings: "tnum","lnum"; }
+    .accent-line::after { content:""; display:block; width:36px; height:2px; background:#84CC16; margin-top:14px; }
+    /* Presentation only: the phone frames of this board */
+    .frame { position: relative; width: 390px; height: 844px; overflow: hidden; background: #0A0A0A; border: 1px solid #2A2A2A; display: flex; flex-direction: column; }
+    .frame main { flex: 1; overflow-y: auto; }
+    .frame main::-webkit-scrollbar { display: none; }
+  </style>
+
+  <style type="text/tailwindcss">
+    /* Eyebrow: 10px minimum (fin des 8 px, AC-A3) */
+    .eb      { @apply font-sans text-[10px] uppercase tracking-eyebrow; }
+    /* Stepper − / + : 48×48, neutre (jamais racing, le foyer reste le chiffre) */
+    .step    { @apply w-12 h-12 shrink-0 flex items-center justify-center border border-border text-paper font-display font-bold text-[24px] leading-none active:border-paper active:bg-inkAlt transition; }
+    .step-dim{ @apply w-12 h-12 shrink-0 flex items-center justify-center border border-border/70 text-muted font-display font-bold text-[24px] leading-none; }
+    /* Fake iOS status bar (47px) — board only */
+    .sb      { @apply h-[47px] shrink-0 px-7 flex items-end pb-2 justify-between font-sans text-[12px] font-semibold text-paper; }
+    /* Home indicator zone (34px) */
+    .hi      { @apply h-[34px] flex items-end justify-center pb-2; }
+    .hi > span { @apply w-[134px] h-[5px] bg-paper/80 rounded-full; }
+    .btn-dock-exos { @apply w-[92px] h-14 shrink-0 border border-border flex flex-col items-center justify-center gap-0.5 active:bg-inkAlt transition; }
+  </style>
+</head>
+
+<body class="font-sans antialiased">
+
+<!-- ═══ Board header (hors maquette) ═══════════════════════════════════ -->
+<div class="max-w-[1720px] mx-auto px-6 pt-10 pb-6">
+  <p class="eb text-muted">Gym Tracker · Séance live · v3 · brouillon</p>
+  <h1 class="font-display font-black text-[40px] leading-none mt-3">Une série, <span class="text-paper/40"><span class="text-acid">&amp;</span> un pouce.</span></h1>
+  <p class="font-sans text-[13px] text-muted mt-4 max-w-[70ch]">
+    Pas un export AIDesigner : dérivé à la main du mock canonique A-athlete-dense et de BRIEF.md, à régénérer quand le MCP sera connecté.
+    Frames 390×844 (iPhone 13/14). Les zones barre d'état (47 px) et indicateur d'accueil (34 px) sont simulées.
+  </p>
+</div>
+
+<div class="max-w-[1720px] mx-auto px-6 pb-24 flex flex-wrap gap-x-10 gap-y-14">
+
+<!-- ════════════════════════════════════════════════════════════════════
+     01 — LISTE  (renderExerciseList)
+     Masthead H1 conservé ici uniquement. Ordre STABLE. Pas de numéros.
+     1 seule card racing = dernier exo touché. Stats cyan : Tonnage + Reps.
+═══════════════════════════════════════════════════════════════════════ -->
+<figure>
+  <figcaption class="eb text-muted mb-3">01 — Liste · ordre stable</figcaption>
+  <div class="frame">
+    <div class="sb"><span>9:41</span><span class="text-muted">5G</span></div>
+
+    <header class="shrink-0 bg-ink border-b border-border">
+      <div class="px-5 h-11 flex items-center justify-between">
+        <p class="eb text-muted">24 sept. <span class="text-muted/50 mx-1">·</span> En cours</p>
+        <button class="h-11 px-4 -mr-2 eb font-semibold text-acid border border-acid/70 active:bg-acid active:text-ink transition">Fin</button>
+      </div>
+      <div class="px-5 pb-3 pt-1">
+        <div class="flex items-baseline justify-between mb-2">
+          <p class="font-display italic font-semibold text-[11px] uppercase tracking-eyebrow text-paper">Build · Fuel · Dominate</p>
+          <span class="font-display text-[14px] num-stat font-bold leading-none"><span class="text-acid">07</span><span class="text-muted">/28</span><span class="eb text-muted ml-1.5">séries</span></span>
+        </div>
+        <div class="h-[3px] bg-border relative"><div class="absolute inset-y-0 left-0 bg-acid" style="width:25%"></div></div>
+      </div>
+      <div class="grid grid-cols-2 border-t border-border">
+        <div class="px-5 py-2.5 border-r border-border flex items-baseline justify-between">
+          <p class="eb text-muted">Tonnage</p>
+          <p class="font-display font-bold text-[20px] num-stat text-cyan leading-none">1,9<span class="eb text-muted ml-1">t</span></p>
+        </div>
+        <div class="px-5 py-2.5 flex items-baseline justify-between">
+          <p class="eb text-muted">Reps</p>
+          <p class="font-display font-bold text-[20px] num-stat text-cyan leading-none">80<span class="eb text-muted ml-1">/320</span></p>
+        </div>
+      </div>
+    </header>
+
+    <main class="pb-4">
+      <section class="px-5 pt-8 pb-8 accent-line">
+        <h1 class="font-display font-black h-display">Cuisses<br/><span class="text-paper/40"><span class="text-acid">&amp;</span> Fesses.</span></h1>
+        <p class="eb text-muted mt-5">07 exercices · 28 séries · ≈ 38 min restantes</p>
+      </section>
+
+      <ul class="border-y border-border">
+        <!-- Fait — reste à sa place (ordre stable) -->
+        <li class="flex items-center gap-4 px-5 py-4 border-b border-border/70 border-l-[3px] border-l-acid bg-acid/[0.03]">
+          <div class="flex-1 min-w-0">
+            <h3 class="font-display font-black italic text-[21px] leading-[1.05] text-muted truncate">Climb box</h3>
+            <p class="eb text-acid mt-1.5">Cuisses <span class="text-acid/40 mx-1">—</span> <span class="font-semibold">Fait</span></p>
+          </div>
+          <div class="text-right shrink-0">
+            <p class="font-display font-black text-[24px] num-stat text-muted leading-none">10<span class="eb text-muted ml-1">kg</span></p>
+            <p class="eb text-muted num-stat mt-1.5">4 × 12</p>
+          </div>
+        </li>
+        <!-- Dernier exo touché — seule card racing -->
+        <li class="flex items-center gap-4 px-5 py-4 border-b border-border/70 border-l-[3px] border-l-racing bg-racing/[0.07]">
+          <div class="flex-1 min-w-0">
+            <h3 class="font-display font-black italic text-[21px] leading-[1.05] text-paper truncate">Leg extension</h3>
+            <p class="eb text-racing mt-1.5">Cuisses <span class="text-racing/40 mx-1">—</span> <span class="font-semibold">02/04</span></p>
+          </div>
+          <div class="text-right shrink-0">
+            <p class="font-display font-black text-[24px] num-stat text-racing leading-none">42,5<span class="eb text-muted ml-1">kg</span></p>
+            <p class="eb text-paper num-stat mt-1.5">10/10/8/8</p>
+          </div>
+        </li>
+        <!-- Commencé mais pas le dernier touché — neutre + compteur -->
+        <li class="flex items-center gap-4 px-5 py-4 border-b border-border/70 border-l-[3px] border-l-todo">
+          <div class="flex-1 min-w-0">
+            <h3 class="font-display font-black italic text-[21px] leading-[1.05] text-paper truncate">Seated leg curl</h3>
+            <p class="eb text-muted mt-1.5">Cuisses <span class="text-muted/40 mx-1">—</span> <span class="font-semibold text-paper">01/04</span></p>
+          </div>
+          <div class="text-right shrink-0">
+            <p class="font-display font-black text-[24px] num-stat text-paper leading-none">45<span class="eb text-muted ml-1">kg</span></p>
+            <p class="eb text-muted num-stat mt-1.5">4 × 12</p>
+          </div>
+        </li>
+        <li class="flex items-center gap-4 px-5 py-4 border-b border-border/70 border-l-[3px] border-l-transparent">
+          <div class="flex-1 min-w-0">
+            <h3 class="font-display font-black italic text-[21px] leading-[1.05] text-paper truncate">Hip abduction</h3>
+            <p class="eb text-muted mt-1.5">Cuisses</p>
+          </div>
+          <div class="text-right shrink-0">
+            <p class="font-display font-black text-[24px] num-stat text-paper leading-none">42,5<span class="eb text-muted ml-1">kg</span></p>
+            <p class="eb text-muted num-stat mt-1.5">4 × 12</p>
+          </div>
+        </li>
+        <li class="flex items-center gap-4 px-5 py-4 border-b border-border/70 border-l-[3px] border-l-transparent">
+          <div class="flex-1 min-w-0">
+            <h3 class="font-display font-black italic text-[21px] leading-[1.05] text-paper truncate">Press</h3>
+            <p class="eb text-muted mt-1.5">Cuisses</p>
+          </div>
+          <div class="text-right shrink-0">
+            <p class="font-display font-black text-[24px] num-stat text-paper leading-none">142,5<span class="eb text-muted ml-1">kg</span></p>
+            <p class="eb text-muted num-stat mt-1.5">12/10/8/6</p>
+          </div>
+        </li>
+        <li class="flex items-center gap-4 px-5 py-4 border-l-[3px] border-l-transparent">
+          <div class="flex-1 min-w-0">
+            <h3 class="font-display font-black italic text-[21px] leading-[1.05] text-paper truncate">Glute trainer</h3>
+            <p class="eb text-muted mt-1.5">Fesses</p>
+          </div>
+          <div class="text-right shrink-0">
+            <p class="font-display font-black text-[24px] num-stat text-paper leading-none">17,5<span class="eb text-muted ml-1">kg</span></p>
+            <p class="eb text-muted num-stat mt-1.5">4 × 12</p>
+          </div>
+        </li>
+      </ul>
+    </main>
+
+    <!-- Tab bar (mock A) — onglet actif racing toléré -->
+    <nav class="shrink-0 grid grid-cols-3 border-t border-border bg-ink">
+      <button class="relative h-14 flex items-center justify-center"><span class="absolute top-0 left-6 right-6 h-[2px] bg-racing"></span><span class="font-display italic font-bold text-[12px] uppercase tracking-eyebrow text-racing">Séance</span></button>
+      <button class="h-14 flex items-center justify-center eb font-medium text-muted">Historique</button>
+      <button class="h-14 flex items-center justify-center eb font-medium text-muted">Données</button>
+    </nav>
+    <div class="hi shrink-0"><span></span></div>
+  </div>
+</figure>
+
+<figure>
+  <figcaption class="eb text-muted mb-3">01b — Liste · repos en cours</figcaption>
+  <div class="frame">
+    <div class="sb"><span>9:41</span><span class="text-muted">5G</span></div>
+
+    <header class="shrink-0 bg-ink border-b border-border">
+      <div class="px-5 h-11 flex items-center justify-between">
+        <p class="eb text-muted">24 sept. <span class="text-muted/50 mx-1">·</span> En cours</p>
+        <button class="h-11 px-4 -mr-2 eb font-semibold text-acid border border-acid/70 active:bg-acid active:text-ink transition">Fin</button>
+      </div>
+      <div class="px-5 pb-3 pt-1">
+        <div class="flex items-baseline justify-between mb-2">
+          <p class="font-display italic font-semibold text-[11px] uppercase tracking-eyebrow text-paper">Build · Fuel · Dominate</p>
+          <span class="font-display text-[14px] num-stat font-bold leading-none"><span class="text-acid">08</span><span class="text-muted">/28</span><span class="eb text-muted ml-1.5">séries</span></span>
+        </div>
+        <div class="h-[3px] bg-border relative"><div class="absolute inset-y-0 left-0 bg-acid" style="width:25%"></div></div>
+      </div>
+      <div class="grid grid-cols-2 border-t border-border">
+        <div class="px-5 py-2.5 border-r border-border flex items-baseline justify-between">
+          <p class="eb text-muted">Tonnage</p>
+          <p class="font-display font-bold text-[20px] num-stat text-cyan leading-none">1,9<span class="eb text-muted ml-1">t</span></p>
+        </div>
+        <div class="px-5 py-2.5 flex items-baseline justify-between">
+          <p class="eb text-muted">Reps</p>
+          <p class="font-display font-bold text-[20px] num-stat text-cyan leading-none">80<span class="eb text-muted ml-1">/320</span></p>
+        </div>
+      </div>
+    </header>
+
+    <main class="pb-4">
+      <section class="px-5 pt-8 pb-8 accent-line">
+        <h1 class="font-display font-black h-display">Cuisses<br/><span class="text-paper/40"><span class="text-acid">&amp;</span> Fesses.</span></h1>
+        <p class="eb text-muted mt-5">07 exercices · 28 séries · ≈ 38 min restantes</p>
+      </section>
+
+      <ul class="border-y border-border">
+        <!-- Fait — reste à sa place (ordre stable) -->
+        <li class="flex items-center gap-4 px-5 py-4 border-b border-border/70 border-l-[3px] border-l-acid bg-acid/[0.03]">
+          <div class="flex-1 min-w-0">
+            <h3 class="font-display font-black italic text-[21px] leading-[1.05] text-muted truncate">Climb box</h3>
+            <p class="eb text-acid mt-1.5">Cuisses <span class="text-acid/40 mx-1">—</span> <span class="font-semibold">Fait</span></p>
+          </div>
+          <div class="text-right shrink-0">
+            <p class="font-display font-black text-[24px] num-stat text-muted leading-none">10<span class="eb text-muted ml-1">kg</span></p>
+            <p class="eb text-muted num-stat mt-1.5">4 × 12</p>
+          </div>
+        </li>
+        <!-- Dernier touché pendant le repos : bord paper, le décompte est le foyer -->
+        <li class="flex items-center gap-4 px-5 py-4 border-b border-border/70 border-l-[3px] border-l-paper bg-inkAlt">
+          <div class="flex-1 min-w-0">
+            <h3 class="font-display font-black italic text-[21px] leading-[1.05] text-paper truncate">Leg extension</h3>
+            <p class="eb text-muted mt-1.5">Cuisses <span class="text-muted/40 mx-1">—</span> <span class="font-semibold text-paper">03/04 · en repos</span></p>
+          </div>
+          <div class="text-right shrink-0">
+            <p class="font-display font-black text-[24px] num-stat text-paper leading-none">45<span class="eb text-muted ml-1">kg</span></p>
+            <p class="eb text-paper num-stat mt-1.5">10/10/8/8</p>
+          </div>
+        </li>
+        <!-- Commencé mais pas le dernier touché — neutre + compteur -->
+        <li class="flex items-center gap-4 px-5 py-4 border-b border-border/70 border-l-[3px] border-l-todo">
+          <div class="flex-1 min-w-0">
+            <h3 class="font-display font-black italic text-[21px] leading-[1.05] text-paper truncate">Seated leg curl</h3>
+            <p class="eb text-muted mt-1.5">Cuisses <span class="text-muted/40 mx-1">—</span> <span class="font-semibold text-paper">01/04</span></p>
+          </div>
+          <div class="text-right shrink-0">
+            <p class="font-display font-black text-[24px] num-stat text-paper leading-none">45<span class="eb text-muted ml-1">kg</span></p>
+            <p class="eb text-muted num-stat mt-1.5">4 × 12</p>
+          </div>
+        </li>
+        <li class="flex items-center gap-4 px-5 py-4 border-b border-border/70 border-l-[3px] border-l-transparent">
+          <div class="flex-1 min-w-0">
+            <h3 class="font-display font-black italic text-[21px] leading-[1.05] text-paper truncate">Hip abduction</h3>
+            <p class="eb text-muted mt-1.5">Cuisses</p>
+          </div>
+          <div class="text-right shrink-0">
+            <p class="font-display font-black text-[24px] num-stat text-paper leading-none">42,5<span class="eb text-muted ml-1">kg</span></p>
+            <p class="eb text-muted num-stat mt-1.5">4 × 12</p>
+          </div>
+        </li>
+        <li class="flex items-center gap-4 px-5 py-4 border-b border-border/70 border-l-[3px] border-l-transparent">
+          <div class="flex-1 min-w-0">
+            <h3 class="font-display font-black italic text-[21px] leading-[1.05] text-paper truncate">Press</h3>
+            <p class="eb text-muted mt-1.5">Cuisses</p>
+          </div>
+          <div class="text-right shrink-0">
+            <p class="font-display font-black text-[24px] num-stat text-paper leading-none">142,5<span class="eb text-muted ml-1">kg</span></p>
+            <p class="eb text-muted num-stat mt-1.5">12/10/8/6</p>
+          </div>
+        </li>
+        <li class="flex items-center gap-4 px-5 py-4 border-l-[3px] border-l-transparent">
+          <div class="flex-1 min-w-0">
+            <h3 class="font-display font-black italic text-[21px] leading-[1.05] text-paper truncate">Glute trainer</h3>
+            <p class="eb text-muted mt-1.5">Fesses</p>
+          </div>
+          <div class="text-right shrink-0">
+            <p class="font-display font-black text-[24px] num-stat text-paper leading-none">17,5<span class="eb text-muted ml-1">kg</span></p>
+            <p class="eb text-muted num-stat mt-1.5">4 × 12</p>
+          </div>
+        </li>
+      </ul>
+    </main>
+
+    <!-- Bandeau repos compact (même composant que le tiroir), au-dessus de la tab bar -->
+    <div class="shrink-0 border-t border-border bg-ink px-4 py-2 flex items-center gap-3">
+      <p class="eb text-muted flex-1 truncate">Repos · Leg extension</p>
+      <p class="font-display font-black text-[26px] num-stat text-racing leading-none">1:04</p>
+      <button class="h-11 px-3 border border-border eb font-semibold text-paper">Passer</button>
+    </div>
+    <!-- Tab bar (mock A) — onglet actif racing toléré -->
+    <nav class="shrink-0 grid grid-cols-3 border-t border-border bg-ink">
+      <button class="relative h-14 flex items-center justify-center"><span class="absolute top-0 left-6 right-6 h-[2px] bg-racing"></span><span class="font-display italic font-bold text-[12px] uppercase tracking-eyebrow text-racing">Séance</span></button>
+      <button class="h-14 flex items-center justify-center eb font-medium text-muted">Historique</button>
+      <button class="h-14 flex items-center justify-center eb font-medium text-muted">Données</button>
+    </nav>
+    <div class="hi shrink-0"><span></span></div>
+  </div>
+</figure>
+
+<figure>
+  <figcaption class="eb text-muted mb-3">02 — Exercice · série active</figcaption>
+  <div class="frame">
+    <div class="sb"><span>9:41</span><span class="text-muted">5G</span></div>
+
+    <!-- Compact header : 44 + 40 = 84 px -->
+    <header class="shrink-0 bg-ink border-b border-border">
+      <div class="h-11 flex items-center justify-between">
+        <button class="h-11 px-5 eb text-muted active:text-paper">Liste</button>
+        <p class="font-display italic font-semibold text-[12px] text-paper/70 truncate">Cuisses &amp; Fesses</p>
+        <button class="h-11 px-4 mr-3 eb font-semibold text-acid border border-acid/70 active:bg-acid active:text-ink transition">Fin</button>
+      </div>
+      <div class="px-5 pb-3 pt-1">
+        <div class="flex items-baseline justify-between mb-2">
+          <span class="font-display text-[14px] num-stat font-bold leading-none"><span class="text-acid">07</span><span class="text-muted">/28</span><span class="eb text-muted ml-1.5">séries</span></span>
+          <span class="font-display font-bold text-[14px] num-stat text-cyan leading-none">1,9<span class="eb text-muted ml-1 mr-3">t</span>80<span class="eb text-muted ml-1">reps</span></span>
+        </div>
+        <div class="h-[3px] bg-border relative"><div class="absolute inset-y-0 left-0 bg-acid" style="width:25%"></div></div>
+      </div>
+    </header>
+
+    <main class="pb-[150px]">
+      <!-- Exercise header (mock : sans numéro 01) -->
+      <section class="px-5 pt-5 pb-4">
+        <p class="eb text-muted">Cuisses · Repos 1:45</p>
+        <div class="flex items-baseline gap-3 mt-2">
+          <h2 class="font-display font-black italic text-[30px] leading-[1.02] text-paper">Leg extension</h2>
+          <span class="eb font-semibold text-acid shrink-0">02/04 fait</span>
+        </div>
+      </section>
+
+      <div class="border-y border-border">
+        <div class="grid grid-cols-[1fr_64px_64px] gap-3 px-5 py-2 border-l-[3px] border-l-transparent border-b border-border eb text-muted">
+          <span>Charge</span><span class="text-right">Reps</span><span class="text-right">Repos</span>
+        </div>
+        <!-- Faites — acid -->
+        <div class="grid grid-cols-[1fr_64px_64px] gap-3 items-baseline px-5 py-2 border-l-[3px] border-l-acid border-b border-border/70">
+          <span class="font-display font-black text-[26px] num-stat leading-none text-paper">40<span class="eb text-muted ml-1.5">kg</span></span>
+          <span class="font-display font-bold text-[18px] num-stat text-paper text-right">× 10</span>
+          <span class="eb font-semibold text-acid num-stat text-right">1:45</span>
+        </div>
+        <div class="grid grid-cols-[1fr_64px_64px] gap-3 items-baseline px-5 py-2 border-l-[3px] border-l-acid border-b border-border/70">
+          <span class="font-display font-black text-[26px] num-stat leading-none text-paper">40<span class="eb text-muted ml-1.5">kg</span></span>
+          <span class="font-display font-bold text-[18px] num-stat text-paper text-right">× 10</span>
+          <span class="eb font-semibold text-acid num-stat text-right">1:52</span>
+        </div>
+
+        <!-- ACTIVE — le seul bloc racing de l'écran -->
+        <div class="px-5 pt-3 pb-4 border-l-[3px] border-l-racing bg-racing/[0.07] border-b border-border/70">
+          <div class="flex items-baseline justify-between">
+            <p class="eb font-semibold text-racing">En cours</p>
+            <p class="eb text-muted">Préc · 42,5 kg × 8</p>
+          </div>
+          <!-- Charge -->
+          <div class="mt-3 grid grid-cols-[48px_1fr_48px] items-center gap-3">
+            <button class="step" aria-label="Charge moins 2,5 kg">−</button>
+            <button class="text-center" aria-label="Saisir la charge">
+              <span class="font-display font-black num-set-hot text-racing border-b border-dashed border-racing/40">42,5</span><span class="eb text-racing/80 ml-1.5">kg</span>
+            </button>
+            <button class="step" aria-label="Charge plus 2,5 kg">+</button>
+          </div>
+          <!-- Reps -->
+          <div class="mt-3 grid grid-cols-[48px_1fr_48px] items-center gap-3">
+            <button class="step" aria-label="Reps moins 1">−</button>
+            <button class="text-center" aria-label="Saisir les reps">
+              <span class="font-display font-black num-set-hot text-racing border-b border-dashed border-racing/40">8</span><span class="eb text-racing/80 ml-1.5">reps</span>
+            </button>
+            <button class="step" aria-label="Reps plus 1">+</button>
+          </div>
+          <p class="eb text-muted text-center mt-3">Cran 2,5 kg · 1 rep · tape le chiffre pour saisir</p>
+        </div>
+
+        <!-- À venir — todo -->
+        <div class="grid grid-cols-[1fr_64px_64px] gap-3 items-baseline px-5 py-2 border-l-[3px] border-l-transparent border-b border-border/70">
+          <span class="font-display font-black text-[26px] num-stat leading-none text-todo">42,5<span class="eb text-todo ml-1.5">kg</span></span>
+          <span class="font-display font-bold text-[18px] num-stat text-todo text-right">× 8</span>
+          <span class="eb text-todo num-stat text-right">—</span>
+        </div>
+
+        <!-- Σ Cumul cyan -->
+        <div class="flex items-baseline justify-between px-5 py-3 bg-inkAlt border-l-[3px] border-l-transparent border-t-2 border-t-cyan">
+          <span class="eb font-bold text-cyan">Σ Cumul</span>
+          <span class="font-display font-bold num-stat text-cyan"><span class="text-[20px]">800 kg</span><span class="text-[14px] text-cyan/75 ml-2">· 20 reps</span></span>
+        </div>
+      </div>
+
+      <!-- Suggestion IA : texte, pas d'emoji -->
+      <div class="mx-5 mt-5 px-4 py-3 border border-border bg-inkAlt">
+        <p class="eb text-muted">Conseil coach</p>
+        <p class="font-display italic text-[14px] text-paper/85 mt-1.5 leading-snug">Tu as tenu 10 reps à 40 kg deux fois : 42,5 kg sur les 8 dernières.</p>
+      </div>
+    </main>
+
+    <!-- Dock pouce -->
+    <div class="absolute inset-x-0 bottom-0 bg-ink border-t border-border">
+      <div class="px-4 pt-3 flex gap-3">
+        <button class="btn-dock-exos"><span class="eb text-paper font-semibold">Exos</span><span class="eb text-muted num-stat">1/7 faits</span></button>
+        <button class="flex-1 h-14 bg-paper text-ink font-display font-bold text-[15px] uppercase tracking-eyebrow active:bg-paper/80 transition">Valider la série</button>
+      </div>
+      <div class="hi"><span></span></div>
+    </div>
+  </div>
+</figure>
+
+<figure>
+  <figcaption class="eb text-muted mb-3">02bis — 375×667 · 4e série sur 4</figcaption>
+  <div class="frame" style="width:375px;height:667px">
+    <div class="sb !h-5 !pb-0.5 !items-center"><span>9:48</span><span class="text-muted">5G</span></div>
+    <header class="shrink-0 bg-ink border-b border-border">
+      <div class="h-11 flex items-center justify-between">
+        <button class="h-11 px-5 eb text-muted">Liste</button>
+        <p class="font-display italic font-semibold text-[12px] text-paper/70 truncate">Cuisses &amp; Fesses</p>
+        <button class="h-11 px-4 mr-3 eb font-semibold text-acid border border-acid/70">Fin</button>
+      </div>
+      <div class="px-5 pb-3 pt-1">
+        <div class="flex items-baseline justify-between mb-2">
+          <span class="font-display text-[14px] num-stat font-bold leading-none"><span class="text-acid">08</span><span class="text-muted">/28</span><span class="eb text-muted ml-1.5">séries</span></span>
+          <span class="font-display font-bold text-[14px] num-stat text-cyan leading-none">2,2<span class="eb text-muted ml-1 mr-3">t</span>88<span class="eb text-muted ml-1">reps</span></span>
+        </div>
+        <div class="h-[3px] bg-border relative"><div class="absolute inset-y-0 left-0 bg-acid" style="width:28.6%"></div></div>
+      </div>
+    </header>
+    <main class="pb-[96px]">
+      <section class="px-5 pt-3 pb-3 flex items-baseline gap-3">
+        <h2 class="font-display font-black italic text-[24px] leading-none text-paper truncate">Leg extension</h2>
+        <span class="eb font-semibold text-acid shrink-0">03/04 fait</span>
+      </section>
+      <div class="border-y border-border">
+        <div class="grid grid-cols-[1fr_64px_64px] gap-3 px-5 py-2 border-l-[3px] border-l-transparent border-b border-border eb text-muted">
+          <span>Charge</span><span class="text-right">Reps</span><span class="text-right">Repos</span>
+        </div>
+        <div class="grid grid-cols-[1fr_64px_64px] gap-3 items-baseline px-5 py-2 border-l-[3px] border-l-acid border-b border-border/70">
+          <span class="font-display font-black text-[26px] num-stat leading-none text-paper">40<span class="eb text-muted ml-1.5">kg</span></span>
+          <span class="font-display font-bold text-[18px] num-stat text-paper text-right">× 10</span>
+          <span class="eb font-semibold text-acid num-stat text-right">1:45</span>
+        </div>
+        <div class="grid grid-cols-[1fr_64px_64px] gap-3 items-baseline px-5 py-2 border-l-[3px] border-l-acid border-b border-border/70">
+          <span class="font-display font-black text-[26px] num-stat leading-none text-paper">40<span class="eb text-muted ml-1.5">kg</span></span>
+          <span class="font-display font-bold text-[18px] num-stat text-paper text-right">× 10</span>
+          <span class="eb font-semibold text-acid num-stat text-right">1:52</span>
+        </div>
+        <div class="grid grid-cols-[1fr_64px_64px] gap-3 items-baseline px-5 py-2 border-l-[3px] border-l-acid border-b border-border/70">
+          <span class="font-display font-black text-[26px] num-stat leading-none text-paper">42,5<span class="eb text-muted ml-1.5">kg</span></span>
+          <span class="font-display font-bold text-[18px] num-stat text-paper text-right">× 8</span>
+          <span class="eb font-semibold text-acid num-stat text-right">1:40</span>
+        </div>
+        <div class="px-5 pt-2.5 pb-4 border-l-[3px] border-l-racing bg-racing/[0.07] border-b border-border/70">
+          <div class="flex items-baseline justify-between">
+            <p class="eb font-semibold text-racing">Dernière série</p>
+            <p class="eb text-muted">Préc · 42,5 kg × 8</p>
+          </div>
+          <div class="mt-3 grid grid-cols-[48px_1fr_48px] items-center gap-3">
+            <button class="step" aria-label="Charge moins 2,5 kg">−</button>
+            <button class="text-center"><span class="font-display font-black num-set-hot text-racing border-b border-dashed border-racing/40">45</span><span class="eb text-racing/80 ml-1.5">kg</span></button>
+            <button class="step" aria-label="Charge plus 2,5 kg">+</button>
+          </div>
+          <div class="mt-3 grid grid-cols-[48px_1fr_48px] items-center gap-3">
+            <button class="step" aria-label="Reps moins 1">−</button>
+            <button class="text-center"><span class="font-display font-black num-set-hot text-racing border-b border-dashed border-racing/40">8</span><span class="eb text-racing/80 ml-1.5">reps</span></button>
+            <button class="step" aria-label="Reps plus 1">+</button>
+          </div>
+          <p class="eb text-muted text-center mt-3">Cran 2,5 kg · 1 rep · tape le chiffre pour saisir</p>
+        </div>
+        <div class="flex items-baseline justify-between px-5 py-3 bg-inkAlt border-l-[3px] border-l-transparent border-t-2 border-t-cyan">
+          <span class="eb font-bold text-cyan">Σ Cumul</span>
+          <span class="font-display font-bold num-stat text-cyan"><span class="text-[20px]">1 140 kg</span><span class="text-[14px] text-cyan/75 ml-2">· 28 reps</span></span>
+        </div>
+      </div>
+    </main>
+    <div class="absolute inset-x-0 bottom-0 bg-ink border-t border-border">
+      <div class="px-4 pt-3 flex gap-3">
+        <button class="btn-dock-exos"><span class="eb text-paper font-semibold">Exos</span><span class="eb text-muted num-stat">1/7 faits</span></button>
+        <button class="flex-1 h-14 bg-paper text-ink font-display font-bold text-[15px] uppercase tracking-eyebrow active:bg-paper/80 transition">Valider la série</button>
+      </div>
+      <div class="h-3"></div>
+    </div>
+  </div>
+  <p class="font-sans text-[12px] text-muted mt-3 max-w-[375px] leading-snug">Règle retenue (AC-A8) : lignes faites et à venir ≤ 44 px (chiffres 26 px), en-tête d'exercice sur une ligne (24 px), status bar 20 px. Ligne active + dock tiennent sans scroll. À l'ouverture et après chaque validation, la ligne active est scrollée juste au-dessus du dock.</p>
+</figure>
+
+<figure>
+  <figcaption class="eb text-muted mb-3">03 — Exercice · repos en cours</figcaption>
+  <div class="frame">
+    <div class="sb"><span>9:43</span><span class="text-muted">5G</span></div>
+
+    <header class="shrink-0 bg-ink border-b border-border">
+      <div class="h-11 flex items-center justify-between">
+        <button class="h-11 px-5 eb text-muted">Liste</button>
+        <p class="font-display italic font-semibold text-[12px] text-paper/70 truncate">Cuisses &amp; Fesses</p>
+        <button class="h-11 px-4 mr-3 eb font-semibold text-acid border border-acid/70">Fin</button>
+      </div>
+      <div class="px-5 pb-3 pt-1">
+        <div class="flex items-baseline justify-between mb-2">
+          <span class="font-display text-[14px] num-stat font-bold leading-none"><span class="text-acid">08</span><span class="text-muted">/28</span><span class="eb text-muted ml-1.5">séries</span></span>
+          <span class="font-display font-bold text-[14px] num-stat text-cyan leading-none">2,2<span class="eb text-muted ml-1 mr-3">t</span>88<span class="eb text-muted ml-1">reps</span></span>
+        </div>
+        <div class="h-[3px] bg-border relative"><div class="absolute inset-y-0 left-0 bg-acid" style="width:28.6%"></div></div>
+      </div>
+    </header>
+
+    <main class="pb-[230px]">
+      <section class="px-5 pt-5 pb-4">
+        <p class="eb text-muted">Cuisses · Repos 1:45</p>
+        <div class="flex items-baseline gap-3 mt-2">
+          <h2 class="font-display font-black italic text-[30px] leading-[1.02] text-paper">Leg extension</h2>
+          <span class="eb font-semibold text-acid shrink-0">03/04 fait</span>
+        </div>
+      </section>
+
+      <div class="border-y border-border">
+        <div class="grid grid-cols-[1fr_64px_64px] gap-3 px-5 py-2 border-l-[3px] border-l-transparent border-b border-border eb text-muted">
+          <span>Charge</span><span class="text-right">Reps</span><span class="text-right">Repos</span>
+        </div>
+        <div class="grid grid-cols-[1fr_64px_64px] gap-3 items-baseline px-5 py-2 border-l-[3px] border-l-acid border-b border-border/70">
+          <span class="font-display font-black text-[26px] num-stat leading-none text-paper">40<span class="eb text-muted ml-1.5">kg</span></span>
+          <span class="font-display font-bold text-[18px] num-stat text-paper text-right">× 10</span>
+          <span class="eb font-semibold text-acid num-stat text-right">1:45</span>
+        </div>
+        <div class="grid grid-cols-[1fr_64px_64px] gap-3 items-baseline px-5 py-2 border-l-[3px] border-l-acid border-b border-border/70">
+          <span class="font-display font-black text-[26px] num-stat leading-none text-paper">40<span class="eb text-muted ml-1.5">kg</span></span>
+          <span class="font-display font-bold text-[18px] num-stat text-paper text-right">× 10</span>
+          <span class="eb font-semibold text-acid num-stat text-right">1:52</span>
+        </div>
+        <!-- Juste validée : tap sur la ligne = corriger (AC-C4) -->
+        <button class="w-full text-left grid grid-cols-[1fr_64px_64px] gap-3 items-baseline px-5 py-2 border-l-[3px] border-l-acid bg-acid/[0.04] border-b border-border/70">
+          <span class="font-display font-black text-[26px] num-stat leading-none text-paper">42,5<span class="eb text-muted ml-1.5">kg</span></span>
+          <span class="font-display font-bold text-[18px] num-stat text-paper text-right">× 8</span>
+          <span class="eb font-semibold text-acid text-right">Corriger</span>
+        </button>
+
+        <!-- Suivante — en préparation : bord paper, éditable, PAS racing -->
+        <div class="px-5 pt-3 pb-4 border-l-[3px] border-l-paper bg-inkAlt border-b border-border/70">
+          <div class="flex items-baseline justify-between">
+            <p class="eb font-semibold text-paper">À suivre</p>
+            <p class="eb text-muted">Préc · 42,5 kg × 8</p>
+          </div>
+          <div class="mt-3 grid grid-cols-[48px_1fr_48px] items-center gap-3">
+            <button class="step" aria-label="Charge moins 2,5 kg">−</button>
+            <button class="text-center"><span class="font-display font-black num-set text-paper border-b border-dashed border-paper/30">45</span><span class="eb text-muted ml-1.5">kg</span></button>
+            <button class="step" aria-label="Charge plus 2,5 kg">+</button>
+          </div>
+          <div class="mt-3 grid grid-cols-[48px_1fr_48px] items-center gap-3">
+            <button class="step" aria-label="Reps moins 1">−</button>
+            <button class="text-center"><span class="font-display font-black num-set text-paper border-b border-dashed border-paper/30">8</span><span class="eb text-muted ml-1.5">reps</span></button>
+            <button class="step" aria-label="Reps plus 1">+</button>
+          </div>
+        </div>
+
+        <div class="flex items-baseline justify-between px-5 py-3 bg-inkAlt border-l-[3px] border-l-transparent border-t-2 border-t-cyan">
+          <span class="eb font-bold text-cyan">Σ Cumul</span>
+          <span class="font-display font-bold num-stat text-cyan"><span class="text-[20px]">1 140 kg</span><span class="text-[14px] text-cyan/75 ml-2">· 28 reps</span></span>
+        </div>
+      </div>
+    </main>
+
+    <!-- Dock : bandeau repos (foyer racing unique) + actions -->
+    <div class="absolute inset-x-0 bottom-0 bg-ink border-t border-border">
+      <div class="px-4 pt-3 flex items-center gap-3">
+        <div class="flex-1 min-w-0">
+          <p class="eb text-muted">Repos · Leg extension</p>
+          <p class="font-display font-black text-[44px] num-stat text-racing leading-none tracking-tight mt-1">1:12</p>
+        </div>
+        <button class="w-14 h-12 border border-border eb font-semibold text-paper num-stat active:bg-inkAlt">−15 s</button>
+        <button class="w-14 h-12 border border-border eb font-semibold text-paper num-stat active:bg-inkAlt">+15 s</button>
+      </div>
+      <!-- barre de temps restant (neutre) -->
+      <div class="mx-4 mt-3 h-[2px] bg-border relative"><div class="absolute inset-y-0 left-0 bg-paper/50" style="width:69%"></div></div>
+      <div class="px-4 pt-3 flex gap-3">
+        <button class="btn-dock-exos"><span class="eb text-paper font-semibold">Exos</span><span class="eb text-muted num-stat">1/7 faits</span></button>
+        <button class="flex-1 h-14 border border-paper text-paper font-display font-bold text-[15px] uppercase tracking-eyebrow active:bg-paper active:text-ink transition">Passer le repos</button>
+      </div>
+      <div class="hi"><span></span></div>
+    </div>
+  </div>
+
+  <!-- Variante dock ≤ 5 s : inversion racing plein fond (alerte, pas blood) -->
+  <p class="eb text-muted mt-6 mb-3">03b — Dock repos · alerte ≤ 5 s</p>
+  <div class="w-[390px] border border-border bg-ink">
+    <div class="px-4 py-3 flex items-center gap-3 bg-racing">
+      <div class="flex-1 min-w-0">
+        <p class="eb font-bold text-ink">Prends place</p>
+        <p class="font-display font-black text-[44px] num-stat text-ink leading-none tracking-tight mt-1">0:04</p>
+      </div>
+      <button class="w-14 h-12 border border-ink/40 eb font-bold text-ink num-stat">−15 s</button>
+      <button class="w-14 h-12 border border-ink/40 eb font-bold text-ink num-stat">+15 s</button>
+    </div>
+    <div class="px-4 pt-3 pb-4 flex gap-3">
+      <button class="btn-dock-exos"><span class="eb text-paper font-semibold">Exos</span><span class="eb text-muted num-stat">1/7 faits</span></button>
+      <button class="flex-1 h-14 border border-paper text-paper font-display font-bold text-[15px] uppercase tracking-eyebrow">Passer le repos</button>
+    </div>
+  </div>
+  <!-- Toast Annuler après Passer (AC-E3) -->
+  <p class="eb text-muted mt-6 mb-3">03c — Toast après « Passer » · 3 s</p>
+  <div class="w-[390px] px-4">
+    <div class="flex items-center justify-between gap-3 border border-border bg-inkAlt pl-4">
+      <p class="font-sans text-[13px] text-paper">Repos passé.</p>
+      <button class="h-12 px-5 eb font-bold text-paper border-l border-border">Annuler</button>
+    </div>
+  </div>
+</figure>
+
+<figure>
+  <figcaption class="eb text-muted mb-3">03d — Fin du repos · la série devient active</figcaption>
+  <div class="frame">
+    <div class="sb"><span>9:44</span><span class="text-muted">5G</span></div>
+    <header class="shrink-0 bg-ink border-b border-border">
+      <div class="h-11 flex items-center justify-between">
+        <button class="h-11 px-5 eb text-muted">Liste</button>
+        <p class="font-display italic font-semibold text-[12px] text-paper/70 truncate">Cuisses &amp; Fesses</p>
+        <button class="h-11 px-4 mr-3 eb font-semibold text-acid border border-acid/70">Fin</button>
+      </div>
+      <div class="px-5 pb-3 pt-1">
+        <div class="flex items-baseline justify-between mb-2">
+          <span class="font-display text-[14px] num-stat font-bold leading-none"><span class="text-acid">08</span><span class="text-muted">/28</span><span class="eb text-muted ml-1.5">séries</span></span>
+          <span class="font-display font-bold text-[14px] num-stat text-cyan leading-none">2,2<span class="eb text-muted ml-1 mr-3">t</span>88<span class="eb text-muted ml-1">reps</span></span>
+        </div>
+        <div class="h-[3px] bg-border relative"><div class="absolute inset-y-0 left-0 bg-acid" style="width:28.6%"></div></div>
+      </div>
+    </header>
+    <main class="pb-[110px]">
+      <section class="px-5 pt-5 pb-4">
+        <p class="eb text-muted">Cuisses · Repos 1:45</p>
+        <div class="flex items-baseline gap-3 mt-2">
+          <h2 class="font-display font-black italic text-[30px] leading-[1.02] text-paper">Leg extension</h2>
+          <span class="eb font-semibold text-acid shrink-0">03/04 fait</span>
+        </div>
+      </section>
+      <div class="border-y border-border">
+        <div class="grid grid-cols-[1fr_64px_64px] gap-3 px-5 py-2 border-l-[3px] border-l-transparent border-b border-border eb text-muted">
+          <span>Charge</span><span class="text-right">Reps</span><span class="text-right">Repos</span>
+        </div>
+        <div class="grid grid-cols-[1fr_64px_64px] gap-3 items-baseline px-5 py-2 border-l-[3px] border-l-acid border-b border-border/70">
+          <span class="font-display font-black text-[26px] num-stat leading-none text-paper">40<span class="eb text-muted ml-1.5">kg</span></span>
+          <span class="font-display font-bold text-[18px] num-stat text-paper text-right">× 10</span>
+          <span class="eb font-semibold text-acid num-stat text-right">1:45</span>
+        </div>
+        <div class="grid grid-cols-[1fr_64px_64px] gap-3 items-baseline px-5 py-2 border-l-[3px] border-l-acid border-b border-border/70">
+          <span class="font-display font-black text-[26px] num-stat leading-none text-paper">40<span class="eb text-muted ml-1.5">kg</span></span>
+          <span class="font-display font-bold text-[18px] num-stat text-paper text-right">× 10</span>
+          <span class="eb font-semibold text-acid num-stat text-right">1:52</span>
+        </div>
+        <div class="grid grid-cols-[1fr_64px_64px] gap-3 items-baseline px-5 py-2 border-l-[3px] border-l-acid border-b border-border/70">
+          <span class="font-display font-black text-[26px] num-stat leading-none text-paper">42,5<span class="eb text-muted ml-1.5">kg</span></span>
+          <span class="font-display font-bold text-[18px] num-stat text-paper text-right">× 8</span>
+          <span class="eb font-semibold text-acid num-stat text-right">1:40</span>
+        </div>
+        <div class="px-5 pt-3 pb-4 border-l-[3px] border-l-racing bg-racing/[0.07] border-b border-border/70">
+          <div class="flex items-baseline justify-between">
+            <p class="eb font-semibold text-racing">En cours</p>
+            <p class="eb text-muted">Préc · 42,5 kg × 8</p>
+          </div>
+          <div class="mt-3 grid grid-cols-[48px_1fr_48px] items-center gap-3">
+            <button class="step" aria-label="Charge moins 2,5 kg">−</button>
+            <button class="text-center"><span class="font-display font-black num-set-hot text-racing border-b border-dashed border-racing/40">45</span><span class="eb text-racing/80 ml-1.5">kg</span></button>
+            <button class="step" aria-label="Charge plus 2,5 kg">+</button>
+          </div>
+          <div class="mt-3 grid grid-cols-[48px_1fr_48px] items-center gap-3">
+            <button class="step" aria-label="Reps moins 1">−</button>
+            <button class="text-center"><span class="font-display font-black num-set-hot text-racing border-b border-dashed border-racing/40">8</span><span class="eb text-racing/80 ml-1.5">reps</span></button>
+            <button class="step" aria-label="Reps plus 1">+</button>
+          </div>
+          <p class="eb text-muted text-center mt-3">Cran 2,5 kg · 1 rep · tape le chiffre pour saisir</p>
+        </div>
+        <div class="flex items-baseline justify-between px-5 py-3 bg-inkAlt border-l-[3px] border-l-transparent border-t-2 border-t-cyan">
+          <span class="eb font-bold text-cyan">Σ Cumul</span>
+          <span class="font-display font-bold num-stat text-cyan"><span class="text-[20px]">1 140 kg</span><span class="text-[14px] text-cyan/75 ml-2">· 28 reps</span></span>
+        </div>
+      </div>
+    </main>
+    <div class="absolute inset-x-0 bottom-0 bg-ink border-t border-border">
+      <div class="px-4 pt-3 flex gap-3">
+        <button class="btn-dock-exos"><span class="eb text-paper font-semibold">Exos</span><span class="eb text-muted num-stat">1/7 faits</span></button>
+        <button class="flex-1 h-14 bg-paper text-ink font-display font-bold text-[15px] uppercase tracking-eyebrow active:bg-paper/80 transition opacity-60">Valider la série</button>
+      </div>
+      <div class="hi"><span></span></div>
+    </div>
+  </div>
+  <p class="font-sans text-[12px] text-muted mt-3 max-w-[390px] leading-snug">Au passage à 0 (ou après Passer), la ligne « À suivre » passe en racing et le CTA « Passer le repos » (contour paper) devient « Valider la série » (paper plein) au même endroit. Garde-fou obligatoire : les taps sur le CTA sont ignorés pendant 1 000 ms après chaque changement d'action (CTA à 60 % d'opacité pendant ce délai), pour éviter de valider une série non faite.</p>
+</figure>
+
+<figure>
+  <figcaption class="eb text-muted mb-3">04 — Tiroir exercices · pendant le repos</figcaption>
+  <div class="frame">
+    <div class="sb"><span>9:43</span><span class="text-muted">5G</span></div>
+    <!-- écran exercice assombri derrière -->
+    <div class="flex-1 relative">
+      <div class="absolute inset-0 px-5 pt-16 opacity-30">
+        <p class="font-display font-black italic text-[30px] text-paper">Leg extension</p>
+      </div>
+      <div class="absolute inset-0 bg-ink/80"></div>
+
+      <div class="absolute inset-x-0 bottom-0 bg-ink border-t border-border">
+        <div class="flex justify-center pt-2.5"><span class="w-10 h-1 bg-border"></span></div>
+        <div class="px-5 pt-3 pb-3 flex items-center justify-between">
+          <div><h3 class="font-display font-bold text-[20px] text-paper">Exercices</h3><p class="eb text-muted mt-1">Ordre du programme</p></div>
+          <button class="h-11 px-4 -mr-2 border border-border eb font-semibold text-paper">Fermer</button>
+        </div>
+        <ul class="border-t border-border">
+          <li><button class="w-full text-left flex items-center gap-3 px-5 min-h-[56px] py-2 border-b border-border/70 border-l-[3px] border-l-acid">
+            <p class="flex-1 font-display italic font-bold text-[17px] text-muted truncate">Climb box</p>
+            <span class="eb font-semibold text-acid">Fait</span>
+          </button></li>
+          <li><button class="w-full text-left flex items-center gap-3 px-5 min-h-[56px] py-2 border-b border-border/70 border-l-[3px] border-l-paper bg-inkAlt">
+            <p class="flex-1 font-display italic font-bold text-[17px] text-paper truncate">Leg extension</p>
+            <span class="eb font-semibold text-paper">Ici · 03/04</span>
+          </button></li>
+          <li><button class="w-full text-left flex items-center gap-3 px-5 min-h-[56px] py-2 border-b border-border/70 border-l-[3px] border-l-todo">
+            <p class="flex-1 font-display italic font-bold text-[17px] text-paper truncate">Seated leg curl</p>
+            <span class="eb text-paper num-stat">01/04</span>
+          </button></li>
+          <!-- Nom long sans espace : 2 lignes max, coupure forcée -->
+          <li><button class="w-full text-left flex items-center gap-3 px-5 min-h-[56px] py-2 border-b border-border/70 border-l-[3px] border-l-transparent">
+            <p class="flex-1 min-w-0 font-display italic font-bold text-[17px] leading-tight text-paper break-all line-clamp-2">Développé-couché-incliné-haltères-prise-neutre</p>
+            <span class="eb text-muted num-stat shrink-0">4 × 10</span>
+          </button></li>
+          <li><button class="w-full text-left flex items-center gap-3 px-5 min-h-[56px] py-2 border-b border-border/70 border-l-[3px] border-l-transparent">
+            <p class="flex-1 font-display italic font-bold text-[17px] text-paper truncate">Hip abduction</p>
+            <span class="eb text-muted num-stat">4 × 12</span>
+          </button></li>
+          <li><button class="w-full text-left flex items-center gap-3 px-5 min-h-[56px] py-2 border-b border-border/70 border-l-[3px] border-l-transparent">
+            <p class="flex-1 font-display italic font-bold text-[17px] text-paper truncate">Press</p>
+            <span class="eb text-muted num-stat">12/10/8/6</span>
+          </button></li>
+          <li><button class="w-full text-left flex items-center gap-3 px-5 min-h-[56px] py-2 border-l-[3px] border-l-transparent">
+            <p class="flex-1 font-display italic font-bold text-[17px] text-paper truncate">Glute trainer</p>
+            <span class="eb text-muted num-stat">4 × 12</span>
+          </button></li>
+        </ul>
+        <!-- Bandeau repos compact : persiste hors écran exercice -->
+        <div class="border-t border-border px-4 py-2 flex items-center gap-3">
+          <p class="eb text-muted flex-1">Repos · Leg extension</p>
+          <p class="font-display font-black text-[26px] num-stat text-racing leading-none">1:04</p>
+          <button class="h-11 px-3 border border-border eb font-semibold text-paper">Passer</button>
+        </div>
+        <div class="hi"><span></span></div>
+      </div>
+    </div>
+  </div>
+</figure>
+
+<figure>
+  <figcaption class="eb text-muted mb-3">04b — Autre exercice ouvert pendant un repos</figcaption>
+  <div class="frame">
+    <div class="sb"><span>9:43</span><span class="text-muted">5G</span></div>
+    <header class="shrink-0 bg-ink border-b border-border">
+      <div class="h-11 flex items-center justify-between">
+        <button class="h-11 px-5 eb text-muted">Liste</button>
+        <p class="font-display italic font-semibold text-[12px] text-paper/70 truncate">Cuisses &amp; Fesses</p>
+        <button class="h-11 px-4 mr-3 eb font-semibold text-acid border border-acid/70">Fin</button>
+      </div>
+      <div class="px-5 pb-3 pt-1">
+        <div class="flex items-baseline justify-between mb-2">
+          <span class="font-display text-[14px] num-stat font-bold leading-none"><span class="text-acid">08</span><span class="text-muted">/28</span><span class="eb text-muted ml-1.5">séries</span></span>
+          <span class="font-display font-bold text-[14px] num-stat text-cyan leading-none">2,2<span class="eb text-muted ml-1 mr-3">t</span>88<span class="eb text-muted ml-1">reps</span></span>
+        </div>
+        <div class="h-[3px] bg-border relative"><div class="absolute inset-y-0 left-0 bg-acid" style="width:28.6%"></div></div>
+      </div>
+    </header>
+    <main class="pb-[230px]">
+      <section class="px-5 pt-5 pb-4">
+        <p class="eb text-muted">Cuisses · Repos 1:30</p>
+        <div class="flex items-baseline gap-3 mt-2">
+          <h2 class="font-display font-black italic text-[30px] leading-[1.02] text-paper">Seated leg curl</h2>
+          <span class="eb font-semibold text-acid shrink-0">01/04 fait</span>
+        </div>
+      </section>
+      <div class="border-y border-border">
+        <div class="grid grid-cols-[1fr_64px_64px] gap-3 px-5 py-2 border-l-[3px] border-l-transparent border-b border-border eb text-muted">
+          <span>Charge</span><span class="text-right">Reps</span><span class="text-right">Repos</span>
+        </div>
+        <div class="grid grid-cols-[1fr_64px_64px] gap-3 items-baseline px-5 py-2 border-l-[3px] border-l-acid border-b border-border/70">
+          <span class="font-display font-black text-[26px] num-stat leading-none text-paper">45<span class="eb text-muted ml-1.5">kg</span></span>
+          <span class="font-display font-bold text-[18px] num-stat text-paper text-right">× 12</span>
+          <span class="eb font-semibold text-acid num-stat text-right">1:30</span>
+        </div>
+        <div class="px-5 pt-3 pb-4 border-l-[3px] border-l-paper bg-inkAlt border-b border-border/70">
+          <div class="flex items-baseline justify-between">
+            <p class="eb font-semibold text-paper">À suivre</p>
+            <p class="eb text-muted">Préc · 45 kg × 12</p>
+          </div>
+          <div class="mt-3 grid grid-cols-[48px_1fr_48px] items-center gap-3">
+            <button class="step" aria-label="Charge moins 2,5 kg">−</button>
+            <button class="text-center"><span class="font-display font-black num-set text-paper border-b border-dashed border-paper/30">45</span><span class="eb text-muted ml-1.5">kg</span></button>
+            <button class="step" aria-label="Charge plus 2,5 kg">+</button>
+          </div>
+          <div class="mt-3 grid grid-cols-[48px_1fr_48px] items-center gap-3">
+            <button class="step" aria-label="Reps moins 1">−</button>
+            <button class="text-center"><span class="font-display font-black num-set text-paper border-b border-dashed border-paper/30">12</span><span class="eb text-muted ml-1.5">reps</span></button>
+            <button class="step" aria-label="Reps plus 1">+</button>
+          </div>
+        </div>
+        <div class="grid grid-cols-[1fr_64px_64px] gap-3 items-baseline px-5 py-2 border-l-[3px] border-l-transparent border-b border-border/70">
+          <span class="font-display font-black text-[26px] num-stat leading-none text-todo">45<span class="eb text-todo ml-1.5">kg</span></span>
+          <span class="font-display font-bold text-[18px] num-stat text-todo text-right">× 12</span>
+          <span class="eb text-todo num-stat text-right">—</span>
+        </div>
+        <div class="grid grid-cols-[1fr_64px_64px] gap-3 items-baseline px-5 py-2 border-l-[3px] border-l-transparent border-b border-border/70">
+          <span class="font-display font-black text-[26px] num-stat leading-none text-todo">45<span class="eb text-todo ml-1.5">kg</span></span>
+          <span class="font-display font-bold text-[18px] num-stat text-todo text-right">× 12</span>
+          <span class="eb text-todo num-stat text-right">—</span>
+        </div>
+        <div class="flex items-baseline justify-between px-5 py-3 bg-inkAlt border-l-[3px] border-l-transparent border-t-2 border-t-cyan">
+          <span class="eb font-bold text-cyan">Σ Cumul</span>
+          <span class="font-display font-bold num-stat text-cyan"><span class="text-[20px]">540 kg</span><span class="text-[14px] text-cyan/75 ml-2">· 12 reps</span></span>
+        </div>
+      </div>
+    </main>
+    <div class="absolute inset-x-0 bottom-0 bg-ink border-t border-border">
+      <div class="px-4 pt-3 flex items-center gap-3">
+        <div class="flex-1 min-w-0">
+          <p class="eb text-muted truncate">Repos · Leg extension</p>
+          <p class="font-display font-black text-[44px] num-stat text-racing leading-none tracking-tight mt-1">1:04</p>
+        </div>
+        <button class="w-14 h-12 border border-border eb font-semibold text-paper num-stat">−15 s</button>
+        <button class="w-14 h-12 border border-border eb font-semibold text-paper num-stat">+15 s</button>
+      </div>
+      <div class="mx-4 mt-3 h-[2px] bg-border relative"><div class="absolute inset-y-0 left-0 bg-paper/50" style="width:61%"></div></div>
+      <div class="px-4 pt-3 flex gap-3">
+        <button class="btn-dock-exos"><span class="eb text-paper font-semibold">Exos</span><span class="eb text-muted num-stat">1/7 faits</span></button>
+        <button class="flex-1 h-14 border border-paper text-paper font-display font-bold text-[15px] uppercase tracking-eyebrow">Passer le repos</button>
+      </div>
+      <div class="hi"><span></span></div>
+    </div>
+  </div>
+  <p class="font-sans text-[12px] text-muted mt-3 max-w-[390px] leading-snug">AC-J2 : le repos de Leg extension continue. La première série de Seated leg curl est « À suivre » (bord paper, steppers actifs) tant que le décompte tourne : il reste le seul foyer racing. À 0, elle passe en racing comme en 03d.</p>
+</figure>
+
+<figure>
+  <figcaption class="eb text-muted mb-3">05 — Exercice terminé · record</figcaption>
+  <div class="frame">
+    <div class="sb"><span>9:46</span><span class="text-muted">5G</span></div>
+
+    <header class="shrink-0 bg-ink border-b border-border">
+      <div class="h-11 flex items-center justify-between">
+        <button class="h-11 px-5 eb text-muted">Liste</button>
+        <p class="font-display italic font-semibold text-[12px] text-paper/70 truncate">Cuisses &amp; Fesses</p>
+        <button class="h-11 px-4 mr-3 eb font-semibold text-acid border border-acid/70">Fin</button>
+      </div>
+      <div class="px-5 pb-3 pt-1">
+        <div class="flex items-baseline justify-between mb-2">
+          <span class="font-display text-[14px] num-stat font-bold leading-none"><span class="text-acid">09</span><span class="text-muted">/28</span><span class="eb text-muted ml-1.5">séries</span></span>
+          <span class="font-display font-bold text-[14px] num-stat text-cyan leading-none">2,6<span class="eb text-muted ml-1 mr-3">t</span>96<span class="eb text-muted ml-1">reps</span></span>
+        </div>
+        <div class="h-[3px] bg-border relative"><div class="absolute inset-y-0 left-0 bg-acid" style="width:32.1%"></div></div>
+      </div>
+    </header>
+
+    <main class="pb-[150px]">
+      <section class="px-5 pt-5 pb-4">
+        <p class="eb text-muted">Cuisses · Repos 1:45</p>
+        <div class="flex items-baseline gap-3 mt-2">
+          <h2 class="font-display font-black italic text-[30px] leading-[1.02] text-paper">Leg extension</h2>
+          <span class="eb font-semibold text-acid shrink-0">04/04 fait</span>
+        </div>
+      </section>
+
+      <div class="border-y border-border">
+        <div class="grid grid-cols-[1fr_64px_64px] gap-3 px-5 py-2 border-l-[3px] border-l-transparent border-b border-border eb text-muted">
+          <span>Charge</span><span class="text-right">Reps</span><span class="text-right">Repos</span>
+        </div>
+        <div class="grid grid-cols-[1fr_64px_64px] gap-3 items-baseline px-5 py-2 border-l-[3px] border-l-acid border-b border-border/70">
+          <span class="font-display font-black text-[26px] num-stat leading-none text-paper">40<span class="eb text-muted ml-1.5">kg</span></span>
+          <span class="font-display font-bold text-[18px] num-stat text-paper text-right">× 10</span>
+          <span class="eb font-semibold text-acid num-stat text-right">1:45</span>
+        </div>
+        <div class="grid grid-cols-[1fr_64px_64px] gap-3 items-baseline px-5 py-2 border-l-[3px] border-l-acid border-b border-border/70">
+          <span class="font-display font-black text-[26px] num-stat leading-none text-paper">40<span class="eb text-muted ml-1.5">kg</span></span>
+          <span class="font-display font-bold text-[18px] num-stat text-paper text-right">× 10</span>
+          <span class="eb font-semibold text-acid num-stat text-right">1:52</span>
+        </div>
+        <div class="grid grid-cols-[1fr_64px_64px] gap-3 items-baseline px-5 py-2 border-l-[3px] border-l-acid border-b border-border/70">
+          <span class="font-display font-black text-[26px] num-stat leading-none text-paper">42,5<span class="eb text-muted ml-1.5">kg</span></span>
+          <span class="font-display font-bold text-[18px] num-stat text-paper text-right">× 8</span>
+          <span class="eb font-semibold text-acid num-stat text-right">1:40</span>
+        </div>
+        <!-- Record : seul élément blood de la séance -->
+        <div class="grid grid-cols-[1fr_64px_64px] gap-3 items-baseline px-5 py-2 border-l-[3px] border-l-acid border-b border-border/70">
+          <span class="font-display font-black text-[26px] num-stat leading-none text-paper">45<span class="eb text-muted ml-1.5">kg</span></span>
+          <span class="font-display font-bold text-[18px] num-stat text-paper text-right">× 8</span>
+          <span class="text-right"><span class="font-sans font-bold text-[10px] uppercase tracking-eyebrow text-paper bg-blood px-1.5 py-0.5">PR</span></span>
+        </div>
+        <div class="flex items-baseline justify-between px-5 py-3 bg-inkAlt border-l-[3px] border-l-transparent border-t-2 border-t-cyan">
+          <span class="eb font-bold text-cyan">Σ Cumul</span>
+          <span class="font-display font-bold num-stat text-cyan"><span class="text-[20px]">1 500 kg</span><span class="text-[14px] text-cyan/75 ml-2">· 36 reps</span></span>
+        </div>
+      </div>
+
+      <p class="font-display italic text-[13px] text-muted mt-4 px-5">Record : 45 kg, ta meilleure charge jamais faite sur Leg extension (ancien record : 42,5 kg).</p>
+    </main>
+
+    <div class="absolute inset-x-0 bottom-0 bg-ink border-t border-border">
+      <div class="px-4 pt-3 flex gap-3">
+        <button class="btn-dock-exos"><span class="eb text-paper font-semibold">Exos</span><span class="eb text-muted num-stat">1/7 faits</span></button>
+        <button class="flex-1 h-14 bg-paper text-ink px-4 flex flex-col items-start justify-center active:bg-paper/80 transition">
+          <span class="eb font-semibold text-ink/60">Exercice suivant</span>
+          <span class="font-display font-bold italic text-[17px] leading-tight truncate w-full text-left">Seated leg curl · 45 kg</span>
+        </button>
+      </div>
+      <div class="hi"><span></span></div>
+    </div>
+  </div>
+</figure>
+
+<figure>
+  <figcaption class="eb text-muted mb-3">05b — Dernier exercice · dock</figcaption>
+  <div class="w-[390px] border border-border bg-ink">
+    <div class="px-4 pt-3 pb-4 flex gap-3">
+      <button class="btn-dock-exos"><span class="eb text-paper font-semibold">Exos</span><span class="eb text-muted num-stat">7/7 faits</span></button>
+      <button class="flex-1 h-14 bg-acid text-ink font-display font-bold text-[13px] uppercase tracking-eyebrow">Terminer la séance</button>
+    </div>
+  </div>
+  <p class="font-sans text-[12px] text-muted mt-3 max-w-[390px] leading-snug">AC-C3b : quand l'exercice terminé est le dernier non fait, le CTA « Exercice suivant » devient « Terminer la séance » (acid, l'écran « respire le vert »). La confirmation AC-G4 s'applique.</p>
+
+  <p class="eb text-muted mt-8 mb-3">09 — Stepper désactivé (AC-D3 / D4)</p>
+  <div class="w-[390px] border border-border bg-ink px-5 py-4 grid grid-cols-[48px_1fr_48px] items-center gap-3 border-l-[3px] border-l-racing">
+    <span class="step-dim" aria-disabled="true">−</span>
+    <span class="text-center"><span class="font-display font-black num-set-hot text-racing">1</span><span class="eb text-racing/80 ml-1.5">rep</span></span>
+    <button class="step">+</button>
+  </div>
+  <p class="font-sans text-[12px] text-muted mt-3 max-w-[390px] leading-snug">À reps = 1 ou charge = 0, le « − » passe en contour atténué et texte muted, et ne réagit plus. Il n'y a ni toast ni vibration.</p>
+</figure>
+
+
+
+<figure>
+  <figcaption class="eb text-muted mb-3">06 — Superset · minuterie + chrono</figcaption>
+  <div class="frame">
+    <div class="sb"><span>10:02</span><span class="text-muted">5G</span></div>
+
+    <header class="shrink-0 bg-ink border-b border-border">
+      <div class="h-11 flex items-center justify-between">
+        <button class="h-11 px-5 eb text-muted">Liste</button>
+        <p class="font-display italic font-semibold text-[12px] text-paper/70 truncate">Cuisses &amp; Fesses</p>
+        <button class="h-11 px-4 mr-3 eb font-semibold text-acid border border-acid/70">Fin</button>
+      </div>
+      <div class="px-5 pb-3 pt-1">
+        <div class="flex items-baseline justify-between mb-2">
+          <span class="font-display text-[14px] num-stat font-bold leading-none"><span class="text-acid">24</span><span class="text-muted">/28</span><span class="eb text-muted ml-1.5">séries</span></span>
+          <span class="font-display font-bold text-[14px] num-stat text-cyan leading-none">7,8<span class="eb text-muted ml-1 mr-3">t</span>290<span class="eb text-muted ml-1">reps</span></span>
+        </div>
+        <div class="h-[3px] bg-border relative"><div class="absolute inset-y-0 left-0 bg-acid" style="width:85.7%"></div></div>
+      </div>
+    </header>
+
+    <main class="pb-[150px]">
+      <section class="px-5 pt-5 pb-4">
+        <p class="eb text-muted">Abdos · Planche + Parachutiste · Repos 1:00</p>
+        <div class="flex items-baseline gap-3 mt-2">
+          <h2 class="font-display font-black italic text-[30px] leading-[1.02] text-paper">Gainage</h2>
+          <span class="eb font-semibold text-acid shrink-0">01/03 fait</span>
+        </div>
+      </section>
+
+      <div class="border-y border-border">
+        <div class="grid grid-cols-[1fr_96px] gap-3 px-5 py-2 border-l-[3px] border-l-transparent border-b border-border eb text-muted">
+          <span>Activité</span><span class="text-right">Durée</span>
+        </div>
+        <!-- Série faite : 2 sous-lignes -->
+        <div class="border-l-[3px] border-l-acid border-b border-border/70 px-5 py-2.5 space-y-1">
+          <div class="flex items-baseline justify-between"><span class="eb text-muted">Planche</span><span class="font-display font-bold text-[22px] num-stat text-paper">45<span class="eb text-muted ml-1">s</span></span></div>
+          <div class="flex items-baseline justify-between"><span class="eb text-muted">Parachutiste</span><span class="font-display font-bold text-[22px] num-stat text-paper">38<span class="eb text-muted ml-1">s</span></span></div>
+        </div>
+        <!-- Série en cours : Planche active (racing), Parachutiste en attente -->
+        <div class="border-l-[3px] border-l-racing bg-racing/[0.07] border-b border-border/70 px-5 pt-3 pb-3">
+          <div class="flex items-baseline justify-between">
+            <p class="eb font-semibold text-racing">Planche · minuterie</p>
+            <p class="eb text-muted">Préc · 45 s</p>
+          </div>
+          <div class="mt-3 grid grid-cols-[48px_1fr_48px] items-center gap-3">
+            <button class="step" aria-label="Moins 5 secondes">−</button>
+            <button class="text-center"><span class="font-display font-black num-set-hot text-racing border-b border-dashed border-racing/40">50</span><span class="eb text-racing/80 ml-1.5">s</span></button>
+            <button class="step" aria-label="Plus 5 secondes">+</button>
+          </div>
+          <p class="eb text-muted text-center mt-2.5">Cran 5 s</p>
+          <div class="mt-3 pt-2.5 border-t border-border/70 flex items-baseline justify-between">
+            <span class="eb text-muted">Parachutiste · chrono libre</span>
+            <span class="font-display font-bold text-[18px] num-stat text-todo">—</span>
+          </div>
+        </div>
+        <div class="border-l-[3px] border-l-transparent border-b border-border/70 px-5 py-2.5 space-y-1">
+          <div class="flex items-baseline justify-between"><span class="eb text-todo">Planche</span><span class="font-display font-bold text-[22px] num-stat text-todo">45<span class="eb ml-1">s</span></span></div>
+          <div class="flex items-baseline justify-between"><span class="eb text-todo">Parachutiste</span><span class="font-display font-bold text-[22px] num-stat text-todo">chrono</span></div>
+        </div>
+      </div>
+      <p class="font-display italic text-[13px] text-muted mt-4 px-5">Quand l'activité active est un chrono libre, pas de stepper : le CTA devient « Lancer le chrono ».</p>
+    </main>
+
+    <div class="absolute inset-x-0 bottom-0 bg-ink border-t border-border">
+      <div class="px-4 pt-3 flex gap-3">
+        <button class="btn-dock-exos"><span class="eb text-paper font-semibold">Exos</span><span class="eb text-muted num-stat">5/7 faits</span></button>
+        <button class="flex-1 h-14 bg-paper text-ink font-display font-bold text-[13px] uppercase tracking-eyebrow active:bg-paper/80 transition">Lancer la minuterie</button>
+      </div>
+      <div class="hi"><span></span></div>
+    </div>
+  </div>
+</figure>
+
+<figure>
+  <figcaption class="eb text-muted mb-3">07 — Séance cardio</figcaption>
+  <div class="frame">
+    <div class="sb"><span>18:20</span><span class="text-muted">5G</span></div>
+
+    <header class="shrink-0 bg-ink border-b border-border">
+      <div class="h-11 flex items-center justify-between">
+        <p class="px-5 eb text-muted">24 sept. <span class="text-muted/50 mx-1">·</span> En cours</p>
+        <button class="h-11 px-4 mr-3 eb font-semibold text-acid border border-acid/70">Fin</button>
+      </div>
+      <div class="px-5 pb-3 pt-1">
+        <div class="flex items-baseline justify-between mb-2">
+          <p class="font-display italic font-semibold text-[16px] text-paper truncate">Cardio du jeudi</p>
+          <span class="font-display text-[14px] num-stat font-bold leading-none"><span class="text-acid">01</span><span class="text-muted">/03</span><span class="eb text-muted ml-1.5">faits</span></span>
+        </div>
+        <div class="h-[3px] bg-border relative"><div class="absolute inset-y-0 left-0 bg-acid" style="width:33.3%"></div></div>
+      </div>
+    </header>
+
+    <main class="pb-[110px]">
+      <!-- Fait -->
+      <article class="mt-6 border-l-[3px] border-l-acid">
+        <header class="px-5 mb-3 flex items-center justify-between gap-3">
+          <h2 class="font-display font-bold italic text-[24px] leading-[1.1] text-muted">Vélo</h2>
+          <span class="flex items-center gap-3"><span class="eb font-semibold text-acid">Fait</span><button class="h-11 px-3 border border-border eb text-muted">Rouvrir</button></span>
+        </header>
+        <div class="grid grid-cols-3 border-y border-border">
+          <div class="px-3 py-3 border-r border-border"><p class="eb text-muted mb-1.5">Temps</p><p class="font-display font-bold text-[22px] num-stat text-cyan leading-none">20<span class="eb text-muted ml-1">min</span></p></div>
+          <div class="px-3 py-3 border-r border-border"><p class="eb text-muted mb-1.5">Puiss.</p><p class="font-display font-bold text-[22px] num-stat text-cyan leading-none">160<span class="eb text-muted ml-1">W</span></p></div>
+          <div class="px-3 py-3"><p class="eb text-muted mb-1.5">Dist.</p><p class="font-display font-bold text-[22px] num-stat text-cyan leading-none">8,4<span class="eb text-muted ml-1">km</span></p></div>
+        </div>
+      </article>
+
+      <!-- Premier non fait : seul racing -->
+      <article class="mt-8 border-l-[3px] border-l-racing bg-racing/[0.05] pb-4">
+        <header class="px-5 pt-3 mb-3">
+          <p class="eb font-semibold text-racing">En cours</p>
+          <h2 class="font-display font-black italic text-[28px] leading-[1.05] text-paper mt-1">Rameur</h2>
+          <p class="eb text-muted mt-1.5">Allure régulière · 22 à 24 cps/min</p>
+        </header>
+        <div class="grid grid-cols-3 border-y border-border">
+          <label class="px-3 py-3 border-r border-border"><span class="eb text-muted block mb-1.5">Temps</span><span class="flex items-baseline gap-1"><input value="15" inputmode="numeric" class="w-full min-w-0 bg-transparent font-display font-bold text-[24px] num-stat text-cyan leading-none outline-none border-b border-dashed border-cyan/40" /><span class="eb text-muted">min</span></span></label>
+          <label class="px-3 py-3 border-r border-border"><span class="eb text-muted block mb-1.5">Puiss.</span><span class="flex items-baseline gap-1"><input value="140" inputmode="numeric" class="w-full min-w-0 bg-transparent font-display font-bold text-[24px] num-stat text-cyan leading-none outline-none border-b border-dashed border-cyan/40" /><span class="eb text-muted">W</span></span></label>
+          <label class="px-3 py-3"><span class="eb text-muted block mb-1.5">Dist.</span><span class="flex items-baseline gap-1"><input value="3,2" inputmode="decimal" class="w-full min-w-0 bg-transparent font-display font-bold text-[24px] num-stat text-cyan leading-none outline-none border-b border-dashed border-cyan/40" /><span class="eb text-muted">km</span></span></label>
+        </div>
+      </article>
+
+      <!-- À faire : neutre -->
+      <article class="mt-8 border-l-[3px] border-l-transparent">
+        <header class="px-5 mb-3">
+          <h2 class="font-display font-bold italic text-[24px] leading-[1.1] text-paper">Tapis incliné</h2>
+          <p class="eb text-muted mt-1.5">Pente 8 % · marche rapide</p>
+        </header>
+        <div class="grid grid-cols-3 border-y border-border">
+          <div class="px-3 py-3 border-r border-border"><p class="eb text-muted mb-1.5">Temps</p><p class="font-display font-bold text-[22px] num-stat text-todo leading-none">15<span class="eb ml-1">min</span></p></div>
+          <div class="px-3 py-3 border-r border-border"><p class="eb text-muted mb-1.5">Puiss.</p><p class="font-display font-bold text-[22px] num-stat text-todo leading-none">—</p></div>
+          <div class="px-3 py-3"><p class="eb text-muted mb-1.5">Dist.</p><p class="font-display font-bold text-[22px] num-stat text-todo leading-none">—</p></div>
+        </div>
+      </article>
+    </main>
+    <div class="absolute inset-x-0 bottom-0 bg-ink border-t border-border">
+      <div class="px-4 pt-3">
+        <button class="w-full h-14 bg-paper text-ink font-display font-bold text-[15px] uppercase tracking-eyebrow">Marquer fait · Rameur</button>
+      </div>
+      <div class="hi"><span></span></div>
+    </div>
+  </div>
+  <p class="font-sans text-[12px] text-muted mt-3 max-w-[390px] leading-snug">« Marquer fait » s'applique à l'exercice racing. « Rouvrir » sur un exercice fait demande une confirmation (AC-I4). Il n'y a plus de toggle. Les champs acceptent la virgule (« 3,2 »).</p>
+</figure>
+
+<figure>
+  <figcaption class="eb text-muted mb-3">08 — Séance terminée · la liste respire le vert</figcaption>
+  <div class="frame">
+    <div class="sb"><span>10:31</span><span class="text-muted">5G</span></div>
+    <header class="shrink-0 bg-ink border-b border-border">
+      <div class="px-5 h-11 flex items-center justify-between">
+        <p class="eb text-acid font-semibold">24 sept. <span class="text-acid/50 mx-1">·</span> Terminée</p>
+      </div>
+      <div class="px-5 pb-3 pt-1">
+        <div class="flex items-baseline justify-end mb-2">
+          <span class="font-display text-[14px] num-stat font-bold leading-none"><span class="text-acid">28</span><span class="text-muted">/28</span><span class="eb text-muted ml-1.5">séries</span></span>
+        </div>
+        <div class="h-[3px] bg-acid"></div>
+      </div>
+      <div class="grid grid-cols-2 border-t border-border">
+        <div class="px-5 py-2.5 border-r border-border flex items-baseline justify-between"><p class="eb text-muted">Tonnage</p><p class="font-display font-bold text-[20px] num-stat text-cyan leading-none">9,6<span class="eb text-muted ml-1">t</span></p></div>
+        <div class="px-5 py-2.5 flex items-baseline justify-between"><p class="eb text-muted">Reps</p><p class="font-display font-bold text-[20px] num-stat text-cyan leading-none">318<span class="eb text-muted ml-1">/320</span></p></div>
+      </div>
+    </header>
+    <main class="pb-4">
+      <section class="px-5 pt-7 pb-7 accent-line">
+        <h1 class="font-display font-black h-display">Cuisses<br/><span class="text-paper/40"><span class="text-acid">&amp;</span> Fesses.</span></h1>
+        <p class="eb text-acid mt-5">Séance terminée · 1 h 04 · 1 record</p>
+      </section>
+      <ul class="border-y border-border">
+        <li class="flex items-center gap-4 px-5 py-3 border-b border-border/70 border-l-[3px] border-l-acid bg-acid/[0.03]">
+          <div class="flex-1 min-w-0">
+            <h3 class="font-display font-black italic text-[19px] leading-[1.05] text-muted truncate">Climb box</h3>
+            <p class="eb text-acid mt-1">Cuisses <span class="text-acid/40 mx-1">—</span> <span class="font-semibold">Fait</span></p>
+          </div>
+          <div class="text-right shrink-0">
+            <p class="font-display font-black text-[20px] num-stat text-muted leading-none">10<span class="eb text-muted ml-1">kg</span></p>
+            <p class="eb text-muted num-stat mt-1">4 × 12</p>
+          </div>
+        </li>
+        <li class="flex items-center gap-4 px-5 py-3 border-b border-border/70 border-l-[3px] border-l-acid bg-acid/[0.03]">
+          <div class="flex-1 min-w-0">
+            <h3 class="font-display font-black italic text-[19px] leading-[1.05] text-muted truncate">Leg extension</h3>
+            <p class="eb text-acid mt-1">Cuisses <span class="text-acid/40 mx-1">—</span> <span class="font-semibold">Fait</span></p>
+          </div>
+          <div class="text-right shrink-0">
+            <p class="font-display font-black text-[20px] num-stat text-muted leading-none">45<span class="eb text-muted ml-1">kg</span></p>
+            <p class="eb text-muted num-stat mt-1">10/10/8/8</p>
+          </div>
+        </li>
+        <li class="flex items-center gap-4 px-5 py-3 border-b border-border/70 border-l-[3px] border-l-acid bg-acid/[0.03]">
+          <div class="flex-1 min-w-0">
+            <h3 class="font-display font-black italic text-[19px] leading-[1.05] text-muted truncate">Seated leg curl</h3>
+            <p class="eb text-acid mt-1">Cuisses <span class="text-acid/40 mx-1">—</span> <span class="font-semibold">Fait</span></p>
+          </div>
+          <div class="text-right shrink-0">
+            <p class="font-display font-black text-[20px] num-stat text-muted leading-none">45<span class="eb text-muted ml-1">kg</span></p>
+            <p class="eb text-muted num-stat mt-1">4 × 12</p>
+          </div>
+        </li>
+        <li class="flex items-center gap-4 px-5 py-3 border-b border-border/70 border-l-[3px] border-l-acid bg-acid/[0.03]">
+          <div class="flex-1 min-w-0">
+            <h3 class="font-display font-black italic text-[19px] leading-[1.05] text-muted truncate">Hip abduction</h3>
+            <p class="eb text-acid mt-1">Cuisses <span class="text-acid/40 mx-1">—</span> <span class="font-semibold">Fait</span></p>
+          </div>
+          <div class="text-right shrink-0">
+            <p class="font-display font-black text-[20px] num-stat text-muted leading-none">42,5<span class="eb text-muted ml-1">kg</span></p>
+            <p class="eb text-muted num-stat mt-1">4 × 12</p>
+          </div>
+        </li>
+        <li class="flex items-center gap-4 px-5 py-3 border-b border-border/70 border-l-[3px] border-l-acid bg-acid/[0.03]">
+          <div class="flex-1 min-w-0">
+            <h3 class="font-display font-black italic text-[19px] leading-[1.05] text-muted truncate">Press</h3>
+            <p class="eb text-acid mt-1">Cuisses <span class="text-acid/40 mx-1">—</span> <span class="font-semibold">Fait</span></p>
+          </div>
+          <div class="text-right shrink-0">
+            <p class="font-display font-black text-[20px] num-stat text-muted leading-none">142,5<span class="eb text-muted ml-1">kg</span></p>
+            <p class="eb text-muted num-stat mt-1">12/10/8/6</p>
+          </div>
+        </li>
+        <li class="flex items-center gap-4 px-5 py-3 border-b border-border/70 border-l-[3px] border-l-acid bg-acid/[0.03]">
+          <div class="flex-1 min-w-0">
+            <h3 class="font-display font-black italic text-[19px] leading-[1.05] text-muted truncate">Glute trainer</h3>
+            <p class="eb text-acid mt-1">Fesses <span class="text-acid/40 mx-1">—</span> <span class="font-semibold">Fait</span></p>
+          </div>
+          <div class="text-right shrink-0">
+            <p class="font-display font-black text-[20px] num-stat text-muted leading-none">17,5<span class="eb text-muted ml-1">kg</span></p>
+            <p class="eb text-muted num-stat mt-1">4 × 12</p>
+          </div>
+        </li>
+      </ul>
+    </main>
+    <nav class="shrink-0 grid grid-cols-3 border-t border-border bg-ink">
+      <button class="relative h-14 flex items-center justify-center"><span class="absolute top-0 left-6 right-6 h-[2px] bg-racing"></span><span class="font-display italic font-bold text-[12px] uppercase tracking-eyebrow text-racing">Séance</span></button>
+      <button class="h-14 flex items-center justify-center eb font-medium text-muted">Historique</button>
+      <button class="h-14 flex items-center justify-center eb font-medium text-muted">Données</button>
+    </nav>
+    <div class="hi shrink-0"><span></span></div>
+  </div>
+  <p class="font-sans text-[12px] text-muted mt-3 max-w-[390px] leading-snug">AC-C10 : barre à 100 %, toutes les cards en acid, aucune card racing (seul l'onglet actif). Le badge PR reste visible dans le détail de l'exercice, pas sur la card.</p>
+</figure>
+
+</div>
+</body>
+</html>
