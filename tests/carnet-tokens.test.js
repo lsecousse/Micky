@@ -23,10 +23,12 @@ const MIGRATED_FUNCTIONS = [
   'stopMinuterieOverlay',
   'seriesBandHtml', 'seriesLogRow', 'seriesLogHtml', 'createDock', 'exerciseViewWrap', 'previousValueText',
   'nextStepHint', 'activityLabel', 'formatKg',
+  'renderHistory', 'resumeSessionFromHistory', 'openModal', 'closeModal', 'formatFeedback', 'feedbackCard',
 ];
 const MIGRATED_HTML_BLOCKS = ['DIALOG CUSTOM', 'TOAST', 'COUNTDOWN STICKY TOP BAR', 'HOME', 'À LA SALLE', 'MODAL ÉDITION ACTIVITÉ (live)',
-  'CHRONO FULLSCREEN', 'MINUTERIE FULLSCREEN'];
-const MIGRATED_CSS_SELECTORS = ['#toast', '.dialog', '#countdown', '.live-edit', '.feedback-ia', '#chrono', '#minuterie'];
+  'CHRONO FULLSCREEN', 'MINUTERIE FULLSCREEN', 'HISTORIQUE', 'MODAL DÉTAIL SÉANCE'];
+const MIGRATED_CSS_SELECTORS = ['#toast', '.dialog', '#countdown', '.live-edit', '.feedback-ia', '#chrono', '#minuterie', '.modal',
+  '.series-not-done'];
 
 // Source of a top-level function, up to its closing brace at column 0.
 function functionSource(file, name) {
@@ -159,6 +161,10 @@ describe('carnetTokensShould', () => {
     expect(html).toContain('Newsreader');
     expect(html).toContain('IBM+Plex+Sans');
     expect(html).toContain('IBM+Plex+Mono');
+  });
+
+  it('detail modal has no hard-coded colour', () => {
+    expect(functionSource('app.js', 'openModal').match(/#[0-9a-fA-F]{3,6}\b/g) ?? []).toEqual([]);
   });
 
   it.each(MIGRATED_FUNCTIONS)('migrated function %s has no Direction A leftover', (name) => {

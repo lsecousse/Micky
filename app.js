@@ -2791,9 +2791,9 @@ async function renderHistory() {
 
   if (!sessions.length) {
     list.innerHTML = `
-      <div class="px-5 pt-12 text-center font-display italic text-[16px] text-a-muted">
+      <p class="px-5 pt-12 font-display italic text-[20px] text-mut">
         Aucune séance enregistrée.
-      </div>
+      </p>
     `;
     return;
   }
@@ -2821,17 +2821,17 @@ async function renderHistory() {
   const totalExos     = sessions.reduce((s, x) => s + x.exercises.length, 0);
 
   const masthead = document.createElement('section');
-  masthead.className = 'px-5 pt-9 pb-9 accent-line';
+  masthead.className = 'px-5 pt-8 pb-7';
   masthead.innerHTML = `
-    <h1 class="font-display font-black h-display text-a-paper">
-      Tes<br/>
-      <span class="text-a-paper/40"><span class="text-a-acid not-italic font-black">·</span> séances.</span>
-    </h1>
-    <p class="font-sans text-[10px] uppercase tracking-eyebrow text-a-muted mt-5">
-      ${String(totalSessions).padStart(2, '0')} séances · ${totalExos} exercices · ${totalTon} t cumulées
+    <h1 class="font-display font-medium text-[52px] leading-[0.95] tracking-[-0.02em] text-ink">Tes <em class="text-mut">séances.</em></h1>
+    <p class="font-sans text-[13px] text-mut mt-3 num-stat">
+      <span class="font-mono text-ink">${totalSessions}</span> séances · <span class="font-mono text-ink">${totalExos}</span> exercices · <span class="font-mono text-ink">${totalTon}</span> t cumulées
     </p>
   `;
   list.appendChild(masthead);
+
+  // Exactly one highlighter on screen: the most recent session still in progress
+  const markedSession = sessions.find(s => !s.duration);
 
   // Groupes mois
   [...groups.entries()].forEach(([monthKey, monthSessions]) => {
@@ -2839,18 +2839,18 @@ async function renderHistory() {
     section.className = 'mb-8';
 
     const monthHeader = document.createElement('header');
-    monthHeader.className = 'flex items-baseline justify-between mb-3 px-5';
+    monthHeader.className = 'flex items-baseline justify-between gap-3 px-5 pb-2';
     const monthVol = monthSessions.reduce((s, x) => s + totalVolume(x.exercises), 0);
     monthHeader.innerHTML = `
-      <h3 class="font-display italic font-bold text-[14px] uppercase tracking-eyebrow text-a-paper">${monthLabel(monthKey)}</h3>
-      <span class="font-sans text-[10px] uppercase tracking-eyebrow text-a-cyan num-stat">${(monthVol / 1000).toFixed(1).replace('.', ',')} t</span>
+      <h2 class="font-display italic font-medium text-[22px] leading-tight text-ink first-letter:uppercase">${monthLabel(monthKey)}</h2>
+      ${monthVol > 0 ? `<span class="font-mono text-[14px] text-ink num-stat whitespace-nowrap">${(monthVol / 1000).toFixed(1).replace('.', ',')} t</span>` : ''}
     `;
     section.appendChild(monthHeader);
 
     const ul = document.createElement('ul');
-    ul.className = 'border-y border-a-border';
+    ul.className = 'list-none border-0 border-solid border-t-[1.5px] border-ink';
 
-    monthSessions.forEach((session, idx) => {
+    monthSessions.forEach((session) => {
       const isAbandoned = !session.duration;
       const done    = Math.round(totalVolume(session.exercises));
       const planned = Math.round(plannedVolume(session.exercises));
@@ -2864,26 +2864,22 @@ async function renderHistory() {
         }, 0) || 0);
       }, 0);
 
-      const borderLeft = isAbandoned ? 'border-l-[3px] border-l-a-racing bg-a-racing/[0.04]' : 'border-l-[3px] border-l-a-acid';
-      const isLast = idx === monthSessions.length - 1;
-
       const name = session.programmeName || session.name || 'Séance';
+      const nameHtml = session === markedSession ? `<span class="mark">${escapeHtml(name)}</span>` : escapeHtml(name);
+      const volume = done > 0
+        ? `<span class="font-mono text-[14px] text-ink num-stat whitespace-nowrap">${done.toLocaleString('fr-FR')} kg</span>`
+        : `<span class="font-mono text-[14px] text-mut">—</span>`;
       const li = document.createElement('li');
       li.innerHTML = `
-        <button class="w-full text-left flex items-start gap-4 px-5 py-4 ${isLast ? '' : 'border-b border-a-border/70'} ${borderLeft} active:bg-a-inkAlt transition">
-          <div class="flex-1 min-w-0">
-            <h4 class="font-display font-bold italic text-[18px] leading-tight text-a-paper truncate">${escapeHtml(name)}</h4>
-            <p class="font-sans text-[9px] uppercase tracking-eyebrow text-a-muted mt-1.5 flex items-center gap-2 flex-wrap">
-              <span>${formatDate(session.date)}</span>
-              ${session.duration ? `<span class="text-a-muted/50">·</span><span>${formatDuration(session.duration)}</span>` : `<span class="text-a-muted/50">·</span><span class="text-a-racing">En cours</span>`}
-              <span class="text-a-muted/50">·</span>
-              <span>${session.exercises.length} exo${session.exercises.length > 1 ? 's' : ''}</span>
-            </p>
-          </div>
-          <div class="text-right shrink-0 leading-none">
-            <p class="font-display font-bold text-[18px] num-stat text-a-cyan leading-none">${done.toLocaleString('fr-FR')}<span class="font-sans font-medium text-[9px] tracking-eyebrow text-a-muted ml-1 align-baseline">kg</span></p>
-            ${reps > 0 ? `<p class="font-sans font-medium text-[10px] uppercase tracking-eyebrow text-a-muted num-stat mt-1.5">${reps} reps</p>` : ''}
-          </div>
+        <button class="grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-1 items-baseline w-full text-left px-5 py-3 border-0 border-solid border-b border-rule active:bg-sheet transition">
+          <h3 class="font-display font-bold italic text-[20px] leading-[1.15] text-ink truncate">${nameHtml}</h3>
+          ${volume}
+          <p class="font-sans text-[13px] text-mut num-stat">
+            ${formatDate(session.date)}
+            · ${session.duration ? formatDuration(session.duration) : `<span class="font-semibold text-ink">En cours</span>`}
+            · ${session.exercises.length} exo${session.exercises.length > 1 ? 's' : ''}
+          </p>
+          ${reps > 0 ? `<span class="font-sans text-[13px] text-mut num-stat text-right whitespace-nowrap">${reps} reps</span>` : ''}
         </button>
       `;
       li.querySelector('button').addEventListener('click', () => openModal(session));
@@ -2937,70 +2933,72 @@ async function openModal(session) {
     }, 0);
   }, 0);
 
-  // Masthead H1 split + status row
-  let html = `
-    <!-- Status row -->
-    <div class="px-5 pt-5 pb-3 flex items-center justify-between font-sans text-[10px] uppercase tracking-eyebrow text-a-muted">
-      <div class="flex items-center gap-2">
-        <span>${formatDate(session.date)}</span>
-        ${session.startedAt ? `<span class="text-a-muted/50">·</span><span>${formatTime(session.startedAt)}</span>` : ''}
-        ${session.duration ? `<span class="text-a-muted/50">·</span><span>${formatDuration(session.duration)}</span>` : `<span class="text-a-muted/50">·</span><span class="text-a-racing">En cours</span>`}
-      </div>
-    </div>
+  const stat = (label, value, unit, last = false) => `
+    <div class="px-5 py-3 min-w-0 ${last ? '' : 'border-0 border-solid border-r border-rule'}">
+      <p class="font-sans text-[12px] text-mut">${label}</p>
+      <p class="font-mono text-[20px] leading-none num-stat text-ink truncate mt-1.5">${value}${unit ? `<span class="font-sans text-[13px] text-mut ml-1">${unit}</span>` : ''}</p>
+    </div>`;
 
-    <!-- Masthead H1 -->
-    <section class="px-5 pt-2 pb-7 accent-line">
-      <h1 class="font-display font-black h-display text-a-paper">
-        ${escapeHtml(line1)}${sep ? `<br/><span class="text-a-paper/40"><span class="text-a-acid not-italic font-black">${escapeHtml(sep)}</span> ${escapeHtml(rest)}.</span>` : ''}
+  // Status row + masthead H1 split + stats strip
+  let html = `
+    <p class="px-5 pt-5 pr-20 font-sans text-[13px] text-mut num-stat leading-[40px]">
+      ${formatDate(session.date)}${session.startedAt ? ` · ${formatTime(session.startedAt)}` : ''}
+      · ${session.duration ? formatDuration(session.duration) : `<span class="font-semibold text-ink">En cours</span>`}
+    </p>
+
+    <section class="px-5 pt-3 pb-6">
+      <h1 class="font-display font-medium leading-[0.95] tracking-[-0.02em] text-ink break-words" style="font-size:clamp(2.5rem, 12vw, 3.25rem)">
+        ${escapeHtml(line1)}${sep ? ` <em class="text-mut">${escapeHtml(sep)} ${escapeHtml(rest)}.</em>` : ''}
       </h1>
     </section>
 
-    <!-- Stats strip cyan -->
-    <div class="grid grid-cols-3 border-y border-a-border">
-      <div class="px-3 py-3 border-r border-a-border min-w-0">
-        <p class="font-sans text-[8px] uppercase tracking-[0.40em] text-a-muted mb-1.5">Volume</p>
-        <p class="font-display font-bold text-[17px] num-stat text-a-cyan leading-none truncate">${done.toLocaleString('fr-FR')}<span class="font-sans text-[9px] uppercase tracking-eyebrow text-a-muted ml-1">kg</span></p>
-      </div>
-      <div class="px-3 py-3 border-r border-a-border min-w-0">
-        <p class="font-sans text-[8px] uppercase tracking-[0.40em] text-a-muted mb-1.5">Tonnage</p>
-        <p class="font-display font-bold text-[17px] num-stat text-a-cyan leading-none truncate">${tonnage}<span class="font-sans text-[9px] uppercase tracking-eyebrow text-a-muted ml-1">t</span></p>
-      </div>
-      <div class="px-3 py-3 min-w-0">
-        <p class="font-sans text-[8px] uppercase tracking-[0.40em] text-a-muted mb-1.5">Reps</p>
-        <p class="font-display font-bold text-[17px] num-stat text-a-cyan leading-none truncate">${totalRepsDone.toLocaleString('fr-FR')}</p>
-      </div>
+    <div class="grid grid-cols-3 border-0 border-solid border-t-[1.5px] border-ink border-b border-b-rule">
+      ${stat('Volume', done.toLocaleString('fr-FR'), 'kg')}
+      ${stat('Tonnage', tonnage, 't')}
+      ${stat('Reps', totalRepsDone.toLocaleString('fr-FR'), '', true)}
     </div>
   `;
 
-  // Exercices
+  // Exercices — logbook per exercise (mock .log / .lr)
+  const cols = 'grid grid-cols-[30px_minmax(0,1fr)_52px_34px_66px] items-baseline px-5 border-0 border-solid border-b border-rule';
   session.exercises.forEach(ex => {
     const e = migrateExercise(ex);
     const muscle = e.activities?.[0]?.name || '';
+    const hasWeight = (e.activities || []).some(a => a.type === 'weight');
     html += `
-      <article class="mt-6">
-        <header class="px-5 mb-3">
-          <h2 class="font-display font-bold text-[20px] leading-[1.1] text-a-paper">${escapeHtml(e.name)}</h2>
-          ${muscle ? `<p class="font-sans text-[10px] uppercase tracking-eyebrow text-a-muted mt-1.5">${escapeHtml(muscle)}</p>` : ''}
+      <article class="mt-8">
+        <header class="px-5 pb-2">
+          <h2 class="font-display italic font-bold text-[22px] leading-[1.15] text-ink">${escapeHtml(e.name)}</h2>
+          ${muscle ? `<p class="font-sans text-[13px] text-mut mt-0.5">${escapeHtml(muscle)}</p>` : ''}
         </header>
-        <div class="border-y border-a-border">
+        <div class="border-0 border-solid border-t-[1.5px] border-ink">
+          <div class="${cols} min-h-[30px] pt-2 pb-1.5 text-[12px] text-mut">
+            <span>Série</span><span></span>
+            ${hasWeight ? '<span class="text-right">kg</span><span class="text-right">reps</span>' : '<span class="col-span-2 text-right">durée</span>'}
+            <span class="text-right">repos</span>
+          </div>
           ${(e.series || []).map((s, i) => {
             const allDone = (e.activities || []).every((_, a) => s.activityStates?.[a] === 'done' || s.done !== false);
-            const borderLeft = allDone ? 'border-l-[3px] border-l-a-acid' : 'border-l-[3px] border-l-transparent opacity-50';
-            const restColor = allDone ? 'text-a-acid' : 'text-a-muted';
+            const rowColor = allDone ? 'text-ink' : 'text-mut';
+            const restColor = allDone ? 'text-done font-semibold' : 'text-mut';
             return e.activities.map((act, j) => {
               const v = s.values?.[j] || {};
               const isWeight = act.type === 'weight';
-              const charge = isWeight
-                ? `${v.weight ?? '—'}<span class="font-sans font-medium text-[10px] tracking-eyebrow text-a-muted ml-1.5">kg</span>`
-                : `${v.duration ?? '—'}<span class="font-sans font-medium text-[10px] tracking-eyebrow text-a-muted ml-1.5">s</span>`;
-              const second = isWeight ? `× ${v.reps ?? '—'}` : (act.label || act.name || '—');
+              const num = 'font-mono font-medium text-[17px] leading-none num-stat text-right';
+              const values = isWeight
+                ? `<span class="${num}">${v.weight != null ? formatKg(v.weight) : '—'}</span><span class="${num}">${v.reps ?? '—'}</span>`
+                : `<span class="col-span-2 ${num}">${v.duration ?? '—'} s</span>`;
+              const label = isWeight
+                ? (e.activities.length > 1 ? act.label || act.name || '' : '')
+                : (act.label || act.name || '—');
               const restSecs = act.rest || 0;
               const restLabel = restSecs > 0 ? `${Math.floor(restSecs / 60)}:${String(restSecs % 60).padStart(2, '0')}` : '—';
               return `
-                <div class="grid grid-cols-[1fr_60px_70px] gap-4 items-baseline px-5 py-3 ${borderLeft} border-b border-a-border/70 last:border-b-0">
-                  <span class="font-display font-bold text-[20px] num-stat text-a-paper">${charge}</span>
-                  <span class="font-display font-bold text-[14px] num-stat text-a-paper text-right">${escapeHtml(second)}</span>
-                  <span class="font-sans text-[9px] uppercase tracking-eyebrow ${restColor} num-stat text-right font-semibold">${restLabel}</span>
+                <div class="${cols} min-h-[40px] py-2.5 text-[14px] ${rowColor}">
+                  <span class="text-[12px] text-mut num-stat">${j === 0 ? i + 1 : ''}</span>
+                  <span class="truncate pr-1.5">${escapeHtml(label)}</span>
+                  ${values}
+                  <span class="text-right text-[13px] num-stat ${restColor}">${restLabel}</span>
                 </div>
               `;
             }).join('');
@@ -3012,25 +3010,20 @@ async function openModal(session) {
 
   // Feedback IA
   if (session.feedbackIa) {
-    html += `
-      <div class="mx-5 mt-8 border border-a-border bg-a-inkAlt p-4 space-y-2">
-        <p class="font-sans text-[10px] uppercase tracking-eyebrow text-a-acid font-semibold">Feedback IA</p>
-        <div class="font-sans text-[13px] text-a-paper leading-relaxed">${formatFeedback(session.feedbackIa)}</div>
-      </div>
-    `;
+    html += `<div class="px-5 mt-10">${feedbackCard('Feedback IA', formatFeedback(session.feedbackIa))}</div>`;
   } else if (!isAbandoned) {
     html += `
-      <div class="px-5 mt-8" id="feedback-ia-generate-wrap">
-        <button id="feedback-ia-generate" class="w-full py-3 border border-a-border text-a-paper font-sans text-[11px] uppercase tracking-eyebrow active:border-a-acid active:text-a-acid transition">Générer l'analyse IA</button>
+      <div class="px-5 mt-10" id="feedback-ia-generate-wrap">
+        <button id="feedback-ia-generate" class="w-full min-h-14 px-4 py-3 border-[1.5px] border-solid border-ink rounded font-sans text-[16px] font-semibold text-ink active:bg-paper disabled:border-rule disabled:text-mut transition">Générer l'analyse IA</button>
       </div>
     `;
   }
 
   // Footer actions
   html += `
-    <div class="px-5 mt-8 mb-6 grid ${isAbandoned ? 'grid-cols-2 gap-3' : 'grid-cols-1'}">
-      ${isAbandoned ? `<button id="resume-session" class="py-4 bg-a-racing text-a-ink font-display font-bold text-[14px] uppercase tracking-eyebrow active:bg-a-racing/80 transition">▶ Reprendre</button>` : ''}
-      <button id="delete-session" class="py-4 border border-a-blood text-a-blood font-display font-bold text-[14px] uppercase tracking-eyebrow active:bg-a-blood active:text-a-paper transition">Supprimer</button>
+    <div class="px-5 mt-10 mb-8 grid gap-2">
+      ${isAbandoned ? `<button id="resume-session" class="h-14 bg-ink text-paper rounded font-sans text-[16px] font-semibold active:opacity-80 transition">Reprendre</button>` : ''}
+      <button id="delete-session" class="h-12 font-sans text-[15px] font-semibold text-alert active:opacity-60 transition">Supprimer</button>
     </div>
   `;
 
@@ -3056,31 +3049,18 @@ async function openModal(session) {
     } else {
       generateBtn.addEventListener('click', async () => {
         const wrap = document.getElementById('feedback-ia-generate-wrap');
-        wrap.innerHTML = `
-          <div class="feedback-ia-card">
-            <div class="feedback-ia-title">🤖 Feedback IA</div>
-            <div class="feedback-ia-loading">
-              <div class="feedback-ia-spinner"></div>
-              <p>Analyse en cours…</p>
-            </div>
+        wrap.innerHTML = feedbackCard('Feedback IA', `
+          <div class="flex items-center gap-2 text-[13px] text-mut">
+            <div class="live-edit-suggestion-spinner"></div>
+            <p>Analyse en cours…</p>
           </div>
-        `;
+        `);
         try {
           const feedback = await generateAndPersistFeedback(session);
           session.feedbackIa = feedback;
-          wrap.outerHTML = `
-            <div class="feedback-ia-card">
-              <div class="feedback-ia-title">🤖 Feedback IA</div>
-              <div class="feedback-ia-content">${formatFeedback(feedback)}</div>
-            </div>
-          `;
+          wrap.outerHTML = `<div class="px-5 mt-10">${feedbackCard('Feedback IA', formatFeedback(feedback))}</div>`;
         } catch (e) {
-          wrap.innerHTML = `
-            <div class="feedback-ia-card" style="border-color:#ff5c5c">
-              <div class="feedback-ia-title" style="color:#ff5c5c">Erreur</div>
-              <div class="feedback-ia-content">${escapeHtml(e.message)}</div>
-            </div>
-          `;
+          wrap.innerHTML = feedbackCard('Erreur', escapeHtml(e.message), 'text-alert');
         }
       });
     }
@@ -3319,21 +3299,16 @@ async function showPostSessionFeedback(session) {
   const name = session.programmeName || session.name || 'Séance';
   const vol = totalVolume(session.exercises);
   const durStr = session.duration ? formatDuration(session.duration) : '';
-  // Carnet sheet laid over the (not yet migrated) modal shell
+  // Carnet sheet inside the modal shell (which draws the top rule)
   const sheet = (content) => `
-    <div class="feedback-ia-modal bg-sheet text-ink font-sans px-5 pt-14 pb-10 border-0 border-solid border-t-[1.5px] border-ink">
+    <div class="feedback-ia-modal bg-sheet text-ink font-sans px-5 pt-14 pb-10">
       <p class="text-[13px] text-mut">Fin de séance</p>
       <h2 class="font-display italic font-bold text-[28px] leading-[1.1] text-ink mt-1">${escapeHtml(name)}</h2>
       ${content}
     </div>
   `;
   const meta = `<p class="text-[13px] text-mut mt-2 num-stat">${formatDate(session.date)}${durStr ? ' · ' + durStr : ''} · <span class="font-mono text-ink">${vol.toLocaleString('fr-FR')}</span> kg</p>`;
-  const card = (title, content, titleCls) => `
-    <div class="mt-5 pt-3 border-0 border-solid border-t-[1.5px] border-ink">
-      <p class="text-[13px] font-semibold ${titleCls}">${title}</p>
-      <div class="text-[15px] leading-relaxed text-ink mt-2">${content}</div>
-    </div>
-  `;
+  const card = (title, content, titleCls) => `<div class="mt-5">${feedbackCard(title, content, titleCls)}</div>`;
 
   body.innerHTML = sheet(`
     ${meta}
@@ -3350,6 +3325,16 @@ async function showPostSessionFeedback(session) {
   } catch (e) {
     body.innerHTML = sheet(card('Erreur', escapeHtml(e.message), 'text-alert'));
   }
+}
+
+// AI feedback block (Carnet): rule on top, 13 px title, 15 px text that wraps
+function feedbackCard(title, content, titleCls = 'text-ink') {
+  return `
+    <div class="pt-3 border-0 border-solid border-t-[1.5px] border-ink">
+      <p class="font-sans text-[13px] font-semibold ${titleCls}">${title}</p>
+      <div class="font-sans text-[15px] leading-relaxed text-ink mt-2 break-words">${content}</div>
+    </div>
+  `;
 }
 
 function formatSessionForAI(session) {
