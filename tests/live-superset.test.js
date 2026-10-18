@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   liveFonteExercise, programmeIndexOf, reorderLiveTiming, liveExerciseDurationAllowed,
   supersetKindLabel, supersetSettingText, liveSupersetBlock, supersetRoundLog, livePauseView, supersetNextHint,
+  liveListBlocks, togglePickedExercise, groupDraftRounds, applyLiveGrouping, programmeGrouping,
 } from '../lib/live-superset.js';
 
 const WEIGHT = { type: 'weight', reps: 10, weight: 40, rest: 60 };
@@ -252,5 +253,204 @@ describe('supersetNextHintShould', () => {
     supersetNextHint(exs, { exIdx: 0, sIdx: 0, actIdx: 0 });
 
     expect(exs[0].series[0].activityStates).toEqual({});
+  });
+});
+
+/* ── List by blocks and « Grouper » sheet ─────────────── */
+
+function single(name, sets = 3, doneCount = 0) {
+  const act = { type: 'weight', weight: 20, reps: 10, rest: 60 };
+  return {
+    name, activities: [act],
+    series: Array.from({ length: sets }, (_, k) => ({
+      activityStates: k < doneCount ? { 0: 'done' } : {},
+      values: [{ weight: 20, reps: 10 }],
+    })),
+  };
+}
+
+describe('liveListBlocksShould', () => {
+  it('give one entry per block', () => {
+    const exs = pair();
+
+    const result = liveListBlocks(exs);
+
+    expect(result.map(b => b.indices)).toEqual([[0, 1], [2]]);
+  });
+
+  it('move finished blocks to the end keeping the order of the others', () => {
+    const exs = [single('Tractions', 3, 3), single('Dips'), single('Curl', 2, 2), single('Squat')];
+
+    const result = liveListBlocks(exs);
+
+    expect(result.map(b => b.indices[0])).toEqual([1, 3, 0, 2]);
+  });
+
+  it('flag a block done when every series of every member is done', () => {
+    const exs = pair(8);
+
+    const result = liveListBlocks(exs);
+
+    expect(result.find(b => b.kind === 'group').done).toBe(true);
+  });
+
+  it('flag a group started when one member has a series in progress', () => {
+    const exs = pair(1);
+
+    const result = liveListBlocks(exs);
+
+    expect(result[0].started).toBe(true);
+  });
+
+  it('flag a single exercise not started when no activity has a state', () => {
+    const exs = [single('Dips')];
+
+    const result = liveListBlocks(exs);
+
+    expect(result[0].started).toBe(false);
+  });
+
+  it('give the rounds progress of a group', () => {
+    const exs = pair(4);
+
+    const result = liveListBlocks(exs);
+
+    expect(result[0].progress).toEqual({ roundsDone: 2, rounds: 4 });
+  });
+
+  it('give no progress for a single exercise', () => {
+    const exs = [single('Dips')];
+
+    const result = liveListBlocks(exs);
+
+    expect(result[0].progress).toBeUndefined();
+  });
+});
+
+describe('togglePickedExerciseShould', () => {
+  it('append an exercise not yet picked', () => {
+    const result = togglePickedExercise([3, 1], 5);
+
+    expect(result).toEqual([3, 1, 5]);
+  });
+
+  it('remove a picked exercise so the next ones move up', () => {
+    const result = togglePickedExercise([3, 1, 5], 1);
+
+    expect(result).toEqual([3, 5]);
+  });
+
+  it('ignore a fifth exercise', () => {
+    const result = togglePickedExercise([0, 1, 2, 3], 4);
+
+    expect(result).toEqual([0, 1, 2, 3]);
+  });
+
+  it('leave the given array untouched', () => {
+    const picked = [3, 1];
+
+    togglePickedExercise(picked, 5);
+
+    expect(picked).toEqual([3, 1]);
+  });
+});
+
+describe('groupDraftRoundsShould', () => {
+  it('take the longest picked exercise by default', () => {
+    const exs = [single('Militaire', 4), single('Dips', 3)];
+
+    const result = groupDraftRounds(exs, [1, 0], null);
+
+    expect(result).toBe(4);
+  });
+
+  it('keep the rounds set by the user', () => {
+    const exs = [single('Militaire', 4), single('Dips', 3)];
+
+    const result = groupDraftRounds(exs, [1, 0], 2);
+
+    expect(result).toBe(2);
+  });
+
+  it('propose 4 rounds while nothing is picked', () => {
+    const result = groupDraftRounds([single('Dips', 3)], [], null);
+
+    expect(result).toBe(4);
+  });
+});
+
+function liveSessionWith(exercises) {
+  return {
+    exercises,
+    exoStartedAt:   { 0: 100 },
+    exoDurations:   { 0: 300 },
+    serieStartedAt: { 0: { 0: 100 } },
+    serieDurations: { 0: { 0: 40 } },
+  };
+}
+
+describe('applyLiveGroupingShould', () => {
+  it('group the picked exercises in the picked order at the first picked place', () => {
+    const session = liveSessionWith([single('Tractions', 3, 3), single('Militaire', 4), single('Rowing'), single('Dips')]);
+
+    const { exercises } = applyLiveGrouping(session, [3, 1], { rounds: 4, transition: 15, roundRest: 90 });
+
+    expect(exercises.map(e => e.name)).toEqual(['Tractions', 'Dips', 'Militaire', 'Rowing']);
+  });
+
+  it('give the members the chosen settings', () => {
+    const session = liveSessionWith([single('Militaire', 4), single('Dips')]);
+
+    const { exercises } = applyLiveGrouping(session, [0, 1], { rounds: 4, transition: 20, roundRest: 105 });
+
+    expect(exercises[1].group).toEqual({ id: 'g1', rounds: 4, transition: 20, roundRest: 105 });
+  });
+
+  it('give resized series an empty activity state', () => {
+    const session = liveSessionWith([single('Militaire', 4), single('Dips', 3)]);
+
+    const { exercises } = applyLiveGrouping(session, [0, 1], { rounds: 4, transition: 15, roundRest: 90 });
+
+    expect(exercises[1].series.map(s => s.activityStates)).toEqual([{}, {}, {}, {}]);
+  });
+
+  it('reindex the timing maps by the same permutation', () => {
+    const session = liveSessionWith([single('Tractions', 3, 3), single('Militaire'), single('Dips')]);
+    session.exoDurations = { 0: 300, 2: 50 };
+
+    const { timing } = applyLiveGrouping(session, [2, 1], { rounds: 3, transition: 15, roundRest: 90 });
+
+    expect(timing.exoDurations).toEqual({ 0: 300, 1: 50 });
+  });
+});
+
+describe('programmeGroupingShould', () => {
+  const settings = { rounds: 3, transition: 15, roundRest: 90 };
+
+  it('group the programme exercises matching the picked session exercises', () => {
+    const programme = [programmeEx({ name: 'Militaire' }), programmeEx({ name: 'Rowing' }), programmeEx({ name: 'Dips' })];
+    const session = [single('Rowing'), single('Militaire'), single('Dips')];
+
+    const result = programmeGrouping(programme, session, [2, 1], settings);
+
+    expect(result.map(e => [e.name, e.group?.id])).toEqual([['Dips', 'g1'], ['Militaire', 'g1'], ['Rowing', undefined]]);
+  });
+
+  it('give null when a picked exercise is missing from the programme', () => {
+    const programme = [programmeEx({ name: 'Militaire' })];
+    const session = [single('Militaire'), single('Dips')];
+
+    const result = programmeGrouping(programme, session, [0, 1], settings);
+
+    expect(result).toBeNull();
+  });
+
+  it('give null when the programme refuses the group', () => {
+    const programme = [programmeEx({ name: 'Militaire', group: { ...GROUP } }), programmeEx({ name: 'Rowing', group: { ...GROUP } }), programmeEx({ name: 'Dips' })];
+    const session = [single('Militaire'), single('Dips')];
+
+    const result = programmeGrouping(programme, session, [0, 1], settings);
+
+    expect(result).toBeNull();
   });
 });

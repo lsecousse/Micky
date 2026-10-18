@@ -1045,75 +1045,310 @@ function renderExerciseList(tab, totals = {}) {
     </div>`).join('');
   wrap.appendChild(metrics);
 
-  // Exercise list — done at the bottom
-  const indexed = liveSession.exercises.map((ex, exIdx) => {
-    const totalSets = ex.series.length;
-    const doneSets = ex.series.filter(s =>
-      ex.activities.every((_, a) => s.activityStates?.[a] === 'done')
-    ).length;
-    return { ex, exIdx, totalSets, doneSets };
-  });
-  indexed.sort((a, b) => {
-    const aDone = a.doneSets === a.totalSets ? 1 : 0;
-    const bDone = b.doneSets === b.totalSets ? 1 : 0;
-    return aDone - bDone;
-  });
-
+  // Exercise list — one entry per block, finished blocks at the bottom
   const list = document.createElement('div');
   list.className = 'border-0 border-solid border-t-[1.5px] border-ink';
 
-  let marked = false; // one highlighter at a time: the first exercise in progress
-  indexed.forEach(({ ex, exIdx, totalSets, doneSets }) => {
-    const startedSets = ex.series.filter(s =>
-      ex.activities.some((_, a) => s.activityStates?.[a])
-    ).length;
-
-    const isDone    = doneSets === totalSets;
-    const isStarted = !isDone && startedSets > 0;
-    const isMarked  = isStarted && !marked;
+  let marked = false; // one highlighter at a time: the first block in progress
+  liveListBlocks(liveSession.exercises).forEach(block => {
+    const isMarked = block.started && !block.done && !marked;
     if (isMarked) marked = true;
+    list.appendChild(block.kind === 'group'
+      ? supersetListEntry(block, isMarked)
+      : singleExerciseCard(block.indices[0], isMarked));
+  });
 
-    const muscle = (ex.activities?.[0]?.name) || '';
-    const wActIdx = ex.activities.findIndex(a => a.type === 'weight');
-    const wAct = wActIdx >= 0 ? ex.activities[wActIdx] : null;
-    // Affiche la dernière valeur saisie (sinon le planifié)
-    const latestVal = (() => {
-      if (wActIdx < 0) return null;
-      for (let i = ex.series.length - 1; i >= 0; i--) {
-        const v = ex.series[i]?.values?.[wActIdx];
-        if (v && (v.weight != null || v.reps != null)) return v;
-      }
-      return null;
-    })();
-    const dispWeight = latestVal?.weight ?? wAct?.weight ?? 0;
-    const dispReps   = latestVal?.reps   ?? wAct?.reps   ?? 0;
-    const summary = [
-      wAct ? `${totalSets} × ${dispReps} · ${formatKg(dispWeight)} kg` : `${totalSets} série${totalSets > 1 ? 's' : ''}`,
-      muscle ? escapeHtml(muscle) : '',
-    ].filter(Boolean).join(' · ');
-    const name = escapeHtml(ex.name);
-    const countCls = isDone ? 'font-semibold text-done' : (isStarted ? 'text-ink' : 'text-mut');
+  wrap.appendChild(list);
+  if (groupableLiveIndices(liveSession.exercises).length >= 2) wrap.appendChild(groupOpenButton());
+  tab.appendChild(wrap);
+}
 
-    const card = document.createElement('button');
-    card.className = 'w-full text-left grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-1 items-baseline px-5 py-3 border-0 border-solid border-b border-rule text-ink active:bg-sheet transition';
-    card.innerHTML = `
+// Opens the next undone step of the block of `exIdx` (or its first activity when finished)
+function openListEntry(exIdx) {
+  const next = nextUndoneInBlock(liveSession.exercises, exIdx);
+  // Si exo entièrement fait, on ouvre la première activité de la première série pour permettre l'édition
+  liveFocus = next || { exIdx, sIdx: 0, actIdx: 0 };
+  if (next) markExoSerieStart(next.exIdx, next.sIdx);
+  renderSeanceScreen();
+}
+
+// Last entered weight value of an exercise (null when none)
+function latestWeightValue(ex, wActIdx) {
+  if (wActIdx < 0) return null;
+  for (let i = ex.series.length - 1; i >= 0; i--) {
+    const v = ex.series[i]?.values?.[wActIdx];
+    if (v && (v.weight != null || v.reps != null)) return v;
+  }
+  return null;
+}
+
+// List card of a single exercise (mock .item)
+function singleExerciseCard(exIdx, isMarked) {
+  const ex = liveSession.exercises[exIdx];
+  const totalSets = ex.series.length;
+  const doneSets = ex.series.filter(s =>
+    ex.activities.every((_, a) => s.activityStates?.[a] === 'done')
+  ).length;
+  const startedSets = ex.series.filter(s =>
+    ex.activities.some((_, a) => s.activityStates?.[a])
+  ).length;
+
+  const isDone    = doneSets === totalSets;
+  const isStarted = !isDone && startedSets > 0;
+
+  const muscle = (ex.activities?.[0]?.name) || '';
+  const wActIdx = ex.activities.findIndex(a => a.type === 'weight');
+  const wAct = wActIdx >= 0 ? ex.activities[wActIdx] : null;
+  // Affiche la dernière valeur saisie (sinon le planifié)
+  const latestVal = latestWeightValue(ex, wActIdx);
+  const dispWeight = latestVal?.weight ?? wAct?.weight ?? 0;
+  const dispReps   = latestVal?.reps   ?? wAct?.reps   ?? 0;
+  const summary = [
+    wAct ? `${totalSets} × ${dispReps} · ${formatKg(dispWeight)} kg` : `${totalSets} série${totalSets > 1 ? 's' : ''}`,
+    muscle ? escapeHtml(muscle) : '',
+  ].filter(Boolean).join(' · ');
+  const name = escapeHtml(ex.name);
+  const countCls = isDone ? 'font-semibold text-done' : (isStarted ? 'text-ink' : 'text-mut');
+
+  const card = document.createElement('button');
+  card.className = 'w-full text-left grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-1 items-baseline px-5 py-3 border-0 border-solid border-b border-rule text-ink active:bg-sheet transition';
+  card.innerHTML = `
       <h3 class="font-display italic font-bold text-[20px] leading-[1.15] ${isDone ? 'text-mut' : 'text-ink'}">${isMarked ? `<span class="mark">${name}</span>` : name}</h3>
       <span class="font-mono text-[14px] num-stat ${countCls}">${doneSets}/${totalSets}</span>
       <p class="col-start-1 text-[13px] text-mut num-stat">${summary}</p>
     `;
-    card.addEventListener('click', () => {
-      const next = nextUndoneInBlock(liveSession.exercises, exIdx);
-      // Si exo entièrement fait, on ouvre la première activité de la première série pour permettre l'édition
-      liveFocus = next || { exIdx, sIdx: 0, actIdx: 0 };
-      if (next) markExoSerieStart(next.exIdx, next.sIdx);
-      renderSeanceScreen();
-    });
-    list.appendChild(card);
-  });
-
-  wrap.appendChild(list);
-  tab.appendChild(wrap);
+  card.addEventListener('click', () => openListEntry(exIdx));
+  return card;
 }
+
+// Load of a group member in the list: last entered weight, else the planned one
+function memberLoadText(ex) {
+  const wActIdx = ex.activities.findIndex(a => a.type === 'weight');
+  if (wActIdx < 0) return '';
+  const weight = latestWeightValue(ex, wActIdx)?.weight ?? ex.activities[wActIdx].weight ?? 0;
+  return `${formatKg(weight)} kg`;
+}
+
+function supersetMemberRowHtml(exIdx, position, isDone) {
+  const ex = liveSession.exercises[exIdx];
+  return `
+      <span class="font-display italic font-bold text-[17px] ${isDone ? 'text-mut' : 'text-ink'}">${supersetMemberLetter(position)}</span>
+      <span class="font-display italic font-bold text-[19px] leading-[1.15] truncate ${isDone ? 'text-mut' : 'text-ink'}">${escapeHtml(ex.name)}</span>
+      <span class="font-mono text-[13px] text-mut num-stat">${memberLoadText(ex)}</span>`;
+}
+
+// List entry of a group (mock .grp): header, rounds counter, bracket of members
+function supersetListEntry(block, isMarked) {
+  const { roundsDone, rounds } = block.progress;
+  const label = `${supersetKindLabel(block.indices.length)} · ${rounds} tour${rounds > 1 ? 's' : ''}`;
+  const head = isMarked
+    ? `<span class="mark font-semibold">${label} · en cours</span>`
+    : `<span class="text-mut">${label}</span>`;
+  const countCls = block.done ? 'font-semibold text-done' : (block.started ? 'text-ink' : 'text-mut');
+
+  const entry = document.createElement('button');
+  entry.className = 'w-full text-left block px-5 pt-3 pb-3.5 border-0 border-solid border-b border-rule text-ink active:bg-sheet transition';
+  entry.innerHTML = `
+      <div class="flex justify-between items-baseline gap-3 text-[13px]">
+        ${head}
+        <span class="font-mono text-[14px] num-stat ${countCls}">${roundsDone}/${rounds}</span>
+      </div>
+      <div class="mt-2 pl-3 border-0 border-solid border-l-2 border-ink grid grid-cols-[20px_minmax(0,1fr)_auto] gap-x-2 gap-y-1.5 items-baseline">
+        ${block.indices.map((exIdx, pos) => supersetMemberRowHtml(exIdx, pos, block.done)).join('')}
+      </div>
+    `;
+  entry.addEventListener('click', () => openListEntry(block.indices[0]));
+  return entry;
+}
+
+// Dashed button under the list (mock .dashed): opens the « Grouper » sheet
+function groupOpenButton() {
+  const box = document.createElement('div');
+  box.className = 'px-5 pt-[18px] pb-5';
+  box.innerHTML = `<button id="group-open" class="w-full h-12 border-[1.5px] border-dashed border-ink rounded text-center text-[14px] font-medium text-ink active:bg-ink/10 transition">Grouper des exercices</button>`;
+  box.querySelector('#group-open').addEventListener('click', openGroupSheet);
+  return box;
+}
+
+/* ── « Grouper » sheet (mock screen 05) ──────────────── */
+let groupSheetState = null; // { picked, rounds (null = default), transition, roundRest, keep, escHandler }
+
+const GROUP_SHEET_STEPS = {
+  rounds:     { step: 1,  min: 1 },
+  transition: { step: 5,  min: 0 },
+  roundRest:  { step: 15, min: 0 },
+};
+const GROUP_COUNT_WORDS = { 2: 'des deux', 3: 'des trois', 4: 'des quatre' };
+
+function openGroupSheet() {
+  const escHandler = (e) => { if (e.key === 'Escape') closeGroupSheet(); };
+  document.addEventListener('keydown', escHandler);
+  groupSheetState = {
+    picked: [], rounds: null, keep: false, escHandler,
+    transition: SUPERSET_DEFAULT_TRANSITION, roundRest: SUPERSET_DEFAULT_ROUND_REST,
+  };
+  renderGroupSheet();
+  document.getElementById('group-sheet').classList.remove('hidden');
+}
+
+function closeGroupSheet() {
+  document.getElementById('group-sheet').classList.add('hidden');
+  document.getElementById('group-sheet-body').innerHTML = '';
+  if (groupSheetState) document.removeEventListener('keydown', groupSheetState.escHandler);
+  groupSheetState = null;
+}
+
+function groupSheetSettings(state) {
+  return {
+    rounds:     groupDraftRounds(liveSession.exercises, state.picked, state.rounds),
+    transition: state.transition,
+    roundRest:  state.roundRest,
+  };
+}
+
+// "4 × 8" for a weight exercise, "3 séries" otherwise
+function groupPickPlanText(ex) {
+  const wActIdx = ex.activities.findIndex(a => a.type === 'weight');
+  const sets = ex.series.length;
+  if (wActIdx < 0) return `${sets} série${sets > 1 ? 's' : ''}`;
+  return `${sets} × ${latestWeightValue(ex, wActIdx)?.reps ?? ex.activities[wActIdx].reps ?? 0}`;
+}
+
+function groupPickRowHtml(exIdx, picked) {
+  const pos = picked.indexOf(exIdx);
+  const box = pos >= 0
+    ? `<span class="w-[30px] h-[30px] shrink-0 flex items-center justify-center rounded border-[1.5px] border-solid border-ink bg-ink text-paper font-display italic font-bold text-[17px]">${supersetMemberLetter(pos)}</span>`
+    : `<span class="w-[30px] h-[30px] shrink-0 rounded border-[1.5px] border-solid border-ink"></span>`;
+  return `
+    <li><button data-group-pick="${exIdx}" class="w-full flex items-center gap-3 h-[54px] px-5 text-left text-ink border-0 border-solid border-b border-rule active:bg-ink/10 transition">
+      ${box}
+      <span class="flex-1 min-w-0 truncate font-display italic font-bold text-[18px]">${escapeHtml(liveSession.exercises[exIdx].name)}</span>
+      <small class="font-mono text-[12px] text-mut num-stat">${groupPickPlanText(liveSession.exercises[exIdx])}</small>
+    </button></li>`;
+}
+
+function groupOffRowHtml(name, reason) {
+  return `
+    <li class="flex items-center gap-3 h-[54px] px-5 text-mut border-0 border-solid border-b border-rule">
+      <span class="w-[30px] h-[30px] shrink-0 rounded border-[1.5px] border-solid border-rule"></span>
+      <span class="flex-1 min-w-0 truncate font-display italic font-bold text-[18px]">${name}</span>
+      <small class="text-[12px] text-mut">${reason}</small>
+    </li>`;
+}
+
+// One row per fonte block: groupable exercises are pickable, the others greyed; cardio absent
+function groupPickListHtml(picked) {
+  const exs = liveSession.exercises;
+  const groupable = groupableLiveIndices(exs);
+  return exerciseBlocks(exs).map(({ kind, indices }) => {
+    const ex = exs[indices[0]];
+    if (kind === 'group') {
+      const names = indices.map(i => escapeHtml(exs[i].name)).join(' + ');
+      return groupOffRowHtml(`${supersetKindLabel(indices.length)} · ${names}`, 'déjà groupé');
+    }
+    if (ex.type === 'cardio') return '';
+    if (groupable.includes(indices[0])) return groupPickRowHtml(indices[0], picked);
+    return groupOffRowHtml(escapeHtml(ex.name), 'commencé');
+  }).join('');
+}
+
+function groupCounterHtml(key, label, hint, valueText) {
+  const btn = 'w-[38px] h-[38px] rounded border-[1.5px] border-solid border-ink font-mono text-[18px] text-center text-ink active:bg-ink/10 transition';
+  return `
+    <div class="flex items-center justify-between gap-3 px-5 py-2.5">
+      <p class="text-[14px] font-medium text-ink">${label}<span class="block text-[12px] font-normal text-mut">${hint}</span></p>
+      <div class="flex items-center gap-2">
+        <button data-group-step="${key}" data-dir="-1" class="${btn}" aria-label="${label} moins">−</button>
+        <b class="w-16 text-center font-mono font-semibold text-[22px] text-ink num-stat">${valueText}</b>
+        <button data-group-step="${key}" data-dir="1" class="${btn}" aria-label="${label} plus">+</button>
+      </div>
+    </div>`;
+}
+
+function groupRoundsHint(picked) {
+  const longest = groupDraftRounds(liveSession.exercises, picked, null);
+  const among = GROUP_COUNT_WORDS[picked.length] || 'des exercices';
+  return `le plus long ${among} : <span class="font-mono num-stat">${longest}</span>`;
+}
+
+function groupKeepRowHtml(keep) {
+  return `
+    <div class="flex items-center justify-between gap-3 px-5 pt-3 pb-2.5">
+      <p class="text-[14px] font-medium text-ink">Garder dans le programme<span class="block text-[12px] font-normal text-mut">sinon, pour cette séance seulement</span></p>
+      <button id="group-keep" role="checkbox" aria-checked="${keep}" aria-label="Garder dans le programme"
+        class="w-[30px] h-[30px] shrink-0 flex items-center justify-center rounded border-[1.5px] border-solid border-ink text-[16px] ${keep ? 'bg-ink text-paper' : 'text-ink'}">${keep ? '✓' : ''}</button>
+    </div>`;
+}
+
+function groupSheetBodyHtml(state) {
+  const settings = groupSheetSettings(state);
+  const n = state.picked.length;
+  return `
+    <p class="px-5 text-[13px] leading-normal text-mut">Touche 2 à 4 exercices pas encore commencés, dans l'ordre voulu : le premier touché devient A.</p>
+    <ul class="list-none mt-3.5 border-0 border-solid border-t border-rule">${groupPickListHtml(state.picked)}</ul>
+    <div class="pt-2">
+      ${groupCounterHtml('rounds', 'Tours', groupRoundsHint(state.picked), settings.rounds)}
+      ${groupCounterHtml('transition', 'Transition', 'entre exercices', formatRest(settings.transition))}
+      ${groupCounterHtml('roundRest', 'Repos de tour', 'après le dernier', formatRest(settings.roundRest))}
+    </div>
+    ${groupKeepRowHtml(state.keep)}
+    <div class="px-4 pt-3.5">
+      <button id="group-submit" ${n < 2 ? 'disabled' : ''} class="w-full h-14 bg-ink text-paper rounded text-[16px] font-semibold active:bg-ink/80 disabled:opacity-40 transition">Grouper ${n} exercice${n > 1 ? 's' : ''}</button>
+    </div>`;
+}
+
+function renderGroupSheet() {
+  document.getElementById('group-sheet-body').innerHTML = groupSheetBodyHtml(groupSheetState);
+}
+
+function stepGroupSetting(key, dir) {
+  const { step, min } = GROUP_SHEET_STEPS[key];
+  const current = groupSheetSettings(groupSheetState)[key];
+  groupSheetState[key] = Math.max(min, current + dir * step);
+}
+
+function handleGroupSheetClick(e) {
+  if (!groupSheetState) return;
+  const pick = e.target.closest('[data-group-pick]');
+  const step = e.target.closest('[data-group-step]');
+  if (pick) groupSheetState.picked = togglePickedExercise(groupSheetState.picked, Number(pick.dataset.groupPick));
+  else if (step) stepGroupSetting(step.dataset.groupStep, Number(step.dataset.dir));
+  else if (e.target.closest('#group-keep')) groupSheetState.keep = !groupSheetState.keep;
+  else if (e.target.closest('#group-submit')) return submitLiveGrouping();
+  else return;
+  renderGroupSheet();
+}
+
+// Groups the picked exercises in the live session (timing maps follow), optionally in the programme too
+function submitLiveGrouping() {
+  const { picked, keep } = groupSheetState;
+  if (!canGroupLive(liveSession.exercises, picked)) return;
+  const settings = groupSheetSettings(groupSheetState);
+  const before = liveSession.exercises;
+  const { exercises, timing } = applyLiveGrouping(liveSession, picked, settings);
+  liveSession.exercises = exercises;
+  Object.assign(liveSession, timing);
+  closeGroupSheet();
+  pushSessionSafe(liveSessionSnapshot()).catch(() => {});
+  if (keep) keepGroupInProgramme(before, picked, settings);
+  renderSeanceScreen();
+}
+
+// Same grouping on the programme, on the programme write queue; a refusal keeps the session grouped
+function keepGroupInProgramme(sessionExercises, picked, settings) {
+  const programmeId = liveSession.programmeId;
+  programmeTemplateQueue = programmeTemplateQueue.then(async () => {
+    const prog = programmeId ? (await loadProgrammes()).find(p => p.id === programmeId) : null;
+    const grouped = prog ? programmeGrouping(prog.exercises || [], sessionExercises, picked, settings) : null;
+    if (!grouped) return showToast('Groupe gardé pour cette séance seulement');
+    await updateProgrammeDB({ ...prog, exercises: grouped });
+  }).catch(err => console.error('keepGroupInProgramme error:', err));
+  return programmeTemplateQueue;
+}
+
+document.getElementById('group-sheet-body').addEventListener('click', handleGroupSheetClick);
+document.getElementById('group-close').addEventListener('click', closeGroupSheet);
+document.querySelector('#group-sheet .live-edit-modal-overlay').addEventListener('click', closeGroupSheet);
 
 // Exercise header (mock .head) — shared by the series focus and the rest split
 function renderExoMasthead(wrap, exIdx, kick) {

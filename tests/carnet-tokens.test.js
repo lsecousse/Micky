@@ -26,9 +26,12 @@ const MIGRATED_FUNCTIONS = [
   'focusEditButtonHtml', 'weightSuggestionSlot', 'loadWeightSuggestion', 'dockExosButtonHtml', 'focusDockHtml',
   'startRestDockSync', 'supersetHeadHtml', 'supersetSummaryRowHtml', 'supersetLogRowHtml', 'supersetLogHtml',
   'renderSupersetFocus', 'pauseTimerHtml', 'pauseStepButtonHtml', 'supersetPauseDockHtml', 'renderSupersetPause',
+  'singleExerciseCard', 'memberLoadText', 'supersetMemberRowHtml', 'supersetListEntry', 'groupOpenButton',
+  'openGroupSheet', 'groupPickPlanText', 'groupPickRowHtml', 'groupOffRowHtml', 'groupPickListHtml', 'groupCounterHtml',
+  'groupRoundsHint', 'groupKeepRowHtml', 'groupSheetBodyHtml', 'renderGroupSheet',
 ];
 const MIGRATED_HTML_BLOCKS = ['DIALOG CUSTOM', 'TOAST', 'COUNTDOWN STICKY TOP BAR', 'HOME', 'À LA SALLE', 'MODAL ÉDITION ACTIVITÉ (live)',
-  'CHRONO FULLSCREEN', 'MINUTERIE FULLSCREEN'];
+  'TIROIR GROUPER (live)', 'CHRONO FULLSCREEN', 'MINUTERIE FULLSCREEN'];
 const MIGRATED_CSS_SELECTORS = ['#toast', '.dialog', '#countdown', '.live-edit', '.feedback-ia', '#chrono', '#minuterie'];
 
 // Source of a top-level function, up to its closing brace at column 0.
