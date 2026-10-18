@@ -17,17 +17,17 @@ module.exports = {
     extend: {
       colors: {
         // Base
-        ink:    '#0A0A0A',
-        inkAlt: '#141414',
-        paper:  '#F5F4F0',
-        muted:  '#888888',
-        border: '#2A2A2A',
-        todo:   '#444444',
+        'a-ink':    '#0A0A0A',
+        'a-inkAlt': '#141414',
+        'a-paper':  '#F5F4F0',
+        'a-muted':  '#888888',
+        'a-border': '#2A2A2A',
+        'a-todo':   '#444444',
         // Semantic accents
-        cyan:   '#06B6D4',
-        acid:   '#84CC16',
-        racing: '#FACC15',
-        blood:  '#DC2626',
+        'a-cyan':   '#06B6D4',
+        'a-acid':   '#84CC16',
+        'a-racing': '#FACC15',
+        'a-blood':  '#DC2626',
       },
       fontFamily: {
         display: ['Fraunces', 'ui-serif', 'Georgia', 'serif'],

@@ -236,9 +236,9 @@ async function renderHome() {
     const greeting = document.createElement('div');
     greeting.className = 'space-y-1';
     greeting.innerHTML = `
-      <p class="font-sans text-[10px] uppercase tracking-eyebrow text-muted">Bonjour</p>
-      <p class="font-display text-3xl font-semibold leading-tight text-paper">${escapeHtml(prenom)}.</p>
-      <span class="block w-10 h-px bg-acid mt-2"></span>
+      <p class="font-sans text-[10px] uppercase tracking-eyebrow text-a-muted">Bonjour</p>
+      <p class="font-display text-3xl font-semibold leading-tight text-a-paper">${escapeHtml(prenom)}.</p>
+      <span class="block w-10 h-px bg-a-acid mt-2"></span>
     `;
     main.appendChild(greeting);
   }
@@ -249,8 +249,8 @@ async function renderHome() {
     const msg = document.createElement('div');
     msg.className = 'text-center py-16 space-y-2';
     msg.innerHTML = `
-      <p class="font-display text-xl text-paper">Aucun programme.</p>
-      <p class="font-sans text-[13px] text-muted">Crées-en un dans Programmes.</p>
+      <p class="font-display text-xl text-a-paper">Aucun programme.</p>
+      <p class="font-sans text-[13px] text-a-muted">Crées-en un dans Programmes.</p>
     `;
     main.appendChild(msg);
     return;
@@ -271,17 +271,17 @@ async function renderHomeSection(main, category, programmes, isLive) {
 
   if (isLive) {
     section.innerHTML = `
-      <p class="font-sans text-[10px] uppercase tracking-eyebrow text-racing flex items-center gap-3 font-semibold">
+      <p class="font-sans text-[10px] uppercase tracking-eyebrow text-a-racing flex items-center gap-3 font-semibold">
         <span>${labelMap[category]} · Séance en cours</span>
-        <span class="flex-1 h-px bg-border"></span>
+        <span class="flex-1 h-px bg-a-border"></span>
       </p>
-      <div class="flex items-center gap-3 bg-inkAlt border-l-[3px] border-l-racing border-y border-r border-border p-5">
-        <button data-role="resume-delete" class="w-11 h-11 flex items-center justify-center text-[18px] text-muted border border-border active:text-blood active:border-blood transition" aria-label="Supprimer">🗑</button>
+      <div class="flex items-center gap-3 bg-a-inkAlt border-l-[3px] border-l-a-racing border-y border-r border-a-border p-5">
+        <button data-role="resume-delete" class="w-11 h-11 flex items-center justify-center text-[18px] text-a-muted border border-a-border active:text-a-blood active:border-a-blood transition" aria-label="Supprimer">🗑</button>
         <button data-role="resume-center" class="flex-1 text-left">
-          <p class="font-sans text-[10px] uppercase tracking-eyebrow text-muted">En cours</p>
-          <p class="font-display text-[22px] font-semibold leading-tight text-racing mt-1">${escapeHtml(liveSession.programmeName)}</p>
+          <p class="font-sans text-[10px] uppercase tracking-eyebrow text-a-muted">En cours</p>
+          <p class="font-display text-[22px] font-semibold leading-tight text-a-racing mt-1">${escapeHtml(liveSession.programmeName)}</p>
         </button>
-        <button data-role="resume-finish" class="w-11 h-11 flex items-center justify-center text-[18px] text-acid border border-acid bg-acid/[0.12] active:bg-acid active:text-ink transition" aria-label="Terminer">✅</button>
+        <button data-role="resume-finish" class="w-11 h-11 flex items-center justify-center text-[18px] text-a-acid border border-a-acid bg-a-acid/[0.12] active:bg-a-acid active:text-a-ink transition" aria-label="Terminer">✅</button>
       </div>
     `;
     section.querySelector('[data-role="resume-center"]').addEventListener('click', () => showScreen('seance'));
@@ -319,17 +319,17 @@ async function renderHomeSection(main, category, programmes, isLive) {
       : `${next.exercises.length} machine${next.exercises.length > 1 ? 's' : ''} · ${totalDur} min`;
 
     section.innerHTML = `
-      <p class="font-sans text-[10px] uppercase tracking-eyebrow text-acid flex items-center gap-3 font-semibold">
+      <p class="font-sans text-[10px] uppercase tracking-eyebrow text-a-acid flex items-center gap-3 font-semibold">
         <span>${labelMap[category]} · Prochaine séance</span>
-        <span class="flex-1 h-px bg-border"></span>
+        <span class="flex-1 h-px bg-a-border"></span>
       </p>
-      <button data-role="next-card" class="block w-full text-left bg-inkAlt border border-border p-5 active:border-acid transition">
-        <h2 class="font-display text-[26px] font-semibold leading-tight text-paper">${escapeHtml(next.name)}</h2>
-        <span class="block w-12 h-px bg-acid my-3"></span>
-        ${muscles.length ? `<p class="font-sans text-[12px] text-acid leading-relaxed">${muscles.map(escapeHtml).join(' · ')}</p>` : ''}
+      <button data-role="next-card" class="block w-full text-left bg-a-inkAlt border border-a-border p-5 active:border-a-acid transition">
+        <h2 class="font-display text-[26px] font-semibold leading-tight text-a-paper">${escapeHtml(next.name)}</h2>
+        <span class="block w-12 h-px bg-a-acid my-3"></span>
+        ${muscles.length ? `<p class="font-sans text-[12px] text-a-acid leading-relaxed">${muscles.map(escapeHtml).join(' · ')}</p>` : ''}
         <div class="mt-4 flex items-center justify-between">
-          <p class="font-sans text-[10px] uppercase tracking-eyebrow text-muted">${meta}</p>
-          <span class="font-sans text-[10px] uppercase tracking-eyebrow text-acid font-semibold">Démarrer →</span>
+          <p class="font-sans text-[10px] uppercase tracking-eyebrow text-a-muted">${meta}</p>
+          <span class="font-sans text-[10px] uppercase tracking-eyebrow text-a-acid font-semibold">Démarrer →</span>
         </div>
       </button>
     `;
@@ -340,7 +340,7 @@ async function renderHomeSection(main, category, programmes, isLive) {
 
     if (programmes.length > 1) {
       const other = document.createElement('button');
-      other.className = 'block w-full text-left py-3 px-4 border border-border font-sans text-[11px] uppercase tracking-eyebrow text-paper active:border-acid active:text-acid transition';
+      other.className = 'block w-full text-left py-3 px-4 border border-a-border font-sans text-[11px] uppercase tracking-eyebrow text-a-paper active:border-a-acid active:text-a-acid transition';
       other.textContent = `Choisir un autre programme ${category}`;
       other.addEventListener('click', () => { pendingSelectionCategory = category; showScreen('seance'); });
       section.appendChild(other);
@@ -388,10 +388,10 @@ function buildUserDropdown() {
     }},
   ];
 
-  const baseClass = 'w-full text-left px-4 py-3 font-sans text-[12px] uppercase tracking-[0.20em] border-b border-border last:border-b-0 transition active:bg-[rgba(255,255,255,0.04)]';
+  const baseClass = 'w-full text-left px-4 py-3 font-sans text-[12px] uppercase tracking-[0.20em] border-b border-a-border last:border-b-0 transition active:bg-[rgba(255,255,255,0.04)]';
   items.forEach(({ label, danger, action }) => {
     const btn = document.createElement('button');
-    const colorClass = danger ? 'text-blood' : 'text-paper';
+    const colorClass = danger ? 'text-a-blood' : 'text-a-paper';
     btn.className = `${baseClass} ${colorClass}`;
     btn.textContent = label;
     btn.addEventListener('click', action);
@@ -408,7 +408,7 @@ function makeField(label, opts = {}) {
   const wrap = document.createElement('div');
   wrap.className = 'mb-5';
   const lab = document.createElement('p');
-  lab.className = 'font-sans text-[9px] uppercase tracking-[0.40em] text-muted mb-1.5';
+  lab.className = 'font-sans text-[9px] uppercase tracking-[0.40em] text-a-muted mb-1.5';
   lab.textContent = label;
   const input = document.createElement('input');
   input.type = type;
@@ -419,7 +419,7 @@ function makeField(label, opts = {}) {
   if (min != null) input.min = String(min);
   if (max != null) input.max = String(max);
   if (maxLength != null) input.maxLength = maxLength;
-  input.className = 'w-full bg-transparent border-b border-border focus:border-acid font-sans text-[16px] text-paper py-2 outline-none transition';
+  input.className = 'w-full bg-transparent border-b border-a-border focus:border-a-acid font-sans text-[16px] text-a-paper py-2 outline-none transition';
   wrap.append(lab, input);
   return { wrap, input };
 }
@@ -432,8 +432,8 @@ function makeSegment(options, selected, onChange) {
   const refresh = (active) => {
     buttons.forEach(b => {
       b.className = (b.dataset.val === active)
-        ? 'py-3 border border-acid bg-acid/[0.10] text-acid font-sans text-[11px] uppercase tracking-eyebrow font-semibold transition'
-        : 'py-3 border border-border text-paper font-sans text-[11px] uppercase tracking-eyebrow active:border-paper transition';
+        ? 'py-3 border border-a-acid bg-a-acid/[0.10] text-a-acid font-sans text-[11px] uppercase tracking-eyebrow font-semibold transition'
+        : 'py-3 border border-a-border text-a-paper font-sans text-[11px] uppercase tracking-eyebrow active:border-a-paper transition';
     });
   };
   options.forEach(({ val, label }) => {
@@ -457,8 +457,8 @@ function makeOptionList(options, selected, onChange) {
   const refresh = (active) => {
     buttons.forEach(b => {
       b.className = (b.dataset.val === active)
-        ? 'py-3 px-4 border border-acid bg-acid/[0.10] text-acid font-sans text-[11px] uppercase tracking-eyebrow font-semibold text-left transition'
-        : 'py-3 px-4 border border-border text-paper font-sans text-[11px] uppercase tracking-eyebrow text-left active:border-paper transition';
+        ? 'py-3 px-4 border border-a-acid bg-a-acid/[0.10] text-a-acid font-sans text-[11px] uppercase tracking-eyebrow font-semibold text-left transition'
+        : 'py-3 px-4 border border-a-border text-a-paper font-sans text-[11px] uppercase tracking-eyebrow text-left active:border-a-paper transition';
     });
   };
   options.forEach(({ val, label }) => {
@@ -482,9 +482,9 @@ function renderProfil() {
   const masthead = document.createElement('section');
   masthead.className = 'px-5 pt-9 pb-9 accent-line';
   masthead.innerHTML = `
-    <h1 class="font-display font-black h-display text-paper">
+    <h1 class="font-display font-black h-display text-a-paper">
       Tes<br/>
-      <span class="text-paper/40"><span class="text-acid not-italic font-black">·</span> infos.</span>
+      <span class="text-a-paper/40"><span class="text-a-acid not-italic font-black">·</span> infos.</span>
     </h1>
   `;
   body.appendChild(masthead);
@@ -503,7 +503,7 @@ function renderProfil() {
   // Sexe (segmented)
   const sexeBlock = document.createElement('div');
   sexeBlock.className = 'mb-5';
-  sexeBlock.innerHTML = `<p class="font-sans text-[9px] uppercase tracking-[0.40em] text-muted mb-1.5">Sexe</p>`;
+  sexeBlock.innerHTML = `<p class="font-sans text-[9px] uppercase tracking-[0.40em] text-a-muted mb-1.5">Sexe</p>`;
   let selectedSexe = currentProfile?.sexe || null;
   const sexeSeg = makeSegment(
     [{ val: 'h', label: 'Homme' }, { val: 'f', label: 'Femme' }],
@@ -515,7 +515,7 @@ function renderProfil() {
   // Niveau d'activité (option list)
   const actBlock = document.createElement('div');
   actBlock.className = 'mb-8';
-  actBlock.innerHTML = `<p class="font-sans text-[9px] uppercase tracking-[0.40em] text-muted mb-1.5">Niveau d'activité (hors sport)</p>`;
+  actBlock.innerHTML = `<p class="font-sans text-[9px] uppercase tracking-[0.40em] text-a-muted mb-1.5">Niveau d'activité (hors sport)</p>`;
   let selectedActivite = currentProfile?.niveau_activite || null;
   const actList = makeOptionList(
     [
@@ -530,7 +530,7 @@ function renderProfil() {
   actBlock.appendChild(actList);
 
   const saveBtn = document.createElement('button');
-  saveBtn.className = 'w-full py-4 bg-acid text-ink font-display font-bold text-[14px] uppercase tracking-eyebrow active:bg-acid/80 transition';
+  saveBtn.className = 'w-full py-4 bg-a-acid text-a-ink font-display font-bold text-[14px] uppercase tracking-eyebrow active:bg-a-acid/80 transition';
   saveBtn.textContent = 'Enregistrer';
   saveBtn.addEventListener('click', async () => {
     const fields = {
@@ -556,7 +556,7 @@ function renderProfil() {
 async function renderClaudeApi() {
   const body = document.getElementById('screen-claude-api-body');
   body.innerHTML = `
-    <div class="px-5 pt-12 text-center font-display italic text-[16px] text-muted">Chargement…</div>
+    <div class="px-5 pt-12 text-center font-display italic text-[16px] text-a-muted">Chargement…</div>
   `;
 
   const existingKey = await getClaudeApiKeyDB();
@@ -567,11 +567,11 @@ async function renderClaudeApi() {
   const masthead = document.createElement('section');
   masthead.className = 'px-5 pt-9 pb-9 accent-line';
   masthead.innerHTML = `
-    <h1 class="font-display font-black h-display text-paper">
+    <h1 class="font-display font-black h-display text-a-paper">
       Clé<br/>
-      <span class="text-paper/40"><span class="text-acid not-italic font-black">·</span> Claude.</span>
+      <span class="text-a-paper/40"><span class="text-a-acid not-italic font-black">·</span> Claude.</span>
     </h1>
-    <p class="font-sans text-[10px] uppercase tracking-eyebrow text-muted mt-5">
+    <p class="font-sans text-[10px] uppercase tracking-eyebrow text-a-muted mt-5">
       Utilisée pour le feedback IA · chiffrée en base
     </p>
   `;
@@ -582,17 +582,17 @@ async function renderClaudeApi() {
 
   const fieldWrap = document.createElement('div');
   fieldWrap.className = 'mb-6';
-  fieldWrap.innerHTML = `<p class="font-sans text-[9px] uppercase tracking-[0.40em] text-muted mb-1.5">Clé API</p>`;
+  fieldWrap.innerHTML = `<p class="font-sans text-[9px] uppercase tracking-[0.40em] text-a-muted mb-1.5">Clé API</p>`;
   const inputRow = document.createElement('div');
   inputRow.className = 'flex items-baseline gap-2';
   const keyInput = document.createElement('input');
   keyInput.type = 'password';
   keyInput.placeholder = 'sk-ant-…';
   keyInput.value = existingKey || '';
-  keyInput.className = 'flex-1 bg-transparent border-b border-border focus:border-acid font-sans text-[16px] text-paper py-2 outline-none transition';
+  keyInput.className = 'flex-1 bg-transparent border-b border-a-border focus:border-a-acid font-sans text-[16px] text-a-paper py-2 outline-none transition';
   const toggleBtn = document.createElement('button');
   toggleBtn.type = 'button';
-  toggleBtn.className = 'shrink-0 px-3 py-2 border border-border text-muted active:text-paper active:border-paper font-sans text-[12px] transition';
+  toggleBtn.className = 'shrink-0 px-3 py-2 border border-a-border text-a-muted active:text-a-paper active:border-a-paper font-sans text-[12px] transition';
   toggleBtn.textContent = '👁';
   toggleBtn.addEventListener('click', () => {
     keyInput.type = keyInput.type === 'password' ? 'text' : 'password';
@@ -602,7 +602,7 @@ async function renderClaudeApi() {
   form.appendChild(fieldWrap);
 
   const saveBtn = document.createElement('button');
-  saveBtn.className = 'w-full py-4 bg-acid text-ink font-display font-bold text-[14px] uppercase tracking-eyebrow active:bg-acid/80 transition';
+  saveBtn.className = 'w-full py-4 bg-a-acid text-a-ink font-display font-bold text-[14px] uppercase tracking-eyebrow active:bg-a-acid/80 transition';
   saveBtn.textContent = 'Enregistrer';
   saveBtn.addEventListener('click', async () => {
     const key = keyInput.value.trim();
@@ -687,11 +687,11 @@ async function renderProgrammeSelection(tab) {
     const wrap = document.createElement('div');
     wrap.className = 'px-5 pt-10 space-y-4 text-center';
     wrap.innerHTML = `
-      <p class="font-display text-xl text-paper">Aucun programme.</p>
-      <p class="font-sans text-[13px] text-muted">Crées-en un dans Programmes.</p>
+      <p class="font-display text-xl text-a-paper">Aucun programme.</p>
+      <p class="font-sans text-[13px] text-a-muted">Crées-en un dans Programmes.</p>
     `;
     const btn = document.createElement('button');
-    btn.className = 'mt-6 w-full py-3 px-4 border border-border font-sans text-[11px] uppercase tracking-eyebrow text-paper active:border-acid active:text-acid transition';
+    btn.className = 'mt-6 w-full py-3 px-4 border border-a-border font-sans text-[11px] uppercase tracking-eyebrow text-a-paper active:border-a-acid active:text-a-acid transition';
     btn.textContent = '→ Programmes';
     btn.addEventListener('click', () => showScreen('params'));
     wrap.appendChild(btn);
@@ -703,12 +703,12 @@ async function renderProgrammeSelection(tab) {
   wrap.className = 'px-5 py-6';
 
   const eyebrow = document.createElement('p');
-  eyebrow.className = 'font-sans text-[10px] uppercase tracking-eyebrow text-muted mb-5 flex items-center gap-3';
-  eyebrow.innerHTML = `<span>Choisir un programme</span><span class="flex-1 h-px bg-border"></span>`;
+  eyebrow.className = 'font-sans text-[10px] uppercase tracking-eyebrow text-a-muted mb-5 flex items-center gap-3';
+  eyebrow.innerHTML = `<span>Choisir un programme</span><span class="flex-1 h-px bg-a-border"></span>`;
   wrap.appendChild(eyebrow);
 
   const list = document.createElement('div');
-  list.className = 'border-y border-border';
+  list.className = 'border-y border-a-border';
   wrap.appendChild(list);
 
   const { ordered, lastDoneId, lastSession } = await cyclicProgrammes(programmes);
@@ -729,17 +729,17 @@ async function renderProgrammeSelection(tab) {
     }
 
     const card = document.createElement('button');
-    const borderLeft = isNext ? 'border-l-[3px] border-l-acid' : (isDone ? 'border-l-[3px] border-l-muted opacity-60' : 'border-l-[3px] border-l-transparent');
-    card.className = `w-full text-left flex items-center gap-4 px-5 py-4 border-b border-border/70 ${borderLeft} active:bg-inkAlt transition`;
+    const borderLeft = isNext ? 'border-l-[3px] border-l-a-acid' : (isDone ? 'border-l-[3px] border-l-a-muted opacity-60' : 'border-l-[3px] border-l-transparent');
+    card.className = `w-full text-left flex items-center gap-4 px-5 py-4 border-b border-a-border/70 ${borderLeft} active:bg-a-inkAlt transition`;
 
-    const status = isDone ? '<span class="font-sans text-[9px] uppercase tracking-eyebrow text-muted">Fait</span>'
-                  : isNext ? '<span class="font-sans text-[9px] uppercase tracking-eyebrow text-acid font-semibold">Suivant →</span>'
+    const status = isDone ? '<span class="font-sans text-[9px] uppercase tracking-eyebrow text-a-muted">Fait</span>'
+                  : isNext ? '<span class="font-sans text-[9px] uppercase tracking-eyebrow text-a-acid font-semibold">Suivant →</span>'
                   : '';
 
     card.innerHTML = `
       <div class="flex-1 min-w-0">
-        <h3 class="font-display font-bold italic text-[18px] leading-tight text-paper truncate">${escapeHtml(prog.name)}</h3>
-        <p class="font-sans text-[10px] uppercase tracking-eyebrow text-muted mt-1 truncate">${meta}</p>
+        <h3 class="font-display font-bold italic text-[18px] leading-tight text-a-paper truncate">${escapeHtml(prog.name)}</h3>
+        <p class="font-sans text-[10px] uppercase tracking-eyebrow text-a-muted mt-1 truncate">${meta}</p>
       </div>
       <div class="shrink-0">${status}</div>
     `;
@@ -952,53 +952,53 @@ function renderLiveSession(tab) {
   const cibleTon = (totalVolume / 1000).toFixed(1).replace('.', ',');
 
   const header = document.createElement('header');
-  header.className = 'sticky top-0 z-10 bg-ink/96 backdrop-blur-sm border-b border-border';
+  header.className = 'sticky top-0 z-10 bg-a-ink/96 backdrop-blur-sm border-b border-a-border';
 
   if (inDetail) {
     header.innerHTML = `
       <!-- Status row : back + date + En cours + Fin -->
-      <div class="px-5 pt-4 pb-3 flex items-center justify-between font-sans text-[10px] uppercase tracking-eyebrow text-muted">
-        <button id="back-to-list" class="flex items-center gap-2 active:text-paper transition">
+      <div class="px-5 pt-4 pb-3 flex items-center justify-between font-sans text-[10px] uppercase tracking-eyebrow text-a-muted">
+        <button id="back-to-list" class="flex items-center gap-2 active:text-a-paper transition">
           <span aria-hidden>←</span><span>Liste</span>
         </button>
         <div class="flex items-center gap-2">
           <span>${formatDate(liveSession.date)}</span>
-          <span class="text-muted/50">·</span>
-          <span class="text-racing">En cours</span>
+          <span class="text-a-muted/50">·</span>
+          <span class="text-a-racing">En cours</span>
         </div>
-        <button id="finish-session" class="font-semibold text-acid border border-acid bg-acid/[0.10] px-3 py-1.5 active:bg-acid active:text-ink transition text-[10px]">Fin</button>
+        <button id="finish-session" class="font-semibold text-a-acid border border-a-acid bg-a-acid/[0.10] px-3 py-1.5 active:bg-a-acid active:text-a-ink transition text-[10px]">Fin</button>
       </div>
 
       <!-- Counter + progress -->
       <div class="px-5 pb-3">
         <div class="flex items-baseline justify-end mb-2">
           <span class="font-display text-[13px] num-stat font-bold leading-none">
-            <span class="text-acid">${String(doneSeries).padStart(2, '0')}</span><span class="text-muted">/${String(totalSeries).padStart(2, '0')}</span>
-            <span class="font-sans font-medium text-[9px] uppercase tracking-eyebrow text-muted ml-1">séries</span>
+            <span class="text-a-acid">${String(doneSeries).padStart(2, '0')}</span><span class="text-a-muted">/${String(totalSeries).padStart(2, '0')}</span>
+            <span class="font-sans font-medium text-[9px] uppercase tracking-eyebrow text-a-muted ml-1">séries</span>
           </span>
         </div>
-        <div class="h-[3px] bg-border relative overflow-hidden">
-          <div class="absolute left-0 top-0 h-full bg-acid" style="width:${pct}%"></div>
+        <div class="h-[3px] bg-a-border relative overflow-hidden">
+          <div class="absolute left-0 top-0 h-full bg-a-acid" style="width:${pct}%"></div>
         </div>
       </div>
 
       <!-- Stats strip 4 cols cyan -->
-      <div class="grid grid-cols-4 border-t border-border">
-        <div class="px-2.5 py-3 border-r border-border min-w-0">
-          <p class="font-sans text-[8px] uppercase tracking-[0.40em] text-muted mb-1.5">Volume</p>
-          <p class="font-display font-bold text-[17px] num-stat text-cyan leading-none truncate">${Math.round(doneVolume)}<span class="font-sans text-[9px] uppercase tracking-eyebrow text-muted ml-1">kg</span></p>
+      <div class="grid grid-cols-4 border-t border-a-border">
+        <div class="px-2.5 py-3 border-r border-a-border min-w-0">
+          <p class="font-sans text-[8px] uppercase tracking-[0.40em] text-a-muted mb-1.5">Volume</p>
+          <p class="font-display font-bold text-[17px] num-stat text-a-cyan leading-none truncate">${Math.round(doneVolume)}<span class="font-sans text-[9px] uppercase tracking-eyebrow text-a-muted ml-1">kg</span></p>
         </div>
-        <div class="px-2.5 py-3 border-r border-border min-w-0">
-          <p class="font-sans text-[8px] uppercase tracking-[0.40em] text-muted mb-1.5">Tonnage</p>
-          <p class="font-display font-bold text-[17px] num-stat text-cyan leading-none truncate">${tonnage}<span class="font-sans text-[9px] uppercase tracking-eyebrow text-muted ml-1">t</span></p>
+        <div class="px-2.5 py-3 border-r border-a-border min-w-0">
+          <p class="font-sans text-[8px] uppercase tracking-[0.40em] text-a-muted mb-1.5">Tonnage</p>
+          <p class="font-display font-bold text-[17px] num-stat text-a-cyan leading-none truncate">${tonnage}<span class="font-sans text-[9px] uppercase tracking-eyebrow text-a-muted ml-1">t</span></p>
         </div>
-        <div class="px-2.5 py-3 border-r border-border min-w-0">
-          <p class="font-sans text-[8px] uppercase tracking-[0.40em] text-muted mb-1.5">Reps</p>
-          <p class="font-display font-bold text-[17px] num-stat text-cyan leading-none truncate">${doneReps}<span class="font-sans text-[9px] uppercase tracking-eyebrow text-muted ml-1">/${totalReps}</span></p>
+        <div class="px-2.5 py-3 border-r border-a-border min-w-0">
+          <p class="font-sans text-[8px] uppercase tracking-[0.40em] text-a-muted mb-1.5">Reps</p>
+          <p class="font-display font-bold text-[17px] num-stat text-a-cyan leading-none truncate">${doneReps}<span class="font-sans text-[9px] uppercase tracking-eyebrow text-a-muted ml-1">/${totalReps}</span></p>
         </div>
         <div class="px-2.5 py-3 min-w-0">
-          <p class="font-sans text-[8px] uppercase tracking-[0.40em] text-muted mb-1.5">Cible</p>
-          <p class="font-display font-bold text-[17px] num-stat text-cyan leading-none truncate">${cibleTon}<span class="font-sans text-[9px] uppercase tracking-eyebrow text-muted ml-1">t</span></p>
+          <p class="font-sans text-[8px] uppercase tracking-[0.40em] text-a-muted mb-1.5">Cible</p>
+          <p class="font-display font-bold text-[17px] num-stat text-a-cyan leading-none truncate">${cibleTon}<span class="font-sans text-[9px] uppercase tracking-eyebrow text-a-muted ml-1">t</span></p>
         </div>
       </div>
     `;
@@ -1006,55 +1006,55 @@ function renderLiveSession(tab) {
     header.innerHTML = `
       <div class="px-5 py-4 flex items-center justify-between gap-3">
         <div class="min-w-0">
-          <div class="font-display font-bold text-[20px] leading-tight text-paper truncate">${escapeHtml(liveSession.programmeName)}</div>
-          <div class="font-sans text-[10px] uppercase tracking-eyebrow text-muted mt-1">${formatDate(liveSession.date)} · En cours</div>
+          <div class="font-display font-bold text-[20px] leading-tight text-a-paper truncate">${escapeHtml(liveSession.programmeName)}</div>
+          <div class="font-sans text-[10px] uppercase tracking-eyebrow text-a-muted mt-1">${formatDate(liveSession.date)} · En cours</div>
         </div>
-        <button id="finish-session" class="shrink-0 font-sans text-[11px] uppercase tracking-eyebrow font-semibold text-acid border border-acid bg-acid/[0.10] px-4 py-2 active:bg-acid active:text-ink transition">Terminer</button>
+        <button id="finish-session" class="shrink-0 font-sans text-[11px] uppercase tracking-eyebrow font-semibold text-a-acid border border-a-acid bg-a-acid/[0.10] px-4 py-2 active:bg-a-acid active:text-a-ink transition">Terminer</button>
       </div>
     `;
   } else {
     // Sticky riche pour la vue liste — calque le mock Direction A
     header.innerHTML = `
       <!-- Status row : date · En cours + Terminer -->
-      <div class="px-5 pt-4 pb-3 flex items-center justify-between font-sans text-[10px] uppercase tracking-eyebrow text-muted">
+      <div class="px-5 pt-4 pb-3 flex items-center justify-between font-sans text-[10px] uppercase tracking-eyebrow text-a-muted">
         <div class="flex items-center gap-2">
           <span>${formatDate(liveSession.date)}</span>
-          <span class="text-muted/50">·</span>
-          <span class="text-racing">En cours</span>
+          <span class="text-a-muted/50">·</span>
+          <span class="text-a-racing">En cours</span>
         </div>
-        <button id="finish-session" class="font-semibold text-acid border border-acid bg-acid/[0.10] px-3 py-1.5 active:bg-acid active:text-ink transition text-[10px]">Fin</button>
+        <button id="finish-session" class="font-semibold text-a-acid border border-a-acid bg-a-acid/[0.10] px-3 py-1.5 active:bg-a-acid active:text-a-ink transition text-[10px]">Fin</button>
       </div>
 
       <!-- Counter + progress -->
       <div class="px-5 pb-3">
         <div class="flex items-baseline justify-end mb-2">
           <span class="font-display text-[13px] num-stat font-bold leading-none">
-            <span class="text-acid">${String(doneSeries).padStart(2, '0')}</span><span class="text-muted">/${String(totalSeries).padStart(2, '0')}</span>
-            <span class="font-sans font-medium text-[9px] uppercase tracking-eyebrow text-muted ml-1">séries</span>
+            <span class="text-a-acid">${String(doneSeries).padStart(2, '0')}</span><span class="text-a-muted">/${String(totalSeries).padStart(2, '0')}</span>
+            <span class="font-sans font-medium text-[9px] uppercase tracking-eyebrow text-a-muted ml-1">séries</span>
           </span>
         </div>
-        <div class="h-[3px] bg-border relative overflow-hidden">
-          <div class="absolute left-0 top-0 h-full bg-acid" style="width:${pct}%"></div>
+        <div class="h-[3px] bg-a-border relative overflow-hidden">
+          <div class="absolute left-0 top-0 h-full bg-a-acid" style="width:${pct}%"></div>
         </div>
       </div>
 
       <!-- Stats strip 4 cols cyan -->
-      <div class="grid grid-cols-4 border-t border-border">
-        <div class="px-2.5 py-3 border-r border-border min-w-0">
-          <p class="font-sans text-[8px] uppercase tracking-[0.40em] text-muted mb-1.5">Volume</p>
-          <p class="font-display font-bold text-[17px] num-stat text-cyan leading-none truncate">${Math.round(doneVolume)}<span class="font-sans text-[9px] uppercase tracking-eyebrow text-muted ml-1">kg</span></p>
+      <div class="grid grid-cols-4 border-t border-a-border">
+        <div class="px-2.5 py-3 border-r border-a-border min-w-0">
+          <p class="font-sans text-[8px] uppercase tracking-[0.40em] text-a-muted mb-1.5">Volume</p>
+          <p class="font-display font-bold text-[17px] num-stat text-a-cyan leading-none truncate">${Math.round(doneVolume)}<span class="font-sans text-[9px] uppercase tracking-eyebrow text-a-muted ml-1">kg</span></p>
         </div>
-        <div class="px-2.5 py-3 border-r border-border min-w-0">
-          <p class="font-sans text-[8px] uppercase tracking-[0.40em] text-muted mb-1.5">Tonnage</p>
-          <p class="font-display font-bold text-[17px] num-stat text-cyan leading-none truncate">${tonnage}<span class="font-sans text-[9px] uppercase tracking-eyebrow text-muted ml-1">t</span></p>
+        <div class="px-2.5 py-3 border-r border-a-border min-w-0">
+          <p class="font-sans text-[8px] uppercase tracking-[0.40em] text-a-muted mb-1.5">Tonnage</p>
+          <p class="font-display font-bold text-[17px] num-stat text-a-cyan leading-none truncate">${tonnage}<span class="font-sans text-[9px] uppercase tracking-eyebrow text-a-muted ml-1">t</span></p>
         </div>
-        <div class="px-2.5 py-3 border-r border-border min-w-0">
-          <p class="font-sans text-[8px] uppercase tracking-[0.40em] text-muted mb-1.5">Reps</p>
-          <p class="font-display font-bold text-[17px] num-stat text-cyan leading-none truncate">${doneReps}<span class="font-sans text-[9px] uppercase tracking-eyebrow text-muted ml-1">/${totalReps}</span></p>
+        <div class="px-2.5 py-3 border-r border-a-border min-w-0">
+          <p class="font-sans text-[8px] uppercase tracking-[0.40em] text-a-muted mb-1.5">Reps</p>
+          <p class="font-display font-bold text-[17px] num-stat text-a-cyan leading-none truncate">${doneReps}<span class="font-sans text-[9px] uppercase tracking-eyebrow text-a-muted ml-1">/${totalReps}</span></p>
         </div>
         <div class="px-2.5 py-3 min-w-0">
-          <p class="font-sans text-[8px] uppercase tracking-[0.40em] text-muted mb-1.5">Cible</p>
-          <p class="font-display font-bold text-[17px] num-stat text-cyan leading-none truncate">${cibleTon}<span class="font-sans text-[9px] uppercase tracking-eyebrow text-muted ml-1">t</span></p>
+          <p class="font-sans text-[8px] uppercase tracking-[0.40em] text-a-muted mb-1.5">Cible</p>
+          <p class="font-display font-bold text-[17px] num-stat text-a-cyan leading-none truncate">${cibleTon}<span class="font-sans text-[9px] uppercase tracking-eyebrow text-a-muted ml-1">t</span></p>
         </div>
       </div>
     `;
@@ -1098,10 +1098,10 @@ function renderExerciseList(tab, totals = {}) {
   const masthead = document.createElement('section');
   masthead.className = 'px-5 pt-9 pb-9 accent-line';
   masthead.innerHTML = `
-    <h1 class="font-display font-black h-display text-paper">
-      ${escapeHtml(line1)}${sep ? `<br/><span class="text-paper/40"><span class="text-acid not-italic font-black">${escapeHtml(sep)}</span> ${escapeHtml(rest)}.</span>` : ''}
+    <h1 class="font-display font-black h-display text-a-paper">
+      ${escapeHtml(line1)}${sep ? `<br/><span class="text-a-paper/40"><span class="text-a-acid not-italic font-black">${escapeHtml(sep)}</span> ${escapeHtml(rest)}.</span>` : ''}
     </h1>
-    <p class="font-sans text-[10px] uppercase tracking-eyebrow text-muted mt-5">
+    <p class="font-sans text-[10px] uppercase tracking-eyebrow text-a-muted mt-5">
       ${String(exoCount).padStart(2, '0')} exercice${exoCount > 1 ? 's' : ''} · ${String(totalSeries).padStart(2, '0')} séries${estimMin ? ` · ≈ ${estimMin} min` : ''}
     </p>
   `;
@@ -1122,7 +1122,7 @@ function renderExerciseList(tab, totals = {}) {
   });
 
   const list = document.createElement('div');
-  list.className = 'border-y border-border';
+  list.className = 'border-y border-a-border';
 
   indexed.forEach(({ ex, exIdx, totalSets, doneSets }) => {
     const startedSets = ex.series.filter(s =>
@@ -1134,35 +1134,35 @@ function renderExerciseList(tab, totals = {}) {
 
     let statusHtml, borderLeft, nameColor, weightColor, unitColor, repsColor, muscleColor, xColor, dotColor;
     if (isDone) {
-      statusHtml  = `<span class="font-display italic font-semibold text-[10px] uppercase tracking-eyebrow text-acid">Fait</span>`;
-      borderLeft  = 'border-l-[3px] border-l-acid bg-acid/[0.03]';
-      nameColor   = 'text-muted';
-      weightColor = 'text-muted';
-      unitColor   = 'text-muted';
-      repsColor   = 'text-muted';
-      muscleColor = 'text-acid/70';
-      xColor      = 'text-acid/60';
-      dotColor    = 'bg-acid';
+      statusHtml  = `<span class="font-display italic font-semibold text-[10px] uppercase tracking-eyebrow text-a-acid">Fait</span>`;
+      borderLeft  = 'border-l-[3px] border-l-a-acid bg-a-acid/[0.03]';
+      nameColor   = 'text-a-muted';
+      weightColor = 'text-a-muted';
+      unitColor   = 'text-a-muted';
+      repsColor   = 'text-a-muted';
+      muscleColor = 'text-a-acid/70';
+      xColor      = 'text-a-acid/60';
+      dotColor    = 'bg-a-acid';
     } else if (isStarted) {
-      statusHtml  = `<span class="font-display italic font-semibold text-[10px] uppercase tracking-eyebrow text-racing flex items-center gap-1.5"><span aria-hidden class="w-1.5 h-1.5 bg-racing animate-pulse"></span>${doneSets}/${totalSets}</span>`;
-      borderLeft  = 'border-l-[3px] border-l-racing bg-racing/[0.07]';
-      nameColor   = 'text-paper';
-      weightColor = 'text-racing';
-      unitColor   = 'text-muted';
-      repsColor   = 'text-paper';
-      muscleColor = 'text-racing';
-      xColor      = 'text-racing';
-      dotColor    = 'bg-racing';
+      statusHtml  = `<span class="font-display italic font-semibold text-[10px] uppercase tracking-eyebrow text-a-racing flex items-center gap-1.5"><span aria-hidden class="w-1.5 h-1.5 bg-a-racing animate-pulse"></span>${doneSets}/${totalSets}</span>`;
+      borderLeft  = 'border-l-[3px] border-l-a-racing bg-a-racing/[0.07]';
+      nameColor   = 'text-a-paper';
+      weightColor = 'text-a-racing';
+      unitColor   = 'text-a-muted';
+      repsColor   = 'text-a-paper';
+      muscleColor = 'text-a-racing';
+      xColor      = 'text-a-racing';
+      dotColor    = 'bg-a-racing';
     } else {
       statusHtml  = '';
       borderLeft  = 'border-l-[3px] border-l-transparent';
-      nameColor   = 'text-paper';
-      weightColor = 'text-paper';
-      unitColor   = 'text-muted';
-      repsColor   = 'text-paper';
-      muscleColor = 'text-paper';
-      xColor      = 'text-acid';
-      dotColor    = 'bg-paper';
+      nameColor   = 'text-a-paper';
+      weightColor = 'text-a-paper';
+      unitColor   = 'text-a-muted';
+      repsColor   = 'text-a-paper';
+      muscleColor = 'text-a-paper';
+      xColor      = 'text-a-acid';
+      dotColor    = 'bg-a-paper';
     }
 
     const muscle = (ex.activities?.[0]?.name) || '';
@@ -1185,13 +1185,13 @@ function renderExerciseList(tab, totals = {}) {
       : `${totalSets} série${totalSets > 1 ? 's' : ''}`;
 
     const card = document.createElement('button');
-    card.className = `w-full text-left flex items-center gap-4 px-5 py-5 border-b border-border/70 ${borderLeft} active:bg-inkAlt transition`;
+    card.className = `w-full text-left flex items-center gap-4 px-5 py-5 border-b border-a-border/70 ${borderLeft} active:bg-a-inkAlt transition`;
     card.innerHTML = `
       <div class="flex-1 min-w-0">
         <h3 class="font-display font-black italic text-[22px] leading-[1.05] ${nameColor} truncate">${escapeHtml(ex.name)}</h3>
         <p class="font-sans text-[9px] uppercase tracking-eyebrow ${muscleColor} mt-1.5 flex items-center gap-2 truncate">
           ${muscle ? `<span aria-hidden class="w-1 h-1 ${dotColor} shrink-0"></span><span class="truncate">${escapeHtml(muscle)}</span>` : ''}
-          ${statusHtml ? `<span aria-hidden class="w-2 h-px ${isDone ? 'bg-acid/40' : 'bg-racing/40'}"></span>${statusHtml}` : ''}
+          ${statusHtml ? `<span aria-hidden class="w-2 h-px ${isDone ? 'bg-a-acid/40' : 'bg-a-racing/40'}"></span>${statusHtml}` : ''}
         </p>
       </div>
       <div class="text-right shrink-0 leading-none">
@@ -1230,10 +1230,10 @@ function renderExoMasthead(wrap, exIdx) {
   const exoCount = liveSession.exercises.filter(e => e.type !== 'cardio').length;
   const totalSeriesAll = liveSession.exercises.reduce((s, e) => e.type === 'cardio' ? s : s + e.series.length, 0);
   sessionMast.innerHTML = `
-    <h1 class="font-display font-black h-display text-paper">
-      ${escapeHtml(line1)}${sep ? `<br/><span class="text-paper/40"><span class="text-acid not-italic font-black">${escapeHtml(sep)}</span> ${escapeHtml(rest)}.</span>` : ''}
+    <h1 class="font-display font-black h-display text-a-paper">
+      ${escapeHtml(line1)}${sep ? `<br/><span class="text-a-paper/40"><span class="text-a-acid not-italic font-black">${escapeHtml(sep)}</span> ${escapeHtml(rest)}.</span>` : ''}
     </h1>
-    <p class="font-sans text-[10px] uppercase tracking-eyebrow text-muted mt-5">
+    <p class="font-sans text-[10px] uppercase tracking-eyebrow text-a-muted mt-5">
       ${String(exoCount).padStart(2, '0')} exercices · ${String(totalSeriesAll).padStart(2, '0')} séries
     </p>
   `;
@@ -1247,13 +1247,13 @@ function renderExoMasthead(wrap, exIdx) {
   exoHead.className = 'px-5 mb-5';
   exoHead.innerHTML = `
     <div class="flex items-baseline gap-3 flex-wrap">
-      <h2 class="font-display font-bold text-[24px] leading-[1.1] text-paper">${escapeHtml(ex.name)}</h2>
-      <span class="font-sans text-[9px] uppercase tracking-eyebrow text-acid font-semibold flex items-center gap-1.5 shrink-0">
-        <span aria-hidden class="w-1.5 h-1.5 bg-acid"></span>
+      <h2 class="font-display font-bold text-[24px] leading-[1.1] text-a-paper">${escapeHtml(ex.name)}</h2>
+      <span class="font-sans text-[9px] uppercase tracking-eyebrow text-a-acid font-semibold flex items-center gap-1.5 shrink-0">
+        <span aria-hidden class="w-1.5 h-1.5 bg-a-acid"></span>
         ${String(doneSeries).padStart(2, '0')}/${String(totalSeries).padStart(2, '0')} fait
       </span>
     </div>
-    ${(muscle || restStr) ? `<p class="font-sans text-[11px] uppercase tracking-eyebrow text-muted mt-2">${escapeHtml([muscle, restStr].filter(Boolean).join(' · '))}</p>` : ''}
+    ${(muscle || restStr) ? `<p class="font-sans text-[11px] uppercase tracking-eyebrow text-a-muted mt-2">${escapeHtml([muscle, restStr].filter(Boolean).join(' · '))}</p>` : ''}
   `;
   wrap.appendChild(exoHead);
 }
@@ -1282,14 +1282,14 @@ function renderSeriesFocus(tab) {
     const reps = v.reps ?? act.reps ?? 0;
     const kg   = v.weight ?? act.weight ?? 0;
     valuesHtml = `
-      <span class="font-display font-black num-set-hot text-racing">${kg}<span class="font-sans font-medium text-[14px] uppercase tracking-eyebrow text-racing/80 ml-2 align-baseline">kg</span></span>
-      <span class="font-display font-bold text-[28px] num-stat text-paper pb-3">× ${reps}</span>
+      <span class="font-display font-black num-set-hot text-a-racing">${kg}<span class="font-sans font-medium text-[14px] uppercase tracking-eyebrow text-a-racing/80 ml-2 align-baseline">kg</span></span>
+      <span class="font-display font-bold text-[28px] num-stat text-a-paper pb-3">× ${reps}</span>
     `;
   } else if (act.type === 'countdown') {
     const dur = v.duration ?? act.duration ?? 0;
-    valuesHtml = `<span class="font-display font-black num-set-hot text-racing">${dur}<span class="font-sans font-medium text-[14px] uppercase tracking-eyebrow text-racing/80 ml-2 align-baseline">s</span></span>`;
+    valuesHtml = `<span class="font-display font-black num-set-hot text-a-racing">${dur}<span class="font-sans font-medium text-[14px] uppercase tracking-eyebrow text-a-racing/80 ml-2 align-baseline">s</span></span>`;
   } else {
-    valuesHtml = `<span class="font-display font-black num-set-hot text-racing">Chrono</span>`;
+    valuesHtml = `<span class="font-display font-black num-set-hot text-a-racing">Chrono</span>`;
   }
 
   // Préc
@@ -1304,15 +1304,15 @@ function renderSeriesFocus(tab) {
   }
 
   focus.innerHTML = `
-    <p class="font-sans text-[10px] uppercase tracking-eyebrow text-racing font-semibold mb-4 flex items-center gap-2">
-      <span aria-hidden class="w-1.5 h-1.5 bg-racing animate-pulse"></span>
+    <p class="font-sans text-[10px] uppercase tracking-eyebrow text-a-racing font-semibold mb-4 flex items-center gap-2">
+      <span aria-hidden class="w-1.5 h-1.5 bg-a-racing animate-pulse"></span>
       ${subParts.join(' · ')}
     </p>
     <div class="flex items-end gap-5 mb-3">
       ${valuesHtml}
     </div>
-    <span aria-hidden class="block w-10 h-px bg-racing mt-3"></span>
-    ${prevText ? `<p class="font-sans text-[11px] uppercase tracking-eyebrow text-muted mt-5">${prevText}</p>` : ''}
+    <span aria-hidden class="block w-10 h-px bg-a-racing mt-3"></span>
+    ${prevText ? `<p class="font-sans text-[11px] uppercase tracking-eyebrow text-a-muted mt-5">${prevText}</p>` : ''}
   `;
   wrap.appendChild(focus);
 
@@ -1320,7 +1320,7 @@ function renderSeriesFocus(tab) {
   if (act.type === 'weight') {
     const sug = document.createElement('div');
     sug.id = 'focus-suggestion';
-    sug.className = 'hidden font-sans text-[12px] text-muted italic mx-5 mt-5 mb-2 px-3 py-2 border border-border bg-inkAlt';
+    sug.className = 'hidden font-sans text-[12px] text-a-muted italic mx-5 mt-5 mb-2 px-3 py-2 border border-a-border bg-a-inkAlt';
     wrap.appendChild(sug);
   }
 
@@ -1334,11 +1334,11 @@ function renderSeriesFocus(tab) {
   actions.className = 'mt-10 px-5 grid grid-cols-2 gap-3';
   let actionsHtml = '';
   if (act.type !== 'stopwatch') {
-    actionsHtml += `<button id="focus-edit" class="py-4 border border-border text-paper font-sans text-[12px] uppercase tracking-eyebrow active:border-acid active:text-acid transition">✎ Modifier</button>`;
+    actionsHtml += `<button id="focus-edit" class="py-4 border border-a-border text-a-paper font-sans text-[12px] uppercase tracking-eyebrow active:border-a-acid active:text-a-acid transition">✎ Modifier</button>`;
   } else {
     actionsHtml += `<span></span>`;
   }
-  actionsHtml += `<button id="focus-validate" class="py-4 bg-acid text-ink font-display font-bold text-[14px] uppercase tracking-eyebrow active:bg-acid/80 transition">${validateLabel}</button>`;
+  actionsHtml += `<button id="focus-validate" class="py-4 bg-a-acid text-a-ink font-display font-bold text-[14px] uppercase tracking-eyebrow active:bg-a-acid/80 transition">${validateLabel}</button>`;
   actions.innerHTML = actionsHtml;
   wrap.appendChild(actions);
 
@@ -1394,12 +1394,12 @@ function renderRestSplit(tab) {
   const topHeader = document.createElement('header');
   topHeader.className = 'px-5 pt-6 pb-3';
   topHeader.innerHTML = `
-    <p class="font-sans text-[9px] uppercase tracking-eyebrow text-acid font-semibold mb-1.5 flex items-center gap-2">
-      <span aria-hidden class="w-1.5 h-1.5 bg-acid"></span>
+    <p class="font-sans text-[9px] uppercase tracking-eyebrow text-a-acid font-semibold mb-1.5 flex items-center gap-2">
+      <span aria-hidden class="w-1.5 h-1.5 bg-a-acid"></span>
       Série ${sIdx + 1} / ${totalSets} validée
     </p>
-    <h2 class="font-display font-bold italic text-[20px] leading-tight text-paper truncate">${escapeHtml(ex.name)}</h2>
-    ${muscle ? `<p class="font-sans text-[9px] uppercase tracking-eyebrow text-muted mt-1">${escapeHtml(muscle)}</p>` : ''}
+    <h2 class="font-display font-bold italic text-[20px] leading-tight text-a-paper truncate">${escapeHtml(ex.name)}</h2>
+    ${muscle ? `<p class="font-sans text-[9px] uppercase tracking-eyebrow text-a-muted mt-1">${escapeHtml(muscle)}</p>` : ''}
   `;
   wrap.appendChild(topHeader);
 
@@ -1407,13 +1407,13 @@ function renderRestSplit(tab) {
   const center = document.createElement('div');
   center.className = 'flex-1 flex flex-col items-center justify-center text-center px-6 py-10 gap-5';
   center.innerHTML = `
-    <p class="font-sans text-[10px] uppercase tracking-[0.40em] text-racing font-semibold flex items-center gap-2">
-      <span aria-hidden class="w-1.5 h-1.5 bg-racing animate-pulse"></span>
+    <p class="font-sans text-[10px] uppercase tracking-[0.40em] text-a-racing font-semibold flex items-center gap-2">
+      <span aria-hidden class="w-1.5 h-1.5 bg-a-racing animate-pulse"></span>
       Repos
     </p>
-    <div id="rest-split-time" class="font-display font-black num-stat text-racing leading-none tracking-tight" style="font-size:clamp(4.5rem, 24vw, 7.5rem)">--:--</div>
-    <p id="rest-split-next" class="font-sans text-[11px] uppercase tracking-eyebrow text-muted max-w-[30ch]"></p>
-    <button id="rest-split-skip" class="mt-2 py-3 px-6 border border-border text-paper font-sans text-[11px] uppercase tracking-eyebrow active:border-acid active:text-acid transition">⏭ Passer le repos</button>
+    <div id="rest-split-time" class="font-display font-black num-stat text-a-racing leading-none tracking-tight" style="font-size:clamp(4.5rem, 24vw, 7.5rem)">--:--</div>
+    <p id="rest-split-next" class="font-sans text-[11px] uppercase tracking-eyebrow text-a-muted max-w-[30ch]"></p>
+    <button id="rest-split-skip" class="mt-2 py-3 px-6 border border-a-border text-a-paper font-sans text-[11px] uppercase tracking-eyebrow active:border-a-acid active:text-a-acid transition">⏭ Passer le repos</button>
   `;
   wrap.appendChild(center);
 
@@ -1421,21 +1421,21 @@ function renderRestSplit(tab) {
   let valHtml;
   if (act.type === 'weight') {
     valHtml = `
-      <span class="font-display font-bold text-[26px] num-stat text-paper">${v.weight ?? 0}<span class="font-sans font-medium text-[11px] uppercase tracking-eyebrow text-muted ml-1.5 align-baseline">kg</span></span>
-      <span class="font-display font-bold text-[18px] num-stat text-paper">× ${v.reps ?? 0}</span>
+      <span class="font-display font-bold text-[26px] num-stat text-a-paper">${v.weight ?? 0}<span class="font-sans font-medium text-[11px] uppercase tracking-eyebrow text-a-muted ml-1.5 align-baseline">kg</span></span>
+      <span class="font-display font-bold text-[18px] num-stat text-a-paper">× ${v.reps ?? 0}</span>
     `;
   } else {
-    valHtml = `<span class="font-display font-bold text-[26px] num-stat text-paper">${v.duration ?? 0}<span class="font-sans font-medium text-[11px] uppercase tracking-eyebrow text-muted ml-1.5 align-baseline">s</span></span>`;
+    valHtml = `<span class="font-display font-bold text-[26px] num-stat text-a-paper">${v.duration ?? 0}<span class="font-sans font-medium text-[11px] uppercase tracking-eyebrow text-a-muted ml-1.5 align-baseline">s</span></span>`;
   }
   const editBtn = act.type === 'stopwatch'
     ? ''
-    : `<button id="rest-edit" class="shrink-0 py-2 px-4 border border-border text-paper font-sans text-[10px] uppercase tracking-eyebrow active:border-acid active:text-acid transition">✎ Modifier</button>`;
+    : `<button id="rest-edit" class="shrink-0 py-2 px-4 border border-a-border text-a-paper font-sans text-[10px] uppercase tracking-eyebrow active:border-a-acid active:text-a-acid transition">✎ Modifier</button>`;
 
   const recap = document.createElement('div');
-  recap.className = 'border-y border-border border-l-[3px] border-l-acid bg-acid/[0.04] px-5 py-4 mt-6 mx-5 flex items-center justify-between gap-4';
+  recap.className = 'border-y border-a-border border-l-[3px] border-l-a-acid bg-a-acid/[0.04] px-5 py-4 mt-6 mx-5 flex items-center justify-between gap-4';
   recap.innerHTML = `
     <div class="min-w-0 space-y-1">
-      <p class="font-sans text-[9px] uppercase tracking-eyebrow text-acid font-semibold">Série ${sIdx + 1} ✓</p>
+      <p class="font-sans text-[9px] uppercase tracking-eyebrow text-a-acid font-semibold">Série ${sIdx + 1} ✓</p>
       <div class="flex items-baseline gap-3 flex-wrap">${valHtml}</div>
     </div>
     ${editBtn}
@@ -1627,22 +1627,22 @@ function openEditModalForActivity(exIdx, sIdx, actIdx) {
     const currentRest   = act.rest ?? 0;
     const originalWeight = currentWeight;
 
-    const inputCls = 'w-full bg-transparent border-b border-border focus:border-acid font-display font-bold text-[22px] num-stat text-paper py-2 outline-none transition';
-    const labelCls = 'font-sans text-[9px] uppercase tracking-[0.40em] text-muted mb-1.5';
+    const inputCls = 'w-full bg-transparent border-b border-a-border focus:border-a-acid font-display font-bold text-[22px] num-stat text-a-paper py-2 outline-none transition';
+    const labelCls = 'font-sans text-[9px] uppercase tracking-[0.40em] text-a-muted mb-1.5';
     const bodyHTML = `
       <div class="grid grid-cols-2 gap-4">
         <div>
           <p class="${labelCls}">Poids</p>
           <div class="flex items-baseline gap-2">
             <input type="number" inputmode="decimal" class="live-weight ${inputCls}" value="${currentWeight}" min="0" step="0.5">
-            <span class="font-sans text-[10px] uppercase tracking-eyebrow text-muted shrink-0">kg</span>
+            <span class="font-sans text-[10px] uppercase tracking-eyebrow text-a-muted shrink-0">kg</span>
           </div>
         </div>
         <div>
           <p class="${labelCls}">Reps</p>
           <div class="flex items-baseline gap-2">
             <input type="number" inputmode="decimal" class="live-reps ${inputCls}" value="${currentReps}" min="1">
-            <span class="font-sans text-[10px] uppercase tracking-eyebrow text-muted shrink-0">×</span>
+            <span class="font-sans text-[10px] uppercase tracking-eyebrow text-a-muted shrink-0">×</span>
           </div>
         </div>
       </div>
@@ -1650,7 +1650,7 @@ function openEditModalForActivity(exIdx, sIdx, actIdx) {
         <p class="${labelCls}">Repos</p>
         <div class="flex items-baseline gap-2">
           <input type="number" inputmode="numeric" class="live-rest ${inputCls}" value="${currentRest}" min="0">
-          <span class="font-sans text-[10px] uppercase tracking-eyebrow text-muted shrink-0">s</span>
+          <span class="font-sans text-[10px] uppercase tracking-eyebrow text-a-muted shrink-0">s</span>
         </div>
       </div>
     `;
@@ -1691,22 +1691,22 @@ function openEditModalForActivity(exIdx, sIdx, actIdx) {
     const currentDur  = v.duration ?? act.duration ?? 0;
     const currentRest = act.rest ?? 0;
 
-    const inputCls = 'w-full bg-transparent border-b border-border focus:border-acid font-display font-bold text-[22px] num-stat text-paper py-2 outline-none transition';
-    const labelCls = 'font-sans text-[9px] uppercase tracking-[0.40em] text-muted mb-1.5';
+    const inputCls = 'w-full bg-transparent border-b border-a-border focus:border-a-acid font-display font-bold text-[22px] num-stat text-a-paper py-2 outline-none transition';
+    const labelCls = 'font-sans text-[9px] uppercase tracking-[0.40em] text-a-muted mb-1.5';
     const bodyHTML = `
       <div class="grid grid-cols-2 gap-4">
         <div>
           <p class="${labelCls}">Durée</p>
           <div class="flex items-baseline gap-2">
             <input type="number" inputmode="numeric" class="live-duration ${inputCls}" value="${currentDur}" min="1">
-            <span class="font-sans text-[10px] uppercase tracking-eyebrow text-muted shrink-0">s</span>
+            <span class="font-sans text-[10px] uppercase tracking-eyebrow text-a-muted shrink-0">s</span>
           </div>
         </div>
         <div>
           <p class="${labelCls}">Repos</p>
           <div class="flex items-baseline gap-2">
             <input type="number" inputmode="numeric" class="live-rest ${inputCls}" value="${currentRest}" min="0">
-            <span class="font-sans text-[10px] uppercase tracking-eyebrow text-muted shrink-0">s</span>
+            <span class="font-sans text-[10px] uppercase tracking-eyebrow text-a-muted shrink-0">s</span>
           </div>
         </div>
       </div>
@@ -1749,16 +1749,16 @@ function renderLiveCardio(tab) {
     header.className = 'px-5 mb-4';
     header.innerHTML = `
       <div class="flex items-baseline gap-5">
-        <span class="font-display font-black text-[34px] ${isDone ? 'text-muted' : 'text-racing'} leading-none num-stat tracking-tight">${ord}</span>
+        <span class="font-display font-black text-[34px] ${isDone ? 'text-a-muted' : 'text-a-racing'} leading-none num-stat tracking-tight">${ord}</span>
         <div class="flex-1 pt-1 space-y-2">
           <div class="flex items-baseline gap-3 flex-wrap">
-            <h2 class="font-display font-bold text-[24px] leading-[1.1] text-paper">${escapeHtml(ex.name)}</h2>
-            <span class="font-sans text-[9px] uppercase tracking-eyebrow ${isDone ? 'text-acid' : 'text-muted'} font-semibold flex items-center gap-1.5 shrink-0">
-              <span aria-hidden class="w-1.5 h-1.5 ${isDone ? 'bg-acid' : 'bg-muted'}"></span>
+            <h2 class="font-display font-bold text-[24px] leading-[1.1] text-a-paper">${escapeHtml(ex.name)}</h2>
+            <span class="font-sans text-[9px] uppercase tracking-eyebrow ${isDone ? 'text-a-acid' : 'text-a-muted'} font-semibold flex items-center gap-1.5 shrink-0">
+              <span aria-hidden class="w-1.5 h-1.5 ${isDone ? 'bg-a-acid' : 'bg-a-muted'}"></span>
               ${isDone ? 'Fait' : 'À faire'}
             </span>
           </div>
-          ${ex.comment ? `<p class="font-sans text-[11px] uppercase tracking-eyebrow text-muted">${escapeHtml(ex.comment)}</p>` : ''}
+          ${ex.comment ? `<p class="font-sans text-[11px] uppercase tracking-eyebrow text-a-muted">${escapeHtml(ex.comment)}</p>` : ''}
         </div>
       </div>
     `;
@@ -1766,17 +1766,17 @@ function renderLiveCardio(tab) {
 
     // Fields — 3 inputs (Temps / Puissance / Distance)
     const fields = document.createElement('div');
-    fields.className = 'grid grid-cols-3 border-y border-border';
+    fields.className = 'grid grid-cols-3 border-y border-a-border';
 
     const makeField = (label, unit, value, type, step, onChange) => {
       const wrap = document.createElement('div');
-      wrap.className = 'px-3 py-3 border-r border-border last:border-r-0';
+      wrap.className = 'px-3 py-3 border-r border-a-border last:border-r-0';
       wrap.innerHTML = `
-        <p class="font-sans text-[8px] uppercase tracking-[0.40em] text-muted mb-1.5">${label}</p>
+        <p class="font-sans text-[8px] uppercase tracking-[0.40em] text-a-muted mb-1.5">${label}</p>
         <div class="flex items-baseline gap-1.5">
           <input type="number" inputmode="${type}" ${step ? `step="${step}"` : ''} min="0" value="${value || ''}"
-            class="font-display font-bold text-[20px] num-stat text-cyan leading-none bg-transparent w-full min-w-0 outline-none focus:text-paper" />
-          <span class="font-sans text-[9px] uppercase tracking-eyebrow text-muted shrink-0">${unit}</span>
+            class="font-display font-bold text-[20px] num-stat text-a-cyan leading-none bg-transparent w-full min-w-0 outline-none focus:text-a-paper" />
+          <span class="font-sans text-[9px] uppercase tracking-eyebrow text-a-muted shrink-0">${unit}</span>
         </div>
       `;
       const inp = wrap.querySelector('input');
@@ -1809,7 +1809,7 @@ function renderLiveCardio(tab) {
       ];
       if (ex.prev.km) parts.push(`${ex.prev.km} km`);
       const prev = document.createElement('p');
-      prev.className = 'font-sans text-[10px] uppercase tracking-eyebrow text-muted mt-3 px-5';
+      prev.className = 'font-sans text-[10px] uppercase tracking-eyebrow text-a-muted mt-3 px-5';
       prev.textContent = `Préc : ${parts.join(' · ')}`;
       article.appendChild(prev);
     }
@@ -1821,8 +1821,8 @@ function renderLiveCardio(tab) {
     const refreshStateBtn = () => {
       const done = ex.state === 'done';
       stateBtn.className = done
-        ? 'w-full py-4 border border-acid text-acid font-display font-bold text-[14px] uppercase tracking-eyebrow active:bg-acid/[0.08] transition'
-        : 'w-full py-4 bg-acid text-ink font-display font-bold text-[14px] uppercase tracking-eyebrow active:bg-acid/80 transition';
+        ? 'w-full py-4 border border-a-acid text-a-acid font-display font-bold text-[14px] uppercase tracking-eyebrow active:bg-a-acid/[0.08] transition'
+        : 'w-full py-4 bg-a-acid text-a-ink font-display font-bold text-[14px] uppercase tracking-eyebrow active:bg-a-acid/80 transition';
       stateBtn.textContent = done ? '✓ Fait' : '✓ Valider';
     };
     refreshStateBtn();
@@ -2388,9 +2388,9 @@ async function renderCorps() {
   const masthead = document.createElement('section');
   masthead.className = 'px-5 pt-9 pb-9 accent-line';
   masthead.innerHTML = `
-    <h1 class="font-display font-black h-display text-paper">
+    <h1 class="font-display font-black h-display text-a-paper">
       Ton<br/>
-      <span class="text-paper/40"><span class="text-acid not-italic font-black">·</span> corps.</span>
+      <span class="text-a-paper/40"><span class="text-a-acid not-italic font-black">·</span> corps.</span>
     </h1>
   `;
   body.appendChild(masthead);
@@ -2415,13 +2415,13 @@ async function renderCorps() {
   const dateRow = document.createElement('div');
   dateRow.className = 'mb-6 flex items-center gap-3';
   dateRow.innerHTML = `
-    <p class="font-sans text-[9px] uppercase tracking-[0.40em] text-muted">Jour</p>
-    <span class="flex-1 h-px bg-border"></span>
+    <p class="font-sans text-[9px] uppercase tracking-[0.40em] text-a-muted">Jour</p>
+    <span class="flex-1 h-px bg-a-border"></span>
   `;
   const dateInput = document.createElement('input');
   dateInput.type = 'date';
   dateInput.value = todayIso();
-  dateInput.className = 'font-sans text-[12px] text-paper border border-border bg-transparent px-3 py-1.5 focus:border-acid focus:outline-none transition';
+  dateInput.className = 'font-sans text-[12px] text-a-paper border border-a-border bg-transparent px-3 py-1.5 focus:border-a-acid focus:outline-none transition';
   dateRow.appendChild(dateInput);
   form.appendChild(dateRow);
 
@@ -2435,20 +2435,20 @@ async function renderCorps() {
     const cell = document.createElement('div');
     cell.className = 'min-w-0';
     const lbl = document.createElement('p');
-    lbl.className = 'font-sans text-[9px] uppercase tracking-[0.40em] text-muted mb-1.5';
+    lbl.className = 'font-sans text-[9px] uppercase tracking-[0.40em] text-a-muted mb-1.5';
     lbl.textContent = label;
     const row = document.createElement('div');
-    row.className = 'flex items-baseline gap-2 border-b border-border focus-within:border-acid transition';
+    row.className = 'flex items-baseline gap-2 border-b border-a-border focus-within:border-a-acid transition';
     const inp = document.createElement('input');
     inp.type = 'number';
     inp.inputMode = 'decimal';
     inp.step = step;
     inp.min = '0';
     inp.placeholder = '—';
-    inp.className = 'flex-1 min-w-0 bg-transparent font-display font-bold text-[20px] num-stat text-paper py-1.5 outline-none';
+    inp.className = 'flex-1 min-w-0 bg-transparent font-display font-bold text-[20px] num-stat text-a-paper py-1.5 outline-none';
     inputs[key] = inp;
     const unitSpan = document.createElement('span');
-    unitSpan.className = 'font-sans text-[10px] uppercase tracking-eyebrow text-muted shrink-0';
+    unitSpan.className = 'font-sans text-[10px] uppercase tracking-eyebrow text-a-muted shrink-0';
     unitSpan.textContent = unit;
     row.append(inp, unitSpan);
     if (key === 'poids' || key === 'graisseKg') {
@@ -2501,7 +2501,7 @@ async function renderCorps() {
     if (delta === 0) return;
     span.textContent = (delta > 0 ? '+' : '') + delta;
     // Pour poids/graisse : up = blood (mauvais), down = acid (mieux)
-    span.classList.add(delta > 0 ? 'text-blood' : 'text-acid');
+    span.classList.add(delta > 0 ? 'text-a-blood' : 'text-a-acid');
   }
 
   fillFormForDate(dateInput.value);
@@ -2524,7 +2524,7 @@ async function renderCorps() {
   form.appendChild(grid);
 
   const saveBtn = document.createElement('button');
-  saveBtn.className = 'w-full mt-8 py-4 bg-acid text-ink font-display font-bold text-[14px] uppercase tracking-eyebrow active:bg-acid/80 transition';
+  saveBtn.className = 'w-full mt-8 py-4 bg-a-acid text-a-ink font-display font-bold text-[14px] uppercase tracking-eyebrow active:bg-a-acid/80 transition';
   saveBtn.textContent = 'Enregistrer';
   saveBtn.addEventListener('click', async () => {
     const m = {
@@ -2557,7 +2557,7 @@ async function renderCorps() {
 
   if (!measurements.length) {
     const empty = document.createElement('p');
-    empty.className = 'font-display italic text-[14px] text-muted px-5 py-4';
+    empty.className = 'font-display italic text-[14px] text-a-muted px-5 py-4';
     empty.textContent = 'Aucune mesure enregistrée.';
     body.appendChild(empty);
     return;
@@ -2582,21 +2582,21 @@ async function renderCorps() {
     trendSection.className = 'mt-4 mb-8';
     trendSection.innerHTML = `
       <header class="px-5 mb-3">
-        <h3 class="font-display italic font-bold text-[14px] uppercase tracking-eyebrow text-paper">Tendance</h3>
-        <p class="font-sans text-[9px] uppercase tracking-eyebrow text-muted mt-1">10 dernières mesures · variation hebdo</p>
+        <h3 class="font-display italic font-bold text-[14px] uppercase tracking-eyebrow text-a-paper">Tendance</h3>
+        <p class="font-sans text-[9px] uppercase tracking-eyebrow text-a-muted mt-1">10 dernières mesures · variation hebdo</p>
       </header>
     `;
     const grid4 = document.createElement('div');
-    grid4.className = 'grid grid-cols-2 border-y border-border';
+    grid4.className = 'grid grid-cols-2 border-y border-a-border';
 
     trendItems.forEach(({ label, field, unit, lowerIsBetter, latest, trend }, idx) => {
       const cell = document.createElement('div');
-      const borderR = (idx % 2 === 0) ? 'border-r border-border' : '';
-      const borderB = (idx < 2) ? 'border-b border-border' : '';
+      const borderR = (idx % 2 === 0) ? 'border-r border-a-border' : '';
+      const borderB = (idx < 2) ? 'border-b border-a-border' : '';
       cell.className = `px-4 py-3 min-w-0 ${borderR} ${borderB}`;
 
       let arrow = '';
-      let arrowColor = 'text-muted';
+      let arrowColor = 'text-a-muted';
       if (trend && !trend.neutral) {
         arrow = trend.up ? `↑ ${trend.delta}/sem` : `↓ ${trend.delta}/sem`;
         let positive;
@@ -2605,10 +2605,10 @@ async function renderCorps() {
         } else {
           positive = lowerIsBetter ? !trend.up : trend.up;
         }
-        arrowColor = positive ? 'text-acid' : 'text-blood';
+        arrowColor = positive ? 'text-a-acid' : 'text-a-blood';
       } else if (trend?.neutral) {
         arrow = '→ stable';
-        arrowColor = 'text-muted';
+        arrowColor = 'text-a-muted';
       }
 
       // Catégorie IMG en badge
@@ -2621,8 +2621,8 @@ async function renderCorps() {
       }
 
       cell.innerHTML = `
-        <p class="font-sans text-[8px] uppercase tracking-[0.40em] text-muted mb-1.5 flex items-center">${label}${catBadge}</p>
-        <p class="font-display font-bold text-[18px] num-stat text-cyan leading-none truncate">${latest}<span class="font-sans text-[9px] uppercase tracking-eyebrow text-muted ml-1">${unit}</span></p>
+        <p class="font-sans text-[8px] uppercase tracking-[0.40em] text-a-muted mb-1.5 flex items-center">${label}${catBadge}</p>
+        <p class="font-display font-bold text-[18px] num-stat text-a-cyan leading-none truncate">${latest}<span class="font-sans text-[9px] uppercase tracking-eyebrow text-a-muted ml-1">${unit}</span></p>
         ${arrow ? `<p class="font-sans text-[9px] uppercase tracking-eyebrow font-semibold ${arrowColor} num-stat mt-1.5">${arrow}</p>` : ''}
       `;
       grid4.appendChild(cell);
@@ -2645,8 +2645,8 @@ async function renderCorps() {
     chartWrap.className = 'px-5 mb-8';
     chartWrap.innerHTML = `
       <header class="mb-3 flex items-baseline justify-between">
-        <h3 class="font-display italic font-bold text-[14px] uppercase tracking-eyebrow text-paper">${label}</h3>
-        <span class="font-sans text-[10px] uppercase tracking-eyebrow text-muted num-stat">${chartData[chartData.length - 1][field]} ${unit}</span>
+        <h3 class="font-display italic font-bold text-[14px] uppercase tracking-eyebrow text-a-paper">${label}</h3>
+        <span class="font-sans text-[10px] uppercase tracking-eyebrow text-a-muted num-stat">${chartData[chartData.length - 1][field]} ${unit}</span>
       </header>
     `;
     const canvas = document.createElement('canvas');
@@ -2661,10 +2661,10 @@ async function renderCorps() {
   // ── Analyse bienveillante (affichée seulement si déjà générée dans ce tab) ──
   if (bodyAnalysisCache !== null) {
     const analysisCard = document.createElement('div');
-    analysisCard.className = 'mx-5 mb-8 border border-border bg-inkAlt p-4 space-y-2';
+    analysisCard.className = 'mx-5 mb-8 border border-a-border bg-a-inkAlt p-4 space-y-2';
     analysisCard.innerHTML = `
-      <p class="font-sans text-[10px] uppercase tracking-eyebrow text-acid font-semibold">Ton évolution</p>
-      <div class="font-sans text-[13px] text-paper leading-relaxed">${formatFeedback(bodyAnalysisCache)}</div>
+      <p class="font-sans text-[10px] uppercase tracking-eyebrow text-a-acid font-semibold">Ton évolution</p>
+      <div class="font-sans text-[13px] text-a-paper leading-relaxed">${formatFeedback(bodyAnalysisCache)}</div>
     `;
     body.appendChild(analysisCard);
   }
@@ -2674,26 +2674,26 @@ async function renderCorps() {
   histSection.className = 'mt-12';
   histSection.innerHTML = `
     <header class="px-5 pb-6 accent-line mb-4">
-      <h2 class="font-display font-black text-paper" style="font-size:clamp(2rem, 9vw, 2.75rem); line-height:0.92; letter-spacing:-0.025em">
+      <h2 class="font-display font-black text-a-paper" style="font-size:clamp(2rem, 9vw, 2.75rem); line-height:0.92; letter-spacing:-0.025em">
         Tes<br/>
-        <span class="text-paper/40"><span class="text-acid not-italic font-black">·</span> mesures.</span>
+        <span class="text-a-paper/40"><span class="text-a-acid not-italic font-black">·</span> mesures.</span>
       </h2>
-      <p class="font-sans text-[10px] uppercase tracking-eyebrow text-muted mt-5">${measurements.length} entrée${measurements.length > 1 ? 's' : ''}</p>
+      <p class="font-sans text-[10px] uppercase tracking-eyebrow text-a-muted mt-5">${measurements.length} entrée${measurements.length > 1 ? 's' : ''}</p>
     </header>
   `;
   body.appendChild(histSection);
 
   measurements.forEach(m => {
     const card = document.createElement('div');
-    card.className = 'px-5 py-4 border-b border-border/70';
+    card.className = 'px-5 py-4 border-b border-a-border/70';
 
     const header = document.createElement('div');
     header.className = 'flex items-center justify-between gap-3 mb-2';
     const dateSpan = document.createElement('span');
-    dateSpan.className = 'font-sans text-[10px] uppercase tracking-eyebrow text-muted';
+    dateSpan.className = 'font-sans text-[10px] uppercase tracking-eyebrow text-a-muted';
     dateSpan.textContent = formatDate(m.date);
     const delBtn = document.createElement('button');
-    delBtn.className = 'font-sans text-[10px] uppercase tracking-eyebrow text-muted active:text-blood transition';
+    delBtn.className = 'font-sans text-[10px] uppercase tracking-eyebrow text-a-muted active:text-a-blood transition';
     delBtn.textContent = '✕ Suppr';
     delBtn.addEventListener('click', () => {
       showConfirm('Supprimer cette mesure ?', async () => {
@@ -2730,7 +2730,7 @@ async function renderCorps() {
     ].filter(e => e.value !== null && e.value !== undefined).forEach(({ label, value, unit }) => {
       const chip = document.createElement('span');
       chip.className = 'font-sans text-[10px] uppercase tracking-eyebrow';
-      chip.innerHTML = `<span class="text-muted">${label}</span> <span class="text-paper font-semibold num-stat">${value}</span><span class="text-muted">${unit}</span>`;
+      chip.innerHTML = `<span class="text-a-muted">${label}</span> <span class="text-a-paper font-semibold num-stat">${value}</span><span class="text-a-muted">${unit}</span>`;
       values.appendChild(chip);
     });
 
@@ -2744,14 +2744,14 @@ function openBodyAnalysisPopupLoading() {
   const modalBody = document.getElementById('modal-body');
   modalBody.innerHTML = `
     <div id="body-analysis-popup" class="px-5 py-9">
-      <p class="font-sans text-[10px] uppercase tracking-eyebrow text-acid font-semibold mb-3">Ton évolution</p>
-      <h2 class="font-display font-black h-display text-paper mb-6">
+      <p class="font-sans text-[10px] uppercase tracking-eyebrow text-a-acid font-semibold mb-3">Ton évolution</p>
+      <h2 class="font-display font-black h-display text-a-paper mb-6">
         Analyse<br/>
-        <span class="text-paper/40"><span class="text-acid not-italic font-black">·</span> en cours.</span>
+        <span class="text-a-paper/40"><span class="text-a-acid not-italic font-black">·</span> en cours.</span>
       </h2>
       <div class="flex items-center gap-3 mt-8">
-        <span aria-hidden class="w-1.5 h-1.5 bg-acid animate-pulse"></span>
-        <p class="font-sans text-[11px] uppercase tracking-eyebrow text-muted">Patiente…</p>
+        <span aria-hidden class="w-1.5 h-1.5 bg-a-acid animate-pulse"></span>
+        <p class="font-sans text-[11px] uppercase tracking-eyebrow text-a-muted">Patiente…</p>
       </div>
     </div>
   `;
@@ -2762,12 +2762,12 @@ function fillBodyAnalysisPopup(text) {
   const popup = document.getElementById('body-analysis-popup');
   if (!popup) return;
   popup.innerHTML = `
-    <p class="font-sans text-[10px] uppercase tracking-eyebrow text-acid font-semibold mb-3">Ton évolution</p>
-    <h2 class="font-display font-black h-display text-paper accent-line pb-7">
+    <p class="font-sans text-[10px] uppercase tracking-eyebrow text-a-acid font-semibold mb-3">Ton évolution</p>
+    <h2 class="font-display font-black h-display text-a-paper accent-line pb-7">
       Le<br/>
-      <span class="text-paper/40"><span class="text-acid not-italic font-black">·</span> bilan.</span>
+      <span class="text-a-paper/40"><span class="text-a-acid not-italic font-black">·</span> bilan.</span>
     </h2>
-    <div class="font-sans text-[14px] text-paper leading-relaxed mt-8 space-y-3">${formatFeedback(text)}</div>
+    <div class="font-sans text-[14px] text-a-paper leading-relaxed mt-8 space-y-3">${formatFeedback(text)}</div>
   `;
 }
 
@@ -2846,7 +2846,7 @@ async function renderHistory() {
 
   if (!sessions.length) {
     list.innerHTML = `
-      <div class="px-5 pt-12 text-center font-display italic text-[16px] text-muted">
+      <div class="px-5 pt-12 text-center font-display italic text-[16px] text-a-muted">
         Aucune séance enregistrée.
       </div>
     `;
@@ -2878,11 +2878,11 @@ async function renderHistory() {
   const masthead = document.createElement('section');
   masthead.className = 'px-5 pt-9 pb-9 accent-line';
   masthead.innerHTML = `
-    <h1 class="font-display font-black h-display text-paper">
+    <h1 class="font-display font-black h-display text-a-paper">
       Tes<br/>
-      <span class="text-paper/40"><span class="text-acid not-italic font-black">·</span> séances.</span>
+      <span class="text-a-paper/40"><span class="text-a-acid not-italic font-black">·</span> séances.</span>
     </h1>
-    <p class="font-sans text-[10px] uppercase tracking-eyebrow text-muted mt-5">
+    <p class="font-sans text-[10px] uppercase tracking-eyebrow text-a-muted mt-5">
       ${String(totalSessions).padStart(2, '0')} séances · ${totalExos} exercices · ${totalTon} t cumulées
     </p>
   `;
@@ -2897,13 +2897,13 @@ async function renderHistory() {
     monthHeader.className = 'flex items-baseline justify-between mb-3 px-5';
     const monthVol = monthSessions.reduce((s, x) => s + totalVolume(x.exercises), 0);
     monthHeader.innerHTML = `
-      <h3 class="font-display italic font-bold text-[14px] uppercase tracking-eyebrow text-paper">${monthLabel(monthKey)}</h3>
-      <span class="font-sans text-[10px] uppercase tracking-eyebrow text-cyan num-stat">${(monthVol / 1000).toFixed(1).replace('.', ',')} t</span>
+      <h3 class="font-display italic font-bold text-[14px] uppercase tracking-eyebrow text-a-paper">${monthLabel(monthKey)}</h3>
+      <span class="font-sans text-[10px] uppercase tracking-eyebrow text-a-cyan num-stat">${(monthVol / 1000).toFixed(1).replace('.', ',')} t</span>
     `;
     section.appendChild(monthHeader);
 
     const ul = document.createElement('ul');
-    ul.className = 'border-y border-border';
+    ul.className = 'border-y border-a-border';
 
     monthSessions.forEach((session, idx) => {
       const isAbandoned = !session.duration;
@@ -2919,25 +2919,25 @@ async function renderHistory() {
         }, 0) || 0);
       }, 0);
 
-      const borderLeft = isAbandoned ? 'border-l-[3px] border-l-racing bg-racing/[0.04]' : 'border-l-[3px] border-l-acid';
+      const borderLeft = isAbandoned ? 'border-l-[3px] border-l-a-racing bg-a-racing/[0.04]' : 'border-l-[3px] border-l-a-acid';
       const isLast = idx === monthSessions.length - 1;
 
       const name = session.programmeName || session.name || 'Séance';
       const li = document.createElement('li');
       li.innerHTML = `
-        <button class="w-full text-left flex items-start gap-4 px-5 py-4 ${isLast ? '' : 'border-b border-border/70'} ${borderLeft} active:bg-inkAlt transition">
+        <button class="w-full text-left flex items-start gap-4 px-5 py-4 ${isLast ? '' : 'border-b border-a-border/70'} ${borderLeft} active:bg-a-inkAlt transition">
           <div class="flex-1 min-w-0">
-            <h4 class="font-display font-bold italic text-[18px] leading-tight text-paper truncate">${escapeHtml(name)}</h4>
-            <p class="font-sans text-[9px] uppercase tracking-eyebrow text-muted mt-1.5 flex items-center gap-2 flex-wrap">
+            <h4 class="font-display font-bold italic text-[18px] leading-tight text-a-paper truncate">${escapeHtml(name)}</h4>
+            <p class="font-sans text-[9px] uppercase tracking-eyebrow text-a-muted mt-1.5 flex items-center gap-2 flex-wrap">
               <span>${formatDate(session.date)}</span>
-              ${session.duration ? `<span class="text-muted/50">·</span><span>${formatDuration(session.duration)}</span>` : `<span class="text-muted/50">·</span><span class="text-racing">En cours</span>`}
-              <span class="text-muted/50">·</span>
+              ${session.duration ? `<span class="text-a-muted/50">·</span><span>${formatDuration(session.duration)}</span>` : `<span class="text-a-muted/50">·</span><span class="text-a-racing">En cours</span>`}
+              <span class="text-a-muted/50">·</span>
               <span>${session.exercises.length} exo${session.exercises.length > 1 ? 's' : ''}</span>
             </p>
           </div>
           <div class="text-right shrink-0 leading-none">
-            <p class="font-display font-bold text-[18px] num-stat text-cyan leading-none">${done.toLocaleString('fr-FR')}<span class="font-sans font-medium text-[9px] tracking-eyebrow text-muted ml-1 align-baseline">kg</span></p>
-            ${reps > 0 ? `<p class="font-sans font-medium text-[10px] uppercase tracking-eyebrow text-muted num-stat mt-1.5">${reps} reps</p>` : ''}
+            <p class="font-display font-bold text-[18px] num-stat text-a-cyan leading-none">${done.toLocaleString('fr-FR')}<span class="font-sans font-medium text-[9px] tracking-eyebrow text-a-muted ml-1 align-baseline">kg</span></p>
+            ${reps > 0 ? `<p class="font-sans font-medium text-[10px] uppercase tracking-eyebrow text-a-muted num-stat mt-1.5">${reps} reps</p>` : ''}
           </div>
         </button>
       `;
@@ -2995,34 +2995,34 @@ async function openModal(session) {
   // Masthead H1 split + status row
   let html = `
     <!-- Status row -->
-    <div class="px-5 pt-5 pb-3 flex items-center justify-between font-sans text-[10px] uppercase tracking-eyebrow text-muted">
+    <div class="px-5 pt-5 pb-3 flex items-center justify-between font-sans text-[10px] uppercase tracking-eyebrow text-a-muted">
       <div class="flex items-center gap-2">
         <span>${formatDate(session.date)}</span>
-        ${session.startedAt ? `<span class="text-muted/50">·</span><span>${formatTime(session.startedAt)}</span>` : ''}
-        ${session.duration ? `<span class="text-muted/50">·</span><span>${formatDuration(session.duration)}</span>` : `<span class="text-muted/50">·</span><span class="text-racing">En cours</span>`}
+        ${session.startedAt ? `<span class="text-a-muted/50">·</span><span>${formatTime(session.startedAt)}</span>` : ''}
+        ${session.duration ? `<span class="text-a-muted/50">·</span><span>${formatDuration(session.duration)}</span>` : `<span class="text-a-muted/50">·</span><span class="text-a-racing">En cours</span>`}
       </div>
     </div>
 
     <!-- Masthead H1 -->
     <section class="px-5 pt-2 pb-7 accent-line">
-      <h1 class="font-display font-black h-display text-paper">
-        ${escapeHtml(line1)}${sep ? `<br/><span class="text-paper/40"><span class="text-acid not-italic font-black">${escapeHtml(sep)}</span> ${escapeHtml(rest)}.</span>` : ''}
+      <h1 class="font-display font-black h-display text-a-paper">
+        ${escapeHtml(line1)}${sep ? `<br/><span class="text-a-paper/40"><span class="text-a-acid not-italic font-black">${escapeHtml(sep)}</span> ${escapeHtml(rest)}.</span>` : ''}
       </h1>
     </section>
 
     <!-- Stats strip cyan -->
-    <div class="grid grid-cols-3 border-y border-border">
-      <div class="px-3 py-3 border-r border-border min-w-0">
-        <p class="font-sans text-[8px] uppercase tracking-[0.40em] text-muted mb-1.5">Volume</p>
-        <p class="font-display font-bold text-[17px] num-stat text-cyan leading-none truncate">${done.toLocaleString('fr-FR')}<span class="font-sans text-[9px] uppercase tracking-eyebrow text-muted ml-1">kg</span></p>
+    <div class="grid grid-cols-3 border-y border-a-border">
+      <div class="px-3 py-3 border-r border-a-border min-w-0">
+        <p class="font-sans text-[8px] uppercase tracking-[0.40em] text-a-muted mb-1.5">Volume</p>
+        <p class="font-display font-bold text-[17px] num-stat text-a-cyan leading-none truncate">${done.toLocaleString('fr-FR')}<span class="font-sans text-[9px] uppercase tracking-eyebrow text-a-muted ml-1">kg</span></p>
       </div>
-      <div class="px-3 py-3 border-r border-border min-w-0">
-        <p class="font-sans text-[8px] uppercase tracking-[0.40em] text-muted mb-1.5">Tonnage</p>
-        <p class="font-display font-bold text-[17px] num-stat text-cyan leading-none truncate">${tonnage}<span class="font-sans text-[9px] uppercase tracking-eyebrow text-muted ml-1">t</span></p>
+      <div class="px-3 py-3 border-r border-a-border min-w-0">
+        <p class="font-sans text-[8px] uppercase tracking-[0.40em] text-a-muted mb-1.5">Tonnage</p>
+        <p class="font-display font-bold text-[17px] num-stat text-a-cyan leading-none truncate">${tonnage}<span class="font-sans text-[9px] uppercase tracking-eyebrow text-a-muted ml-1">t</span></p>
       </div>
       <div class="px-3 py-3 min-w-0">
-        <p class="font-sans text-[8px] uppercase tracking-[0.40em] text-muted mb-1.5">Reps</p>
-        <p class="font-display font-bold text-[17px] num-stat text-cyan leading-none truncate">${totalRepsDone.toLocaleString('fr-FR')}</p>
+        <p class="font-sans text-[8px] uppercase tracking-[0.40em] text-a-muted mb-1.5">Reps</p>
+        <p class="font-display font-bold text-[17px] num-stat text-a-cyan leading-none truncate">${totalRepsDone.toLocaleString('fr-FR')}</p>
       </div>
     </div>
   `;
@@ -3034,27 +3034,27 @@ async function openModal(session) {
     html += `
       <article class="mt-6">
         <header class="px-5 mb-3">
-          <h2 class="font-display font-bold text-[20px] leading-[1.1] text-paper">${escapeHtml(e.name)}</h2>
-          ${muscle ? `<p class="font-sans text-[10px] uppercase tracking-eyebrow text-muted mt-1.5">${escapeHtml(muscle)}</p>` : ''}
+          <h2 class="font-display font-bold text-[20px] leading-[1.1] text-a-paper">${escapeHtml(e.name)}</h2>
+          ${muscle ? `<p class="font-sans text-[10px] uppercase tracking-eyebrow text-a-muted mt-1.5">${escapeHtml(muscle)}</p>` : ''}
         </header>
-        <div class="border-y border-border">
+        <div class="border-y border-a-border">
           ${(e.series || []).map((s, i) => {
             const allDone = (e.activities || []).every((_, a) => s.activityStates?.[a] === 'done' || s.done !== false);
-            const borderLeft = allDone ? 'border-l-[3px] border-l-acid' : 'border-l-[3px] border-l-transparent opacity-50';
-            const restColor = allDone ? 'text-acid' : 'text-muted';
+            const borderLeft = allDone ? 'border-l-[3px] border-l-a-acid' : 'border-l-[3px] border-l-transparent opacity-50';
+            const restColor = allDone ? 'text-a-acid' : 'text-a-muted';
             return e.activities.map((act, j) => {
               const v = s.values?.[j] || {};
               const isWeight = act.type === 'weight';
               const charge = isWeight
-                ? `${v.weight ?? '—'}<span class="font-sans font-medium text-[10px] tracking-eyebrow text-muted ml-1.5">kg</span>`
-                : `${v.duration ?? '—'}<span class="font-sans font-medium text-[10px] tracking-eyebrow text-muted ml-1.5">s</span>`;
+                ? `${v.weight ?? '—'}<span class="font-sans font-medium text-[10px] tracking-eyebrow text-a-muted ml-1.5">kg</span>`
+                : `${v.duration ?? '—'}<span class="font-sans font-medium text-[10px] tracking-eyebrow text-a-muted ml-1.5">s</span>`;
               const second = isWeight ? `× ${v.reps ?? '—'}` : (act.label || act.name || '—');
               const restSecs = act.rest || 0;
               const restLabel = restSecs > 0 ? `${Math.floor(restSecs / 60)}:${String(restSecs % 60).padStart(2, '0')}` : '—';
               return `
-                <div class="grid grid-cols-[1fr_60px_70px] gap-4 items-baseline px-5 py-3 ${borderLeft} border-b border-border/70 last:border-b-0">
-                  <span class="font-display font-bold text-[20px] num-stat text-paper">${charge}</span>
-                  <span class="font-display font-bold text-[14px] num-stat text-paper text-right">${escapeHtml(second)}</span>
+                <div class="grid grid-cols-[1fr_60px_70px] gap-4 items-baseline px-5 py-3 ${borderLeft} border-b border-a-border/70 last:border-b-0">
+                  <span class="font-display font-bold text-[20px] num-stat text-a-paper">${charge}</span>
+                  <span class="font-display font-bold text-[14px] num-stat text-a-paper text-right">${escapeHtml(second)}</span>
                   <span class="font-sans text-[9px] uppercase tracking-eyebrow ${restColor} num-stat text-right font-semibold">${restLabel}</span>
                 </div>
               `;
@@ -3068,15 +3068,15 @@ async function openModal(session) {
   // Feedback IA
   if (session.feedbackIa) {
     html += `
-      <div class="mx-5 mt-8 border border-border bg-inkAlt p-4 space-y-2">
-        <p class="font-sans text-[10px] uppercase tracking-eyebrow text-acid font-semibold">Feedback IA</p>
-        <div class="font-sans text-[13px] text-paper leading-relaxed">${formatFeedback(session.feedbackIa)}</div>
+      <div class="mx-5 mt-8 border border-a-border bg-a-inkAlt p-4 space-y-2">
+        <p class="font-sans text-[10px] uppercase tracking-eyebrow text-a-acid font-semibold">Feedback IA</p>
+        <div class="font-sans text-[13px] text-a-paper leading-relaxed">${formatFeedback(session.feedbackIa)}</div>
       </div>
     `;
   } else if (!isAbandoned) {
     html += `
       <div class="px-5 mt-8" id="feedback-ia-generate-wrap">
-        <button id="feedback-ia-generate" class="w-full py-3 border border-border text-paper font-sans text-[11px] uppercase tracking-eyebrow active:border-acid active:text-acid transition">Générer l'analyse IA</button>
+        <button id="feedback-ia-generate" class="w-full py-3 border border-a-border text-a-paper font-sans text-[11px] uppercase tracking-eyebrow active:border-a-acid active:text-a-acid transition">Générer l'analyse IA</button>
       </div>
     `;
   }
@@ -3084,8 +3084,8 @@ async function openModal(session) {
   // Footer actions
   html += `
     <div class="px-5 mt-8 mb-6 grid ${isAbandoned ? 'grid-cols-2 gap-3' : 'grid-cols-1'}">
-      ${isAbandoned ? `<button id="resume-session" class="py-4 bg-racing text-ink font-display font-bold text-[14px] uppercase tracking-eyebrow active:bg-racing/80 transition">▶ Reprendre</button>` : ''}
-      <button id="delete-session" class="py-4 border border-blood text-blood font-display font-bold text-[14px] uppercase tracking-eyebrow active:bg-blood active:text-paper transition">Supprimer</button>
+      ${isAbandoned ? `<button id="resume-session" class="py-4 bg-a-racing text-a-ink font-display font-bold text-[14px] uppercase tracking-eyebrow active:bg-a-racing/80 transition">▶ Reprendre</button>` : ''}
+      <button id="delete-session" class="py-4 border border-a-blood text-a-blood font-display font-bold text-[14px] uppercase tracking-eyebrow active:bg-a-blood active:text-a-paper transition">Supprimer</button>
     </div>
   `;
 
@@ -3507,11 +3507,11 @@ async function renderMealPresetButtons(container, dateIso, onChanged) {
     row.className = 'flex items-stretch gap-2 mb-2';
 
     const mainBtn = document.createElement('button');
-    mainBtn.className = 'flex-1 py-3 px-4 border border-border text-paper font-sans text-[11px] uppercase tracking-eyebrow text-left active:border-acid active:text-acid transition';
+    mainBtn.className = 'flex-1 py-3 px-4 border border-a-border text-a-paper font-sans text-[11px] uppercase tracking-eyebrow text-left active:border-a-acid active:text-a-acid transition';
     mainBtn.innerHTML = `<span class="text-[14px] mr-2">${emoji}</span>${label}`;
 
     const editBtn = document.createElement('button');
-    editBtn.className = 'shrink-0 py-3 px-3 border border-border text-muted active:text-paper active:border-paper transition';
+    editBtn.className = 'shrink-0 py-3 px-3 border border-a-border text-a-muted active:text-a-paper active:border-a-paper transition';
     editBtn.textContent = '⚙';
     if (!preset) editBtn.classList.add('hidden');
 
@@ -3551,23 +3551,23 @@ async function renderMealPresetButtons(container, dateIso, onChanged) {
 async function renderAlimentation() {
   const body = document.getElementById('screen-alim-body');
   body.innerHTML = `
-    <div class="px-5 pt-12 text-center font-display italic text-[16px] text-muted">Chargement…</div>
+    <div class="px-5 pt-12 text-center font-display italic text-[16px] text-a-muted">Chargement…</div>
   `;
 
   const apiKey = await getClaudeApiKeyDB();
   if (!apiKey) {
     body.innerHTML = `
       <section class="px-5 pt-9 pb-9 accent-line">
-        <h1 class="font-display font-black h-display text-paper">
+        <h1 class="font-display font-black h-display text-a-paper">
           Clé<br/>
-          <span class="text-paper/40"><span class="text-acid not-italic font-black">·</span> manquante.</span>
+          <span class="text-a-paper/40"><span class="text-a-acid not-italic font-black">·</span> manquante.</span>
         </h1>
-        <p class="font-sans text-[10px] uppercase tracking-eyebrow text-muted mt-5">
+        <p class="font-sans text-[10px] uppercase tracking-eyebrow text-a-muted mt-5">
           Configure ta clé API Claude pour activer le suivi
         </p>
       </section>
       <div class="px-5 mt-4">
-        <button id="alim-go-key" class="w-full py-4 bg-acid text-ink font-display font-bold text-[14px] uppercase tracking-eyebrow active:bg-acid/80 transition">→ Configurer la clé</button>
+        <button id="alim-go-key" class="w-full py-4 bg-a-acid text-a-ink font-display font-bold text-[14px] uppercase tracking-eyebrow active:bg-a-acid/80 transition">→ Configurer la clé</button>
       </div>
     `;
     document.getElementById('alim-go-key').addEventListener('click', () => showScreen('claude-api'));
@@ -3580,9 +3580,9 @@ async function renderAlimentation() {
   const masthead = document.createElement('section');
   masthead.className = 'px-5 pt-9 pb-9 accent-line';
   masthead.innerHTML = `
-    <h1 class="font-display font-black h-display text-paper">
+    <h1 class="font-display font-black h-display text-a-paper">
       Tes<br/>
-      <span class="text-paper/40"><span class="text-acid not-italic font-black">·</span> apports.</span>
+      <span class="text-a-paper/40"><span class="text-a-acid not-italic font-black">·</span> apports.</span>
     </h1>
   `;
   body.appendChild(masthead);
@@ -3591,13 +3591,13 @@ async function renderAlimentation() {
   const dateRow = document.createElement('div');
   dateRow.className = 'px-5 mt-6 mb-3 flex items-center gap-3';
   dateRow.innerHTML = `
-    <p class="font-sans text-[10px] uppercase tracking-eyebrow text-muted">Jour</p>
-    <span class="flex-1 h-px bg-border"></span>
+    <p class="font-sans text-[10px] uppercase tracking-eyebrow text-a-muted">Jour</p>
+    <span class="flex-1 h-px bg-a-border"></span>
   `;
   const dateInput = document.createElement('input');
   dateInput.type = 'date';
   dateInput.value = todayIso();
-  dateInput.className = 'font-sans text-[12px] text-paper border border-border bg-transparent px-3 py-1.5 focus:border-acid focus:outline-none';
+  dateInput.className = 'font-sans text-[12px] text-a-paper border border-a-border bg-transparent px-3 py-1.5 focus:border-a-acid focus:outline-none';
   dateRow.appendChild(dateInput);
   body.appendChild(dateRow);
 
@@ -3617,17 +3617,17 @@ async function renderAlimentation() {
   body.appendChild(actions);
 
   const addBtn = document.createElement('button');
-  addBtn.className = 'w-full py-4 bg-acid text-ink font-display font-bold text-[14px] uppercase tracking-eyebrow active:bg-acid/80 transition';
+  addBtn.className = 'w-full py-4 bg-a-acid text-a-ink font-display font-bold text-[14px] uppercase tracking-eyebrow active:bg-a-acid/80 transition';
   addBtn.textContent = '+ Ajouter un repas';
   actions.appendChild(addBtn);
 
   const adviceBtn = document.createElement('button');
-  adviceBtn.className = 'w-full py-3 border border-border text-paper font-sans text-[11px] uppercase tracking-eyebrow active:border-acid active:text-acid transition';
+  adviceBtn.className = 'w-full py-3 border border-a-border text-a-paper font-sans text-[11px] uppercase tracking-eyebrow active:border-a-acid active:text-a-acid transition';
   adviceBtn.textContent = 'Conseil pour ce soir';
   actions.appendChild(adviceBtn);
 
   const askBtn = document.createElement('button');
-  askBtn.className = 'w-full py-3 border border-border text-paper font-sans text-[11px] uppercase tracking-eyebrow active:border-acid active:text-acid transition';
+  askBtn.className = 'w-full py-3 border border-a-border text-a-paper font-sans text-[11px] uppercase tracking-eyebrow active:border-a-acid active:text-a-acid transition';
   askBtn.textContent = 'Poser une question';
   actions.appendChild(askBtn);
 
@@ -3637,7 +3637,7 @@ async function renderAlimentation() {
   const timelineHdr = document.createElement('header');
   timelineHdr.className = 'flex items-baseline justify-between mb-3 px-5';
   timelineHdr.innerHTML = `
-    <h3 class="font-display italic font-bold text-[14px] uppercase tracking-eyebrow text-paper">Timeline</h3>
+    <h3 class="font-display italic font-bold text-[14px] uppercase tracking-eyebrow text-a-paper">Timeline</h3>
   `;
   timelineSec.appendChild(timelineHdr);
   const timeline = document.createElement('div');
@@ -3682,40 +3682,40 @@ async function renderAlimentation() {
         bmrLabel = 'Métabolisme · 24h';
       }
     } else {
-      bmrNote = `<p class="font-sans text-[10px] uppercase tracking-eyebrow text-muted px-5 mt-3 italic">Configure taille / âge / sexe / activité dans Profil</p>`;
+      bmrNote = `<p class="font-sans text-[10px] uppercase tracking-eyebrow text-a-muted px-5 mt-3 italic">Configure taille / âge / sexe / activité dans Profil</p>`;
     }
 
     const net = apports - depenses - bmrToday;
-    const netColor = net > 200 ? 'text-blood' : net < -200 ? 'text-acid' : 'text-cyan';
+    const netColor = net > 200 ? 'text-a-blood' : net < -200 ? 'text-a-acid' : 'text-a-cyan';
 
     // Stats 4 cols cyan (Apports / Métabolisme / Dépenses / Net)
     bilanCard.innerHTML = `
-      <div class="grid grid-cols-4 border-y border-border">
-        <div class="px-2.5 py-3 border-r border-border min-w-0">
-          <p class="font-sans text-[8px] uppercase tracking-[0.40em] text-muted mb-1.5">Apports</p>
-          <p class="font-display font-bold text-[17px] num-stat text-cyan leading-none truncate">${Math.round(apports)}<span class="font-sans text-[9px] uppercase tracking-eyebrow text-muted ml-1">kcal</span></p>
+      <div class="grid grid-cols-4 border-y border-a-border">
+        <div class="px-2.5 py-3 border-r border-a-border min-w-0">
+          <p class="font-sans text-[8px] uppercase tracking-[0.40em] text-a-muted mb-1.5">Apports</p>
+          <p class="font-display font-bold text-[17px] num-stat text-a-cyan leading-none truncate">${Math.round(apports)}<span class="font-sans text-[9px] uppercase tracking-eyebrow text-a-muted ml-1">kcal</span></p>
         </div>
-        <div class="px-2.5 py-3 border-r border-border min-w-0">
-          <p class="font-sans text-[8px] uppercase tracking-[0.40em] text-muted mb-1.5 truncate">${bmrLabel}</p>
-          <p class="font-display font-bold text-[17px] num-stat text-cyan leading-none truncate">${Math.round(bmrToday)}<span class="font-sans text-[9px] uppercase tracking-eyebrow text-muted ml-1">kcal</span></p>
+        <div class="px-2.5 py-3 border-r border-a-border min-w-0">
+          <p class="font-sans text-[8px] uppercase tracking-[0.40em] text-a-muted mb-1.5 truncate">${bmrLabel}</p>
+          <p class="font-display font-bold text-[17px] num-stat text-a-cyan leading-none truncate">${Math.round(bmrToday)}<span class="font-sans text-[9px] uppercase tracking-eyebrow text-a-muted ml-1">kcal</span></p>
         </div>
-        <div class="px-2.5 py-3 border-r border-border min-w-0">
-          <p class="font-sans text-[8px] uppercase tracking-[0.40em] text-muted mb-1.5">Dépenses</p>
-          <p class="font-display font-bold text-[17px] num-stat text-cyan leading-none truncate">${Math.round(depenses)}<span class="font-sans text-[9px] uppercase tracking-eyebrow text-muted ml-1">kcal</span></p>
+        <div class="px-2.5 py-3 border-r border-a-border min-w-0">
+          <p class="font-sans text-[8px] uppercase tracking-[0.40em] text-a-muted mb-1.5">Dépenses</p>
+          <p class="font-display font-bold text-[17px] num-stat text-a-cyan leading-none truncate">${Math.round(depenses)}<span class="font-sans text-[9px] uppercase tracking-eyebrow text-a-muted ml-1">kcal</span></p>
         </div>
         <div class="px-2.5 py-3 min-w-0">
-          <p class="font-sans text-[8px] uppercase tracking-[0.40em] text-muted mb-1.5">Net</p>
-          <p class="font-display font-bold text-[17px] num-stat ${netColor} leading-none truncate">${net >= 0 ? '+' : ''}${Math.round(net)}<span class="font-sans text-[9px] uppercase tracking-eyebrow text-muted ml-1">kcal</span></p>
+          <p class="font-sans text-[8px] uppercase tracking-[0.40em] text-a-muted mb-1.5">Net</p>
+          <p class="font-display font-bold text-[17px] num-stat ${netColor} leading-none truncate">${net >= 0 ? '+' : ''}${Math.round(net)}<span class="font-sans text-[9px] uppercase tracking-eyebrow text-a-muted ml-1">kcal</span></p>
         </div>
       </div>
       ${bmrNote}
       <div class="grid grid-cols-3 px-5 mt-3 gap-x-3 gap-y-1 font-sans text-[10px] uppercase tracking-eyebrow">
-        <div class="flex items-baseline gap-1.5"><span class="text-muted">Prot</span><span class="text-paper font-semibold num-stat">${Math.round(totP)}<span class="text-muted ml-0.5">g</span></span></div>
-        <div class="flex items-baseline gap-1.5"><span class="text-muted">Gluc</span><span class="text-paper font-semibold num-stat">${Math.round(totG)}<span class="text-muted ml-0.5">g</span></span></div>
-        <div class="flex items-baseline gap-1.5"><span class="text-muted">Lip</span><span class="text-paper font-semibold num-stat">${Math.round(totL)}<span class="text-muted ml-0.5">g</span></span></div>
+        <div class="flex items-baseline gap-1.5"><span class="text-a-muted">Prot</span><span class="text-a-paper font-semibold num-stat">${Math.round(totP)}<span class="text-a-muted ml-0.5">g</span></span></div>
+        <div class="flex items-baseline gap-1.5"><span class="text-a-muted">Gluc</span><span class="text-a-paper font-semibold num-stat">${Math.round(totG)}<span class="text-a-muted ml-0.5">g</span></span></div>
+        <div class="flex items-baseline gap-1.5"><span class="text-a-muted">Lip</span><span class="text-a-paper font-semibold num-stat">${Math.round(totL)}<span class="text-a-muted ml-0.5">g</span></span></div>
       </div>
       ${(depFonte > 0 || depCardio > 0) ? `
-        <div class="flex items-center gap-3 px-5 mt-3 font-sans text-[10px] uppercase tracking-eyebrow text-muted">
+        <div class="flex items-center gap-3 px-5 mt-3 font-sans text-[10px] uppercase tracking-eyebrow text-a-muted">
           ${depFonte > 0  ? `<span>↳ Fonte ${Math.round(depFonte)} kcal</span>` : ''}
           ${depCardio > 0 ? `<span>↳ Cardio ${Math.round(depCardio)} kcal</span>` : ''}
         </div>` : ''}
@@ -3725,41 +3725,41 @@ async function renderAlimentation() {
     timeline.innerHTML = '';
     if (!entries.length) {
       timeline.innerHTML = `
-        <p class="font-display italic text-[14px] text-muted px-5 py-4">Aucune entrée pour ce jour.</p>
+        <p class="font-display italic text-[14px] text-a-muted px-5 py-4">Aucune entrée pour ce jour.</p>
       `;
       return;
     }
 
     const ul = document.createElement('ul');
-    ul.className = 'border-y border-border';
+    ul.className = 'border-y border-a-border';
 
     entries.forEach((e, idx) => {
       const isMeal  = e.type === 'meal';
       const borderLeft = isMeal
-        ? 'border-l-[3px] border-l-acid'
-        : 'border-l-[3px] border-l-racing bg-racing/[0.04]';
-      const kcalColor = isMeal ? 'text-acid' : 'text-racing';
+        ? 'border-l-[3px] border-l-a-acid'
+        : 'border-l-[3px] border-l-a-racing bg-a-racing/[0.04]';
+      const kcalColor = isMeal ? 'text-a-acid' : 'text-a-racing';
       const arrow = isMeal ? '↑' : '↓';
       const isLast = idx === entries.length - 1;
       const time = (e.time || '').slice(0, 5);
       const macros = isMeal && e.proteines_g != null
-        ? `<p class="font-sans text-[9px] uppercase tracking-eyebrow text-muted num-stat mt-1.5">P ${e.proteines_g}g · G ${e.glucides_g}g · L ${e.lipides_g}g</p>`
+        ? `<p class="font-sans text-[9px] uppercase tracking-eyebrow text-a-muted num-stat mt-1.5">P ${e.proteines_g}g · G ${e.glucides_g}g · L ${e.lipides_g}g</p>`
         : '';
 
       const li = document.createElement('li');
-      li.className = `flex items-start gap-3 px-5 py-4 ${isLast ? '' : 'border-b border-border/70'} ${borderLeft}`;
+      li.className = `flex items-start gap-3 px-5 py-4 ${isLast ? '' : 'border-b border-a-border/70'} ${borderLeft}`;
       const photoClickable = e.photo_path ? 'cursor-pointer' : '';
       li.innerHTML = `
         <div class="shrink-0 w-12 pt-1 ${photoClickable}">
-          <p class="font-display font-bold text-[14px] num-stat text-paper leading-none">${time}</p>
+          <p class="font-display font-bold text-[14px] num-stat text-a-paper leading-none">${time}</p>
         </div>
         <div class="flex-1 min-w-0 ${photoClickable}" data-photo="${e.photo_path || ''}">
-          <p class="font-display font-bold italic text-[15px] leading-tight text-paper">${escapeHtml(e.description)}</p>
+          <p class="font-display font-bold italic text-[15px] leading-tight text-a-paper">${escapeHtml(e.description)}</p>
           ${macros}
         </div>
         <div class="text-right shrink-0 leading-none">
-          <p class="font-display font-bold text-[16px] num-stat ${kcalColor} leading-none">${arrow} ${Math.round(e.kcal || 0)}<span class="font-sans font-medium text-[9px] tracking-eyebrow text-muted ml-1">kcal</span></p>
-          <button class="font-sans text-[10px] uppercase tracking-eyebrow text-muted active:text-blood transition mt-2 alim-entry-del" data-id="${e.id}" data-photo="${e.photo_path || ''}">✕ Suppr</button>
+          <p class="font-display font-bold text-[16px] num-stat ${kcalColor} leading-none">${arrow} ${Math.round(e.kcal || 0)}<span class="font-sans font-medium text-[9px] tracking-eyebrow text-a-muted ml-1">kcal</span></p>
+          <button class="font-sans text-[10px] uppercase tracking-eyebrow text-a-muted active:text-a-blood transition mt-2 alim-entry-del" data-id="${e.id}" data-photo="${e.photo_path || ''}">✕ Suppr</button>
         </div>
       `;
 
@@ -4107,7 +4107,7 @@ async function openEveningAdviceModal(dateIso) {
       <div class="modal-title" style="color:#5abe78">🌙 Conseil pour ce soir</div>
       <div id="advice-thread" style="display:flex;flex-direction:column;gap:10px;max-height:50vh;overflow-y:auto;padding-right:4px"></div>
       <textarea id="advice-input" placeholder="Une question, une précision…" rows="2"
-                style="width:100%;padding:10px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--font);font-size:14px;resize:vertical"></textarea>
+                style="width:100%;padding:10px;background:var(--bg);border:1px solid var(--a-border);border-radius:8px;color:var(--text);font-family:var(--font);font-size:14px;resize:vertical"></textarea>
       <div class="live-edit-modal-actions">
         <button class="btn-secondary" id="advice-close">Fermer</button>
         <button class="btn-primary"   id="advice-send">Envoyer</button>
@@ -4195,7 +4195,7 @@ async function openAskQuestionModal(dateIso) {
     <div class="feedback-ia-modal">
       <div class="modal-title" style="color:#5abe78">💬 Poser une question</div>
       <textarea id="ask-text" placeholder="Ex : je repars à la salle à 18h, je dois manger quelque chose avant ?" rows="3"
-                style="width:100%;padding:12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--font);font-size:14px;resize:vertical;margin-top:8px"></textarea>
+                style="width:100%;padding:12px;background:var(--bg);border:1px solid var(--a-border);border-radius:8px;color:var(--text);font-family:var(--font);font-size:14px;resize:vertical;margin-top:8px"></textarea>
       <div id="ask-response" class="hidden" style="margin-top:12px"></div>
       <div class="live-edit-modal-actions" style="margin-top:12px">
         <button class="btn-secondary" id="ask-close">Fermer</button>
@@ -4383,7 +4383,7 @@ async function renderStats() {
 
   if (!sessions.length) {
     body.innerHTML = `
-      <div class="px-5 pt-12 text-center font-display italic text-[16px] text-muted">
+      <div class="px-5 pt-12 text-center font-display italic text-[16px] text-a-muted">
         Aucune séance enregistrée.
       </div>
     `;
@@ -4394,11 +4394,11 @@ async function renderStats() {
   const masthead = document.createElement('section');
   masthead.className = 'px-5 pt-9 pb-9 accent-line';
   masthead.innerHTML = `
-    <h1 class="font-display font-black h-display text-paper">
+    <h1 class="font-display font-black h-display text-a-paper">
       Tes<br/>
-      <span class="text-paper/40"><span class="text-acid not-italic font-black">·</span> progrès.</span>
+      <span class="text-a-paper/40"><span class="text-a-acid not-italic font-black">·</span> progrès.</span>
     </h1>
-    <p class="font-sans text-[10px] uppercase tracking-eyebrow text-muted mt-5">
+    <p class="font-sans text-[10px] uppercase tracking-eyebrow text-a-muted mt-5">
       Évolution par exercice
     </p>
   `;
@@ -4451,7 +4451,7 @@ function buildStatsProgression(sessions) {
     const btn = document.createElement('button');
     const isActive = i === 0;
     btn.className = `shrink-0 px-3 py-2 font-sans text-[10px] uppercase tracking-eyebrow font-semibold border transition ${
-      isActive ? 'border-racing text-racing bg-racing/[0.08]' : 'border-border text-muted active:border-paper active:text-paper'
+      isActive ? 'border-a-racing text-a-racing bg-a-racing/[0.08]' : 'border-a-border text-a-muted active:border-a-paper active:text-a-paper'
     }`;
     btn.textContent = name;
     btn.dataset.prog = name;
@@ -4461,7 +4461,7 @@ function buildStatsProgression(sessions) {
 
   // Metric toggle — segmented bar acid active
   const toggle = document.createElement('div');
-  toggle.className = 'grid grid-cols-3 border-y border-border mb-6';
+  toggle.className = 'grid grid-cols-3 border-y border-a-border mb-6';
   [
     { label: 'Volume', metric: 'volume' },
     { label: '1RM',    metric: 'e1rm' },
@@ -4469,8 +4469,8 @@ function buildStatsProgression(sessions) {
   ].forEach(({ label, metric }, i) => {
     const btn = document.createElement('button');
     const isActive = i === 0;
-    btn.className = `py-3 font-sans text-[11px] uppercase tracking-eyebrow font-semibold border-r border-border last:border-r-0 transition ${
-      isActive ? 'text-acid bg-acid/[0.06] border-t-2 border-t-acid -mt-px' : 'text-muted active:text-paper'
+    btn.className = `py-3 font-sans text-[11px] uppercase tracking-eyebrow font-semibold border-r border-a-border last:border-r-0 transition ${
+      isActive ? 'text-a-acid bg-a-acid/[0.06] border-t-2 border-t-a-acid -mt-px' : 'text-a-muted active:text-a-paper'
     }`;
     btn.textContent = label;
     btn.dataset.metric = metric;
@@ -4520,20 +4520,20 @@ function buildStatsProgression(sessions) {
       const last = exo.points[exo.points.length - 1][activeMetric];
       const delta = first > 0 ? ((last - first) / first * 100) : 0;
       let deltaColor;
-      if (delta > 0)      deltaColor = 'text-acid';
-      else if (delta < 0) deltaColor = 'text-blood';
-      else                deltaColor = 'text-muted';
+      if (delta > 0)      deltaColor = 'text-a-acid';
+      else if (delta < 0) deltaColor = 'text-a-blood';
+      else                deltaColor = 'text-a-muted';
       const deltaStr = delta === 0 ? '=' : `${delta > 0 ? '+' : ''}${Math.round(delta)}%`;
       const fmt = v => activeMetric === 'volume' ? Math.round(v).toLocaleString('fr-FR') : v.toFixed(1);
 
       const card = document.createElement('div');
-      card.className = 'flex items-baseline justify-between gap-3 py-3 border-b border-border/70 last:border-b-0';
+      card.className = 'flex items-baseline justify-between gap-3 py-3 border-b border-a-border/70 last:border-b-0';
       card.innerHTML = `
-        <span class="font-display font-bold italic text-[14px] text-paper truncate flex-1 min-w-0">${escapeHtml(exo.name)}</span>
+        <span class="font-display font-bold italic text-[14px] text-a-paper truncate flex-1 min-w-0">${escapeHtml(exo.name)}</span>
         <div class="flex items-baseline gap-2 shrink-0 font-display num-stat">
-          <span class="text-[12px] text-muted">${fmt(first)}</span>
-          <span class="font-sans text-[10px] text-muted">→</span>
-          <span class="text-[14px] font-bold text-cyan">${fmt(last)}<span class="font-sans font-medium text-[9px] tracking-eyebrow text-muted ml-1">${unit}</span></span>
+          <span class="text-[12px] text-a-muted">${fmt(first)}</span>
+          <span class="font-sans text-[10px] text-a-muted">→</span>
+          <span class="text-[14px] font-bold text-a-cyan">${fmt(last)}<span class="font-sans font-medium text-[9px] tracking-eyebrow text-a-muted ml-1">${unit}</span></span>
           <span class="font-sans text-[10px] uppercase tracking-eyebrow font-semibold ${deltaColor} num-stat min-w-[42px] text-right">${deltaStr}</span>
         </div>
       `;
@@ -4631,9 +4631,9 @@ function buildStatsProgression(sessions) {
     const btn = e.target.closest('button[data-prog]');
     if (!btn) return;
     pills.querySelectorAll('button[data-prog]').forEach(b => {
-      b.className = 'shrink-0 px-3 py-2 font-sans text-[10px] uppercase tracking-eyebrow font-semibold border transition border-border text-muted active:border-paper active:text-paper';
+      b.className = 'shrink-0 px-3 py-2 font-sans text-[10px] uppercase tracking-eyebrow font-semibold border transition border-a-border text-a-muted active:border-a-paper active:text-a-paper';
     });
-    btn.className = 'shrink-0 px-3 py-2 font-sans text-[10px] uppercase tracking-eyebrow font-semibold border transition border-racing text-racing bg-racing/[0.08]';
+    btn.className = 'shrink-0 px-3 py-2 font-sans text-[10px] uppercase tracking-eyebrow font-semibold border transition border-a-racing text-a-racing bg-a-racing/[0.08]';
     activeProg = btn.dataset.prog;
     render();
   });
@@ -4643,9 +4643,9 @@ function buildStatsProgression(sessions) {
     const btn = e.target.closest('button[data-metric]');
     if (!btn) return;
     toggle.querySelectorAll('button[data-metric]').forEach(b => {
-      b.className = 'py-3 font-sans text-[11px] uppercase tracking-eyebrow font-semibold border-r border-border last:border-r-0 transition text-muted active:text-paper';
+      b.className = 'py-3 font-sans text-[11px] uppercase tracking-eyebrow font-semibold border-r border-a-border last:border-r-0 transition text-a-muted active:text-a-paper';
     });
-    btn.className = 'py-3 font-sans text-[11px] uppercase tracking-eyebrow font-semibold border-r border-border last:border-r-0 transition text-acid bg-acid/[0.06] border-t-2 border-t-acid -mt-px';
+    btn.className = 'py-3 font-sans text-[11px] uppercase tracking-eyebrow font-semibold border-r border-a-border last:border-r-0 transition text-a-acid bg-a-acid/[0.06] border-t-2 border-t-a-acid -mt-px';
     activeMetric = btn.dataset.metric;
     render();
   });
@@ -4664,9 +4664,9 @@ async function renderParams() {
   const masthead = document.createElement('section');
   masthead.className = 'px-5 pt-9 pb-9 accent-line';
   masthead.innerHTML = `
-    <h1 class="font-display font-black h-display text-paper">
+    <h1 class="font-display font-black h-display text-a-paper">
       Tes<br/>
-      <span class="text-paper/40"><span class="text-acid not-italic font-black">·</span> programmes.</span>
+      <span class="text-a-paper/40"><span class="text-a-acid not-italic font-black">·</span> programmes.</span>
     </h1>
   `;
   tab.appendChild(masthead);
@@ -4675,29 +4675,29 @@ async function renderParams() {
 
   if (!programmes.length) {
     const msg = document.createElement('p');
-    msg.className = 'font-display italic text-[14px] text-muted px-5 py-4';
+    msg.className = 'font-display italic text-[14px] text-a-muted px-5 py-4';
     msg.textContent = 'Aucun programme.';
     tab.appendChild(msg);
   } else {
     const list = document.createElement('div');
-    list.className = 'border-y border-border';
+    list.className = 'border-y border-a-border';
 
     programmes.forEach((prog, idx) => {
       const row = document.createElement('div');
       const isLast = idx === programmes.length - 1;
-      row.className = `flex items-center gap-3 px-5 py-4 ${isLast ? '' : 'border-b border-border/70'}`;
+      row.className = `flex items-center gap-3 px-5 py-4 ${isLast ? '' : 'border-b border-a-border/70'}`;
       row.innerHTML = `
         <div class="flex flex-col gap-1 shrink-0">
-          <button data-dir="up" ${idx === 0 ? 'disabled' : ''} class="w-7 h-7 flex items-center justify-center border border-border text-paper text-[12px] active:border-acid active:text-acid disabled:opacity-30 disabled:active:border-border disabled:active:text-paper transition">↑</button>
-          <button data-dir="down" ${idx === programmes.length - 1 ? 'disabled' : ''} class="w-7 h-7 flex items-center justify-center border border-border text-paper text-[12px] active:border-acid active:text-acid disabled:opacity-30 disabled:active:border-border disabled:active:text-paper transition">↓</button>
+          <button data-dir="up" ${idx === 0 ? 'disabled' : ''} class="w-7 h-7 flex items-center justify-center border border-a-border text-a-paper text-[12px] active:border-a-acid active:text-a-acid disabled:opacity-30 disabled:active:border-a-border disabled:active:text-a-paper transition">↑</button>
+          <button data-dir="down" ${idx === programmes.length - 1 ? 'disabled' : ''} class="w-7 h-7 flex items-center justify-center border border-a-border text-a-paper text-[12px] active:border-a-acid active:text-a-acid disabled:opacity-30 disabled:active:border-a-border disabled:active:text-a-paper transition">↓</button>
         </div>
         <div class="flex-1 min-w-0">
-          <h4 class="font-display font-bold italic text-[17px] leading-tight text-paper truncate">${escapeHtml(prog.name)}</h4>
-          <p class="font-sans text-[9px] uppercase tracking-eyebrow text-muted mt-1">${prog.category === 'cardio' ? 'Cardio' : 'Fonte'} · ${prog.exercises.length} exo${prog.exercises.length > 1 ? 's' : ''}</p>
+          <h4 class="font-display font-bold italic text-[17px] leading-tight text-a-paper truncate">${escapeHtml(prog.name)}</h4>
+          <p class="font-sans text-[9px] uppercase tracking-eyebrow text-a-muted mt-1">${prog.category === 'cardio' ? 'Cardio' : 'Fonte'} · ${prog.exercises.length} exo${prog.exercises.length > 1 ? 's' : ''}</p>
         </div>
         <div class="flex flex-col gap-1 shrink-0">
-          <button data-action="edit" class="px-3 py-1.5 border border-border text-paper font-sans text-[10px] uppercase tracking-eyebrow active:border-acid active:text-acid transition">Modifier</button>
-          <button data-action="del" class="px-3 py-1.5 border border-blood text-blood font-sans text-[10px] uppercase tracking-eyebrow active:bg-blood active:text-paper transition">Suppr</button>
+          <button data-action="edit" class="px-3 py-1.5 border border-a-border text-a-paper font-sans text-[10px] uppercase tracking-eyebrow active:border-a-acid active:text-a-acid transition">Modifier</button>
+          <button data-action="del" class="px-3 py-1.5 border border-a-blood text-a-blood font-sans text-[10px] uppercase tracking-eyebrow active:bg-a-blood active:text-a-paper transition">Suppr</button>
         </div>
       `;
       row.querySelector('[data-dir="up"]').addEventListener('click', async () => {
@@ -4727,7 +4727,7 @@ async function renderParams() {
   }
 
   const addBtn = document.createElement('button');
-  addBtn.className = 'mx-5 mt-6 mb-12 w-[calc(100%-2.5rem)] py-3 border border-border text-paper font-sans text-[11px] uppercase tracking-eyebrow active:border-acid active:text-acid transition';
+  addBtn.className = 'mx-5 mt-6 mb-12 w-[calc(100%-2.5rem)] py-3 border border-a-border text-a-paper font-sans text-[11px] uppercase tracking-eyebrow active:border-a-acid active:text-a-acid transition';
   addBtn.textContent = '+ Nouveau programme';
   addBtn.addEventListener('click', () => openProgrammeEditor());
   tab.appendChild(addBtn);
@@ -4746,11 +4746,11 @@ function openProgrammeEditor(programme = null) {
   const masthead = document.createElement('section');
   masthead.className = 'px-5 pt-9 pb-9 accent-line';
   masthead.innerHTML = `
-    <h1 class="font-display font-black h-display text-paper">
+    <h1 class="font-display font-black h-display text-a-paper">
       ${isEdit ? 'Édite' : 'Crée'}<br/>
-      <span class="text-paper/40"><span class="text-acid not-italic font-black">·</span> ton programme.</span>
+      <span class="text-a-paper/40"><span class="text-a-acid not-italic font-black">·</span> ton programme.</span>
     </h1>
-    <button id="prog-back" class="font-sans text-[10px] uppercase tracking-eyebrow text-muted active:text-paper transition flex items-center gap-2 mt-5">
+    <button id="prog-back" class="font-sans text-[10px] uppercase tracking-eyebrow text-a-muted active:text-a-paper transition flex items-center gap-2 mt-5">
       <span aria-hidden>←</span><span>Retour</span>
     </button>
   `;
@@ -4764,26 +4764,26 @@ function openProgrammeEditor(programme = null) {
   // Nom programme
   const nameBlock = document.createElement('div');
   nameBlock.innerHTML = `
-    <p class="font-sans text-[9px] uppercase tracking-[0.40em] text-muted mb-1.5">Nom du programme</p>
+    <p class="font-sans text-[9px] uppercase tracking-[0.40em] text-a-muted mb-1.5">Nom du programme</p>
     <input id="prog-name-input" type="text" maxlength="60" placeholder="Pectoraux & Bras" value="${escapeHtml(programme?.name)}"
-      class="w-full bg-transparent border-b border-border focus:border-acid font-display font-black italic text-[22px] text-paper py-2 outline-none transition" />
+      class="w-full bg-transparent border-b border-a-border focus:border-a-acid font-display font-black italic text-[22px] text-a-paper py-2 outline-none transition" />
   `;
   form.appendChild(nameBlock);
 
   // Toggle catégorie (segmented)
   const currentCat = programme?.category || 'fonte';
   const catBlock = document.createElement('div');
-  catBlock.innerHTML = `<p class="font-sans text-[9px] uppercase tracking-[0.40em] text-muted mb-1.5">Catégorie</p>`;
+  catBlock.innerHTML = `<p class="font-sans text-[9px] uppercase tracking-[0.40em] text-a-muted mb-1.5">Catégorie</p>`;
   const catWrap = document.createElement('div');
   catWrap.className = 'prog-category-toggle grid grid-cols-2 gap-2';
-  const renderCatBtn = (cat, isActive) => `<button type="button" data-cat="${cat}" class="prog-cat-btn py-3 border ${isActive ? 'border-acid bg-acid/[0.10] text-acid' : 'border-border text-paper active:border-paper'} font-sans text-[11px] uppercase tracking-eyebrow font-semibold transition">${cat === 'fonte' ? 'Fonte' : 'Cardio'}</button>`;
+  const renderCatBtn = (cat, isActive) => `<button type="button" data-cat="${cat}" class="prog-cat-btn py-3 border ${isActive ? 'border-a-acid bg-a-acid/[0.10] text-a-acid' : 'border-a-border text-a-paper active:border-a-paper'} font-sans text-[11px] uppercase tracking-eyebrow font-semibold transition">${cat === 'fonte' ? 'Fonte' : 'Cardio'}</button>`;
   catWrap.innerHTML = renderCatBtn('fonte', currentCat === 'fonte') + renderCatBtn('cardio', currentCat === 'cardio');
   catBlock.appendChild(catWrap);
   form.appendChild(catBlock);
 
   function getActiveCat() {
     return catWrap.querySelector('.prog-cat-btn[data-cat][data-active="1"]')?.dataset.cat
-      || (catWrap.querySelector('.prog-cat-btn.border-acid')?.dataset.cat)
+      || (catWrap.querySelector('.prog-cat-btn.border-a-acid')?.dataset.cat)
       || currentCat;
   }
 
@@ -4803,7 +4803,7 @@ function openProgrammeEditor(programme = null) {
 
   // Section exercices
   const exoSec = document.createElement('div');
-  exoSec.innerHTML = `<p class="font-sans text-[9px] uppercase tracking-[0.40em] text-muted mb-3">Exercices</p>`;
+  exoSec.innerHTML = `<p class="font-sans text-[9px] uppercase tracking-[0.40em] text-a-muted mb-3">Exercices</p>`;
   const exercisesList = document.createElement('div');
   exercisesList.id = 'prog-exercises-list';
   exercisesList.className = 'space-y-4';
@@ -4845,16 +4845,16 @@ function openProgrammeEditor(programme = null) {
 
   // CTAs : + Exercice / Enregistrer
   const addExBtn = document.createElement('button');
-  addExBtn.className = 'w-full py-3 border border-border text-paper font-sans text-[11px] uppercase tracking-eyebrow active:border-acid active:text-acid transition';
+  addExBtn.className = 'w-full py-3 border border-a-border text-a-paper font-sans text-[11px] uppercase tracking-eyebrow active:border-a-acid active:text-a-acid transition';
   addExBtn.textContent = '+ Exercice';
   addExBtn.addEventListener('click', () => {
-    const cat = catWrap.querySelector('.prog-cat-btn.border-acid')?.dataset.cat || currentCat;
+    const cat = catWrap.querySelector('.prog-cat-btn.border-a-acid')?.dataset.cat || currentCat;
     exercisesList.appendChild(cat === 'cardio' ? makeCardioExerciseCard() : makeExerciseCard());
   });
   form.appendChild(addExBtn);
 
   const saveBtn = document.createElement('button');
-  saveBtn.className = 'w-full py-4 bg-acid text-ink font-display font-bold text-[14px] uppercase tracking-eyebrow active:bg-acid/80 transition';
+  saveBtn.className = 'w-full py-4 bg-a-acid text-a-ink font-display font-bold text-[14px] uppercase tracking-eyebrow active:bg-a-acid/80 transition';
   saveBtn.textContent = isEdit ? 'Mettre à jour' : 'Créer le programme';
   saveBtn.addEventListener('click', () => saveProgrammeFromEditor(programme ? programme.id : null));
   form.appendChild(saveBtn);
@@ -4867,7 +4867,7 @@ async function saveProgrammeFromEditor(existingId) {
   const cards = document.querySelectorAll('#prog-exercises-list .exercise-card');
   if (!cards.length) { showAlert('Ajoute au moins un exercice.'); return; }
 
-  const category = document.querySelector('.prog-cat-btn.border-acid')?.dataset.cat || 'fonte';
+  const category = document.querySelector('.prog-cat-btn.border-a-acid')?.dataset.cat || 'fonte';
   const exercises = Array.from(cards).map(category === 'cardio' ? readCardioExerciseCard : readExerciseCard);
 
   const programmes = await loadProgrammes();
