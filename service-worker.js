@@ -1,9 +1,20 @@
-const CACHE_NAME = 'mikecoach-20261018195704';
+const CACHE_NAME = 'mikecoach-20261018200405';
 const SHELL = [
   '/',
   '/index.html',
   '/app.js',
   '/style.css',
+  '/lib/escape-html.js',
+  '/lib/exercise-name.js',
+  '/lib/programme-title.js',
+  '/lib/recompose-session.js',
+  '/lib/planned-series.js',
+  '/lib/prefill-series.js',
+  '/lib/live-resume.js',
+  '/lib/watch-sync.js',
+  '/supabase.js',
+  '/exercise-editor.js',
+  '/dist/output.css',
   '/manifest.json',
   '/icons/icon-192.png',
   '/icons/icon-512.png',

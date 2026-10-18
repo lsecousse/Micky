@@ -21,6 +21,8 @@ const MIGRATED_FUNCTIONS = [
   'showPostSessionFeedback',
   'renderLiveCardio', 'openChronoOverlay', 'startChrono', 'stopChronoOverlay', 'openMinuterieOverlay',
   'stopMinuterieOverlay',
+  'seriesBandHtml', 'seriesLogRow', 'seriesLogHtml', 'createDock', 'exerciseViewWrap', 'previousValueText',
+  'nextStepHint', 'activityLabel', 'formatKg',
 ];
 const MIGRATED_HTML_BLOCKS = ['DIALOG CUSTOM', 'TOAST', 'COUNTDOWN STICKY TOP BAR', 'HOME', 'À LA SALLE', 'MODAL ÉDITION ACTIVITÉ (live)',
   'CHRONO FULLSCREEN', 'MINUTERIE FULLSCREEN'];
@@ -149,6 +151,14 @@ describe('carnetTokensShould', () => {
     expect(fontLink).not.toMatch(/Fraunces|DM\+Sans/);
     expect(html).toContain('<meta name="theme-color" content="#EEEDE8" />');
     expect(html).toMatch(/<meta name="apple-mobile-web-app-status-bar-style" content="default"/);
+  });
+
+  it('back-office loads the Carnet fonts', () => {
+    const html = read('backoffice.html');
+
+    expect(html).toContain('Newsreader');
+    expect(html).toContain('IBM+Plex+Sans');
+    expect(html).toContain('IBM+Plex+Mono');
   });
 
   it.each(MIGRATED_FUNCTIONS)('migrated function %s has no Direction A leftover', (name) => {
