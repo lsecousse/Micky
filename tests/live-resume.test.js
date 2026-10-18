@@ -65,6 +65,26 @@ describe('restoreLiveExercises', () => {
   });
 });
 
+describe('restoreLiveExercises with super sets', () => {
+  const fonte = extra => ({
+    name: 'Squat', activities: [{ type: 'weight' }], series: [{ values: [{ reps: 10, weight: 80 }] }], ...extra,
+  });
+
+  it('keeps the group of a fonte exercise', () => {
+    const group = { id: 'g1', rounds: 1, transition: 15, roundRest: 90 };
+
+    const [restored] = restoreLiveExercises([fonte({ group })], 'fonte', identity);
+
+    expect(restored.group).toEqual(group);
+  });
+
+  it('adds no group key to an exercise without group', () => {
+    const [restored] = restoreLiveExercises([fonte()], 'fonte', identity);
+
+    expect('group' in restored).toBe(false);
+  });
+});
+
 describe('resolveResumeSession', () => {
   const unfinished = { id: 'abc', duration: 0 };
   const finished   = { id: 'abc', duration: 1800 };

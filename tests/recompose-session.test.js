@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { recomposeSession } from '../lib/recompose-session.js';
+import { recomposeSession, recomposeExercise } from '../lib/recompose-session.js';
 
 describe('recomposeSession', () => {
   const baseRow = {
@@ -91,5 +91,23 @@ describe('recomposeSession', () => {
     ];
     const result = recomposeSession(baseRow, exoRows);
     expect(result.exercises[0].duration_seconds).toBe(720);
+  });
+});
+
+describe('recomposeExercise with super sets', () => {
+  const row = execution => ({ name: 'Squat', comment: '', activities: [{ type: 'weight' }], execution });
+
+  it('reads execution.group into ex.group', () => {
+    const group = { id: 'g1', rounds: 3, transition: 15, roundRest: 90 };
+
+    const ex = recomposeExercise(row({ series: [], group }), 'fonte');
+
+    expect(ex.group).toEqual(group);
+  });
+
+  it('adds no group key when execution has no group', () => {
+    const ex = recomposeExercise(row({ series: [] }), 'fonte');
+
+    expect('group' in ex).toBe(false);
   });
 });
