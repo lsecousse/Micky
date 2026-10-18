@@ -3,6 +3,7 @@ import {
   liveFonteExercise, programmeIndexOf, reorderLiveTiming, liveExerciseDurationAllowed,
   supersetKindLabel, supersetSettingText, liveSupersetBlock, supersetRoundLog, livePauseView, supersetNextHint,
   liveListBlocks, togglePickedExercise, groupDraftRounds, applyLiveGrouping, programmeGrouping,
+  canOpenLiveGrouping,
 } from '../lib/live-superset.js';
 
 const WEIGHT = { type: 'weight', reps: 10, weight: 40, rest: 60 };
@@ -452,5 +453,25 @@ describe('programmeGroupingShould', () => {
     const result = programmeGrouping(programme, session, [0, 1], settings);
 
     expect(result).toBeNull();
+  });
+});
+
+describe('canOpenLiveGroupingShould', () => {
+  it('allow grouping with two groupable exercises and no countdown', () => {
+    const result = canOpenLiveGrouping([single('Militaire'), single('Dips')], false);
+
+    expect(result).toBe(true);
+  });
+
+  it('refuse while a countdown is running', () => {
+    const result = canOpenLiveGrouping([single('Militaire'), single('Dips')], true);
+
+    expect(result).toBe(false);
+  });
+
+  it('refuse with fewer than two groupable exercises', () => {
+    const result = canOpenLiveGrouping([single('Militaire'), single('Dips', 3, 1)], false);
+
+    expect(result).toBe(false);
   });
 });

@@ -1059,7 +1059,7 @@ function renderExerciseList(tab, totals = {}) {
   });
 
   wrap.appendChild(list);
-  if (groupableLiveIndices(liveSession.exercises).length >= 2) wrap.appendChild(groupOpenButton());
+  if (canOpenLiveGrouping(liveSession.exercises, Boolean(countdownTimer))) wrap.appendChild(groupOpenButton());
   tab.appendChild(wrap);
 }
 
@@ -1133,7 +1133,7 @@ function supersetMemberRowHtml(exIdx, position, isDone) {
   const ex = liveSession.exercises[exIdx];
   return `
       <span class="font-display italic font-bold text-[17px] ${isDone ? 'text-mut' : 'text-ink'}">${supersetMemberLetter(position)}</span>
-      <span class="font-display italic font-bold text-[19px] leading-[1.15] truncate ${isDone ? 'text-mut' : 'text-ink'}">${escapeHtml(ex.name)}</span>
+      <span class="font-display italic font-bold text-[19px] leading-[1.3] truncate ${isDone ? 'text-mut' : 'text-ink'}">${escapeHtml(ex.name)}</span>
       <span class="font-mono text-[13px] text-mut num-stat">${memberLoadText(ex)}</span>`;
 }
 
@@ -1222,7 +1222,7 @@ function groupPickRowHtml(exIdx, picked) {
   return `
     <li><button data-group-pick="${exIdx}" class="w-full flex items-center gap-3 h-[54px] px-5 text-left text-ink border-0 border-solid border-b border-rule active:bg-ink/10 transition">
       ${box}
-      <span class="flex-1 min-w-0 truncate font-display italic font-bold text-[18px]">${escapeHtml(liveSession.exercises[exIdx].name)}</span>
+      <span class="flex-1 min-w-0 truncate font-display italic font-bold text-[18px] leading-[1.3]">${escapeHtml(liveSession.exercises[exIdx].name)}</span>
       <small class="font-mono text-[12px] text-mut num-stat">${groupPickPlanText(liveSession.exercises[exIdx])}</small>
     </button></li>`;
 }
@@ -1231,7 +1231,7 @@ function groupOffRowHtml(name, reason) {
   return `
     <li class="flex items-center gap-3 h-[54px] px-5 text-mut border-0 border-solid border-b border-rule">
       <span class="w-[30px] h-[30px] shrink-0 rounded border-[1.5px] border-solid border-rule"></span>
-      <span class="flex-1 min-w-0 truncate font-display italic font-bold text-[18px]">${name}</span>
+      <span class="flex-1 min-w-0 truncate font-display italic font-bold text-[18px] leading-[1.3]">${name}</span>
       <small class="text-[12px] text-mut">${reason}</small>
     </li>`;
 }
@@ -1322,6 +1322,7 @@ function handleGroupSheetClick(e) {
 // Groups the picked exercises in the live session (timing maps follow), optionally in the programme too
 function submitLiveGrouping() {
   const { picked, keep } = groupSheetState;
+  if (countdownTimer) return closeGroupSheet();
   if (!canGroupLive(liveSession.exercises, picked)) return;
   const settings = groupSheetSettings(groupSheetState);
   const before = liveSession.exercises;
