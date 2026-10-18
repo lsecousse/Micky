@@ -333,10 +333,10 @@ input:focus { border-color: var(--accent); }
 }
 
 .modal-close {
-  position: absolute;
+  position: fixed; /* stays reachable while the full-screen sheet scrolls */
   top: calc(env(safe-area-inset-top) + 12px);
   right: 16px;
-  z-index: 1;
+  z-index: 2;
   background: var(--sheet);
   border: 1.5px solid var(--ink);
   color: var(--ink);

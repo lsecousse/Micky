@@ -24,6 +24,7 @@ const MIGRATED_FUNCTIONS = [
   'seriesBandHtml', 'seriesLogRow', 'seriesLogHtml', 'createDock', 'exerciseViewWrap', 'previousValueText',
   'nextStepHint', 'activityLabel', 'formatKg',
   'renderHistory', 'resumeSessionFromHistory', 'openModal', 'closeModal', 'formatFeedback', 'feedbackCard',
+  'openBodyAnalysisPopupLoading', 'fillBodyAnalysisPopup',
   'renderStats', 'statsSection', 'exoMetrics', 'buildStatsProgression', 'carnetColor',
 ];
 const MIGRATED_HTML_BLOCKS = ['DIALOG CUSTOM', 'TOAST', 'COUNTDOWN STICKY TOP BAR', 'HOME', 'À LA SALLE', 'MODAL ÉDITION ACTIVITÉ (live)',

@@ -2688,15 +2688,12 @@ function openBodyAnalysisPopupLoading() {
   const modal = document.getElementById('modal');
   const modalBody = document.getElementById('modal-body');
   modalBody.innerHTML = `
-    <div id="body-analysis-popup" class="px-5 py-9">
-      <p class="font-sans text-[10px] uppercase tracking-eyebrow text-a-acid font-semibold mb-3">Ton évolution</p>
-      <h2 class="font-display font-black h-display text-a-paper mb-6">
-        Analyse<br/>
-        <span class="text-a-paper/40"><span class="text-a-acid not-italic font-black">·</span> en cours.</span>
-      </h2>
-      <div class="flex items-center gap-3 mt-8">
-        <span aria-hidden class="w-1.5 h-1.5 bg-a-acid animate-pulse"></span>
-        <p class="font-sans text-[11px] uppercase tracking-eyebrow text-a-muted">Patiente…</p>
+    <div id="body-analysis-popup" class="px-5 pt-5 pb-10 text-ink font-sans">
+      <p class="pr-16 text-[13px] text-mut leading-[40px]">Ton évolution</p>
+      <h2 class="font-display font-medium text-[52px] leading-[0.95] tracking-[-0.02em] text-ink mt-3">Analyse <em class="text-mut">en cours.</em></h2>
+      <div class="flex items-center gap-2 mt-8 text-[13px] text-mut">
+        <div class="live-edit-suggestion-spinner"></div>
+        <p>Patiente…</p>
       </div>
     </div>
   `;
@@ -2707,12 +2704,9 @@ function fillBodyAnalysisPopup(text) {
   const popup = document.getElementById('body-analysis-popup');
   if (!popup) return;
   popup.innerHTML = `
-    <p class="font-sans text-[10px] uppercase tracking-eyebrow text-a-acid font-semibold mb-3">Ton évolution</p>
-    <h2 class="font-display font-black h-display text-a-paper accent-line pb-7">
-      Le<br/>
-      <span class="text-a-paper/40"><span class="text-a-acid not-italic font-black">·</span> bilan.</span>
-    </h2>
-    <div class="font-sans text-[14px] text-a-paper leading-relaxed mt-8 space-y-3">${formatFeedback(text)}</div>
+    <p class="pr-16 text-[13px] text-mut leading-[40px]">Ton évolution</p>
+    <h2 class="font-display font-medium text-[52px] leading-[0.95] tracking-[-0.02em] text-ink mt-3">Le <em class="text-mut">bilan.</em></h2>
+    <div class="mt-8 pt-3 border-0 border-solid border-t-[1.5px] border-ink text-[15px] leading-relaxed text-ink break-words">${formatFeedback(text)}</div>
   `;
 }
 
@@ -3066,6 +3060,7 @@ async function openModal(session) {
     }
   }
 
+  document.querySelector('#modal .modal-content').scrollTop = 0;
   document.getElementById('modal').classList.remove('hidden');
 }
 
@@ -4034,7 +4029,7 @@ async function openEveningAdviceModal(dateIso) {
       <textarea id="advice-input" placeholder="Une question, une précision…" rows="2"
                 style="width:100%;padding:10px;background:var(--bg);border:1px solid var(--a-border);border-radius:8px;color:var(--text);font-family:var(--font);font-size:14px;resize:vertical"></textarea>
       <div class="live-edit-modal-actions">
-        <button class="btn-secondary" id="advice-close">Fermer</button>
+        <button class="btn-secondary" id="advice-close" style="color:var(--ink);border-color:var(--ink)">Fermer</button>
         <button class="btn-primary"   id="advice-send">Envoyer</button>
       </div>
     </div>
@@ -4123,7 +4118,7 @@ async function openAskQuestionModal(dateIso) {
                 style="width:100%;padding:12px;background:var(--bg);border:1px solid var(--a-border);border-radius:8px;color:var(--text);font-family:var(--font);font-size:14px;resize:vertical;margin-top:8px"></textarea>
       <div id="ask-response" class="hidden" style="margin-top:12px"></div>
       <div class="live-edit-modal-actions" style="margin-top:12px">
-        <button class="btn-secondary" id="ask-close">Fermer</button>
+        <button class="btn-secondary" id="ask-close" style="color:var(--ink);border-color:var(--ink)">Fermer</button>
         <button class="btn-primary"   id="ask-send">Envoyer</button>
       </div>
     </div>
