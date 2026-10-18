@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   liveFonteExercise, programmeIndexOf, reorderLiveTiming, liveExerciseDurationAllowed,
+  supersetKindLabel, supersetSettingText, liveSupersetBlock, supersetRoundLog, livePauseView, supersetNextHint,
 } from '../lib/live-superset.js';
 
 const WEIGHT = { type: 'weight', reps: 10, weight: 40, rest: 60 };
@@ -87,5 +88,169 @@ describe('liveExerciseDurationAllowedShould', () => {
 
   it('allow an isolated member read as single', () => {
     expect(liveExerciseDurationAllowed([{ group }, {}], 0)).toBe(true);
+  });
+});
+
+// ── Déroulé d'un groupe ─────────────────────────────────
+
+const GROUP = { id: 'g1', rounds: 4, transition: 15, roundRest: 90 };
+
+function member(name, weight, reps, extra = {}) {
+  const activities = extra.activities || [{ type: 'weight', weight, reps, rest: 60 }];
+  return {
+    name, activities, group: { ...GROUP },
+    series: Array.from({ length: 4 }, () => ({
+      activityStates: {},
+      values: activities.map(a => (a.type === 'weight' ? { weight: a.weight, reps: a.reps } : { duration: a.duration })),
+    })),
+  };
+}
+
+// Développé couché (A) + Rowing barre (B), the first `steps` steps done (A1 B1 A2 B2 …).
+function pair(steps = 0) {
+  const exs = [member('Développé couché', 60, 10), member('Rowing barre', 50, 10), { name: 'Curl', activities: [{ type: 'weight', weight: 12, reps: 12, rest: 60 }], series: [{ activityStates: {}, values: [{}] }] }];
+  for (let k = 0; k < steps; k++) exs[k % 2].series[Math.floor(k / 2)].activityStates[0] = 'done';
+  return exs;
+}
+
+describe('supersetKindLabelShould', () => {
+  it('name a group of two a super set', () => {
+    expect(supersetKindLabel(2)).toBe('Super set');
+  });
+
+  it('name a group of three a tri-set', () => {
+    expect(supersetKindLabel(3)).toBe('Tri-set');
+  });
+
+  it('name a group of four a circuit', () => {
+    expect(supersetKindLabel(4)).toBe('Circuit');
+  });
+});
+
+describe('supersetSettingTextShould', () => {
+  it('write seconds under a minute', () => {
+    expect(supersetSettingText(15)).toBe('15 s');
+  });
+
+  it('write minutes and seconds', () => {
+    expect(supersetSettingText(90)).toBe('1 min 30');
+  });
+
+  it('write whole minutes', () => {
+    expect(supersetSettingText(120)).toBe('2 min');
+  });
+});
+
+describe('liveSupersetBlockShould', () => {
+  it('return the group block of a member', () => {
+    expect(liveSupersetBlock(pair(), 1)).toEqual({ kind: 'group', indices: [0, 1], ...GROUP });
+  });
+
+  it('return null for a single exercise', () => {
+    expect(liveSupersetBlock(pair(), 2)).toBeNull();
+  });
+});
+
+describe('supersetRoundLogShould', () => {
+  it('describe round 1 in progress with the planned pauses', () => {
+    const log = supersetRoundLog(pair(), [0, 1], { exIdx: 0, sIdx: 0, actIdx: 0 });
+
+    expect(log).toEqual({
+      round: 1, rounds: 4, roundsDone: 0, finished: [],
+      current: [
+        { exIdx: 0, actIdx: 0, letter: 'A', name: 'Développé couché', weight: 60, reps: 10, duration: null,
+          state: 'focus', after: { kind: 'transition', seconds: 15 } },
+        { exIdx: 1, actIdx: 0, letter: 'B', name: 'Rowing barre', weight: 50, reps: 10, duration: null,
+          state: 'todo', after: { kind: 'roundRest', seconds: 90 } },
+      ],
+      remaining: { from: 2, to: 4, text: 'A 60 × 10 · B 50 × 10' },
+    });
+  });
+
+  it('summarize round 1 once finished and keep rounds 3 to 4 remaining', () => {
+    const exs = pair(3);
+    exs[0].series[0].values[0].weight = 62.5;
+
+    const log = supersetRoundLog(exs, [0, 1], { exIdx: 1, sIdx: 1, actIdx: 0 });
+
+    expect(log.finished).toEqual([{ round: 1, text: 'A 62,5 × 10 · B 50 × 10' }]);
+    expect(log.current.map(row => row.state)).toEqual(['done', 'focus']);
+    expect(log.remaining).toEqual({ from: 3, to: 4, text: 'A 60 × 10 · B 50 × 10' });
+    expect([log.round, log.roundsDone]).toEqual([2, 1]);
+  });
+
+  it('have nothing remaining and no round rest on the last round', () => {
+    const log = supersetRoundLog(pair(6), [0, 1], { exIdx: 0, sIdx: 3, actIdx: 0 });
+
+    expect(log.remaining).toBeNull();
+    expect(log.current[1].after).toBeNull();
+    expect(log.finished.map(f => f.round)).toEqual([1, 2, 3]);
+  });
+
+  it('write one row per activity of a member and a clock for a timed activity', () => {
+    const plank = { type: 'countdown', duration: 45, rest: 0 };
+    const exs = [
+      member('Pompes', 0, 15, { activities: [{ type: 'weight', weight: 0, reps: 15, rest: 0 }, plank] }),
+      member('Rowing barre', 50, 10),
+    ];
+    exs[0].series[0].activityStates = { 0: 'done', 1: 'done' };
+    exs[1].series[0].activityStates = { 0: 'done' };
+
+    const log = supersetRoundLog(exs, [0, 1], { exIdx: 0, sIdx: 1, actIdx: 0 });
+
+    expect(log.finished).toEqual([{ round: 1, text: 'A 0 × 15 + 0:45 · B 50 × 10' }]);
+    expect(log.current.map(row => [row.letter, row.actIdx, row.duration, row.after])).toEqual([
+      ['A', 0, null, null],
+      ['A', 1, 45, { kind: 'transition', seconds: 15 }],
+      ['B', 0, null, { kind: 'roundRest', seconds: 90 }],
+    ]);
+  });
+});
+
+describe('livePauseViewShould', () => {
+  it('keep the activity rest screen', () => {
+    expect(livePauseView({ kind: 'rest', seconds: 60 })).toBe('rest');
+  });
+
+  it('show the round rest screen', () => {
+    expect(livePauseView({ kind: 'roundRest', seconds: 90 })).toBe('roundRest');
+  });
+
+  it('count a transition down when it lasts', () => {
+    expect(livePauseView({ kind: 'transition', seconds: 15 })).toBe('transitionCountdown');
+  });
+
+  it('stop at once on a transition of 0 s', () => {
+    expect(livePauseView({ kind: 'transition', seconds: 0 })).toBe('transitionStop');
+  });
+
+  it('stop once the transition countdown is over', () => {
+    expect(livePauseView({ kind: 'transition', seconds: 15, stop: true })).toBe('transitionStop');
+  });
+});
+
+describe('supersetNextHintShould', () => {
+  it('announce the next member after a transition', () => {
+    expect(supersetNextHint(pair(), { exIdx: 0, sIdx: 0, actIdx: 0 })).toBe('puis B · Rowing barre');
+  });
+
+  it('announce the round rest after the last member', () => {
+    expect(supersetNextHint(pair(1), { exIdx: 1, sIdx: 0, actIdx: 0 })).toBe('puis repos de tour 1:30');
+  });
+
+  it('announce the list after the last step', () => {
+    expect(supersetNextHint(pair(7), { exIdx: 1, sIdx: 3, actIdx: 0 })).toBe('puis retour à la liste');
+  });
+
+  it('leave a single exercise to the usual hint', () => {
+    expect(supersetNextHint(pair(), { exIdx: 2, sIdx: 0, actIdx: 0 })).toBeNull();
+  });
+
+  it('not mutate the session', () => {
+    const exs = pair();
+
+    supersetNextHint(exs, { exIdx: 0, sIdx: 0, actIdx: 0 });
+
+    expect(exs[0].series[0].activityStates).toEqual({});
   });
 });

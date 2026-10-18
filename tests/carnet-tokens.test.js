@@ -23,6 +23,9 @@ const MIGRATED_FUNCTIONS = [
   'stopMinuterieOverlay',
   'seriesBandHtml', 'seriesLogRow', 'seriesLogHtml', 'createDock', 'exerciseViewWrap', 'previousValueText',
   'nextStepHint', 'activityLabel', 'formatKg',
+  'focusEditButtonHtml', 'weightSuggestionSlot', 'loadWeightSuggestion', 'dockExosButtonHtml', 'focusDockHtml',
+  'startRestDockSync', 'supersetHeadHtml', 'supersetSummaryRowHtml', 'supersetLogRowHtml', 'supersetLogHtml',
+  'renderSupersetFocus', 'pauseTimerHtml', 'pauseStepButtonHtml', 'supersetPauseDockHtml', 'renderSupersetPause',
 ];
 const MIGRATED_HTML_BLOCKS = ['DIALOG CUSTOM', 'TOAST', 'COUNTDOWN STICKY TOP BAR', 'HOME', 'À LA SALLE', 'MODAL ÉDITION ACTIVITÉ (live)',
   'CHRONO FULLSCREEN', 'MINUTERIE FULLSCREEN'];
