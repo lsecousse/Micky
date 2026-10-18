@@ -14,7 +14,7 @@ navigateur, commentaires en anglais, aucune constante globale qui collisionne av
 ## Tâche 1 — `lib/supersets.js` + `tests/supersets.test.js`
 
 Constantes : `SUPERSET_MIN_SIZE = 2`, `SUPERSET_MAX_SIZE = 4`, `SUPERSET_DEFAULT_TRANSITION = 15`,
-`SUPERSET_DEFAULT_ROUND_REST = 90`.
+`SUPERSET_DEFAULT_ROUND_REST = 90`, `SUPERSET_SETTING_KEYS = ['rounds', 'transition', 'roundRest']`.
 
 Tests (un par ligne) :
 
@@ -23,6 +23,7 @@ Tests (un par ligne) :
   même id → deux blocs distincts ; tableau vide → `[]`.
 - `defaultSupersetRounds` : max des séries planifiées (3 et 4 → 4) ; exercice sans séries ni `sets` → valeur de
   `plannedSeries` (4).
+- `isGroupSize` : 2 et 4 → vrai ; 1 et 5 → faux (règle partagée avec `canGroupLive`).
 - `supersetOrder` : `(5, [3, 1])` → `[0, 3, 1, 2, 4]` ; `(3, [0, 1])` → identité.
 - `groupExercises` : membres placés à la place du plus petit indice dans l'ordre choisi ; chaque membre porte
   `{ id: 'g1', rounds, transition: 15, roundRest: 90 }` par défaut ; réglages passés écrasent les défauts ; tours
@@ -81,6 +82,27 @@ values }], group? }`.
   chargés ensemble dans un même scope global (pas de collision), fonctions exposées.
 - Bump `CACHE_NAME` dans `service-worker.js`.
 - `npx vitest run` (tous verts), `npm run css` sans diff sur `dist/output.css`.
+
+## Correctifs de revue
+
+Noms publics renommés (globales navigateur qu'une fonction homonyme de `app.js` écraserait sans erreur) :
+`removeExerciseKeepingGroups`, `ungroupSuperset`, `moveExerciseBlock`, `moveWithinSuperset`, `dropExerciseOnto`,
+`linkNextExercise`, `supersetOrder`, `defaultSupersetRounds`, `supersetMemberLetter`, `nextLiveStep`,
+`supersetProgress`.
+
+Tests ajoutés (un par ligne) :
+
+- `dropExerciseOnto` : cardio déposé sur un membre → throw ; membre déposé sur un membre de son groupe (2 ou 3
+  membres, réglages non par défaut) → inchangé ; `from` ou `onto` hors bornes → « Exercice introuvable ».
+- `setGroupSettings` : ne changer que la transition garde les `activityStates` ; tours 0 ou 1,5 → throw.
+- `linkNextExercise` : les séries des membres déjà groupés sont gardées ; indice hors bornes → « Exercice introuvable ».
+- `moveExerciseBlock`, `moveWithinSuperset`, `removeExerciseKeepingGroups` : indice hors bornes → « Exercice
+  introuvable ».
+- `groupExercises` : un membre isolé est accepté comme un simple.
+- `groupableLiveIndices` : un membre isolé non commencé est inclus.
+- `nextLiveStep` : A2 validé, B1 non fait → B1 en transition confirmée ; A2 validé, A1 non fait → A1 en `rest` ; B plus
+  court (A 3 séries, B 2) : B2 → A3 en repos de tour.
+- `supersetProgress` : `null` pour un exercice simple ou cardio.
 
 ## Vérification et livraison
 

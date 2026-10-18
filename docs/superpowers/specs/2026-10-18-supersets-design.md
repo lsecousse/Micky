@@ -72,43 +72,49 @@ Historique, PR, `prevSeries` restent indexés par exercice (nom normalisé) : in
 | `exerciseBlocks(exercises)` | découpe en blocs `{ kind: 'single', indices }` / `{ kind: 'group', id, indices, rounds, transition, roundRest }` |
 | `defaultSupersetRounds(members)` | plus grand nombre de séries planifiées (≥ 1) |
 | `supersetOrder(length, indices)` | permutation : les membres choisis, dans l'ordre choisi, prennent la place du plus petit indice |
-| `groupExercises(exercises, indices, settings?)` | crée un groupe ; refuse (throw) taille hors 2–4, doublon, indice hors bornes, exercice cardio ou déjà groupé |
+| `isGroupSize(count)` | vrai si 2 ≤ `count` ≤ 4 (règle de taille unique, partagée par l'édition et `canGroupLive`) |
+| `groupExercises(exercises, indices, settings?)` | crée un groupe ; refuse (throw) taille hors 2–4, doublon, indice hors bornes, exercice cardio ou déjà membre d'un groupe (un membre isolé compte comme simple) |
 | `ungroupSuperset(exercises, groupId)` | retire `group` des membres (séries conservées) |
-| `setGroupSettings(exercises, groupId, patch)` | règle tours / transition / repos de tour sur tous les membres ; tours → séries redimensionnées |
+| `setGroupSettings(exercises, groupId, patch)` | règle tours / transition / repos de tour sur tous les membres ; tours → séries redimensionnées ; refuse des tours qui ne sont pas un entier ≥ 1 |
 | `linkNextExercise(exercises, index)` | « Lier au suivant » : fusionne le bloc de `index` et le bloc suivant (≤ 4) ; un groupe existant garde ses réglages |
 | `moveExerciseBlock(exercises, index, dir)` | déplace d'un cran le bloc entier (le groupe bouge d'un bloc) |
 | `moveWithinSuperset(exercises, index, dir)` | ↑↓ à l'intérieur du groupe ; sans effet au bord |
-| `dropExerciseOnto(exercises, from, onto)` | back-office : déposer **sur** un exercice forme ou agrandit son groupe (en fin de groupe) |
+| `dropExerciseOnto(exercises, from, onto)` | back-office : déposer **sur** un exercice forme ou agrandit son groupe (en fin de groupe) ; sans effet sur soi-même ou sur un membre de son propre groupe ; refuse le cardio |
 | `removeExerciseKeepingGroups(exercises, index)` | suppression ; un groupe réduit à 1 membre est dissous |
 | `supersetMemberLetter(position)` | `'A'`…`'D'` |
 
-Toutes ces fonctions sont **pures** : elles rendent un nouveau tableau et ne modifient pas l'entrée.
+Toutes ces fonctions sont **pures** : elles rendent un nouveau tableau et ne modifient pas l'entrée. Un indice hors
+bornes lève « Exercice introuvable ». Les noms publics sont spécifiques (`ungroupSuperset`, `dropExerciseOnto`…) :
+ce sont des globales du navigateur, qu'une fonction homonyme de `app.js` écraserait sans erreur.
 
-Elles servent aussi à la séance live (mêmes exercices, séries avec `activityStates`) : un exercice non commencé n'a
-aucun état, le redimensionnement par `plannedSeries` est donc sans perte.
+Elles servent aussi à la séance live (mêmes exercices, séries avec `activityStates`). Les séries d'un membre ne sont
+redimensionnées (par `plannedSeries`) que si leur nombre diffère de `rounds` : sinon elles sont gardées telles quelles,
+états et valeurs compris. Et en séance, seuls les exercices non commencés sont groupables : un redimensionnement ne
+touche donc jamais un état d'exécution.
 
 ### `lib/superset-flow.js` — déroulé de la séance live
 
 | Fonction | Rôle |
 |---|---|
 | `isExerciseStarted(ex)` | au moins une activité `done` (cardio : état ≠ `pending`) |
-| `groupableLiveIndices(exercises)` | exercices fonte, non commencés, non groupés |
+| `groupableLiveIndices(exercises)` | exercices fonte, non commencés, hors d'un groupe (un membre isolé compte comme simple) |
 | `canGroupLive(exercises, indices)` | 2 à 4 indices distincts, tous groupables |
 | `nextUndoneInBlock(exercises, exIdx)` | première étape non faite du bloc ; groupe : tour par tour, A puis B (A1 B1 A2 B2) ; remplace `nextUndoneActivity` |
 | `nextLiveStep(exercises, done)` | après validation de `done = { exIdx, sIdx, actIdx }` : `{ next, pause }` |
-| `supersetProgress(exercises, exIdx)` | `{ roundsDone, rounds }` pour le compteur « en tours » de la liste |
+| `supersetProgress(exercises, exIdx)` | `{ roundsDone, rounds }` pour le compteur « en tours » de la liste ; `null` hors groupe (simple ou cardio) |
 
 Règle de `pause` :
 
 - `next` nul (bloc fini) → `pause` nulle (retour à la liste, comme aujourd'hui).
 - même exercice, même série (activité suivante) ou exercice simple → `{ kind: 'rest', seconds: activité.rest }`
   (comportement actuel inchangé).
-- groupe, même tour → `{ kind: 'transition', seconds: group.transition, confirm: true }` : l'écran « Va au poste
-  suivant » est **toujours** affiché et validé, même à 0 s.
-- groupe, tour suivant → `{ kind: 'roundRest', seconds: group.roundRest }`.
+- groupe, tour suivant (`next.sIdx > done.sIdx`) → `{ kind: 'roundRest', seconds: group.roundRest }`.
+- groupe, même exercice sur une série antérieure (retour arrière sur le même poste) → `rest` de l'activité.
+- groupe, autre exercice du même tour ou d'un tour antérieur → `{ kind: 'transition', seconds: group.transition,
+  confirm: true }` : l'écran « Va au poste suivant » est **toujours** affiché et validé, même à 0 s.
 
 Tolérance : si les membres n'ont pas tous `rounds` séries (donnée incohérente), le parcours va jusqu'à la plus longue
-et saute les séries absentes.
+et saute les séries absentes (l'estimation de durée, elle, calcule un plan sur `group.rounds`).
 
 ### `lib/duration-estimate.js` — estimation
 
@@ -142,8 +148,12 @@ et saute les séries absentes.
    faire avant ou après le groupe, ou passer par `dropExerciseOnto`.
 6. `migrateExercise` (exercices très anciens sans `activities`) ne recopie pas `group` : un exercice groupé a
    forcément été réenregistré au format actuel, à vérifier au branchement.
-7. Charger `lib/supersets.js` et `lib/superset-flow.js` dans `index.html` / `backoffice.html` (le test
-   `browser-scripts` vérifie déjà l'absence de collision de noms globaux).
+7. Charger `lib/supersets.js` et `lib/superset-flow.js` dans `index.html` / `backoffice.html`. Le test
+   `browser-scripts` ne détecte que les doublons de `const` / `let` entre scripts : une `function` homonyme déclarée
+   plus loin (par `app.js`) écraserait la nôtre sans erreur, d'où les noms publics spécifiques ; vérifier par grep
+   au branchement.
+8. Quand `backoffice.html` chargera `lib/supersets.js`, supprimer le repli « tout simple » de `_exerciseBlocksOf`
+   (`lib/duration-estimate.js`), posé pour ne pas casser l'estimation du back-office en attendant.
 
 ## Hors périmètre phase 1
 
