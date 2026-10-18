@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import {
-  exerciseBlocks, defaultRounds, groupOrder, memberLetter, groupExercises,
-  ungroup, setGroupSettings, linkNext, moveBlock, moveInGroup,
-  removeExercise, dropOnto, isGroupSize,
+  exerciseBlocks, defaultSupersetRounds, supersetOrder, supersetMemberLetter, groupExercises,
+  ungroupSuperset, setGroupSettings, linkNextExercise, moveExerciseBlock, moveWithinSuperset,
+  removeExerciseKeepingGroups, dropExerciseOnto, isGroupSize,
 } from '../lib/supersets.js';
 
 // Weight exercise with `n` planned series of `reps` reps.
@@ -63,33 +63,33 @@ describe('exerciseBlocks', () => {
   });
 });
 
-describe('defaultRounds', () => {
+describe('defaultSupersetRounds', () => {
   it('returns the largest number of planned series', () => {
-    expect(defaultRounds([weightEx('A', 3), weightEx('B', 4)])).toBe(4);
+    expect(defaultSupersetRounds([weightEx('A', 3), weightEx('B', 4)])).toBe(4);
   });
 
   it('uses the plannedSeries default for an exercise without series nor sets', () => {
-    expect(defaultRounds([{ name: 'A', activities: [{ type: 'weight' }] }])).toBe(4);
+    expect(defaultSupersetRounds([{ name: 'A', activities: [{ type: 'weight' }] }])).toBe(4);
   });
 });
 
-describe('groupOrder', () => {
+describe('supersetOrder', () => {
   it('puts the chosen members, in the chosen order, at the smallest index', () => {
-    expect(groupOrder(5, [3, 1])).toEqual([0, 3, 1, 2, 4]);
+    expect(supersetOrder(5, [3, 1])).toEqual([0, 3, 1, 2, 4]);
   });
 
   it('keeps the identity when members are already contiguous and ordered', () => {
-    expect(groupOrder(3, [0, 1])).toEqual([0, 1, 2]);
+    expect(supersetOrder(3, [0, 1])).toEqual([0, 1, 2]);
   });
 });
 
-describe('memberLetter', () => {
+describe('supersetMemberLetter', () => {
   it('names the first member A', () => {
-    expect(memberLetter(0)).toBe('A');
+    expect(supersetMemberLetter(0)).toBe('A');
   });
 
   it('names the fourth member D', () => {
-    expect(memberLetter(3)).toBe('D');
+    expect(supersetMemberLetter(3)).toBe('D');
   });
 });
 
@@ -187,15 +187,15 @@ const grouped = () => [
   weightEx('D', 3, { group: group('g2') }), weightEx('E', 3, { group: group('g2') }),
 ];
 
-describe('ungroup', () => {
+describe('ungroupSuperset', () => {
   it('removes group from the members of that id only', () => {
-    const result = ungroup(grouped(), 'g1');
+    const result = ungroupSuperset(grouped(), 'g1');
 
     expect(result.map(ex => ex.group && ex.group.id)).toEqual([undefined, undefined, undefined, 'g2', 'g2']);
   });
 
   it('removes the group key itself', () => {
-    const result = ungroup(grouped(), 'g1');
+    const result = ungroupSuperset(grouped(), 'g1');
 
     expect('group' in result[0]).toBe(false);
   });
@@ -203,7 +203,7 @@ describe('ungroup', () => {
   it('keeps the member series', () => {
     const exercises = grouped();
 
-    const result = ungroup(exercises, 'g1');
+    const result = ungroupSuperset(exercises, 'g1');
 
     expect(result[1].series).toEqual(exercises[1].series);
   });
@@ -212,7 +212,7 @@ describe('ungroup', () => {
     const exercises = grouped();
     const snapshot  = JSON.stringify(exercises);
 
-    ungroup(exercises, 'g1');
+    ungroupSuperset(exercises, 'g1');
 
     expect(JSON.stringify(exercises)).toBe(snapshot);
   });
@@ -257,27 +257,27 @@ describe('setGroupSettings', () => {
   });
 });
 
-describe('linkNext', () => {
+describe('linkNextExercise', () => {
   it('groups two single exercises with the default settings', () => {
-    const result = linkNext([weightEx('A', 3), weightEx('B', 4)], 0);
+    const result = linkNextExercise([weightEx('A', 3), weightEx('B', 4)], 0);
 
     expect(result.map(ex => ex.group)).toEqual([group('g1', { rounds: 4 }), group('g1', { rounds: 4 })]);
   });
 
   it('adds the next single exercise to the group with the group settings', () => {
-    const result = linkNext(grouped(), 1);
+    const result = linkNextExercise(grouped(), 1);
 
     expect(result[2].group).toEqual(group('g1'));
   });
 
   it('resizes the series of the exercise joining a group', () => {
-    const result = linkNext(grouped(), 1);
+    const result = linkNextExercise(grouped(), 1);
 
     expect(result[2].series).toHaveLength(3);
   });
 
   it('makes a single exercise the first member of the following group', () => {
-    const result = linkNext(grouped(), 2);
+    const result = linkNextExercise(grouped(), 2);
 
     expect(result.slice(2).map(ex => ex.group.id)).toEqual(['g2', 'g2', 'g2']);
   });
@@ -289,7 +289,7 @@ describe('linkNext', () => {
       weightEx('D', 4, { group: group('g2', { rounds: 4, transition: 0 }) }),
     ];
 
-    const result = linkNext(exercises, 0);
+    const result = linkNextExercise(exercises, 0);
 
     expect(result.map(ex => ex.group)).toEqual([group('g1'), group('g1'), group('g1'), group('g1')]);
   });
@@ -297,24 +297,24 @@ describe('linkNext', () => {
   it('refuses a group larger than four exercises', () => {
     const exercises = [...grouped().slice(0, 2), weightEx('X', 3, { group: group('g1') }), ...grouped().slice(3)];
 
-    expect(() => linkNext(exercises, 0)).toThrow(/2 à 4/);
+    expect(() => linkNextExercise(exercises, 0)).toThrow(/2 à 4/);
   });
 
   it('refuses to link the last block', () => {
-    expect(() => linkNext(grouped(), 4)).toThrow(/suivant/);
+    expect(() => linkNextExercise(grouped(), 4)).toThrow(/suivant/);
   });
 
   it('refuses to link a cardio exercise', () => {
     const exercises = [{ name: 'Rameur', type: 'cardio' }, weightEx('A', 3)];
 
-    expect(() => linkNext(exercises, 0)).toThrow(/cardio/);
+    expect(() => linkNextExercise(exercises, 0)).toThrow(/cardio/);
   });
 
   it('does not mutate the input array', () => {
     const exercises = grouped();
     const snapshot  = JSON.stringify(exercises);
 
-    linkNext(exercises, 1);
+    linkNextExercise(exercises, 1);
 
     expect(JSON.stringify(exercises)).toBe(snapshot);
   });
@@ -322,11 +322,11 @@ describe('linkNext', () => {
 
 const names = exercises => exercises.map(ex => ex.name);
 
-describe('moveBlock', () => {
+describe('moveExerciseBlock', () => {
   it('moves a single exercise below a whole group of two', () => {
     const exercises = [weightEx('S', 3), ...grouped().slice(0, 2), weightEx('X', 3)];
 
-    const result = moveBlock(exercises, 0, 1);
+    const result = moveExerciseBlock(exercises, 0, 1);
 
     expect(names(result)).toEqual(['A', 'B', 'S', 'X']);
   });
@@ -334,13 +334,13 @@ describe('moveBlock', () => {
   it('moves a whole group above a single exercise', () => {
     const exercises = [weightEx('S', 3), ...grouped().slice(0, 2)];
 
-    const result = moveBlock(exercises, 2, -1);
+    const result = moveExerciseBlock(exercises, 2, -1);
 
     expect(names(result)).toEqual(['A', 'B', 'S']);
   });
 
   it('does nothing at the edge', () => {
-    const result = moveBlock(grouped(), 0, -1);
+    const result = moveExerciseBlock(grouped(), 0, -1);
 
     expect(names(result)).toEqual(['A', 'B', 'C', 'D', 'E']);
   });
@@ -348,21 +348,21 @@ describe('moveBlock', () => {
   it('does not mutate the input array', () => {
     const exercises = grouped();
 
-    moveBlock(exercises, 2, 1);
+    moveExerciseBlock(exercises, 2, 1);
 
     expect(names(exercises)).toEqual(['A', 'B', 'C', 'D', 'E']);
   });
 });
 
-describe('moveInGroup', () => {
+describe('moveWithinSuperset', () => {
   it('swaps a member with its neighbour of the same group', () => {
-    const result = moveInGroup(grouped(), 1, -1);
+    const result = moveWithinSuperset(grouped(), 1, -1);
 
     expect(names(result)).toEqual(['B', 'A', 'C', 'D', 'E']);
   });
 
   it('does nothing at the edge of the group', () => {
-    const result = moveInGroup(grouped(), 1, 1);
+    const result = moveWithinSuperset(grouped(), 1, 1);
 
     expect(names(result)).toEqual(['A', 'B', 'C', 'D', 'E']);
   });
@@ -370,7 +370,7 @@ describe('moveInGroup', () => {
   it('does not mutate the input array', () => {
     const exercises = grouped();
 
-    moveInGroup(exercises, 1, -1);
+    moveWithinSuperset(exercises, 1, -1);
 
     expect(names(exercises)).toEqual(['A', 'B', 'C', 'D', 'E']);
   });
@@ -378,15 +378,15 @@ describe('moveInGroup', () => {
 
 const groupIds = exercises => exercises.map(ex => ex.group && ex.group.id);
 
-describe('removeExercise', () => {
+describe('removeExerciseKeepingGroups', () => {
   it('removes the exercise', () => {
-    const result = removeExercise(grouped(), 2);
+    const result = removeExerciseKeepingGroups(grouped(), 2);
 
     expect(names(result)).toEqual(['A', 'B', 'D', 'E']);
   });
 
   it('dissolves a group reduced to one member', () => {
-    const result = removeExercise(grouped(), 0);
+    const result = removeExerciseKeepingGroups(grouped(), 0);
 
     expect('group' in result[0]).toBe(false);
   });
@@ -394,7 +394,7 @@ describe('removeExercise', () => {
   it('keeps a group of three grouped with two members', () => {
     const exercises = [...grouped().slice(0, 2), weightEx('X', 3, { group: group('g1') })];
 
-    const result = removeExercise(exercises, 0);
+    const result = removeExerciseKeepingGroups(exercises, 0);
 
     expect(groupIds(result)).toEqual(['g1', 'g1']);
   });
@@ -403,17 +403,17 @@ describe('removeExercise', () => {
     const exercises = grouped();
     const snapshot  = JSON.stringify(exercises);
 
-    removeExercise(exercises, 0);
+    removeExerciseKeepingGroups(exercises, 0);
 
     expect(JSON.stringify(exercises)).toBe(snapshot);
   });
 });
 
-describe('dropOnto', () => {
+describe('dropExerciseOnto', () => {
   it('groups a single dropped onto a single, the target first', () => {
     const exercises = [weightEx('S', 3), weightEx('T', 3), weightEx('U', 3)];
 
-    const result = dropOnto(exercises, 2, 0);
+    const result = dropExerciseOnto(exercises, 2, 0);
 
     expect(names(result)).toEqual(['S', 'U', 'T']);
   });
@@ -421,31 +421,31 @@ describe('dropOnto', () => {
   it('gives the new pair the default group', () => {
     const exercises = [weightEx('S', 3), weightEx('T', 3), weightEx('U', 3)];
 
-    const result = dropOnto(exercises, 2, 0);
+    const result = dropExerciseOnto(exercises, 2, 0);
 
     expect(groupIds(result)).toEqual(['g1', 'g1', undefined]);
   });
 
   it('adds a single dropped onto a member at the end of the group', () => {
-    const result = dropOnto(grouped(), 2, 0);
+    const result = dropExerciseOnto(grouped(), 2, 0);
 
     expect(groupIds(result)).toEqual(['g1', 'g1', 'g1', 'g2', 'g2']);
   });
 
   it('gives the joining exercise the target group settings', () => {
-    const result = dropOnto(grouped(), 3, 0);
+    const result = dropExerciseOnto(grouped(), 3, 0);
 
     expect(result[2]).toMatchObject({ name: 'D', group: group('g1') });
   });
 
   it('dissolves the old group of two of the dropped member', () => {
-    const result = dropOnto(grouped(), 3, 2);
+    const result = dropExerciseOnto(grouped(), 3, 2);
 
     expect('group' in result[4]).toBe(false);
   });
 
   it('groups the dropped member with the single target', () => {
-    const result = dropOnto(grouped(), 3, 2);
+    const result = dropExerciseOnto(grouped(), 3, 2);
 
     expect(groupIds(result).slice(2, 4)).toEqual(['g2', 'g2']);
   });
@@ -453,13 +453,13 @@ describe('dropOnto', () => {
   it('refuses a target group that already has four members', () => {
     const full = ['A', 'B', 'C', 'D'].map(n => weightEx(n, 3, { group: group('g1') }));
 
-    expect(() => dropOnto([...full, weightEx('E', 3)], 4, 0)).toThrow(/2 à 4/);
+    expect(() => dropExerciseOnto([...full, weightEx('E', 3)], 4, 0)).toThrow(/2 à 4/);
   });
 
   it('does nothing when dropped onto itself', () => {
     const exercises = grouped();
 
-    const result = dropOnto(exercises, 1, 1);
+    const result = dropExerciseOnto(exercises, 1, 1);
 
     expect(result).toEqual(exercises);
   });
@@ -468,7 +468,7 @@ describe('dropOnto', () => {
     const exercises = grouped();
     const snapshot  = JSON.stringify(exercises);
 
-    dropOnto(exercises, 3, 0);
+    dropExerciseOnto(exercises, 3, 0);
 
     expect(JSON.stringify(exercises)).toBe(snapshot);
   });

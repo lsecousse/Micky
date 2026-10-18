@@ -70,17 +70,17 @@ Historique, PR, `prevSeries` restent indexés par exercice (nom normalisé) : in
 | Fonction | Rôle |
 |---|---|
 | `exerciseBlocks(exercises)` | découpe en blocs `{ kind: 'single', indices }` / `{ kind: 'group', id, indices, rounds, transition, roundRest }` |
-| `defaultRounds(members)` | plus grand nombre de séries planifiées (≥ 1) |
-| `groupOrder(length, indices)` | permutation : les membres choisis, dans l'ordre choisi, prennent la place du plus petit indice |
+| `defaultSupersetRounds(members)` | plus grand nombre de séries planifiées (≥ 1) |
+| `supersetOrder(length, indices)` | permutation : les membres choisis, dans l'ordre choisi, prennent la place du plus petit indice |
 | `groupExercises(exercises, indices, settings?)` | crée un groupe ; refuse (throw) taille hors 2–4, doublon, indice hors bornes, exercice cardio ou déjà groupé |
-| `ungroup(exercises, groupId)` | retire `group` des membres (séries conservées) |
+| `ungroupSuperset(exercises, groupId)` | retire `group` des membres (séries conservées) |
 | `setGroupSettings(exercises, groupId, patch)` | règle tours / transition / repos de tour sur tous les membres ; tours → séries redimensionnées |
-| `linkNext(exercises, index)` | « Lier au suivant » : fusionne le bloc de `index` et le bloc suivant (≤ 4) ; un groupe existant garde ses réglages |
-| `moveBlock(exercises, index, dir)` | déplace d'un cran le bloc entier (le groupe bouge d'un bloc) |
-| `moveInGroup(exercises, index, dir)` | ↑↓ à l'intérieur du groupe ; sans effet au bord |
-| `dropOnto(exercises, from, onto)` | back-office : déposer **sur** un exercice forme ou agrandit son groupe (en fin de groupe) |
-| `removeExercise(exercises, index)` | suppression ; un groupe réduit à 1 membre est dissous |
-| `memberLetter(position)` | `'A'`…`'D'` |
+| `linkNextExercise(exercises, index)` | « Lier au suivant » : fusionne le bloc de `index` et le bloc suivant (≤ 4) ; un groupe existant garde ses réglages |
+| `moveExerciseBlock(exercises, index, dir)` | déplace d'un cran le bloc entier (le groupe bouge d'un bloc) |
+| `moveWithinSuperset(exercises, index, dir)` | ↑↓ à l'intérieur du groupe ; sans effet au bord |
+| `dropExerciseOnto(exercises, from, onto)` | back-office : déposer **sur** un exercice forme ou agrandit son groupe (en fin de groupe) |
+| `removeExerciseKeepingGroups(exercises, index)` | suppression ; un groupe réduit à 1 membre est dissous |
+| `supersetMemberLetter(position)` | `'A'`…`'D'` |
 
 Toutes ces fonctions sont **pures** : elles rendent un nouveau tableau et ne modifient pas l'entrée.
 
@@ -95,8 +95,8 @@ aucun état, le redimensionnement par `plannedSeries` est donc sans perte.
 | `groupableLiveIndices(exercises)` | exercices fonte, non commencés, non groupés |
 | `canGroupLive(exercises, indices)` | 2 à 4 indices distincts, tous groupables |
 | `nextUndoneInBlock(exercises, exIdx)` | première étape non faite du bloc ; groupe : tour par tour, A puis B (A1 B1 A2 B2) ; remplace `nextUndoneActivity` |
-| `nextStep(exercises, done)` | après validation de `done = { exIdx, sIdx, actIdx }` : `{ next, pause }` |
-| `groupProgress(exercises, exIdx)` | `{ roundsDone, rounds }` pour le compteur « en tours » de la liste |
+| `nextLiveStep(exercises, done)` | après validation de `done = { exIdx, sIdx, actIdx }` : `{ next, pause }` |
+| `supersetProgress(exercises, exIdx)` | `{ roundsDone, rounds }` pour le compteur « en tours » de la liste |
 
 Règle de `pause` :
 
@@ -130,16 +130,16 @@ et saute les séries absentes.
 
 1. `startSession` : copier `group` du programme ; `liveSessionSnapshot` et `pushSession` : écrire `group`
    (`execution.group`).
-2. Clic sur une entrée de liste et `completeFocusedActivity` : `nextUndoneInBlock` / `nextStep` à la place de
+2. Clic sur une entrée de liste et `completeFocusedActivity` : `nextUndoneInBlock` / `nextLiveStep` à la place de
    `nextUndoneActivity`.
-3. **Correspondance séance ↔ programme** : grouper en séance réordonne la séance (`groupOrder`).
+3. **Correspondance séance ↔ programme** : grouper en séance réordonne la séance (`supersetOrder`).
    `updateProgrammeTemplate(exIdx, …)` suppose aujourd'hui que l'indice de séance = indice de programme. Avec
    « Garder dans le programme », appliquer la même opération (mêmes indices) au programme garde l'alignement ;
    sans, il faut porter la permutation (ou un indice programme par exercice de séance).
 4. Durées réelles `exoDurations` des membres d'un groupe : elles se chevauchent ; voir si on les garde pour la
    moyenne historique (`loadAvgExerciseDurationsDB`) ou si on les exclut.
 5. Back-office : un exercice déposé **entre** deux membres d'un groupe casserait la contiguïté ; l'insertion doit se
-   faire avant ou après le groupe, ou passer par `dropOnto`.
+   faire avant ou après le groupe, ou passer par `dropExerciseOnto`.
 6. `migrateExercise` (exercices très anciens sans `activities`) ne recopie pas `group` : un exercice groupé a
    forcément été réenregistré au format actuel, à vérifier au branchement.
 7. Charger `lib/supersets.js` et `lib/superset-flow.js` dans `index.html` / `backoffice.html` (le test

@@ -56,13 +56,13 @@ describe('browser lib scripts', () => {
     const context = loadInSharedScope([...libScriptsOf('index.html'), ...SUPERSET_SCRIPTS]);
 
     expect(typeof context.groupExercises).toBe('function');
-    expect(typeof context.nextStep).toBe('function');
+    expect(typeof context.nextLiveStep).toBe('function');
   });
 
   it('load super set scripts with backoffice.html lib scripts in one shared global scope', () => {
     const context = loadInSharedScope([...libScriptsOf('backoffice.html'), ...SUPERSET_SCRIPTS]);
 
-    expect(typeof context.dropOnto).toBe('function');
+    expect(typeof context.dropExerciseOnto).toBe('function');
   });
 
   it('walk a super set with the browser globals', () => {

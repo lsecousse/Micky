@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  isExerciseStarted, groupableLiveIndices, canGroupLive, nextUndoneInBlock, nextStep, groupProgress,
+  isExerciseStarted, groupableLiveIndices, canGroupLive, nextUndoneInBlock, nextLiveStep, supersetProgress,
 } from '../lib/superset-flow.js';
 
 const g1 = (settings = {}) => ({ id: 'g1', rounds: 2, transition: 15, roundRest: 90, ...settings });
@@ -152,23 +152,23 @@ describe('nextUndoneInBlock', () => {
   });
 });
 
-describe('nextStep', () => {
+describe('nextLiveStep', () => {
   it('rests the activity rest before the next series of a single exercise', () => {
     const exercises = withDone([liveEx('S', 2)], [[0, 0]]);
 
-    expect(nextStep(exercises, step(0, 0))).toEqual({ next: step(0, 1), pause: { kind: 'rest', seconds: 60 } });
+    expect(nextLiveStep(exercises, step(0, 0))).toEqual({ next: step(0, 1), pause: { kind: 'rest', seconds: 60 } });
   });
 
   it('returns no next step and no pause when a single exercise is done', () => {
     const exercises = withDone([liveEx('S', 1)], [[0, 0]]);
 
-    expect(nextStep(exercises, step(0, 0))).toEqual({ next: null, pause: null });
+    expect(nextLiveStep(exercises, step(0, 0))).toEqual({ next: null, pause: null });
   });
 
   it('asks for a confirmed transition from A1 to B1', () => {
     const exercises = withDone(pair(), [[0, 0]]);
 
-    expect(nextStep(exercises, step(0, 0))).toEqual({
+    expect(nextLiveStep(exercises, step(0, 0))).toEqual({
       next: step(1, 0), pause: { kind: 'transition', seconds: 15, confirm: true },
     });
   });
@@ -176,49 +176,49 @@ describe('nextStep', () => {
   it('still asks for a confirmed transition at 0 s', () => {
     const exercises = withDone(pair(2, 2, { transition: 0 }), [[0, 0]]);
 
-    expect(nextStep(exercises, step(0, 0)).pause).toEqual({ kind: 'transition', seconds: 0, confirm: true });
+    expect(nextLiveStep(exercises, step(0, 0)).pause).toEqual({ kind: 'transition', seconds: 0, confirm: true });
   });
 
   it('rests the round rest from B1 to A2', () => {
     const exercises = withDone(pair(), [[0, 0], [1, 0]]);
 
-    expect(nextStep(exercises, step(1, 0))).toEqual({ next: step(0, 1), pause: { kind: 'roundRest', seconds: 90 } });
+    expect(nextLiveStep(exercises, step(1, 0))).toEqual({ next: step(0, 1), pause: { kind: 'roundRest', seconds: 90 } });
   });
 
   it('returns no next step after the last B', () => {
     const exercises = withDone(pair(), [[0, 0], [1, 0], [0, 1], [1, 1]]);
 
-    expect(nextStep(exercises, step(1, 1))).toEqual({ next: null, pause: null });
+    expect(nextLiveStep(exercises, step(1, 1))).toEqual({ next: null, pause: null });
   });
 
   it('rests the activity rest between two activities of the same member series', () => {
     const activities = [{ type: 'weight', rest: 30 }, { type: 'weight', rest: 60 }];
     const exercises  = withDone([liveEx('A', 2, { activities, group: g1() }), liveEx('B', 2, { group: g1() })], [[0, 0, 0]]);
 
-    expect(nextStep(exercises, step(0, 0, 0))).toEqual({ next: step(0, 0, 1), pause: { kind: 'rest', seconds: 30 } });
+    expect(nextLiveStep(exercises, step(0, 0, 0))).toEqual({ next: step(0, 0, 1), pause: { kind: 'rest', seconds: 30 } });
   });
 });
 
-describe('groupProgress', () => {
+describe('supersetProgress', () => {
   it('counts no round when nothing is done', () => {
-    expect(groupProgress(pair(), 0)).toEqual({ roundsDone: 0, rounds: 2 });
+    expect(supersetProgress(pair(), 0)).toEqual({ roundsDone: 0, rounds: 2 });
   });
 
   it('counts no round when only A1 is done', () => {
     const exercises = withDone(pair(), [[0, 0]]);
 
-    expect(groupProgress(exercises, 0).roundsDone).toBe(0);
+    expect(supersetProgress(exercises, 0).roundsDone).toBe(0);
   });
 
   it('counts one round when A1 and B1 are done', () => {
     const exercises = withDone(pair(), [[0, 0], [1, 0]]);
 
-    expect(groupProgress(exercises, 1).roundsDone).toBe(1);
+    expect(supersetProgress(exercises, 1).roundsDone).toBe(1);
   });
 
   it('counts every round when the group is done', () => {
     const exercises = withDone(pair(), [[0, 0], [1, 0], [0, 1], [1, 1]]);
 
-    expect(groupProgress(exercises, 0)).toEqual({ roundsDone: 2, rounds: 2 });
+    expect(supersetProgress(exercises, 0)).toEqual({ roundsDone: 2, rounds: 2 });
   });
 });
