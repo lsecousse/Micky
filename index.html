@@ -3,16 +3,16 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
-  <meta name="theme-color" content="#0A0A0A" />
+  <meta name="theme-color" content="#EEEDE8" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="apple-mobile-web-app-title" content="Mike Coach" />
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
   <link rel="icon" type="image/png" href="icons/favicon.png" />
   <link rel="manifest" href="manifest.json" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;0,9..144,800;0,9..144,900;1,9..144,600;1,9..144,700;1,9..144,800;1,9..144,900&family=DM+Sans:wght@400;500;600;700&display=swap" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,500;0,6..72,700;1,6..72,500;1,6..72,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" />
   <link rel="stylesheet" href="style.css" />
   <link rel="stylesheet" href="dist/output.css" />
   <title>Mike Coach</title>
@@ -20,132 +20,132 @@
 <body>
 
   <!-- LOADING SCREEN — image pré-rendue avec la vraie Fraunces -->
-  <div id="loading-screen" class="!bg-ink">
+  <div id="loading-screen" class="!bg-a-ink">
     <div class="text-center px-6 w-full max-w-[420px]">
       <img src="icons/wordmark.png" alt="Mike Coach" class="w-full h-auto" />
-      <p id="loading-sub" class="app-version font-sans text-[9px] uppercase tracking-eyebrow text-muted mt-6"></p>
+      <p id="loading-sub" class="app-version font-sans text-[9px] uppercase tracking-eyebrow text-a-muted mt-6"></p>
     </div>
   </div>
 
   <div id="app">
 
     <!-- HOME -->
-    <div id="screen-home" class="screen active bg-ink text-paper font-sans">
-      <header class="relative flex items-center gap-3 px-5 pt-5 pb-4 border-b border-border shrink-0">
+    <div id="screen-home" class="screen active bg-paper text-ink font-sans">
+      <header class="relative flex items-center gap-3 px-5 pt-5 pb-4 border-0 border-solid border-b-[1.5px] border-ink shrink-0">
         <img src="icons/icon-192.png" class="w-10 h-10 object-contain shrink-0" alt="Mike Coach" />
         <div class="flex-1 min-w-0">
-          <h1 class="font-display text-[22px] font-black italic leading-none tracking-tight text-paper">Mike Coach.</h1>
-          <p class="app-version font-sans text-[9px] uppercase tracking-eyebrow text-muted mt-1.5"></p>
+          <h1 class="font-display text-[22px] font-bold italic leading-none tracking-tight text-ink">Mike Coach.</h1>
+          <p class="app-version font-mono text-[12px] text-mut mt-1.5"></p>
         </div>
-        <button id="user-menu-btn" class="w-10 h-10 rounded-full border border-border flex items-center justify-center text-muted active:text-racing active:border-racing transition" aria-label="Menu utilisateur">
+        <button id="user-menu-btn" class="w-10 h-10 rounded-full border-[1.5px] border-solid border-ink flex items-center justify-center text-ink active:bg-sheet transition" aria-label="Menu utilisateur">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
         </button>
-        <div id="user-dropdown" class="hidden absolute right-5 top-[calc(100%-4px)] min-w-52 bg-inkAlt border border-border rounded shadow-[0_18px_40px_rgba(0,0,0,0.6)] z-50 overflow-hidden"></div>
+        <div id="user-dropdown" class="hidden absolute right-5 top-[calc(100%-4px)] min-w-52 bg-sheet border-[1.5px] border-solid border-ink rounded shadow-[0_12px_28px_rgba(27,28,31,0.14)] z-50 overflow-hidden"></div>
       </header>
 
-      <main id="home-main" class="flex-1 min-h-0 overflow-y-auto px-5 py-8 space-y-10"></main>
+      <main id="home-main" class="flex-1 min-h-0 overflow-y-auto pt-8 pb-10 space-y-10"></main>
 
-      <footer class="grid grid-cols-2 border-t border-border bg-ink/95 backdrop-blur-sm shrink-0">
-        <button id="go-corps" class="py-4 px-4 text-center border-r border-border active:bg-inkAlt transition">
-          <span class="font-sans text-[12px] font-medium uppercase tracking-[0.16em] text-paper leading-tight">Données corporelles</span>
+      <footer class="grid grid-cols-2 border-0 border-solid border-t-[1.5px] border-ink bg-paper shrink-0">
+        <button id="go-corps" class="h-[54px] px-4 text-center border-0 border-solid border-r border-rule active:bg-sheet transition">
+          <span class="font-display italic text-[16px] text-ink leading-tight">Données corporelles</span>
         </button>
-        <button id="go-alim" class="py-4 px-4 text-center active:bg-inkAlt transition">
-          <span class="font-sans text-[12px] font-medium uppercase tracking-[0.16em] text-paper leading-tight">Alimentation</span>
+        <button id="go-alim" class="h-[54px] px-4 text-center active:bg-sheet transition">
+          <span class="font-display italic text-[16px] text-ink leading-tight">Alimentation</span>
         </button>
       </footer>
     </div>
 
     <!-- PROFIL -->
     <div id="screen-profil" class="screen">
-      <header class="sticky top-0 z-10 bg-ink/96 backdrop-blur-sm border-b border-border px-5 py-4 flex items-center gap-4">
-        <button id="back-profil" class="flex items-center gap-2 font-sans text-[11px] uppercase tracking-eyebrow text-paper active:text-acid transition">
+      <header class="sticky top-0 z-10 bg-a-ink/96 backdrop-blur-sm border-b border-a-border px-5 py-4 flex items-center gap-4">
+        <button id="back-profil" class="flex items-center gap-2 font-sans text-[11px] uppercase tracking-eyebrow text-a-paper active:text-a-acid transition">
           <span aria-hidden class="text-[18px] leading-none">←</span>
           <span>Retour</span>
         </button>
-        <div class="font-display font-bold italic text-[15px] leading-tight text-paper">Profil</div>
+        <div class="font-display font-bold italic text-[15px] leading-tight text-a-paper">Profil</div>
       </header>
       <main id="screen-profil-body" class="flex-1 min-h-0 overflow-y-auto"></main>
     </div>
 
     <!-- CLÉ API CLAUDE -->
     <div id="screen-claude-api" class="screen">
-      <header class="sticky top-0 z-10 bg-ink/96 backdrop-blur-sm border-b border-border px-5 py-4 flex items-center gap-4">
-        <button id="back-claude-api" class="flex items-center gap-2 font-sans text-[11px] uppercase tracking-eyebrow text-paper active:text-acid transition">
+      <header class="sticky top-0 z-10 bg-a-ink/96 backdrop-blur-sm border-b border-a-border px-5 py-4 flex items-center gap-4">
+        <button id="back-claude-api" class="flex items-center gap-2 font-sans text-[11px] uppercase tracking-eyebrow text-a-paper active:text-a-acid transition">
           <span aria-hidden class="text-[18px] leading-none">←</span>
           <span>Retour</span>
         </button>
-        <div class="font-display font-bold italic text-[15px] leading-tight text-paper">Clé API Claude</div>
+        <div class="font-display font-bold italic text-[15px] leading-tight text-a-paper">Clé API Claude</div>
       </header>
       <main id="screen-claude-api-body" class="flex-1 min-h-0 overflow-y-auto"></main>
     </div>
 
     <!-- COMPOSITION CORPORELLE -->
     <div id="screen-corps" class="screen">
-      <header class="sticky top-0 z-10 bg-ink/96 backdrop-blur-sm border-b border-border px-5 py-4 flex items-center gap-4">
-        <button id="back-corps" class="flex items-center gap-2 font-sans text-[11px] uppercase tracking-eyebrow text-paper active:text-acid transition">
+      <header class="sticky top-0 z-10 bg-a-ink/96 backdrop-blur-sm border-b border-a-border px-5 py-4 flex items-center gap-4">
+        <button id="back-corps" class="flex items-center gap-2 font-sans text-[11px] uppercase tracking-eyebrow text-a-paper active:text-a-acid transition">
           <span aria-hidden class="text-[18px] leading-none">←</span>
           <span>Retour</span>
         </button>
-        <div class="font-display font-bold italic text-[15px] leading-tight text-paper">Corps</div>
+        <div class="font-display font-bold italic text-[15px] leading-tight text-a-paper">Corps</div>
       </header>
       <main id="screen-corps-body" class="flex-1 min-h-0 overflow-y-auto"></main>
     </div>
 
     <!-- À LA SALLE -->
-    <div id="screen-seance" class="screen bg-ink text-paper font-sans">
-      <header class="relative flex items-center gap-3 px-5 pt-5 pb-4 border-b border-border shrink-0">
-        <button id="back-seance" class="w-10 h-10 -ml-2 flex items-center justify-center text-paper active:text-muted transition" aria-label="Retour">
+    <div id="screen-seance" class="screen bg-paper text-ink font-sans">
+      <header class="relative flex items-center gap-3 px-5 pt-5 pb-4 border-0 border-solid border-b-[1.5px] border-ink shrink-0">
+        <button id="back-seance" class="w-10 h-10 -ml-2 flex items-center justify-center text-ink active:text-mut transition" aria-label="Retour">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
         </button>
-        <span class="font-display text-[18px] font-semibold tracking-tight text-paper">À la salle</span>
+        <span class="font-display italic text-[20px] font-bold tracking-tight text-ink">À la salle</span>
       </header>
       <div class="flex-1 min-h-0 overflow-y-auto" id="screen-seance-body"></div>
     </div>
 
     <!-- HISTORIQUE -->
     <div id="screen-history" class="screen">
-      <header class="sticky top-0 z-10 bg-ink/96 backdrop-blur-sm border-b border-border px-5 py-4 flex items-center gap-4">
-        <button id="back-history" class="flex items-center gap-2 font-sans text-[11px] uppercase tracking-eyebrow text-paper active:text-acid transition">
+      <header class="sticky top-0 z-10 bg-a-ink/96 backdrop-blur-sm border-b border-a-border px-5 py-4 flex items-center gap-4">
+        <button id="back-history" class="flex items-center gap-2 font-sans text-[11px] uppercase tracking-eyebrow text-a-paper active:text-a-acid transition">
           <span aria-hidden class="text-[18px] leading-none">←</span>
           <span>Retour</span>
         </button>
-        <div class="font-display font-bold italic text-[15px] leading-tight text-paper">Historique</div>
+        <div class="font-display font-bold italic text-[15px] leading-tight text-a-paper">Historique</div>
       </header>
       <main id="history-list" class="flex-1 min-h-0 overflow-y-auto"></main>
     </div>
 
     <!-- STATS -->
     <div id="screen-stats" class="screen">
-      <header class="sticky top-0 z-10 bg-ink/96 backdrop-blur-sm border-b border-border px-5 py-4 flex items-center gap-4">
-        <button id="back-stats" class="flex items-center gap-2 font-sans text-[11px] uppercase tracking-eyebrow text-paper active:text-acid transition">
+      <header class="sticky top-0 z-10 bg-a-ink/96 backdrop-blur-sm border-b border-a-border px-5 py-4 flex items-center gap-4">
+        <button id="back-stats" class="flex items-center gap-2 font-sans text-[11px] uppercase tracking-eyebrow text-a-paper active:text-a-acid transition">
           <span aria-hidden class="text-[18px] leading-none">←</span>
           <span>Retour</span>
         </button>
-        <div class="font-display font-bold italic text-[15px] leading-tight text-paper">Stats</div>
+        <div class="font-display font-bold italic text-[15px] leading-tight text-a-paper">Stats</div>
       </header>
       <main id="screen-stats-body" class="flex-1 min-h-0 overflow-y-auto"></main>
     </div>
 
     <!-- ALIMENTATION -->
     <div id="screen-alim" class="screen">
-      <header class="sticky top-0 z-10 bg-ink/96 backdrop-blur-sm border-b border-border px-5 py-4 flex items-center gap-4">
-        <button id="back-alim" class="flex items-center gap-2 font-sans text-[11px] uppercase tracking-eyebrow text-paper active:text-acid transition">
+      <header class="sticky top-0 z-10 bg-a-ink/96 backdrop-blur-sm border-b border-a-border px-5 py-4 flex items-center gap-4">
+        <button id="back-alim" class="flex items-center gap-2 font-sans text-[11px] uppercase tracking-eyebrow text-a-paper active:text-a-acid transition">
           <span aria-hidden class="text-[18px] leading-none">←</span>
           <span>Retour</span>
         </button>
-        <div class="font-display font-bold italic text-[15px] leading-tight text-paper">Alimentation</div>
+        <div class="font-display font-bold italic text-[15px] leading-tight text-a-paper">Alimentation</div>
       </header>
       <main id="screen-alim-body" class="flex-1 min-h-0 overflow-y-auto"></main>
     </div>
 
     <!-- PARAMÈTRES -->
     <div id="screen-params" class="screen">
-      <header class="sticky top-0 z-10 bg-ink/96 backdrop-blur-sm border-b border-border px-5 py-4 flex items-center gap-4">
-        <button id="back-params" class="flex items-center gap-2 font-sans text-[11px] uppercase tracking-eyebrow text-paper active:text-acid transition">
+      <header class="sticky top-0 z-10 bg-a-ink/96 backdrop-blur-sm border-b border-a-border px-5 py-4 flex items-center gap-4">
+        <button id="back-params" class="flex items-center gap-2 font-sans text-[11px] uppercase tracking-eyebrow text-a-paper active:text-a-acid transition">
           <span aria-hidden class="text-[18px] leading-none">←</span>
           <span>Retour</span>
         </button>
-        <div class="font-display font-bold italic text-[15px] leading-tight text-paper">Programmes</div>
+        <div class="font-display font-bold italic text-[15px] leading-tight text-a-paper">Programmes</div>
       </header>
       <main id="screen-params-body" class="flex-1 min-h-0 overflow-y-auto"></main>
     </div>
@@ -155,26 +155,26 @@
       <div class="flex-1 flex flex-col justify-center px-6 pt-[env(safe-area-inset-top)]">
         <!-- Masthead -->
         <section class="pb-9 accent-line">
-          <h1 class="font-display font-black h-display text-paper">
+          <h1 class="font-display font-black h-display text-a-paper">
             Mike<br/>
-            <span class="text-paper/40"><span class="text-acid not-italic font-black">·</span> Coach.</span>
+            <span class="text-a-paper/40"><span class="text-a-acid not-italic font-black">·</span> Coach.</span>
           </h1>
         </section>
 
         <!-- Form -->
         <div id="login-form" class="mt-12 space-y-4">
           <div>
-            <p class="font-sans text-[9px] uppercase tracking-[0.40em] text-muted mb-1.5">Email</p>
+            <p class="font-sans text-[9px] uppercase tracking-[0.40em] text-a-muted mb-1.5">Email</p>
             <input type="email" id="login-email" autocomplete="email" inputmode="email"
-              class="w-full bg-transparent border-b border-border focus:border-acid font-sans text-[16px] text-paper py-2 outline-none transition" />
+              class="w-full bg-transparent border-b border-a-border focus:border-a-acid font-sans text-[16px] text-a-paper py-2 outline-none transition" />
           </div>
           <div>
-            <p class="font-sans text-[9px] uppercase tracking-[0.40em] text-muted mb-1.5">Mot de passe</p>
+            <p class="font-sans text-[9px] uppercase tracking-[0.40em] text-a-muted mb-1.5">Mot de passe</p>
             <input type="password" id="login-password" autocomplete="current-password"
-              class="w-full bg-transparent border-b border-border focus:border-acid font-sans text-[16px] text-paper py-2 outline-none transition" />
+              class="w-full bg-transparent border-b border-a-border focus:border-a-acid font-sans text-[16px] text-a-paper py-2 outline-none transition" />
           </div>
-          <p id="login-error" class="hidden font-sans text-[11px] text-blood mt-2"></p>
-          <button id="btn-login" class="w-full mt-6 py-4 bg-acid text-ink font-display font-bold text-[14px] uppercase tracking-eyebrow active:bg-acid/80 transition">
+          <p id="login-error" class="hidden font-sans text-[11px] text-a-blood mt-2"></p>
+          <button id="btn-login" class="w-full mt-6 py-4 bg-a-acid text-a-ink font-display font-bold text-[14px] uppercase tracking-eyebrow active:bg-a-acid/80 transition">
             Se connecter →
           </button>
         </div>
@@ -184,46 +184,50 @@
   </div>
 
   <!-- CHRONO FULLSCREEN -->
-  <div id="chrono-overlay" class="hidden fixed inset-0 z-[200] bg-ink flex flex-col items-center justify-center px-6 text-center">
-    <p class="font-sans text-[10px] uppercase tracking-[0.40em] text-racing font-semibold mb-3 flex items-center gap-2">
-      <span aria-hidden class="w-1.5 h-1.5 bg-racing animate-pulse"></span>
-      Chrono en cours
-    </p>
-    <p id="chrono-exercise-name" class="font-display font-bold italic text-[16px] text-paper mb-10 max-w-[28ch]"></p>
-    <div class="font-display font-black num-stat text-racing leading-none tracking-tight" style="font-size:clamp(4rem, 22vw, 7rem)">
-      <span id="chrono-display">00:00</span>
+  <div id="chrono-overlay" class="hidden fixed inset-0 z-[200] bg-paper text-ink font-sans flex flex-col pt-[env(safe-area-inset-top)]">
+    <div class="flex-1 flex flex-col justify-center">
+      <div class="px-5 mb-4">
+        <p class="text-[13px] text-mut">Chrono en cours</p>
+        <p id="chrono-exercise-name" class="font-display italic font-medium text-[31px] leading-[1.05] tracking-[-0.01em] text-ink mt-1.5"></p>
+      </div>
+      <div class="bg-hl px-5 py-6 border-0 border-solid border-y-[1.5px] border-ink text-center">
+        <span id="chrono-display" class="inline-block font-mono font-semibold num-stat text-ink leading-none tracking-[-0.04em] text-[clamp(4.5rem,24vw,7.5rem)]">00:00</span>
+      </div>
     </div>
-    <button id="chrono-stop" class="mt-12 py-4 px-10 bg-blood text-paper font-display font-bold text-[14px] uppercase tracking-eyebrow active:bg-blood/80 transition">Stop</button>
+    <div class="border-0 border-solid border-t-[1.5px] border-ink px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+12px)]">
+      <button id="chrono-stop" class="w-full h-14 bg-ink text-paper rounded text-[16px] font-semibold active:bg-ink/80 transition">Stop</button>
+    </div>
   </div>
 
   <!-- MINUTERIE FULLSCREEN -->
-  <div id="minuterie-overlay" class="hidden fixed inset-0 z-[200] bg-ink flex flex-col items-center justify-center px-6 text-center">
-    <p class="font-sans text-[10px] uppercase tracking-[0.40em] text-racing font-semibold mb-3 flex items-center gap-2">
-      <span aria-hidden class="w-1.5 h-1.5 bg-racing animate-pulse"></span>
-      Minuterie
-    </p>
-    <p id="minuterie-exercise-name" class="font-display font-bold italic text-[16px] text-paper mb-10 max-w-[28ch]"></p>
-    <div class="font-display font-black num-stat text-racing leading-none tracking-tight" style="font-size:clamp(4rem, 22vw, 7rem)">
-      <span id="minuterie-display">00:00</span>
+  <div id="minuterie-overlay" class="hidden fixed inset-0 z-[200] bg-paper text-ink font-sans flex flex-col pt-[env(safe-area-inset-top)]">
+    <div class="flex-1 flex flex-col justify-center">
+      <div class="px-5 mb-4">
+        <p class="text-[13px] text-mut">Minuterie</p>
+        <p id="minuterie-exercise-name" class="font-display italic font-medium text-[31px] leading-[1.05] tracking-[-0.01em] text-ink mt-1.5"></p>
+      </div>
+      <div class="bg-hl px-5 py-6 border-0 border-solid border-y-[1.5px] border-ink text-center">
+        <span id="minuterie-display" class="inline-block font-mono font-semibold num-stat text-ink leading-none tracking-[-0.04em] text-[clamp(4.5rem,24vw,7.5rem)]">00:00</span>
+      </div>
     </div>
-    <button id="minuterie-stop" class="mt-12 py-4 px-10 bg-blood text-paper font-display font-bold text-[14px] uppercase tracking-eyebrow active:bg-blood/80 transition">Stop</button>
+    <div class="border-0 border-solid border-t-[1.5px] border-ink px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+12px)]">
+      <button id="minuterie-stop" class="w-full h-14 bg-ink text-paper rounded text-[16px] font-semibold active:bg-ink/80 transition">Stop</button>
+    </div>
   </div>
 
 
   <!-- COUNTDOWN STICKY TOP BAR -->
   <div id="countdown-bar" class="hidden">
-    <button id="countdown-skip" title="Passer le repos" aria-label="Passer le repos">⏭</button>
-    <div class="countdown-ring-wrap">
-      <svg class="countdown-ring" viewBox="0 0 100 100">
-        <circle class="ring-bg" cx="50" cy="50" r="42" />
-        <circle id="ring-progress" class="ring-progress" cx="50" cy="50" r="42" />
-      </svg>
-      <span id="countdown-display">00:00</span>
-    </div>
     <div class="countdown-info">
-      <span class="countdown-label">Repos</span>
-      <span id="countdown-exercise-name" class="overlay-exercise-name"></span>
+      <p class="countdown-head"><span class="countdown-label">Repos</span> <span id="countdown-exercise-name" class="overlay-exercise-name"></span></p>
+      <span id="countdown-display">00:00</span>
+      <!-- Linear progress: same dash mechanics as the former ring (length 264 = RING_CIRCUMFERENCE) -->
+      <svg class="countdown-ring" viewBox="0 0 264 4" preserveAspectRatio="none" aria-hidden="true">
+        <line class="ring-bg" x1="0" y1="2" x2="264" y2="2" />
+        <line id="ring-progress" class="ring-progress" x1="0" y1="2" x2="264" y2="2" />
+      </svg>
     </div>
+    <button id="countdown-skip" title="Passer le repos" aria-label="Passer le repos">⏭</button>
   </div>
 
   <!-- TOAST -->
@@ -231,78 +235,83 @@
 
   <!-- DIALOG CUSTOM -->
   <div id="dialog" class="dialog hidden">
-    <div class="!bg-ink !border !border-border !p-6 !rounded-none !max-w-[360px] w-full mx-4 space-y-5" style="background:var(--ink)">
-      <p id="dialog-msg" class="font-display italic font-medium text-[15px] text-paper leading-snug"></p>
-      <div class="grid grid-cols-2 gap-3">
-        <button id="dialog-cancel" class="py-3 border border-border text-paper font-sans text-[11px] uppercase tracking-eyebrow active:border-paper transition">Annuler</button>
-        <button id="dialog-ok" class="py-3 bg-acid text-ink font-display font-bold text-[12px] uppercase tracking-eyebrow active:bg-acid/80 transition">OK</button>
+    <div class="bg-sheet border-[1.5px] border-solid border-ink rounded p-6 max-w-[360px] w-full space-y-6">
+      <p id="dialog-msg" class="font-display italic font-medium text-[20px] text-ink leading-snug"></p>
+      <div class="flex gap-3">
+        <button id="dialog-cancel" class="flex-1 h-14 border-[1.5px] border-solid border-ink rounded text-ink font-sans text-[16px] font-semibold active:bg-ink/10 transition">Annuler</button>
+        <button id="dialog-ok" class="flex-1 h-14 bg-ink text-paper rounded font-sans text-[16px] font-semibold active:bg-ink/80 transition">OK</button>
       </div>
     </div>
   </div>
 
   <!-- MODAL DÉTAIL SÉANCE -->
   <div id="modal" class="modal hidden">
-    <div class="modal-content !bg-ink !p-0 !rounded-t-none border-t border-border">
-      <button class="modal-close !bg-inkAlt !border !border-border !text-paper !rounded-none" id="modal-close">✕</button>
+    <div class="modal-content !bg-a-ink !p-0 !rounded-t-none border-t border-a-border">
+      <button class="modal-close !bg-a-inkAlt !border !border-a-border !text-a-paper !rounded-none" id="modal-close">✕</button>
       <div id="modal-body"></div>
     </div>
   </div>
 
   <!-- MODAL ÉDITION ACTIVITÉ (live) -->
   <div id="live-edit-modal" class="live-edit-modal hidden">
-    <div class="live-edit-modal-overlay !bg-ink/80"></div>
-    <div class="!relative !bg-ink !border !border-border !rounded-none !p-6 !max-w-[380px] !w-full mx-4 space-y-5" style="background:var(--ink);max-height:90vh;overflow-y:auto">
-      <p class="font-sans text-[9px] uppercase tracking-[0.40em] text-acid font-semibold">Modifier</p>
-      <h2 id="live-edit-modal-title" class="font-display font-bold italic text-[20px] leading-tight text-paper">Activité</h2>
-      <div id="live-edit-modal-body" class="space-y-4"></div>
-      <div class="grid grid-cols-2 gap-3 pt-2">
-        <button id="live-edit-modal-cancel" class="py-3 border border-border text-paper font-sans text-[11px] uppercase tracking-eyebrow active:border-paper transition">Annuler</button>
-        <button id="live-edit-modal-ok" class="py-3 bg-acid text-ink font-display font-bold text-[12px] uppercase tracking-eyebrow active:bg-acid/80 transition">Valider</button>
+    <div class="live-edit-modal-overlay"></div>
+    <div class="live-edit-modal-sheet bg-sheet text-ink font-sans border-0 border-solid border-t-[1.5px] border-ink">
+      <div class="flex justify-center pt-2.5" aria-hidden="true"><span class="w-10 h-1 rounded-sm bg-rule"></span></div>
+      <div class="px-5 pt-3 space-y-5">
+        <div>
+          <p class="text-[13px] text-mut">Modifier</p>
+          <h2 id="live-edit-modal-title" class="font-display italic font-bold text-[28px] leading-[1.1] text-ink mt-1">Activité</h2>
+        </div>
+        <div id="live-edit-modal-body" class="space-y-4"></div>
+        <div class="flex gap-2.5 pt-1">
+          <button id="live-edit-modal-cancel" class="flex-1 h-14 border-[1.5px] border-solid border-ink rounded text-ink text-[16px] font-semibold active:bg-ink/10 transition">Annuler</button>
+          <button id="live-edit-modal-ok" class="flex-1 h-14 bg-ink text-paper rounded text-[16px] font-semibold active:bg-ink/80 transition">Valider</button>
+        </div>
       </div>
     </div>
   </div>
 
   <!-- MODAL AJOUTER REPAS -->
   <div id="add-meal-modal" class="live-edit-modal hidden">
-    <div class="live-edit-modal-overlay !bg-ink/80"></div>
-    <div class="!relative !bg-ink !border !border-border !rounded-none !p-6 !max-w-[400px] !w-full mx-4 space-y-5" style="background:var(--ink);max-height:90vh;overflow-y:auto">
+    <div class="live-edit-modal-overlay !bg-a-ink/80"></div>
+    <div class="!relative !bg-a-ink !border !border-a-border !rounded-none !p-6 !max-w-[400px] !w-full mx-4 space-y-5" style="background:var(--a-ink);max-height:90vh;overflow-y:auto">
       <div>
-        <p class="font-sans text-[9px] uppercase tracking-[0.40em] text-acid font-semibold mb-2">Repas</p>
-        <h2 class="font-display font-bold italic text-[20px] leading-tight text-paper">Ajouter</h2>
+        <p class="font-sans text-[9px] uppercase tracking-[0.40em] text-a-acid font-semibold mb-2">Repas</p>
+        <h2 class="font-display font-bold italic text-[20px] leading-tight text-a-paper">Ajouter</h2>
       </div>
       <div>
-        <p class="font-sans text-[9px] uppercase tracking-[0.40em] text-muted mb-1.5">Description</p>
+        <p class="font-sans text-[9px] uppercase tracking-[0.40em] text-a-muted mb-1.5">Description</p>
         <textarea id="meal-text" placeholder="3 weetabix, miel, banane…" rows="3"
-          class="w-full bg-transparent border border-border focus:border-acid font-sans text-[14px] text-paper p-3 outline-none transition resize-y"></textarea>
+          class="w-full bg-transparent border border-a-border focus:border-a-acid font-sans text-[14px] text-a-paper p-3 outline-none transition resize-y"></textarea>
       </div>
       <input type="file" id="meal-photo" accept="image/*" capture="environment" class="hidden" />
-      <button type="button" id="meal-photo-btn" class="w-full py-3 border border-border text-paper font-sans text-[11px] uppercase tracking-eyebrow active:border-acid active:text-acid transition">📸 Joindre une photo</button>
+      <button type="button" id="meal-photo-btn" class="w-full py-3 border border-a-border text-a-paper font-sans text-[11px] uppercase tracking-eyebrow active:border-a-acid active:text-a-acid transition">📸 Joindre une photo</button>
       <div id="meal-photo-preview" class="hidden text-center"></div>
-      <p id="meal-error" class="hidden font-sans text-[11px] text-blood"></p>
+      <p id="meal-error" class="hidden font-sans text-[11px] text-a-blood"></p>
       <div class="grid grid-cols-2 gap-3">
-        <button id="meal-cancel" class="py-3 border border-border text-paper font-sans text-[11px] uppercase tracking-eyebrow active:border-paper transition">Annuler</button>
-        <button id="meal-save" class="py-3 bg-acid text-ink font-display font-bold text-[12px] uppercase tracking-eyebrow active:bg-acid/80 transition">Estimer →</button>
+        <button id="meal-cancel" class="py-3 border border-a-border text-a-paper font-sans text-[11px] uppercase tracking-eyebrow active:border-a-paper transition">Annuler</button>
+        <button id="meal-save" class="py-3 bg-a-acid text-a-ink font-display font-bold text-[12px] uppercase tracking-eyebrow active:bg-a-acid/80 transition">Estimer →</button>
       </div>
     </div>
   </div>
 
   <!-- MODAL PRESET PETIT-DEJ -->
   <div id="meal-preset-modal" class="live-edit-modal hidden">
-    <div class="live-edit-modal-overlay !bg-ink/80"></div>
-    <div class="!relative !bg-ink !border !border-border !rounded-none !p-6 !max-w-[400px] !w-full mx-4 space-y-5" style="background:var(--ink)">
+    <div class="live-edit-modal-overlay !bg-a-ink/80"></div>
+    <div class="!relative !bg-a-ink !border !border-a-border !rounded-none !p-6 !max-w-[400px] !w-full mx-4 space-y-5" style="background:var(--a-ink)">
       <div>
-        <p class="font-sans text-[9px] uppercase tracking-[0.40em] text-acid font-semibold mb-2">Preset</p>
-        <h2 id="meal-preset-title" class="font-display font-bold italic text-[20px] leading-tight text-paper">Définir petit-dej</h2>
+        <p class="font-sans text-[9px] uppercase tracking-[0.40em] text-a-acid font-semibold mb-2">Preset</p>
+        <h2 id="meal-preset-title" class="font-display font-bold italic text-[20px] leading-tight text-a-paper">Définir petit-dej</h2>
       </div>
       <div>
-        <p class="font-sans text-[9px] uppercase tracking-[0.40em] text-muted mb-1.5">Description</p>
+        <p class="font-sans text-[9px] uppercase tracking-[0.40em] text-a-muted mb-1.5">Description</p>
         <textarea id="meal-preset-text" placeholder="3 weetabix, miel, banane…" rows="3"
-          class="w-full bg-transparent border border-border focus:border-acid font-sans text-[14px] text-paper p-3 outline-none transition resize-y"></textarea>
+          class="w-full bg-transparent border border-a-border focus:border-a-acid font-sans text-[14px] text-a-paper p-3 outline-none transition resize-y"></textarea>
       </div>
-      <p id="meal-preset-error" class="hidden font-sans text-[11px] text-blood"></p>
+      <p id="meal-preset-error" class="hidden font-sans text-[11px] text-a-blood"></p>
       <div class="grid grid-cols-2 gap-3">
-        <button id="meal-preset-cancel" class="py-3 border border-border text-paper font-sans text-[11px] uppercase tracking-eyebrow active:border-paper transition">Annuler</button>
-        <button id="meal-preset-save" class="py-3 bg-acid text-ink font-display font-bold text-[12px] uppercase tracking-eyebrow active:bg-acid/80 transition">Estimer →</button>
+        <button id="meal-preset-cancel" class="py-3 border border-a-border text-a-paper font-sans text-[11px] uppercase tracking-eyebrow active:border-a-paper transition">Annuler</button>
+        <button id="meal-preset-save" class="py-3 bg-a-acid text-a-ink font-display font-bold text-[12px] uppercase tracking-eyebrow active:bg-a-acid/80 transition">Estimer →</button>
       </div>
     </div>
   </div>
@@ -311,6 +320,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="lib/escape-html.js"></script>
   <script src="lib/exercise-name.js"></script>
+  <script src="lib/programme-title.js"></script>
   <script src="lib/recompose-session.js"></script>
   <script src="lib/planned-series.js"></script>
   <script src="lib/prefill-series.js"></script>

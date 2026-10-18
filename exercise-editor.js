@@ -30,12 +30,12 @@ function migrateExercise(ex) {
 }
 
 /* ── Classes Tailwind partagées ────────────────────────── */
-const _INPUT_TXT  = 'w-full bg-transparent border-b border-border focus:border-acid font-sans text-[15px] text-paper py-2 outline-none transition';
-const _INPUT_NUM  = 'flex-1 min-w-0 bg-transparent font-display font-bold text-[18px] num-stat text-paper py-1.5 outline-none';
-const _LABEL_EYE  = 'font-sans text-[9px] uppercase tracking-[0.40em] text-muted mb-1.5';
-const _BTN_GHOST  = 'w-9 h-9 flex items-center justify-center border border-border text-paper text-[14px] active:border-acid active:text-acid transition shrink-0';
-const _BTN_DEL    = 'px-3 py-2 border border-blood text-blood font-sans text-[10px] uppercase tracking-eyebrow active:bg-blood active:text-paper transition shrink-0';
-const _BTN_BORDER = 'py-3 px-4 border border-border text-paper font-sans text-[11px] uppercase tracking-eyebrow active:border-acid active:text-acid transition';
+const _INPUT_TXT  = 'w-full bg-transparent border-b border-a-border focus:border-a-acid font-sans text-[15px] text-a-paper py-2 outline-none transition';
+const _INPUT_NUM  = 'flex-1 min-w-0 bg-transparent font-display font-bold text-[18px] num-stat text-a-paper py-1.5 outline-none';
+const _LABEL_EYE  = 'font-sans text-[9px] uppercase tracking-[0.40em] text-a-muted mb-1.5';
+const _BTN_GHOST  = 'w-9 h-9 flex items-center justify-center border border-a-border text-a-paper text-[14px] active:border-a-acid active:text-a-acid transition shrink-0';
+const _BTN_DEL    = 'px-3 py-2 border border-a-blood text-a-blood font-sans text-[10px] uppercase tracking-eyebrow active:bg-a-blood active:text-a-paper transition shrink-0';
+const _BTN_BORDER = 'py-3 px-4 border border-a-border text-a-paper font-sans text-[11px] uppercase tracking-eyebrow active:border-a-acid active:text-a-acid transition';
 
 /* ── Éditeur d'activité (sous-bloc d'un exercice) ──────── */
 const ACTIVITY_TYPES  = ['weight', 'countdown', 'stopwatch'];
@@ -45,24 +45,24 @@ function updateActivityFields(row, type, initial = {}) {
   const fieldsDiv = row.querySelector('.activity-fields');
   if (type === 'weight') {
     fieldsDiv.innerHTML = `
-      <div class="flex-1 flex items-baseline gap-2 border-b border-border focus-within:border-acid transition">
+      <div class="flex-1 flex items-baseline gap-2 border-b border-a-border focus-within:border-a-acid transition">
         <input type="number" inputmode="decimal" min="1" placeholder="0" value="${initial.reps ?? ''}"
           class="activity-reps ${_INPUT_NUM} text-center" />
-        <span class="font-display font-bold text-acid text-[16px] shrink-0">×</span>
+        <span class="font-display font-bold text-a-acid text-[16px] shrink-0">×</span>
         <input type="number" inputmode="decimal" min="0" step="0.5" placeholder="0" value="${initial.weight ?? ''}"
           class="activity-weight ${_INPUT_NUM} text-center" />
-        <span class="font-sans text-[10px] uppercase tracking-eyebrow text-muted shrink-0">kg</span>
+        <span class="font-sans text-[10px] uppercase tracking-eyebrow text-a-muted shrink-0">kg</span>
       </div>`;
   } else if (type === 'countdown') {
     fieldsDiv.innerHTML = `
-      <div class="flex-1 flex items-baseline gap-2 border-b border-border focus-within:border-acid transition">
+      <div class="flex-1 flex items-baseline gap-2 border-b border-a-border focus-within:border-a-acid transition">
         <input type="number" inputmode="numeric" min="1" placeholder="0" value="${initial.duration ?? ''}"
           class="activity-duration ${_INPUT_NUM} text-center" />
-        <span class="font-sans text-[10px] uppercase tracking-eyebrow text-muted shrink-0">sec</span>
+        <span class="font-sans text-[10px] uppercase tracking-eyebrow text-a-muted shrink-0">sec</span>
       </div>`;
   } else {
     fieldsDiv.innerHTML = `
-      <p class="flex-1 font-display italic text-[13px] text-muted py-2 border-b border-border">temps enregistré au chrono</p>`;
+      <p class="flex-1 font-display italic text-[13px] text-a-muted py-2 border-b border-a-border">temps enregistré au chrono</p>`;
   }
 }
 
@@ -77,7 +77,7 @@ function syncActivityLabels(activitiesList) {
 
 function makeActivityRow({ type = 'weight', label = '', name = '', reps = '', weight = '', duration = '', rest = '' } = {}) {
   const row = document.createElement('div');
-  row.className = 'activity-row border border-border bg-inkAlt/30 px-4 py-4 space-y-4';
+  row.className = 'activity-row border border-a-border bg-a-inkAlt/30 px-4 py-4 space-y-4';
 
   // Ligne 0 : nom de l'activité (caché si une seule activité)
   const labelRow = document.createElement('div');
@@ -85,7 +85,7 @@ function makeActivityRow({ type = 'weight', label = '', name = '', reps = '', we
   labelRow.innerHTML = `
     <input type="text" maxlength="60" placeholder="Nom de l'activité" value="${escapeHtml(label)}"
       class="activity-label ${_INPUT_TXT} font-display italic font-bold" />
-    <button type="button" class="activity-remove-btn shrink-0 w-8 h-8 flex items-center justify-center text-muted active:text-blood transition">×</button>
+    <button type="button" class="activity-remove-btn shrink-0 w-8 h-8 flex items-center justify-center text-a-muted active:text-a-blood transition">×</button>
   `;
   labelRow.querySelector('.activity-remove-btn').addEventListener('click', () => {
     const list = row.closest('.activities-list');
@@ -101,7 +101,7 @@ function makeActivityRow({ type = 'weight', label = '', name = '', reps = '', we
 
   const typeBtn = document.createElement('button');
   typeBtn.type = 'button';
-  typeBtn.className = 'activity-type-btn shrink-0 px-3 py-2 border border-border text-acid font-sans text-[10px] uppercase tracking-eyebrow font-semibold active:border-acid transition';
+  typeBtn.className = 'activity-type-btn shrink-0 px-3 py-2 border border-a-border text-a-acid font-sans text-[10px] uppercase tracking-eyebrow font-semibold active:border-a-acid transition';
   typeBtn.dataset.type = type;
   typeBtn.textContent = ACTIVITY_LABELS[type] || ACTIVITY_LABELS.weight;
   typeBtn.addEventListener('click', () => {
@@ -128,12 +128,12 @@ function makeActivityRow({ type = 'weight', label = '', name = '', reps = '', we
   fieldsDiv.className = 'activity-fields flex-1 flex items-baseline gap-2';
 
   const restWrap = document.createElement('div');
-  restWrap.className = 'flex items-baseline gap-2 border-b border-border focus-within:border-acid transition shrink-0 w-[160px] px-2';
+  restWrap.className = 'flex items-baseline gap-2 border-b border-a-border focus-within:border-a-acid transition shrink-0 w-[160px] px-2';
   restWrap.innerHTML = `
-    <span class="font-sans text-[10px] uppercase tracking-eyebrow text-muted shrink-0">repos</span>
+    <span class="font-sans text-[10px] uppercase tracking-eyebrow text-a-muted shrink-0">repos</span>
     <input type="number" inputmode="numeric" min="0" placeholder="0" value="${rest}"
       class="activity-rest ${_INPUT_NUM} text-center text-[20px] py-2" />
-    <span class="font-sans text-[11px] uppercase tracking-eyebrow text-muted shrink-0">s</span>
+    <span class="font-sans text-[11px] uppercase tracking-eyebrow text-a-muted shrink-0">s</span>
   `;
 
   bottomRow.append(fieldsDiv, restWrap);
@@ -146,14 +146,14 @@ function makeActivityRow({ type = 'weight', label = '', name = '', reps = '', we
 /* ── Éditeur d'exercice ────────────────────────────────── */
 function makeExerciseCard({ name = '', sets = 3, activities = null, comment = '' } = {}) {
   const card = document.createElement('div');
-  card.className = 'exercise-card border-l-[3px] border-l-acid border-y border-r border-border bg-inkAlt/30 px-5 py-5 space-y-5';
+  card.className = 'exercise-card border-l-[3px] border-l-a-acid border-y border-r border-a-border bg-a-inkAlt/30 px-5 py-5 space-y-5';
 
   // Header : nom + reorder + delete
   const header = document.createElement('div');
   header.className = 'flex items-baseline gap-2';
   header.innerHTML = `
     <input type="text" maxlength="60" placeholder="Nom de l'exercice" value="${escapeHtml(name)}"
-      class="exercise-name flex-1 bg-transparent border-b border-border focus:border-acid font-display font-bold italic text-[18px] text-paper py-2 outline-none transition" />
+      class="exercise-name flex-1 bg-transparent border-b border-a-border focus:border-a-acid font-display font-bold italic text-[18px] text-a-paper py-2 outline-none transition" />
     <button type="button" class="exercise-move-btn ${_BTN_GHOST}" data-dir="up" title="Monter">↑</button>
     <button type="button" class="exercise-move-btn ${_BTN_GHOST}" data-dir="down" title="Descendre">↓</button>
     <button type="button" class="exercise-del-btn ${_BTN_DEL}">Suppr</button>
@@ -174,11 +174,11 @@ function makeExerciseCard({ name = '', sets = 3, activities = null, comment = ''
   setsRow.className = 'flex items-baseline gap-3';
   setsRow.innerHTML = `
     <p class="${_LABEL_EYE} mb-0 shrink-0">Séries</p>
-    <div class="w-[90px] flex items-baseline gap-2 border-b border-border focus-within:border-acid transition">
+    <div class="w-[90px] flex items-baseline gap-2 border-b border-a-border focus-within:border-a-acid transition">
       <input type="number" inputmode="numeric" min="1" value="${sets}"
         class="exercise-sets ${_INPUT_NUM} text-center" />
     </div>
-    <span class="flex-1 h-px bg-border"></span>
+    <span class="flex-1 h-px bg-a-border"></span>
   `;
   card.appendChild(setsRow);
 
@@ -207,7 +207,7 @@ function makeExerciseCard({ name = '', sets = 3, activities = null, comment = ''
 
   // Commentaire
   const commentInput = document.createElement('textarea');
-  commentInput.className = 'exercise-comment w-full bg-transparent border border-border focus:border-acid font-sans text-[13px] text-paper p-3 outline-none transition resize-y';
+  commentInput.className = 'exercise-comment w-full bg-transparent border border-a-border focus:border-a-acid font-sans text-[13px] text-a-paper p-3 outline-none transition resize-y';
   commentInput.placeholder = 'Commentaire (visible à la salle)';
   commentInput.rows = 2;
   commentInput.value = comment;
@@ -241,14 +241,14 @@ function readExerciseCard(card) {
 
 function makeCardioExerciseCard({ name = '', duration = '', power = '', comment = '' } = {}) {
   const card = document.createElement('div');
-  card.className = 'exercise-card cardio-card border-l-[3px] border-l-racing border-y border-r border-border bg-inkAlt/30 px-5 py-5 space-y-5';
+  card.className = 'exercise-card cardio-card border-l-[3px] border-l-a-racing border-y border-r border-a-border bg-a-inkAlt/30 px-5 py-5 space-y-5';
 
   // Header
   const header = document.createElement('div');
   header.className = 'flex items-baseline gap-2';
   header.innerHTML = `
     <input type="text" maxlength="60" placeholder="Nom de la machine" value="${escapeHtml(name)}"
-      class="exercise-name flex-1 bg-transparent border-b border-border focus:border-acid font-display font-bold italic text-[18px] text-paper py-2 outline-none transition" />
+      class="exercise-name flex-1 bg-transparent border-b border-a-border focus:border-a-acid font-display font-bold italic text-[18px] text-a-paper py-2 outline-none transition" />
     <button type="button" class="exercise-del-btn ${_BTN_DEL}">Suppr</button>
   `;
   header.querySelector('.exercise-del-btn').addEventListener('click', () => card.remove());
@@ -260,25 +260,25 @@ function makeCardioExerciseCard({ name = '', duration = '', power = '', comment 
   fields.innerHTML = `
     <div>
       <p class="${_LABEL_EYE}">Temps</p>
-      <div class="flex items-baseline gap-2 border-b border-border focus-within:border-acid transition">
+      <div class="flex items-baseline gap-2 border-b border-a-border focus-within:border-a-acid transition">
         <input type="number" inputmode="numeric" min="1" placeholder="0" value="${duration}"
           class="cardio-duration ${_INPUT_NUM}" />
-        <span class="font-sans text-[10px] uppercase tracking-eyebrow text-muted shrink-0">min</span>
+        <span class="font-sans text-[10px] uppercase tracking-eyebrow text-a-muted shrink-0">min</span>
       </div>
     </div>
     <div>
       <p class="${_LABEL_EYE}">Puissance</p>
-      <div class="flex items-baseline gap-2 border-b border-border focus-within:border-acid transition">
+      <div class="flex items-baseline gap-2 border-b border-a-border focus-within:border-a-acid transition">
         <input type="number" inputmode="numeric" min="0" placeholder="0" value="${power}"
           class="cardio-power ${_INPUT_NUM}" />
-        <span class="font-sans text-[10px] uppercase tracking-eyebrow text-muted shrink-0">W</span>
+        <span class="font-sans text-[10px] uppercase tracking-eyebrow text-a-muted shrink-0">W</span>
       </div>
     </div>
   `;
   card.appendChild(fields);
 
   const commentInput = document.createElement('textarea');
-  commentInput.className = 'exercise-comment w-full bg-transparent border border-border focus:border-acid font-sans text-[13px] text-paper p-3 outline-none transition resize-y';
+  commentInput.className = 'exercise-comment w-full bg-transparent border border-a-border focus:border-a-acid font-sans text-[13px] text-a-paper p-3 outline-none transition resize-y';
   commentInput.placeholder = 'Commentaire (visible à la salle)';
   commentInput.rows = 2;
   commentInput.value = comment;

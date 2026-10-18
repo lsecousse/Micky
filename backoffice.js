@@ -362,13 +362,13 @@ async function renderProgrammeEditor(existingProg) {
 
   body.innerHTML = `
     <div class="bo-editor" style="display:flex;flex-direction:column;height:100%;gap:0;min-height:0">
-      <header class="bo-editor-header border-b border-border" style="display:flex;flex-direction:column;gap:0.5rem;padding:1rem;flex:0 0 auto">
+      <header class="bo-editor-header border-b border-a-border" style="display:flex;flex-direction:column;gap:0.5rem;padding:1rem;flex:0 0 auto">
         <div style="display:flex;align-items:center;gap:1rem">
           <button class="btn-ghost btn-sm" id="ed-back">← Retour</button>
-          <input type="text" id="ed-name" class="bg-transparent border-b border-border focus:border-acid text-paper font-display italic text-[18px] outline-none"
+          <input type="text" id="ed-name" class="bg-transparent border-b border-a-border focus:border-a-acid text-a-paper font-display italic text-[18px] outline-none"
                  style="flex:1 1 auto;min-width:0;padding:0.5rem 0"
                  placeholder="Nom du programme" value="${escapeHtml(_progEditorState.name)}">
-          <div class="text-paper text-[12px] font-sans tracking-eyebrow uppercase" style="flex:0 0 auto;white-space:nowrap">
+          <div class="text-a-paper text-[12px] font-sans tracking-eyebrow uppercase" style="flex:0 0 auto;white-space:nowrap">
             Estimé : <span id="ed-est">—</span>
             <button id="ed-est-edit" class="btn-ghost btn-sm" style="margin-left:0.5rem">✎</button>
           </div>
@@ -377,7 +377,7 @@ async function renderProgrammeEditor(existingProg) {
         <p class="error-msg hidden" id="ed-err" style="margin:0"></p>
       </header>
       <div style="display:grid;grid-template-columns:35% 65%;flex:1 1 auto;min-height:0;overflow:hidden">
-        <aside id="ed-sidebar" class="border-r border-border" style="display:flex;flex-direction:column;min-height:0;min-width:0;overflow:hidden"></aside>
+        <aside id="ed-sidebar" class="border-r border-a-border" style="display:flex;flex-direction:column;min-height:0;min-width:0;overflow:hidden"></aside>
         <section id="ed-zone" style="display:flex;flex-direction:column;min-height:0;min-width:0;overflow-y:auto"></section>
       </div>
     </div>`;
@@ -431,14 +431,14 @@ function promptEstOverride() {
 function renderCatalogSidebar() {
   const aside = document.getElementById('ed-sidebar');
   aside.innerHTML = `
-    <div class="p-3 border-b border-border space-y-2">
-      <button id="cat-new" class="w-full py-2 border border-acid text-acid font-sans text-[10px] uppercase tracking-eyebrow active:bg-acid active:text-ink">+ Nouvel exo</button>
+    <div class="p-3 border-b border-a-border space-y-2">
+      <button id="cat-new" class="w-full py-2 border border-a-acid text-a-acid font-sans text-[10px] uppercase tracking-eyebrow active:bg-a-acid active:text-a-ink">+ Nouvel exo</button>
       <input id="cat-search" type="text" placeholder="Rechercher…"
-             class="w-full bg-transparent border-b border-border focus:border-acid text-paper py-1 text-[12px] outline-none"/>
+             class="w-full bg-transparent border-b border-a-border focus:border-a-acid text-a-paper py-1 text-[12px] outline-none"/>
       <div id="cat-chips" class="flex flex-wrap gap-1"></div>
     </div>
     <div id="cat-list" class="flex-1 overflow-y-auto p-2 space-y-1"></div>
-    <div id="cat-form" class="hidden border-t border-border p-3"></div>`;
+    <div id="cat-form" class="hidden border-t border-a-border p-3"></div>`;
 
   document.getElementById('cat-new').addEventListener('click', () => openCatalogForm(null));
   document.getElementById('cat-search').addEventListener('input', e => {
@@ -453,7 +453,7 @@ function renderMuscleChips() {
   const wrap = document.getElementById('cat-chips');
   wrap.innerHTML = MUSCLE_OPTIONS.map(m => {
     const active = _sidebarFilters.muscles.has(m);
-    return `<button data-m="${m}" class="px-2 py-0.5 border ${active ? 'border-acid text-acid' : 'border-border text-muted'} text-[10px] uppercase tracking-eyebrow">${m}</button>`;
+    return `<button data-m="${m}" class="px-2 py-0.5 border ${active ? 'border-a-acid text-a-acid' : 'border-a-border text-a-muted'} text-[10px] uppercase tracking-eyebrow">${m}</button>`;
   }).join('');
   wrap.querySelectorAll('button').forEach(b => {
     b.addEventListener('click', () => {
@@ -479,12 +479,12 @@ function renderCatalogList() {
     return true;
   });
   list.innerHTML = filtered.map(c => `
-    <div data-id="${c.id}" class="cat-item flex items-center gap-2 p-2 border border-border hover:border-acid cursor-grab"
+    <div data-id="${c.id}" class="cat-item flex items-center gap-2 p-2 border border-a-border hover:border-a-acid cursor-grab"
          draggable="true">
-      <span class="text-muted">≡</span>
-      <span class="flex-1 text-paper text-[12px]">${escapeHtml(c.name)}</span>
-      <button class="cat-edit text-muted hover:text-acid" data-id="${c.id}">✎</button>
-    </div>`).join('') || `<p class="text-muted text-[10px] uppercase tracking-eyebrow p-2">Catalogue vide.</p>`;
+      <span class="text-a-muted">≡</span>
+      <span class="flex-1 text-a-paper text-[12px]">${escapeHtml(c.name)}</span>
+      <button class="cat-edit text-a-muted hover:text-a-acid" data-id="${c.id}">✎</button>
+    </div>`).join('') || `<p class="text-a-muted text-[10px] uppercase tracking-eyebrow p-2">Catalogue vide.</p>`;
   list.querySelectorAll('.cat-edit').forEach(b => {
     b.addEventListener('click', e => {
       e.stopPropagation();
@@ -507,24 +507,24 @@ function openCatalogForm(existing) {
   form.classList.remove('hidden');
   const isEdit = !!existing;
   form.innerHTML = `
-    <p class="text-[9px] uppercase tracking-[0.4em] text-muted mb-2">${isEdit ? 'Modifier' : 'Nouvel'} exo</p>
+    <p class="text-[9px] uppercase tracking-[0.4em] text-a-muted mb-2">${isEdit ? 'Modifier' : 'Nouvel'} exo</p>
     <input id="cf-name" type="text" placeholder="Nom" value="${escapeHtml(existing?.name || '')}"
-           class="w-full bg-transparent border-b border-border focus:border-acid text-paper py-1 text-[13px] outline-none mb-2"/>
-    <p class="text-[9px] uppercase tracking-[0.4em] text-muted mb-1">Groupes musculaires</p>
+           class="w-full bg-transparent border-b border-a-border focus:border-a-acid text-a-paper py-1 text-[13px] outline-none mb-2"/>
+    <p class="text-[9px] uppercase tracking-[0.4em] text-a-muted mb-1">Groupes musculaires</p>
     <div id="cf-muscles" class="flex flex-wrap gap-1 mb-2">${
       MUSCLE_OPTIONS.map(m => {
         const active = (existing?.muscle_groups || []).includes(m);
-        return `<button data-m="${m}" type="button" class="px-2 py-0.5 border ${active ? 'border-acid text-acid' : 'border-border text-muted'} text-[10px] uppercase tracking-eyebrow">${m}</button>`;
+        return `<button data-m="${m}" type="button" class="px-2 py-0.5 border ${active ? 'border-a-acid text-a-acid' : 'border-a-border text-a-muted'} text-[10px] uppercase tracking-eyebrow">${m}</button>`;
       }).join('')
     }</div>
-    <p class="text-[9px] uppercase tracking-[0.4em] text-muted mb-1">Type d'activité par défaut</p>
-    <select id="cf-acttype" class="w-full bg-transparent border border-border text-paper py-1 px-2 text-[12px] mb-2">
+    <p class="text-[9px] uppercase tracking-[0.4em] text-a-muted mb-1">Type d'activité par défaut</p>
+    <select id="cf-acttype" class="w-full bg-transparent border border-a-border text-a-paper py-1 px-2 text-[12px] mb-2">
       <option value="weight"    ${(existing?.default_activities?.[0]?.type === 'weight'    || !existing) ? 'selected' : ''}>Poids</option>
       <option value="countdown" ${ existing?.default_activities?.[0]?.type === 'countdown' ? 'selected' : ''}>Minuterie</option>
       <option value="stopwatch" ${ existing?.default_activities?.[0]?.type === 'stopwatch' ? 'selected' : ''}>Chrono</option>
     </select>
     <textarea id="cf-notes" placeholder="Notes (consignes…)"
-              class="w-full bg-transparent border border-border focus:border-acid text-paper p-2 text-[12px] outline-none mb-2 h-16">${escapeHtml(existing?.notes || '')}</textarea>
+              class="w-full bg-transparent border border-a-border focus:border-a-acid text-a-paper p-2 text-[12px] outline-none mb-2 h-16">${escapeHtml(existing?.notes || '')}</textarea>
     <div class="flex gap-2">
       <button id="cf-save" class="btn-primary btn-sm flex-1">${isEdit ? 'Mettre à jour' : 'Créer'}</button>
       <button id="cf-cancel" class="btn-ghost btn-sm">Annuler</button>
@@ -533,10 +533,10 @@ function openCatalogForm(existing) {
 
   form.querySelectorAll('#cf-muscles button').forEach(b => {
     b.addEventListener('click', () => {
-      b.classList.toggle('border-acid');
-      b.classList.toggle('text-acid');
-      b.classList.toggle('border-border');
-      b.classList.toggle('text-muted');
+      b.classList.toggle('border-a-acid');
+      b.classList.toggle('text-a-acid');
+      b.classList.toggle('border-a-border');
+      b.classList.toggle('text-a-muted');
     });
   });
 
@@ -548,7 +548,7 @@ function openCatalogForm(existing) {
   document.getElementById('cf-save').addEventListener('click', async () => {
     const name = document.getElementById('cf-name').value.trim();
     if (!name) return alert('Nom obligatoire');
-    const muscle_groups = Array.from(form.querySelectorAll('#cf-muscles button.border-acid')).map(b => b.dataset.m);
+    const muscle_groups = Array.from(form.querySelectorAll('#cf-muscles button.border-a-acid')).map(b => b.dataset.m);
     const acttype = document.getElementById('cf-acttype').value;
     const default_activities = [{ type: acttype }];
     const notes = document.getElementById('cf-notes').value.trim();
@@ -595,8 +595,8 @@ function renderProgrammeZone() {
   const exos = _progEditorState.exercises;
   const isEmpty = exos.length === 0;
   zone.innerHTML = `
-    <div id="pz-list" class="m-4 p-4 border border-dashed ${isEmpty ? 'border-acid' : 'border-border'} space-y-2 min-h-[160px]" style="min-height:160px">
-      ${isEmpty ? '<p class="text-acid text-[10px] uppercase tracking-eyebrow text-center py-12">↓ Glisse un exo du catalogue ici</p>' : ''}
+    <div id="pz-list" class="m-4 p-4 border border-dashed ${isEmpty ? 'border-a-acid' : 'border-a-border'} space-y-2 min-h-[160px]" style="min-height:160px">
+      ${isEmpty ? '<p class="text-a-acid text-[10px] uppercase tracking-eyebrow text-center py-12">↓ Glisse un exo du catalogue ici</p>' : ''}
     </div>`;
   const list = document.getElementById('pz-list');
   exos.forEach((ex, idx) => list.appendChild(makeProgrammeCard(ex, idx)));
@@ -642,7 +642,7 @@ function renderProgrammeZone() {
 
 function makeProgrammeCard(ex, idx) {
   const card = document.createElement('div');
-  card.className = 'pz-card flex items-center gap-3 p-3 border border-border bg-inkAlt/30';
+  card.className = 'pz-card flex items-center gap-3 p-3 border border-a-border bg-a-inkAlt/30';
   card.dataset.idx = idx;
   const firstAct = ex.activities?.[0];
   const isWeight = firstAct?.type === 'weight';
@@ -652,10 +652,10 @@ function makeProgrammeCard(ex, idx) {
   const restSec = firstAct?.rest ?? 0;
   const restLabel = restSec > 0 ? ` · repos ${restSec}s` : '';
   card.innerHTML = `
-    <span class="cursor-grab text-muted">≡</span>
+    <span class="cursor-grab text-a-muted">≡</span>
     <div class="flex-1">
-      <p class="text-paper text-[13px]">${String(idx + 1).padStart(2, '0')}. ${escapeHtml(ex.name || '—')}</p>
-      <p class="text-muted text-[10px] uppercase tracking-eyebrow">${setsCount} × ${repsLabel} ${weightLabel}${restLabel}</p>
+      <p class="text-a-paper text-[13px]">${String(idx + 1).padStart(2, '0')}. ${escapeHtml(ex.name || '—')}</p>
+      <p class="text-a-muted text-[10px] uppercase tracking-eyebrow">${setsCount} × ${repsLabel} ${weightLabel}${restLabel}</p>
     </div>
     <button class="pz-up btn-ghost btn-sm" title="Monter">↑</button>
     <button class="pz-down btn-ghost btn-sm" title="Descendre">↓</button>
@@ -700,9 +700,9 @@ async function openExoModal(entryOrExo, idx, isNew = false) {
   const overlay = document.createElement('div');
   overlay.className = 'fixed inset-0 bg-black/70 flex items-center justify-center z-50';
   overlay.innerHTML = `
-    <div class="bg-inkAlt p-5 max-w-lg w-full max-h-[90vh] overflow-y-auto border border-border space-y-4">
+    <div class="bg-a-inkAlt p-5 max-w-lg w-full max-h-[90vh] overflow-y-auto border border-a-border space-y-4">
       <header class="flex items-center justify-between">
-        <h3 class="text-paper font-display italic text-[18px]">${isNew ? 'Ajouter' : 'Modifier'} : ${escapeHtml(seed.name)}</h3>
+        <h3 class="text-a-paper font-display italic text-[18px]">${isNew ? 'Ajouter' : 'Modifier'} : ${escapeHtml(seed.name)}</h3>
         <button id="mx-close" class="btn-ghost btn-sm">✕</button>
       </header>
       <div id="mx-card-wrap"></div>
