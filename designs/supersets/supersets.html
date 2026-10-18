@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Super sets Micky</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="theme-color" content="#EEEDE8">
+<!--
+  Maquette super sets — v2, look « Carnet » (piste 1 choisie par Lionel le 2026-10-18).
+  Faite à la main : le connecteur AIDesigner n'était pas autorisé dans la session, Lionel a validé
+  une maquette à la main. Remplace la Direction A pour cette maquette ; voir NOTES.md.
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,500;0,6..72,700;1,6..72,500;1,6..72,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+  /* Layout: a board of phone frames on a darker desk, each frame is the Carnet page itself */
+  :root {
+    color-scheme: light;
+    --desk: #DCDAD2; --paper: #EEEDE8; --sheet: #F7F6F2; --ink: #1B1C1F; --mut: #6F6C64; --rule: #D6D3C9;
+    --hl: #FFE45C; --done: #1E6B4A;
+    --f-display: "Newsreader", Georgia, serif;
+    --f-sans: "IBM Plex Sans", system-ui, sans-serif;
+    --f-mono: "IBM Plex Mono", ui-monospace, monospace;
+    --r: 6px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--desk); color: var(--ink); font-family: var(--f-sans); -webkit-font-smoothing: antialiased;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+  }
+  button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; text-align: inherit; }
+  button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+  .tn { font-variant-numeric: tabular-nums lining-nums; }
+  .mono { font-family: var(--f-mono); font-weight: 500; }
+  .r { text-align: right; }
+  .mut { color: var(--mut); }
+
+  /* Board */
+  .intro { max-width: 1280px; margin: 0 auto; padding-block: 40px 28px; display: grid; gap: 28px; grid-template-columns: minmax(0, 1fr); }
+  @media (min-width: 900px) { .intro { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); align-items: end; } }
+  .intro .k { font-size: 12px; color: var(--mut); margin: 0; }
+  .intro h1 { font-family: var(--f-display); font-weight: 500; font-size: clamp(2.4rem, 8vw, 4rem); line-height: .98; margin: 10px 0 0; letter-spacing: -0.02em; text-wrap: balance; }
+  .intro h1 em { background: linear-gradient(to bottom, transparent 55%, var(--hl) 55% 92%, transparent 92%); font-style: italic; }
+  .intro p.lead { font-size: 15px; line-height: 1.6; max-width: 60ch; margin: 16px 0 0; }
+  .rules { margin: 0; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 8px 18px; font-size: 14px; border-top: 1.5px solid var(--ink); padding-top: 12px; }
+  .rules dt { color: var(--mut); }
+  .rules dd { margin: 0; }
+  .board { max-width: 1280px; margin: 0 auto; padding-bottom: 64px; display: grid; gap: 56px 36px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 380px), 1fr)); }
+  figure { margin: 0; min-width: 0; }
+  figcaption { display: flex; gap: 10px; align-items: baseline; margin-bottom: 12px; font-size: 13px; }
+  figcaption b { font-family: var(--f-mono); font-weight: 600; }
+  .note { font-size: 14px; line-height: 1.6; margin: 14px 0 0; max-width: 46ch; }
+
+  /* Phone frame */
+  .phone { width: 100%; max-width: 390px; background: var(--paper); border: 1px solid #B9B6AC; overflow: hidden; position: relative; }
+  .sb { height: 40px; padding: 0 24px 8px; display: flex; align-items: flex-end; justify-content: space-between; font: 600 12px/1 system-ui, sans-serif; }
+  .hi { height: 26px; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 8px; }
+  .hi span { width: 134px; height: 5px; border-radius: 3px; background: var(--ink); }
+
+  /* Live header */
+  .top { display: flex; align-items: center; justify-content: space-between; padding: 6px 20px 0; font-size: 13px; color: var(--mut); gap: 12px; }
+  .top b { color: var(--ink); font-weight: 500; }
+  .top .end { height: 40px; padding: 0 14px; border: 1.5px solid var(--ink); border-radius: var(--r); color: var(--ink); font-weight: 500; }
+  .top .back { height: 40px; color: var(--ink); font-weight: 500; }
+  .prog { margin: 8px 20px 0; height: 2px; background: var(--rule); position: relative; }
+  .prog i { position: absolute; inset: 0 auto 0 0; background: var(--ink); }
+  .head { padding: 20px 20px 14px; }
+  .kick { font-size: 13px; color: var(--mut); margin: 0; display: flex; justify-content: space-between; gap: 12px; }
+  .kick b { color: var(--ink); font-weight: 600; }
+  .kick .ok { color: var(--done); font-weight: 600; }
+  .h2 { font-family: var(--f-display); font-weight: 500; font-style: italic; font-size: 31px; line-height: 1.05; margin: 6px 0 0; letter-spacing: -0.01em; }
+  .h2 span { color: var(--mut); }
+  .rests { font-size: 13px; color: var(--mut); margin: 10px 0 0; }
+  .rests b { color: var(--ink); font-weight: 500; }
+
+  /* Logbook rows */
+  .log { border-top: 1.5px solid var(--ink); }
+  .lr { display: grid; grid-template-columns: 30px 22px minmax(0, 1fr) 52px 34px 66px; align-items: baseline; min-height: 40px; padding: 10px 20px 0; font-size: 14px; border-bottom: 1px solid var(--rule); }
+  .lr > * { min-width: 0; }
+  .lr .let { font-family: var(--f-display); font-style: italic; font-weight: 700; font-size: 18px; line-height: 1; }
+  .lr .mono { font-size: 17px; line-height: 1; }
+  .lr .t { color: var(--mut); font-size: 12px; }
+  .lr .name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 6px; }
+  .lr .ck { color: var(--done); font-weight: 600; font-size: 13px; text-align: right; }
+  .lr .nx { color: var(--mut); font-size: 12px; text-align: right; }
+  .lr.hd { color: var(--mut); font-size: 12px; min-height: 30px; padding-top: 8px; }
+  .lr.todo { color: var(--mut); }
+  .lr.sum { grid-template-columns: 34px minmax(0, 1fr) auto; }
+
+  /* Active row: highlighter band = the one current action */
+  .act { padding: 14px 20px 16px; background: var(--hl); border-bottom: 1px solid var(--rule); }
+  .prep { padding: 14px 20px 16px; background: var(--sheet); border-block: 1.5px solid var(--ink); }
+  .who { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; font-size: 13px; }
+  .who b { font-family: var(--f-display); font-style: italic; font-size: 20px; font-weight: 700; }
+  .act .who span { color: #55534B; }
+  .prep .who span { color: var(--mut); }
+  .stp { display: grid; grid-template-columns: 48px minmax(0, 1fr) 48px; align-items: center; gap: 12px; margin-top: 10px; }
+  .stp button { height: 48px; border: 1.5px solid var(--ink); border-radius: var(--r); font-family: var(--f-mono); font-size: 22px; text-align: center; }
+  .stp .v { text-align: center; font-family: var(--f-mono); font-weight: 600; font-size: 44px; line-height: 1; letter-spacing: -0.04em; }
+  .prep .stp .v { font-size: 38px; }
+  .stp .v small { font-family: var(--f-sans); font-size: 14px; font-weight: 500; letter-spacing: 0; margin-left: 4px; }
+  .stp .v u { text-decoration: none; border-bottom: 1.5px dashed currentColor; }
+
+  /* Thumb dock */
+  .dock { border-top: 1.5px solid var(--ink); padding: 12px 16px 0; background: var(--paper); }
+  .dock .row { display: flex; gap: 10px; }
+  .btn-exos { width: 84px; height: 56px; border: 1.5px solid var(--ink); border-radius: var(--r); font-size: 13px; line-height: 1.3; text-align: center; flex-shrink: 0; }
+  .btn-exos span { display: block; color: var(--mut); font-size: 12px; }
+  .btn-go { flex: 1; height: 56px; background: var(--ink); color: var(--paper); border-radius: var(--r); font-size: 16px; font-weight: 600; line-height: 1.25; text-align: center; }
+  .btn-go span { display: block; font-size: 12px; font-weight: 400; opacity: .7; }
+  .btn-line { flex: 1; height: 56px; border: 1.5px solid var(--ink); border-radius: var(--r); font-size: 16px; font-weight: 600; text-align: center; }
+  .timer { display: flex; align-items: center; gap: 10px; margin: -12px -16px 12px; padding: 12px 16px; background: var(--hl); }
+  .timer .tx { flex: 1; min-width: 0; }
+  .timer .tx p { margin: 0; font-size: 13px; color: #55534B; }
+  .timer .tx .big { font-family: var(--f-mono); font-weight: 600; font-size: 42px; line-height: 1; letter-spacing: -0.04em; color: var(--ink); margin-top: 4px; }
+  .timer button { width: 58px; height: 46px; border: 1.5px solid var(--ink); border-radius: var(--r); font-size: 13px; font-weight: 600; text-align: center; }
+  .timer .bar { height: 3px; background: rgba(27,28,31,.15); margin-top: 8px; position: relative; }
+  .timer .bar i { position: absolute; inset: 0 auto 0 0; background: var(--ink); }
+
+  /* List */
+  .h1 { font-family: var(--f-display); font-weight: 500; font-size: 52px; line-height: .95; letter-spacing: -0.02em; margin: 0; }
+  .h1 em { color: var(--mut); }
+  .item { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px; align-items: baseline; padding: 12px 20px; border-bottom: 1px solid var(--rule); }
+  .item .nm { font-family: var(--f-display); font-style: italic; font-weight: 700; font-size: 20px; line-height: 1.15; }
+  .item .sm { font-size: 13px; color: var(--mut); grid-column: 1; }
+  .item .ct { font-family: var(--f-mono); font-size: 14px; }
+  .item.done .nm { color: var(--mut); }
+  .item.done .ct { color: var(--done); font-weight: 600; }
+  .grp { padding: 12px 20px 14px; border-bottom: 1px solid var(--rule); }
+  .grp .gh { display: flex; justify-content: space-between; align-items: baseline; font-size: 13px; }
+  .grp .gh .ct { font-family: var(--f-mono); font-size: 14px; color: var(--ink); }
+  .grp .gl { margin-top: 8px; border-left: 2px solid var(--ink); padding-left: 12px; display: grid; grid-template-columns: 20px minmax(0, 1fr) auto; gap: 6px 8px; align-items: baseline; }
+  .grp .gl .let { font-family: var(--f-display); font-style: italic; font-weight: 700; font-size: 17px; }
+  .grp .gl .nm { font-family: var(--f-display); font-style: italic; font-weight: 700; font-size: 19px; line-height: 1.15; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .grp .gl .kg { font-family: var(--f-mono); font-size: 13px; color: var(--mut); }
+  .mark { background: linear-gradient(to bottom, transparent 18%, var(--hl) 18% 92%, transparent 92%); padding: 0 3px; margin: 0 -3px; color: var(--ink); font-weight: 600; }
+  .dashed { width: 100%; height: 48px; border: 1.5px dashed var(--ink); border-radius: var(--r); font-weight: 500; font-size: 14px; text-align: center; }
+  .tabs { display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1.5px solid var(--ink); }
+  .tabs button { height: 54px; text-align: center; font-family: var(--f-display); font-style: italic; font-size: 16px; color: var(--mut); position: relative; }
+  .tabs button.on { color: var(--ink); font-weight: 700; }
+  .tabs button.on::before { content: ""; position: absolute; top: -1.5px; left: 28%; right: 28%; height: 3px; background: var(--ink); }
+
+  /* Sheet (grouper) */
+  .dim { padding: 18px 20px 40px; opacity: .3; }
+  .sheet { background: var(--sheet); border-top: 1.5px solid var(--ink); }
+  .grab { display: flex; justify-content: center; padding-top: 10px; }
+  .grab span { width: 40px; height: 4px; border-radius: 2px; background: var(--rule); }
+  .sh-h { display: flex; justify-content: space-between; align-items: baseline; padding: 12px 20px 4px; }
+  .sh-h h3 { font-family: var(--f-display); font-style: italic; font-weight: 700; font-size: 28px; margin: 0; }
+  .sh-p { padding: 0 20px; font-size: 13px; color: var(--mut); margin: 0; line-height: 1.5; }
+  .pick { list-style: none; margin: 14px 0 0; padding: 0; border-top: 1px solid var(--rule); }
+  .pick li { display: flex; align-items: center; gap: 12px; height: 54px; padding: 0 20px; border-bottom: 1px solid var(--rule); }
+  .pick .box { width: 30px; height: 30px; flex-shrink: 0; border: 1.5px solid var(--ink); border-radius: var(--r); display: flex; align-items: center; justify-content: center; font-family: var(--f-display); font-style: italic; font-weight: 700; font-size: 17px; }
+  .pick .box.on { background: var(--ink); color: var(--paper); }
+  .pick .nm { flex: 1; min-width: 0; font-family: var(--f-display); font-style: italic; font-weight: 700; font-size: 18px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .pick .off { color: var(--mut); }
+  .pick .off .box { border-color: var(--rule); }
+  .pick small { font-size: 12px; color: var(--mut); }
+  .set { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 20px; }
+  .set p { margin: 0; font-size: 14px; font-weight: 500; }
+  .set p span { display: block; font-size: 12px; color: var(--mut); font-weight: 400; }
+  .ctr { display: flex; align-items: center; gap: 8px; }
+  .ctr button { width: 38px; height: 38px; border: 1.5px solid var(--ink); border-radius: var(--r); font-family: var(--f-mono); font-size: 18px; text-align: center; }
+  .ctr b { font-family: var(--f-mono); font-weight: 600; font-size: 22px; width: 64px; text-align: center; }
+
+  /* Programme editor */
+  .ed { padding: 16px 16px 20px; display: grid; }
+  .card { background: var(--sheet); border: 1.5px solid var(--ink); border-radius: var(--r); padding: 12px 14px; }
+  .card .ch { display: flex; align-items: center; gap: 8px; }
+  .card .ch .nm { flex: 1; min-width: 0; font-family: var(--f-display); font-style: italic; font-weight: 700; font-size: 19px; border-bottom: 1px solid var(--rule); padding-bottom: 4px; }
+  .mv { width: 36px; height: 36px; border: 1.5px solid var(--ink); border-radius: var(--r); font-size: 14px; text-align: center; flex-shrink: 0; }
+  .card .sm { font-size: 13px; color: var(--mut); margin: 10px 0 0; }
+  .link { display: flex; align-items: center; gap: 10px; padding: 8px 0; }
+  .link::before, .link::after { content: ""; flex: 1; height: 1px; background: var(--rule); }
+  .link button { height: 36px; padding: 0 12px; border: 1.5px dashed var(--ink); border-radius: var(--r); font-size: 13px; font-weight: 500; }
+  .gcard { background: var(--sheet); border: 1.5px solid var(--ink); border-radius: var(--r); }
+  .gcard .gt { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 14px; border-bottom: 1px solid var(--rule); }
+  .gcard .gt p { margin: 0; font-family: var(--f-display); font-style: italic; font-weight: 700; font-size: 19px; }
+  .gcard .gs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; padding: 10px 14px; border-bottom: 1px solid var(--rule); }
+  .gcard .gs p { margin: 0; font-size: 12px; color: var(--mut); }
+  .gcard .gs b { display: block; font-family: var(--f-mono); font-weight: 600; font-size: 22px; color: var(--ink); border-bottom: 1px solid var(--rule); margin-top: 4px; }
+  .gcard .ge { display: flex; align-items: center; gap: 10px; padding: 10px 14px 10px 12px; border-bottom: 1px solid var(--rule); margin-left: 14px; border-left: 2px solid var(--ink); }
+  .gcard .ge .let { font-family: var(--f-display); font-style: italic; font-weight: 700; font-size: 18px; width: 16px; }
+  .gcard .ge div { flex: 1; min-width: 0; }
+  .gcard .ge .nm { font-family: var(--f-display); font-style: italic; font-weight: 700; font-size: 17px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .gcard .ge .sm { font-size: 12px; color: var(--mut); }
+  .gcard .gf { display: grid; grid-template-columns: 1fr 1fr; }
+  .gcard .gf button { height: 44px; font-size: 13px; font-weight: 500; text-align: center; }
+  .gcard .gf button + button { border-left: 1px solid var(--rule); color: var(--mut); }
+
+  /* Back-office */
+  .bo-wrap { width: 100%; overflow: hidden; border: 1px solid #B9B6AC; background: var(--paper); }
+  .bo-wrap.real { overflow-x: auto; }
+  .bo { width: 1200px; transform-origin: 0 0; background: var(--paper); }
+  .bo-wrap.real .bo { transform: none !important; }
+  .bo-top { height: 56px; padding: 0 32px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1.5px solid var(--ink); }
+  .bo-top .brand { font-family: var(--f-display); font-style: italic; font-weight: 700; font-size: 22px; }
+  .bo-cols { display: grid; grid-template-columns: 290px 1fr; min-height: 620px; }
+  .bo aside { border-right: 1px solid var(--rule); padding: 24px; background: var(--sheet); }
+  .bo .search { height: 40px; border: 1.5px solid var(--ink); border-radius: var(--r); padding: 0 12px; display: flex; align-items: center; color: var(--mut); font-size: 14px; margin-top: 10px; }
+  .bo .filters { display: flex; gap: 6px; margin-top: 12px; }
+  .bo .filters span { font-size: 13px; padding: 4px 10px; border: 1px solid var(--rule); border-radius: var(--r); color: var(--mut); }
+  .bo .filters span.on { border-color: var(--ink); color: var(--ink); font-weight: 500; }
+  .bo .cat { list-style: none; padding: 0; margin: 16px 0 0; }
+  .bo .cat li { padding: 11px 0; border-bottom: 1px solid var(--rule); font-family: var(--f-display); font-style: italic; font-weight: 700; font-size: 17px; }
+  .bo .cat li.gone { color: var(--rule); }
+  .bo main { padding: 28px 36px; }
+  .bo .ttl { display: flex; justify-content: space-between; align-items: baseline; }
+  .bo .ttl h2 { font-family: var(--f-display); font-weight: 500; font-size: 44px; margin: 0; letter-spacing: -0.02em; }
+  .bo .ttl h2 em { color: var(--mut); }
+  .bo .save { height: 42px; padding: 0 20px; background: var(--ink); color: var(--paper); border-radius: var(--r); font-weight: 600; }
+  .bo .help { font-size: 14px; color: var(--mut); margin: 8px 0 0; }
+  .bo .help b { color: var(--ink); font-weight: 600; }
+  .bo .plist { display: grid; gap: 10px; margin-top: 22px; max-width: 780px; }
+  .bo .pr { height: 54px; display: flex; align-items: center; gap: 16px; padding: 0 18px; background: var(--sheet); border: 1.5px solid var(--ink); border-radius: var(--r); }
+  .bo .h { color: var(--mut); letter-spacing: -2px; }
+  .bo .pr .nm { flex: 1; font-family: var(--f-display); font-style: italic; font-weight: 700; font-size: 18px; }
+  .bo .pr .sm { font-size: 13px; color: var(--mut); }
+  .bo .bg { background: var(--sheet); border: 1.5px solid var(--ink); border-radius: var(--r); }
+  .bo .bg .bh { height: 52px; display: flex; align-items: center; gap: 14px; padding: 0 18px; border-bottom: 1px solid var(--rule); font-size: 13px; color: var(--mut); }
+  .bo .bg .bh .nm { flex: 1; font-family: var(--f-display); font-style: italic; font-weight: 700; font-size: 18px; color: var(--ink); }
+  .bo .bg .bh b { font-family: var(--f-mono); font-weight: 600; font-size: 17px; color: var(--ink); border-bottom: 1px solid var(--rule); min-width: 40px; text-align: center; }
+  .bo .bg .bh button { text-decoration: underline; text-underline-offset: 4px; }
+  .bo .bg .be { height: 48px; display: flex; align-items: center; gap: 14px; margin-left: 18px; padding: 0 18px 0 14px; border-left: 2px solid var(--ink); border-bottom: 1px solid var(--rule); }
+  .bo .bg .be:last-child { border-bottom: 0; }
+  .bo .bg .be .let { font-family: var(--f-display); font-style: italic; font-weight: 700; font-size: 18px; width: 18px; }
+  .bo .bg .be .nm { flex: 1; font-family: var(--f-display); font-style: italic; font-weight: 700; font-size: 17px; }
+  .bo .bg .be .sm { font-size: 13px; color: var(--mut); }
+  .bo .drop { position: relative; background: var(--hl); border: 1.5px dashed var(--ink); }
+  .bo .drop .tip { font-size: 13px; font-weight: 600; }
+  .bo .ghost { position: absolute; left: 24%; top: 30px; width: 250px; height: 48px; background: var(--sheet); border: 1.5px solid var(--ink); border-radius: var(--r); padding: 0 16px; display: flex; align-items: center; box-shadow: 0 10px 24px rgba(27,28,31,.25); transform: rotate(-1.5deg); font-family: var(--f-display); font-style: italic; font-weight: 700; font-size: 17px; }
+  .bo-cap { display: flex; align-items: baseline; gap: 10px; margin-bottom: 12px; font-size: 13px; }
+  .bo-cap button { margin-left: auto; text-decoration: underline; text-underline-offset: 4px; font-size: 13px; }
+
+  .choices { max-width: 1280px; margin: 0 auto; padding-bottom: 72px; }
+  .choices > div { max-width: 820px; border-top: 1.5px solid var(--ink); padding-top: 14px; }
+  .choices h2 { font-family: var(--f-display); font-style: italic; font-weight: 700; font-size: 22px; margin: 0; }
+  .choices ul { margin: 12px 0 0; padding-left: 18px; display: grid; gap: 8px; font-size: 14px; line-height: 1.55; }
+</style>
+</head>
+<body>
+
+<header class="intro">
+  <div>
+    <p class="k">Gym Tracker · super sets · maquette v2, look Carnet · 18 oct. 2026</p>
+    <h1>Enchaîne, <em>souffle au tour.</em></h1>
+    <p class="lead">Un super set groupe 2 à 4 exercices qu'on enchaîne dans l'ordre A, B, C, D. Un passage complet est un <b>tour</b>. Entre deux exercices du tour, une courte <b>transition</b> pour changer de poste ; après le dernier, le vrai <b>repos</b>. Le surligneur jaune marque toujours la seule chose à faire maintenant.</p>
+  </div>
+  <dl class="rules">
+    <dt>Taille</dt><dd>2 à 4 exercices : super set, tri-set, circuit court</dd>
+    <dt>Repos</dt><dd>Transition réglable (15 s), puis repos de tour (1 min 30)</dd>
+    <dt>Séries</dt><dd>Un nombre de tours unique pour le groupe</dd>
+    <dt>Création</dt><dd>Éditeur de programme (app et back-office) et à la volée en séance</dd>
+  </dl>
+</header>
+
+<div class="board">
+
+<!-- ═══ 01 — Séance · tour 2, A en cours ═══ -->
+<figure>
+  <figcaption><b>01</b><span>Séance · tour 2, A en cours</span></figcaption>
+  <div class="phone">
+    <div class="sb"><span>18:42</span><span>5G</span></div>
+    <div class="top"><button class="back">‹ Liste</button><span class="tn"><b>Pecs &amp; Dos</b> · 9/26</span><button class="end">Fin</button></div>
+    <div class="prog"><i style="width:34.6%"></i></div>
+    <div class="head">
+      <p class="kick"><span>Super set · <b>tour 2</b> sur 4</span><span class="ok">1 tour fait</span></p>
+      <h2 class="h2">Développé couché<br><span>+ Rowing barre</span></h2>
+      <p class="rests">Transition <b class="tn">15 s</b> · repos de tour <b class="tn">1 min 30</b></p>
+    </div>
+    <div class="log">
+      <div class="lr hd"><span>Tour</span><span></span><span>Exercice</span><span class="r">kg</span><span class="r">reps</span><span class="r">puis</span></div>
+      <div class="lr"><span class="t tn">1</span><span class="let">A</span><span class="name">Développé</span><span class="mono r tn">60</span><span class="mono r tn">10</span><span class="ck tn">0:15</span></div>
+      <div class="lr"><span class="t"></span><span class="let">B</span><span class="name">Rowing</span><span class="mono r tn">50</span><span class="mono r tn">10</span><span class="ck tn">1:34</span></div>
+      <div class="act">
+        <div class="who"><b>2 · A · Développé couché</b><span>avant : 60 × 10</span></div>
+        <div class="stp"><button aria-label="Charge moins 2,5 kg">−</button><span class="v tn"><u>62,5</u><small>kg</small></span><button aria-label="Charge plus 2,5 kg">+</button></div>
+        <div class="stp"><button aria-label="Reps moins 1">−</button><span class="v tn"><u>8</u><small>reps</small></span><button aria-label="Reps plus 1">+</button></div>
+      </div>
+      <div class="lr todo"><span class="t"></span><span class="let">B</span><span class="name">Rowing</span><span class="mono r tn">52,5</span><span class="mono r tn">10</span><span class="nx tn">1:30</span></div>
+      <div class="lr todo sum"><span class="t tn">3–4</span><span class="tn">A 62,5 × 8 · B 52,5 × 10</span><span></span></div>
+    </div>
+    <div class="dock" style="margin-top:14px">
+      <div class="row">
+        <button class="btn-exos">Exos<span class="tn">2/6 faits</span></button>
+        <button class="btn-go">Valider la série<span>puis B · Rowing barre</span></button>
+      </div>
+      <div class="hi"><span></span></div>
+    </div>
+  </div>
+  <p class="note">Le groupe s'écrit comme une page de carnet : <b>une ligne par passage</b>, la lettre à la place du numéro de série. La colonne « puis » annonce la transition après A et le repos de tour après B. Les temps en vert sont ceux réellement pris.</p>
+</figure>
+
+<!-- ═══ 02 — Séance · transition vers B ═══ -->
+<figure>
+  <figcaption><b>02</b><span>Séance · transition vers B</span></figcaption>
+  <div class="phone">
+    <div class="sb"><span>18:44</span><span>5G</span></div>
+    <div class="top"><button class="back">‹ Liste</button><span class="tn"><b>Pecs &amp; Dos</b> · 10/26</span><button class="end">Fin</button></div>
+    <div class="prog"><i style="width:38.5%"></i></div>
+    <div class="head">
+      <p class="kick"><span>Super set · <b>tour 2</b> sur 4</span><span class="ok">1 tour fait</span></p>
+      <h2 class="h2">Développé couché<br><span>+ Rowing barre</span></h2>
+    </div>
+    <div class="log">
+      <div class="lr sum"><span class="t tn">1</span><span class="tn">A 60 × 10 · B 50 × 10</span><span class="ck">fait</span></div>
+      <button class="lr" style="width:100%"><span class="t tn">2</span><span class="let">A</span><span class="name">Développé</span><span class="mono r tn">62,5</span><span class="mono r tn">8</span><span class="ck">corriger</span></button>
+      <div class="prep">
+        <div class="who"><b>2 · B · Rowing barre</b><span>avant : 50 × 10</span></div>
+        <div class="stp"><button aria-label="Charge moins 2,5 kg">−</button><span class="v tn"><u>52,5</u><small>kg</small></span><button aria-label="Charge plus 2,5 kg">+</button></div>
+        <div class="stp"><button aria-label="Reps moins 1">−</button><span class="v tn"><u>10</u><small>reps</small></span><button aria-label="Reps plus 1">+</button></div>
+      </div>
+      <div class="lr todo sum"><span class="t tn">3–4</span><span class="tn">A 62,5 × 8 · B 52,5 × 10</span><span></span></div>
+    </div>
+    <div class="dock" style="margin-top:14px">
+      <div class="timer">
+        <div class="tx"><p>Transition · va au rowing</p><p class="big tn">0:11</p><div class="bar"><i style="width:73%"></i></div></div>
+        <button>+15 s</button>
+      </div>
+      <div class="row">
+        <button class="btn-exos">Exos<span class="tn">2/6 faits</span></button>
+        <button class="btn-line">Je suis prêt</button>
+      </div>
+      <div class="hi"><span></span></div>
+    </div>
+  </div>
+  <p class="note">Pendant la transition, c'est <b>le décompte qui est surligné</b> ; B attend dans un cadre, déjà modifiable. Transition réglée à 0 s : pas de décompte, mais toujours un court arrêt « Va au poste suivant » à valider (02b).</p>
+  <p class="note" style="margin-top:20px"><b style="font-family:var(--f-mono)">02b</b> · Dock d'une transition à 0 s</p>
+  <div class="phone" style="margin-top:8px">
+    <div class="dock" style="border-top:0">
+      <div class="timer">
+        <div class="tx"><p>Va au poste suivant</p><p class="big" style="font-family:var(--f-display);font-style:italic;font-weight:700;font-size:28px;letter-spacing:0">B · Rowing barre</p></div>
+      </div>
+      <div class="row">
+        <button class="btn-exos">Exos<span class="tn">2/6 faits</span></button>
+        <button class="btn-line">J'y suis</button>
+      </div>
+      <div class="hi"><span></span></div>
+    </div>
+  </div>
+</figure>
+
+<!-- ═══ 03 — Séance · repos de fin de tour ═══ -->
+<figure>
+  <figcaption><b>03</b><span>Séance · repos de fin de tour</span></figcaption>
+  <div class="phone">
+    <div class="sb"><span>18:46</span><span>5G</span></div>
+    <div class="top"><button class="back">‹ Liste</button><span class="tn"><b>Pecs &amp; Dos</b> · 11/26</span><button class="end">Fin</button></div>
+    <div class="prog"><i style="width:42.3%"></i></div>
+    <div class="head">
+      <p class="kick"><span>Super set · <b>tour 3</b> sur 4</span><span class="ok">2 tours faits</span></p>
+      <h2 class="h2">Développé couché<br><span>+ Rowing barre</span></h2>
+    </div>
+    <div class="log">
+      <div class="lr sum"><span class="t tn">1</span><span class="tn">A 60 × 10 · B 50 × 10</span><span class="ck">fait</span></div>
+      <div class="lr sum"><span class="t tn">2</span><span class="tn">A 62,5 × 8 · B 52,5 × 10</span><span class="ck">fait</span></div>
+      <div class="prep">
+        <div class="who"><b>3 · A · Développé couché</b><span>avant : 62,5 × 8</span></div>
+        <div class="stp"><button aria-label="Charge moins 2,5 kg">−</button><span class="v tn"><u>62,5</u><small>kg</small></span><button aria-label="Charge plus 2,5 kg">+</button></div>
+        <div class="stp"><button aria-label="Reps moins 1">−</button><span class="v tn"><u>8</u><small>reps</small></span><button aria-label="Reps plus 1">+</button></div>
+      </div>
+      <div class="lr todo"><span class="t"></span><span class="let">B</span><span class="name">Rowing</span><span class="mono r tn">52,5</span><span class="mono r tn">10</span><span class="nx tn">1:30</span></div>
+      <div class="lr todo sum"><span class="t tn">4</span><span class="tn">A 62,5 × 8 · B 52,5 × 10</span><span></span></div>
+    </div>
+    <div class="dock" style="margin-top:14px">
+      <div class="timer">
+        <div class="tx"><p>Repos · fin du tour 2</p><p class="big tn">1:12</p><div class="bar"><i style="width:80%"></i></div></div>
+        <button>−15 s</button><button>+15 s</button>
+      </div>
+      <div class="row">
+        <button class="btn-exos">Exos<span class="tn">2/6 faits</span></button>
+        <button class="btn-line">Passer le repos</button>
+      </div>
+      <div class="hi"><span></span></div>
+    </div>
+  </div>
+  <p class="note">Après B, le repos de tour (1 min 30), réglable à ±15 s. Les tours finis se résument en <b>une ligne</b> pour que la série suivante reste au-dessus du pouce.</p>
+</figure>
+
+<!-- ═══ 04 — Liste ═══ -->
+<figure>
+  <figcaption><b>04</b><span>Liste · un super set, un tri-set</span></figcaption>
+  <div class="phone">
+    <div class="sb"><span>18:47</span><span>5G</span></div>
+    <div class="top"><span>Samedi 18 oct. · en cours</span><button class="end">Fin</button></div>
+    <div class="prog"><i style="width:42.3%"></i></div>
+    <div class="head" style="padding-bottom:18px">
+      <h1 class="h1">Pecs <em>&amp; Dos</em></h1>
+      <p class="rests tn">6 exercices · 2 groupes · environ 34 min restantes · 11/26 séries</p>
+    </div>
+    <div class="log">
+      <div class="item done"><span class="nm">Tractions</span><span class="ct tn">3/3</span><span class="sm">3 × 8 · poids du corps</span></div>
+      <div class="grp">
+        <div class="gh"><span class="mark">Super set · 4 tours · en cours</span><span class="ct tn">2/4</span></div>
+        <div class="gl">
+          <span class="let">A</span><span class="nm">Développé couché</span><span class="kg tn">62,5 kg</span>
+          <span class="let">B</span><span class="nm">Rowing barre</span><span class="kg tn">52,5 kg</span>
+        </div>
+      </div>
+      <div class="item"><span class="nm">Développé militaire</span><span class="ct tn mut">0/4</span><span class="sm">4 × 8 · 35 kg</span></div>
+      <div class="grp">
+        <div class="gh"><span class="mut">Tri-set · 3 tours</span><span class="ct tn mut">0/3</span></div>
+        <div class="gl">
+          <span class="let">A</span><span class="nm">Élévations latérales</span><span class="kg tn">10 kg</span>
+          <span class="let">B</span><span class="nm">Face pull</span><span class="kg tn">25 kg</span>
+          <span class="let">C</span><span class="nm">Curl marteau</span><span class="kg tn">14 kg</span>
+        </div>
+      </div>
+      <div class="item"><span class="nm">Dips</span><span class="ct tn mut">0/3</span><span class="sm">3 × 12 · poids du corps</span></div>
+    </div>
+    <div style="padding:18px 20px 20px"><button class="dashed">Grouper des exercices</button></div>
+    <div class="tabs"><button class="on">Séance</button><button>Historique</button><button>Réglages</button></div>
+    <div class="hi"><span></span></div>
+  </div>
+  <p class="note">Un groupe tient dans <b>une seule entrée</b>, avec un trait d'accolade à gauche. Le groupe en cours est surligné ; son compteur parle en tours. « Grouper des exercices » ouvre l'écran 05.</p>
+</figure>
+
+<!-- ═══ 05 — Grouper à la volée ═══ -->
+<figure>
+  <figcaption><b>05</b><span>Séance · grouper à la volée</span></figcaption>
+  <div class="phone">
+    <div class="sb"><span>18:48</span><span>5G</span></div>
+    <div class="dim" aria-hidden="true"><p class="h1">Pecs <em>&amp; Dos</em></p></div>
+    <div class="sheet">
+      <div class="grab"><span></span></div>
+      <div class="sh-h"><h3>Grouper</h3><button class="mut" style="height:40px">Fermer</button></div>
+      <p class="sh-p">Touche 2 à 4 exercices pas encore commencés, dans l'ordre voulu : le premier touché devient A.</p>
+      <ul class="pick">
+        <li><span class="box on">A</span><span class="nm">Développé militaire</span><small class="tn">4 × 8</small></li>
+        <li><span class="box on">B</span><span class="nm">Dips</span><small class="tn">3 × 12</small></li>
+        <li class="off"><span class="box"></span><span class="nm">Tri-set · Élévations…</span><small>déjà groupé</small></li>
+        <li class="off"><span class="box"></span><span class="nm">Rowing barre</span><small>commencé</small></li>
+      </ul>
+      <div style="padding-top:8px">
+        <div class="set"><p>Tours<span>le plus long des deux : 4</span></p><div class="ctr"><button>−</button><b class="tn">4</b><button>+</button></div></div>
+        <div class="set"><p>Transition<span>entre exercices</span></p><div class="ctr"><button>−</button><b class="tn">0:15</b><button>+</button></div></div>
+        <div class="set"><p>Repos de tour<span>après le dernier</span></p><div class="ctr"><button>−</button><b class="tn">1:30</b><button>+</button></div></div>
+      </div>
+      <div class="set" style="padding-top:12px"><p>Garder dans le programme<span>sinon, pour cette séance seulement</span></p><span class="box" style="width:30px;height:30px;border:1.5px solid var(--ink);border-radius:var(--r);flex-shrink:0" role="checkbox" aria-checked="false" aria-label="Garder dans le programme"></span></div>
+      <div style="padding:14px 16px 0"><button class="btn-go" style="width:100%">Grouper 2 exercices</button></div>
+      <div class="hi"><span></span></div>
+    </div>
+  </div>
+  <p class="note">Le geste en plus : depuis la liste, on touche les exercices dans l'ordre. Un exercice commencé ou déjà groupé n'est pas proposé. La case décide si le groupe reste dans le programme. Pour défaire, un appui long sur l'entrée du groupe, puis « Dégrouper ».</p>
+</figure>
+
+<!-- ═══ 06 — Éditeur de programme mobile ═══ -->
+<figure>
+  <figcaption><b>06</b><span>Réglages · éditeur de programme</span></figcaption>
+  <div class="phone">
+    <div class="sb"><span>21:10</span><span>Wi-Fi</span></div>
+    <div class="top"><button class="back">Annuler</button><b>Pecs &amp; Dos</b><button class="end" style="background:var(--ink);color:var(--paper)">Enregistrer</button></div>
+    <div class="ed">
+      <div class="card">
+        <div class="ch"><span class="nm">Tractions</span><button class="mv">↑</button><button class="mv">↓</button></div>
+        <p class="sm tn">3 séries · 8 reps · poids du corps · repos 2:00</p>
+      </div>
+      <div class="link"><button>Lier au suivant</button></div>
+      <div class="gcard">
+        <div class="gt"><p>Super set</p><div style="display:flex;gap:8px"><button class="mv">↑</button><button class="mv">↓</button></div></div>
+        <div class="gs">
+          <p>Tours<b class="tn">4</b></p>
+          <p>Transition<b class="tn">0:15</b></p>
+          <p>Repos de tour<b class="tn">1:30</b></p>
+        </div>
+        <div class="ge"><span class="let">A</span><div><p class="nm" style="margin:0">Développé couché</p><p class="sm tn" style="margin:2px 0 0">10 reps · 60 kg</p></div><button class="mv" aria-label="Descendre dans le groupe">↓</button></div>
+        <div class="ge"><span class="let">B</span><div><p class="nm" style="margin:0">Rowing barre</p><p class="sm tn" style="margin:2px 0 0">10 reps · 50 kg</p></div><button class="mv" aria-label="Monter dans le groupe">↑</button></div>
+        <div class="gf"><button>Lier le suivant</button><button>Dégrouper</button></div>
+      </div>
+      <div class="link"><button>Lier au suivant</button></div>
+      <div class="card">
+        <div class="ch"><span class="nm">Développé militaire</span><button class="mv">↑</button><button class="mv">↓</button></div>
+        <p class="sm tn">4 séries · 8 reps · 35 kg · repos 1:45</p>
+      </div>
+    </div>
+  </div>
+  <p class="note">Entre deux exercices, <b>Lier au suivant</b> crée le groupe ; on l'étend jusqu'à 4. Dans un groupe, séries et repos de chaque exercice laissent la place aux <b>tours</b>, à la <b>transition</b> et au <b>repos de tour</b>. Le groupe monte et descend d'un bloc.</p>
+</figure>
+
+</div>
+
+<!-- ═══ 07 — Back-office coach ═══ -->
+<div class="board" style="grid-template-columns:minmax(0,1fr)">
+<figure>
+  <div class="bo-cap"><b style="font-family:var(--f-mono)">07</b><span>Back-office coach · glisser-déposer</span><button id="bo-toggle">Taille réelle</button></div>
+  <div class="bo-wrap" id="bo-wrap">
+    <div class="bo" id="bo">
+      <div class="bo-top"><span class="brand">Micky <span class="mut" style="font-style:normal;font-weight:400;font-size:14px;font-family:var(--f-sans)">coach</span></span><span class="mut" style="font-size:14px">Clients · <b style="color:var(--ink);font-weight:500">Lionel S.</b> · Programmes</span></div>
+      <div class="bo-cols">
+        <aside>
+          <p class="mut" style="margin:0;font-size:13px">Catalogue</p>
+          <div class="search">Rechercher un exercice</div>
+          <div class="filters"><span class="on">Épaules</span><span>Dos</span><span>Bras</span><span>Pecs</span></div>
+          <ul class="cat">
+            <li>Élévations latérales</li><li class="gone">Face pull</li><li>Oiseau haltères</li><li>Développé Arnold</li><li>Shrug barre</li>
+          </ul>
+        </aside>
+        <main>
+          <div class="ttl"><h2>Pecs <em>&amp; Dos</em></h2><button class="save">Enregistrer</button></div>
+          <p class="help">Glisse depuis le catalogue. Dépose <b>entre</b> deux exercices pour insérer, <b>sur</b> un exercice pour former un super set.</p>
+          <div class="plist">
+            <div class="pr"><span class="h">⋮⋮</span><span class="nm">Tractions</span><span class="sm tn">3 × 8 · poids du corps · repos 2:00</span></div>
+            <div class="bg">
+              <div class="bh"><span class="h">⋮⋮</span><span class="nm">Super set</span>Tours <b class="tn">4</b> Transition <b class="tn">0:15</b> Repos de tour <b class="tn">1:30</b><button>Dégrouper</button></div>
+              <div class="be"><span class="let">A</span><span class="nm">Développé couché</span><span class="sm tn">10 reps · 60 kg</span></div>
+              <div class="be"><span class="let">B</span><span class="nm">Rowing barre</span><span class="sm tn">10 reps · 50 kg</span></div>
+            </div>
+            <div class="pr"><span class="h">⋮⋮</span><span class="nm">Développé militaire</span><span class="sm tn">4 × 8 · 35 kg · repos 1:45</span></div>
+            <div class="pr drop"><span class="h">⋮⋮</span><span class="nm">Élévations latérales</span><span class="tip">Déposer : super set avec Élévations latérales</span><div class="ghost">Face pull</div></div>
+            <div class="pr" style="margin-top:24px"><span class="h">⋮⋮</span><span class="nm">Dips</span><span class="sm tn">3 × 12 · poids du corps · repos 1:30</span></div>
+          </div>
+        </main>
+      </div>
+    </div>
+  </div>
+  <p class="note">Même logique au PC : déposer un exercice <b>sur</b> un autre forme le groupe (ou l'agrandit jusqu'à 4) ; le déposer <b>entre</b> deux l'insère comme aujourd'hui. Les réglages du groupe tiennent sur sa ligne de titre.</p>
+</figure>
+</div>
+
+<section class="choices">
+  <div>
+    <h2>Décisions de Lionel, 18 oct.</h2>
+    <ul>
+      <li><b>Grouper en séance</b> : on demande à chaque fois, case « Garder dans le programme » dans le tiroir (05).</li>
+      <li><b>Seuls les exercices pas encore commencés</b> se groupent en séance.</li>
+      <li><b>Tours par défaut</b> : le plus grand nombre de séries parmi les exercices groupés.</li>
+      <li><b>Transition à 0 s</b> : toujours un court arrêt « Va au poste suivant » à valider (02b).</li>
+    </ul>
+  </div>
+</section>
+
+<script>
+  (function () {
+    var wrap = document.getElementById('bo-wrap');
+    var bo = document.getElementById('bo');
+    var toggle = document.getElementById('bo-toggle');
+    function fit() {
+      if (wrap.classList.contains('real')) { wrap.style.height = ''; return; }
+      var s = Math.min(1, wrap.clientWidth / 1200);
+      bo.style.transform = 'scale(' + s + ')';
+      wrap.style.height = Math.ceil(bo.offsetHeight * s) + 'px';
+    }
+    toggle.addEventListener('click', function () {
+      wrap.classList.toggle('real');
+      toggle.textContent = wrap.classList.contains('real') ? 'Réduire' : 'Taille réelle';
+      fit();
+    });
+    window.addEventListener('resize', fit);
+    window.addEventListener('load', fit);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(fit);
+    fit();
+  })();
+</script>
+</body>
+</html>
