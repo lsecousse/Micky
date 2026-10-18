@@ -24,6 +24,13 @@ describe('browser lib scripts', () => {
     expect(typeof context.escapeHtml).toBe('function');
   });
 
+  it('estimate a programme duration in backoffice.html shared global scope', () => {
+    const context   = loadInSharedScope(libScriptsOf('backoffice.html'));
+    const programme = { exercises: [{ name: 'Curl', activities: [{ type: 'weight', rest: 60 }], sets: 4 }] };
+
+    expect(context.computeEstimatedDuration(programme, new Map())).toBe(420);
+  });
+
   it('load together in index.html shared global scope', () => {
     const context = loadInSharedScope(libScriptsOf('index.html'));
 
