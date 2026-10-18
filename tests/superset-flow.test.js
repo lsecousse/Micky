@@ -182,7 +182,9 @@ describe('nextLiveStep', () => {
   it('rests the round rest from B1 to A2', () => {
     const exercises = withDone(pair(), [[0, 0], [1, 0]]);
 
-    expect(nextLiveStep(exercises, step(1, 0))).toEqual({ next: step(0, 1), pause: { kind: 'roundRest', seconds: 90 } });
+    expect(nextLiveStep(exercises, step(1, 0))).toEqual({
+      next: step(0, 1), pause: { kind: 'roundRest', seconds: 90 },
+    });
   });
 
   it('returns no next step after the last B', () => {
@@ -193,9 +195,12 @@ describe('nextLiveStep', () => {
 
   it('rests the activity rest between two activities of the same member series', () => {
     const activities = [{ type: 'weight', rest: 30 }, { type: 'weight', rest: 60 }];
-    const exercises  = withDone([liveEx('A', 2, { activities, group: g1() }), liveEx('B', 2, { group: g1() })], [[0, 0, 0]]);
+    const members    = [liveEx('A', 2, { activities, group: g1() }), liveEx('B', 2, { group: g1() })];
+    const exercises  = withDone(members, [[0, 0, 0]]);
 
-    expect(nextLiveStep(exercises, step(0, 0, 0))).toEqual({ next: step(0, 0, 1), pause: { kind: 'rest', seconds: 30 } });
+    expect(nextLiveStep(exercises, step(0, 0, 0))).toEqual({
+      next: step(0, 0, 1), pause: { kind: 'rest', seconds: 30 },
+    });
   });
 });
 
@@ -245,7 +250,9 @@ describe('review fixes', () => {
   it('nextLiveStep rests the round rest from B2 to A3 when B is shorter', () => {
     const exercises = withDone(pair(3, 2), [[0, 0], [1, 0], [0, 1], [1, 1]]);
 
-    expect(nextLiveStep(exercises, step(1, 1))).toEqual({ next: step(0, 2), pause: { kind: 'roundRest', seconds: 90 } });
+    expect(nextLiveStep(exercises, step(1, 1))).toEqual({
+      next: step(0, 2), pause: { kind: 'roundRest', seconds: 90 },
+    });
   });
 
   it('supersetProgress returns null for a single exercise', () => {

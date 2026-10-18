@@ -18,6 +18,13 @@ function weightEx(name, n, extra = {}) {
 
 const group = (id, settings = {}) => ({ id, rounds: 3, transition: 15, roundRest: 90, ...settings });
 
+// Two groups: g1 = [A, B] (3 rounds), single C, g2 = [D, E] (3 rounds).
+const grouped = () => [
+  weightEx('A', 3, { group: group('g1') }), weightEx('B', 3, { group: group('g1') }),
+  weightEx('C', 2),
+  weightEx('D', 3, { group: group('g2') }), weightEx('E', 3, { group: group('g2') }),
+];
+
 describe('exerciseBlocks', () => {
   it('returns one single block per exercise when nothing is grouped', () => {
     const exercises = [weightEx('A', 3), weightEx('B', 3)];
@@ -27,15 +34,21 @@ describe('exerciseBlocks', () => {
     expect(blocks).toEqual([{ kind: 'single', indices: [0] }, { kind: 'single', indices: [1] }]);
   });
 
-  it('merges contiguous members of the same id into a group block with the first member settings', () => {
-    const exercises = [
-      weightEx('A', 3), weightEx('B', 3, { group: group('g1', { transition: 20 }) }),
-      weightEx('C', 3, { group: group('g1', { transition: 99 }) }),
-    ];
+  const twoSettings = () => [
+    weightEx('A', 3), weightEx('B', 3, { group: group('g1', { transition: 20 }) }),
+    weightEx('C', 3, { group: group('g1', { transition: 99 }) }),
+  ];
 
-    const blocks = exerciseBlocks(exercises);
+  it('merges contiguous members of the same id into one group block', () => {
+    const blocks = exerciseBlocks(twoSettings());
 
-    expect(blocks[1]).toEqual({ kind: 'group', id: 'g1', indices: [1, 2], rounds: 3, transition: 20, roundRest: 90 });
+    expect(blocks[1]).toMatchObject({ kind: 'group', id: 'g1', indices: [1, 2] });
+  });
+
+  it('reads the group block settings on its first member', () => {
+    const blocks = exerciseBlocks(twoSettings());
+
+    expect(blocks[1]).toMatchObject({ rounds: 3, transition: 20, roundRest: 90 });
   });
 
   it('reads an isolated member as a single exercise', () => {
@@ -133,7 +146,7 @@ describe('groupExercises', () => {
   });
 
   it('takes the smallest free gN id', () => {
-    const exercises = [weightEx('A', 3, { group: group('g1') }), weightEx('B', 3, { group: group('g1') }), weightEx('C', 3), weightEx('D', 3)];
+    const exercises = [...grouped().slice(0, 3), weightEx('D', 3)];
 
     const result = groupExercises(exercises, [2, 3]);
 
@@ -174,18 +187,11 @@ describe('groupExercises', () => {
   });
 
   it('refuses an exercise already grouped', () => {
-    const exercises = [weightEx('A', 3, { group: group('g1') }), weightEx('B', 3, { group: group('g1') }), weightEx('C', 3)];
+    const exercises = grouped().slice(0, 3);
 
     expect(() => groupExercises(exercises, [1, 2])).toThrow(/déjà/);
   });
 });
-
-// Two groups: g1 = [A, B] (3 rounds), single C, g2 = [D, E] (3 rounds).
-const grouped = () => [
-  weightEx('A', 3, { group: group('g1') }), weightEx('B', 3, { group: group('g1') }),
-  weightEx('C', 2),
-  weightEx('D', 3, { group: group('g2') }), weightEx('E', 3, { group: group('g2') }),
-];
 
 describe('ungroupSuperset', () => {
   it('removes group from the members of that id only', () => {
@@ -347,10 +353,11 @@ describe('moveExerciseBlock', () => {
 
   it('does not mutate the input array', () => {
     const exercises = grouped();
+    const snapshot  = JSON.stringify(exercises);
 
     moveExerciseBlock(exercises, 2, 1);
 
-    expect(names(exercises)).toEqual(['A', 'B', 'C', 'D', 'E']);
+    expect(JSON.stringify(exercises)).toBe(snapshot);
   });
 });
 
@@ -369,10 +376,11 @@ describe('moveWithinSuperset', () => {
 
   it('does not mutate the input array', () => {
     const exercises = grouped();
+    const snapshot  = JSON.stringify(exercises);
 
     moveWithinSuperset(exercises, 1, -1);
 
-    expect(names(exercises)).toEqual(['A', 'B', 'C', 'D', 'E']);
+    expect(JSON.stringify(exercises)).toBe(snapshot);
   });
 });
 
@@ -520,7 +528,7 @@ describe('review fixes', () => {
   });
 
   it('dropExerciseOnto does nothing when a member is dropped onto a member of its group of three', () => {
-    const exercises = [...tuned().slice(0, 2), weightEx('X', 3, { group: group('g1', { transition: 40, roundRest: 120 }) })];
+    const exercises = [...tuned().slice(0, 2), weightEx('X', 3, { group: tuned()[0].group })];
 
     expect(dropExerciseOnto(exercises, 0, 2)).toEqual(exercises);
   });

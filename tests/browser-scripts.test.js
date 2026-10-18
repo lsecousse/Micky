@@ -4,6 +4,8 @@ import vm from 'node:vm';
 
 // Classic <script> tags share one global scope: a top-level const declared
 // twice across lib files makes the browser reject the second script.
+// A function declared twice is silently overwritten instead (not detected
+// here), hence the specific public names of the super set scripts.
 function libScriptsOf(page) {
   const html = readFileSync(page, 'utf8');
   return [...html.matchAll(/<script src="(lib\/[^"]+)"><\/script>/g)].map(m => m[1]);
@@ -14,6 +16,17 @@ function loadInSharedScope(scripts) {
   context.window = context;
   scripts.forEach(src => vm.runInContext(readFileSync(src, 'utf8'), context, { filename: src }));
   return context;
+}
+
+// Phase 2 loads the super set scripts after the existing lib scripts.
+const SUPERSET_SCRIPTS = ['lib/supersets.js', 'lib/superset-flow.js'];
+
+// Super set g1 = [A, B], 2 rounds, nothing done.
+function groupOfTwo() {
+  const group  = { id: 'g1', rounds: 2, transition: 15, roundRest: 90 };
+  const series = () => [0, 1].map(() => ({ activityStates: {}, values: [{ reps: 10, weight: 40 }] }));
+  const ex     = name => ({ name, activities: [{ type: 'weight', rest: 60 }], sets: 2, series: series(), group });
+  return [ex('A'), ex('B')];
 }
 
 describe('browser lib scripts', () => {
@@ -44,14 +57,6 @@ describe('browser lib scripts', () => {
     expect(typeof context.createLocalWriteTracker).toBe('function');
   });
 
-  // Phase 2 loads the super set scripts after the existing lib scripts.
-  const SUPERSET_SCRIPTS = ['lib/supersets.js', 'lib/superset-flow.js'];
-  const groupOfTwo = () => {
-    const group = { id: 'g1', rounds: 2, transition: 15, roundRest: 90 };
-    const ex    = name => ({ name, activities: [{ type: 'weight', rest: 60 }], sets: 2, group });
-    return [ex('A'), ex('B')];
-  };
-
   it('load super set scripts with index.html lib scripts in one shared global scope', () => {
     const context = loadInSharedScope([...libScriptsOf('index.html'), ...SUPERSET_SCRIPTS]);
 
@@ -67,8 +72,7 @@ describe('browser lib scripts', () => {
 
   it('walk a super set with the browser globals', () => {
     const context   = loadInSharedScope([...libScriptsOf('index.html'), ...SUPERSET_SCRIPTS]);
-    const exercises = context.groupExercises([{ name: 'A', activities: [{ type: 'weight' }], sets: 2 },
-      { name: 'B', activities: [{ type: 'weight' }], sets: 2 }], [0, 1]);
+    const exercises = groupOfTwo();
     exercises[0].series[0].activityStates[0] = 'done';
 
     expect(context.nextUndoneInBlock(exercises, 0)).toEqual({ exIdx: 1, sIdx: 0, actIdx: 0 });
