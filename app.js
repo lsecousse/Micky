@@ -1674,6 +1674,7 @@ function supersetHeadHtml(block, model, withSettings) {
   const names = block.indices.map(i => escapeHtml(liveSession.exercises[i].name));
   const done = model.roundsDone;
   const plural = done > 1 ? 's' : '';
+  const doneCount = done ? `<span class="shrink-0 num-stat font-semibold text-done">${done} tour${plural} fait${plural}</span>` : '';
   const settings = withSettings
     ? `<p class="text-[13px] text-mut mt-2.5">Transition <b class="font-medium text-ink num-stat">${supersetSettingText(block.transition ?? 0)}</b> · repos de tour <b class="font-medium text-ink num-stat">${supersetSettingText(block.roundRest ?? 0)}</b></p>`
     : '';
@@ -1681,7 +1682,7 @@ function supersetHeadHtml(block, model, withSettings) {
     <header class="px-5 pt-5 pb-3.5">
       <p class="flex justify-between gap-3 text-[13px] text-mut">
         <span class="min-w-0">${supersetKindLabel(block.indices.length)} · <b class="font-semibold text-ink num-stat">tour ${model.round}</b> sur ${model.rounds}</span>
-        <span class="shrink-0 num-stat ${done ? 'font-semibold text-done' : ''}">${done} tour${plural} fait${plural}</span>
+        ${doneCount}
       </p>
       <h2 class="font-display italic font-medium text-[31px] leading-[1.05] tracking-[-0.01em] text-ink mt-1.5">${names[0]}${names.slice(1).map(n => `<br><span class="text-mut">+ ${n}</span>`).join('')}</h2>
       ${settings}
@@ -2005,12 +2006,13 @@ function startSupersetPause(done, next, pause) {
   liveRest = { ...state, stop: livePauseView(state) === 'transitionStop' };
   liveFocus = null;
   renderSeanceScreen();
-  if (liveRest.stop) return;
+  if (liveRest.stop) { stopCountdown(); return; }
   // A transition always ends on a stop to confirm, never on an automatic focus
   const onFinish = pause.kind === 'roundRest'
     ? () => focusLiveStep(next)
     : () => { liveRest = { ...state, stop: true }; liveFocus = null; renderSeanceScreen(); };
-  startCountdown(pause.seconds, labelOfActivity(next), onFinish);
+  // Quiet on a transition: the toast would cover the exercise name of screen 02b
+  startCountdown(pause.seconds, labelOfActivity(next), onFinish, pause.kind === 'transition');
 }
 
 function labelOfActivity({ exIdx, sIdx, actIdx }) {
@@ -2644,6 +2646,7 @@ let countdownTimer    = null;
 let countdownSecs     = 0;
 let countdownTotal    = 0;
 let countdownOnFinish = null;
+let countdownQuiet = false;
 // Keep in sync with stroke-dasharray on .ring-progress in style.css
 const RING_CIRCUMFERENCE = 2 * Math.PI * 42; // ≈ 264 (ring compact, r=42)
 
@@ -2665,7 +2668,7 @@ function updateCountdownUI() {
   bar.classList.toggle('urgent', countdownSecs <= 5);
 }
 
-function startCountdown(seconds, nextLabel, onFinish) {
+function startCountdown(seconds, nextLabel, onFinish, quiet = false) {
   stopCountdown();
   if (!seconds || seconds <= 0) {
     if (onFinish) onFinish();
@@ -2674,6 +2677,7 @@ function startCountdown(seconds, nextLabel, onFinish) {
   countdownSecs     = seconds;
   countdownTotal    = seconds;
   countdownOnFinish = onFinish;
+  countdownQuiet    = quiet;
 
   // Sync countdown to watch
   if (liveSession) {
@@ -2697,7 +2701,7 @@ function startCountdown(seconds, nextLabel, onFinish) {
       if (countdownSecs <= 5) {
         beep(660, 80, 0.2);
         if (navigator.vibrate) navigator.vibrate(80);
-        if (countdownSecs === 5) showToast('Prenez place !');
+        if (countdownSecs === 5 && !countdownQuiet) showToast('Prenez place !');
       }
       updateCountdownUI();
     }
@@ -2730,8 +2734,9 @@ function showToast(msg) {
 
 function finishCountdown() {
   const fn = countdownOnFinish;
+  const quiet = countdownQuiet;
   stopCountdown();
-  showToast(randomFrom(goMessages()));
+  if (!quiet) showToast(randomFrom(goMessages()));
   if (fn) fn();
 }
 
@@ -2739,6 +2744,7 @@ function stopCountdown() {
   clearInterval(countdownTimer);
   countdownTimer    = null;
   countdownOnFinish = null;
+  countdownQuiet    = false;
   const bar = document.getElementById('countdown-bar');
   bar.classList.add('hidden');
   bar.classList.remove('urgent');

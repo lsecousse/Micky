@@ -240,6 +240,13 @@ describe('supersetNextHintShould', () => {
     expect(supersetNextHint(pair(1), { exIdx: 1, sIdx: 0, actIdx: 0 })).toBe('puis repos de tour 1:30');
   });
 
+  it('announce the next round when the round rest is 0 s', () => {
+    const exs = pair(1);
+    exs.forEach(e => { if (e.group) e.group.roundRest = 0; });
+
+    expect(supersetNextHint(exs, { exIdx: 1, sIdx: 0, actIdx: 0 })).toBe('puis tour 2 · A · Développé couché');
+  });
+
   it('announce the list after the last step', () => {
     expect(supersetNextHint(pair(7), { exIdx: 1, sIdx: 3, actIdx: 0 })).toBe('puis retour à la liste');
   });
