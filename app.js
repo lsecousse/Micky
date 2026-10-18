@@ -903,16 +903,6 @@ document.getElementById('live-edit-modal-ok').addEventListener('click', () => {
   if (liveEditModalCtx?.onOk) liveEditModalCtx.onOk();
 });
 
-// Split programme title sur premier séparateur " / ", " & " ou " - " pour mise en
-// page éditoriale (signature Direction A : line1 paper + line2 paper/40 avec sep acid)
-function splitProgrammeTitle(raw) {
-  const s = (raw || '').trim();
-  const m = s.match(/^(.+?)\s+([\/&\-])\s+(.+)$/);
-  if (!m) return { line1: s, sep: null, rest: '' };
-  const sepDisplay = m[2] === '-' ? '—' : (m[2] === '&' ? '&amp;' : m[2]);
-  return { line1: m[1], sep: sepDisplay, rest: m[3] };
-}
-
 function renderLiveSession(tab) {
   const inDetail = liveFocus && liveSession.category !== 'cardio';
   const isCardio = liveSession.category === 'cardio';
