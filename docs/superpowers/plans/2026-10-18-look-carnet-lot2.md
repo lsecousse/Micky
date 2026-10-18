@@ -25,7 +25,7 @@
 
 - Une séance sans exercice ou un cardio (volume 0 kg) dans l'historique : pas de « 0 kg » trompeur ni de ligne vide cassée.
 - Détail d'une séance en cours (« Reprendre ») vs terminée : boutons au bon endroit, « Supprimer » en `alert` texte, jamais en aplat.
-- Graphique avec un seul point ou 5 exercices : couleurs distinguables en Carnet (ink, done, mut, alert…), légende lisible.
+- Graphique avec un seul point ou 5 exercices : couleurs distinguables en Carnet (ink, done, mut, plein puis pointillé), légende lisible.
 - Retour IA long dans le détail : texte qui passe à la ligne, pas de débordement à 390 px.
 - Titre de programme avec « & » : affiché une seule fois échappé (corrigé au lot 1, ne pas régresser).
 
@@ -45,6 +45,6 @@
 **Files:** `app.js` (`renderStats`, `statsSection`, `exoMetrics`, `buildStatsProgression`, `drawCorpsChart` NON — lot 3), `index.html` (bloc `STATS`), `tests/carnet-tokens.test.js`, `dist/output.css`.
 
 - [ ] Tests : `renderStats`, `statsSection`, `exoMetrics`, `buildStatsProgression` ajoutés à `MIGRATED_FUNCTIONS`, bloc `STATS` à `MIGRATED_HTML_BLOCKS`. Nouveau helper `carnetColor(name)` (lit `getComputedStyle(document.documentElement).getPropertyValue('--' + name).trim()`) ajouté à `MIGRATED_FUNCTIONS`. Test `it('chart colours come from Carnet CSS variables')` : `functionSource('app.js','buildStatsProgression')` ne contient aucun `#[0-9a-fA-F]{3,6}\b` ni `'DM Sans'`, et la constante `CHART_COLORS` (hex Direction A, `app.js` ligne ~4379) n'existe plus dans `app.js`. `backgroundColor: color + '22'` reste valable car les variables Carnet sont des hex à 6 chiffres. RED constaté.
-- [ ] Repeindre : pastilles programme (actif = fond `ink` texte `paper`, autres contour `rule`), bascule de métrique en onglets façon `.tabs`, cartes exercice en `.item` avec delta `done`/`alert`/`mut`, graphique : séries dans l'ordre `ink`, `done`, `mut`, `alert` (uniquement des tokens) ; au-delà de 4 séries, `ink` en pointillé (`borderDash`) puis `done` en pointillé. Axes et grille `rule`, libellés `mut` IBM Plex Mono 12 px, infobulle fond `ink` texte `paper`.
+- [ ] Repeindre : pastilles programme (actif = fond `ink` texte `paper`, autres contour `rule`), bascule de métrique en onglets façon `.tabs`, cartes exercice en `.item` avec delta `done`/`alert`/`mut`, graphique : séries dans l'ordre `ink`, `done`, `mut` en trait plein, puis les mêmes en pointillé (`borderDash`) ; jamais `alert` (réservé aux événements, correction de revue). Axes et grille `rule`, libellés `mut` IBM Plex Mono 12 px, infobulle fond `ink` texte `paper`.
 - [ ] `npm run css`, `npx vitest run` → PASS ; capture `stats` regardée.
 - [ ] Commit `feat(carnet): stats et graphiques`.
