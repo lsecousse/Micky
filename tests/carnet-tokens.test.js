@@ -13,8 +13,11 @@ const A_ONLY_TOKENS = 'inkAlt|muted|border|todo|cyan|acid|racing|blood';
 const A_HEX = ['#0A0A0A', '#141414', '#F5F4F0', '#888888', '#2A2A2A', '#444444', '#06B6D4', '#84CC16', '#FACC15', '#DC2626'];
 
 // Lists consumed by later tasks: each migrated unit must be free of Direction A leftovers.
-const MIGRATED_FUNCTIONS = ['showConfirm', 'showAlert', 'showToast'];
-const MIGRATED_HTML_BLOCKS = ['DIALOG CUSTOM', 'TOAST', 'COUNTDOWN STICKY TOP BAR'];
+const MIGRATED_FUNCTIONS = [
+  'showConfirm', 'showAlert', 'showToast',
+  'renderHome', 'renderHomeSection', 'buildUserDropdown', 'renderSeanceScreen', 'renderProgrammeSelection',
+];
+const MIGRATED_HTML_BLOCKS = ['DIALOG CUSTOM', 'TOAST', 'COUNTDOWN STICKY TOP BAR', 'HOME', 'À LA SALLE'];
 const MIGRATED_CSS_SELECTORS = ['#toast', '.dialog', '#countdown'];
 
 // Source of a top-level function, up to its closing brace at column 0.

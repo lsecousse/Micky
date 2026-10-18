@@ -30,27 +30,27 @@
   <div id="app">
 
     <!-- HOME -->
-    <div id="screen-home" class="screen active bg-a-ink text-a-paper font-sans">
-      <header class="relative flex items-center gap-3 px-5 pt-5 pb-4 border-b border-a-border shrink-0">
+    <div id="screen-home" class="screen active bg-paper text-ink font-sans">
+      <header class="relative flex items-center gap-3 px-5 pt-5 pb-4 border-0 border-solid border-b-[1.5px] border-ink shrink-0">
         <img src="icons/icon-192.png" class="w-10 h-10 object-contain shrink-0" alt="Mike Coach" />
         <div class="flex-1 min-w-0">
-          <h1 class="font-display text-[22px] font-black italic leading-none tracking-tight text-a-paper">Mike Coach.</h1>
-          <p class="app-version font-sans text-[9px] uppercase tracking-eyebrow text-a-muted mt-1.5"></p>
+          <h1 class="font-display text-[22px] font-bold italic leading-none tracking-tight text-ink">Mike Coach.</h1>
+          <p class="app-version font-mono text-[12px] text-mut mt-1.5"></p>
         </div>
-        <button id="user-menu-btn" class="w-10 h-10 rounded-full border border-a-border flex items-center justify-center text-a-muted active:text-a-racing active:border-a-racing transition" aria-label="Menu utilisateur">
+        <button id="user-menu-btn" class="w-10 h-10 rounded-full border-[1.5px] border-solid border-ink flex items-center justify-center text-ink active:bg-sheet transition" aria-label="Menu utilisateur">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
         </button>
-        <div id="user-dropdown" class="hidden absolute right-5 top-[calc(100%-4px)] min-w-52 bg-a-inkAlt border border-a-border rounded shadow-[0_18px_40px_rgba(0,0,0,0.6)] z-50 overflow-hidden"></div>
+        <div id="user-dropdown" class="hidden absolute right-5 top-[calc(100%-4px)] min-w-52 bg-sheet border-[1.5px] border-solid border-ink rounded shadow-[0_12px_28px_rgba(27,28,31,0.14)] z-50 overflow-hidden"></div>
       </header>
 
-      <main id="home-main" class="flex-1 min-h-0 overflow-y-auto px-5 py-8 space-y-10"></main>
+      <main id="home-main" class="flex-1 min-h-0 overflow-y-auto pt-8 pb-10 space-y-10"></main>
 
-      <footer class="grid grid-cols-2 border-t border-a-border bg-a-ink/95 backdrop-blur-sm shrink-0">
-        <button id="go-corps" class="py-4 px-4 text-center border-r border-a-border active:bg-a-inkAlt transition">
-          <span class="font-sans text-[12px] font-medium uppercase tracking-[0.16em] text-a-paper leading-tight">Données corporelles</span>
+      <footer class="grid grid-cols-2 border-0 border-solid border-t-[1.5px] border-ink bg-paper shrink-0">
+        <button id="go-corps" class="h-[54px] px-4 text-center border-0 border-solid border-r border-rule active:bg-sheet transition">
+          <span class="font-display italic text-[16px] text-ink leading-tight">Données corporelles</span>
         </button>
-        <button id="go-alim" class="py-4 px-4 text-center active:bg-a-inkAlt transition">
-          <span class="font-sans text-[12px] font-medium uppercase tracking-[0.16em] text-a-paper leading-tight">Alimentation</span>
+        <button id="go-alim" class="h-[54px] px-4 text-center active:bg-sheet transition">
+          <span class="font-display italic text-[16px] text-ink leading-tight">Alimentation</span>
         </button>
       </footer>
     </div>
@@ -92,12 +92,12 @@
     </div>
 
     <!-- À LA SALLE -->
-    <div id="screen-seance" class="screen bg-a-ink text-a-paper font-sans">
-      <header class="relative flex items-center gap-3 px-5 pt-5 pb-4 border-b border-a-border shrink-0">
-        <button id="back-seance" class="w-10 h-10 -ml-2 flex items-center justify-center text-a-paper active:text-a-muted transition" aria-label="Retour">
+    <div id="screen-seance" class="screen bg-paper text-ink font-sans">
+      <header class="relative flex items-center gap-3 px-5 pt-5 pb-4 border-0 border-solid border-b-[1.5px] border-ink shrink-0">
+        <button id="back-seance" class="w-10 h-10 -ml-2 flex items-center justify-center text-ink active:text-mut transition" aria-label="Retour">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
         </button>
-        <span class="font-display text-[18px] font-semibold tracking-tight text-a-paper">À la salle</span>
+        <span class="font-display italic text-[20px] font-bold tracking-tight text-ink">À la salle</span>
       </header>
       <div class="flex-1 min-h-0 overflow-y-auto" id="screen-seance-body"></div>
     </div>

@@ -234,11 +234,9 @@ async function renderHome() {
   const prenom = currentProfile?.prenom;
   if (prenom) {
     const greeting = document.createElement('div');
-    greeting.className = 'space-y-1';
+    greeting.className = 'px-5';
     greeting.innerHTML = `
-      <p class="font-sans text-[10px] uppercase tracking-eyebrow text-a-muted">Bonjour</p>
-      <p class="font-display text-3xl font-semibold leading-tight text-a-paper">${escapeHtml(prenom)}.</p>
-      <span class="block w-10 h-px bg-a-acid mt-2"></span>
+      <h1 class="font-display font-medium text-[52px] leading-[0.95] tracking-[-0.02em] text-ink break-words">Bonjour <em class="text-mut">${escapeHtml(prenom)}.</em></h1>
     `;
     main.appendChild(greeting);
   }
@@ -247,10 +245,10 @@ async function renderHome() {
 
   if (!programmes.length) {
     const msg = document.createElement('div');
-    msg.className = 'text-center py-16 space-y-2';
+    msg.className = 'px-5 text-center py-16 space-y-2';
     msg.innerHTML = `
-      <p class="font-display text-xl text-a-paper">Aucun programme.</p>
-      <p class="font-sans text-[13px] text-a-muted">Crées-en un dans Programmes.</p>
+      <p class="font-display italic text-[20px] font-bold text-ink">Aucun programme.</p>
+      <p class="font-sans text-[13px] text-mut">Crées-en un dans Programmes.</p>
     `;
     main.appendChild(msg);
     return;
@@ -260,28 +258,28 @@ async function renderHome() {
   const fonteProgrammes  = programmes.filter(p => (p.category || 'fonte') === 'fonte');
   const cardioProgrammes = programmes.filter(p => p.category === 'cardio');
 
-  if (fonteProgrammes.length)  await renderHomeSection(main, 'fonte',  fonteProgrammes,  liveCat === 'fonte');
-  if (cardioProgrammes.length) await renderHomeSection(main, 'cardio', cardioProgrammes, liveCat === 'cardio');
+  // Exactly one highlighter on screen: the live session, else the first section's next programme
+  const markedCat = liveCat || (fonteProgrammes.length ? 'fonte' : 'cardio');
+
+  if (fonteProgrammes.length)  await renderHomeSection(main, 'fonte',  fonteProgrammes,  liveCat === 'fonte',  markedCat === 'fonte');
+  if (cardioProgrammes.length) await renderHomeSection(main, 'cardio', cardioProgrammes, liveCat === 'cardio', markedCat === 'cardio');
 }
 
-async function renderHomeSection(main, category, programmes, isLive) {
+async function renderHomeSection(main, category, programmes, isLive, isMarked) {
   const labelMap = { fonte: 'Fonte', cardio: 'Cardio' };
   const section = document.createElement('section');
-  section.className = 'space-y-4';
+  const nameClass = isMarked ? 'mark' : '';
 
   if (isLive) {
     section.innerHTML = `
-      <p class="font-sans text-[10px] uppercase tracking-eyebrow text-a-racing flex items-center gap-3 font-semibold">
-        <span>${labelMap[category]} · Séance en cours</span>
-        <span class="flex-1 h-px bg-a-border"></span>
-      </p>
-      <div class="flex items-center gap-3 bg-a-inkAlt border-l-[3px] border-l-a-racing border-y border-r border-a-border p-5">
-        <button data-role="resume-delete" class="w-11 h-11 flex items-center justify-center text-[18px] text-a-muted border border-a-border active:text-a-blood active:border-a-blood transition" aria-label="Supprimer">🗑</button>
-        <button data-role="resume-center" class="flex-1 text-left">
-          <p class="font-sans text-[10px] uppercase tracking-eyebrow text-a-muted">En cours</p>
-          <p class="font-display text-[22px] font-semibold leading-tight text-a-racing mt-1">${escapeHtml(liveSession.programmeName)}</p>
+      <p class="px-5 pb-2 font-sans text-[13px] text-mut">${labelMap[category]} · séance en cours</p>
+      <div class="flex items-center gap-3 px-5 py-3 border-0 border-solid border-t-[1.5px] border-ink border-b border-b-rule">
+        <button data-role="resume-delete" class="w-11 h-11 shrink-0 flex items-center justify-center text-[18px] border-[1.5px] border-solid border-ink rounded active:border-alert transition" aria-label="Supprimer">🗑</button>
+        <button data-role="resume-center" class="flex-1 min-w-0 text-left">
+          <p class="font-sans text-[13px] text-mut">En cours</p>
+          <p class="font-display italic text-[20px] font-bold leading-tight text-ink mt-0.5"><span class="${nameClass}">${escapeHtml(liveSession.programmeName)}</span></p>
         </button>
-        <button data-role="resume-finish" class="w-11 h-11 flex items-center justify-center text-[18px] text-a-acid border border-a-acid bg-a-acid/[0.12] active:bg-a-acid active:text-a-ink transition" aria-label="Terminer">✅</button>
+        <button data-role="resume-finish" class="w-11 h-11 shrink-0 flex items-center justify-center text-[18px] border-[1.5px] border-solid border-ink rounded active:bg-sheet transition" aria-label="Terminer">✅</button>
       </div>
     `;
     section.querySelector('[data-role="resume-center"]').addEventListener('click', () => showScreen('seance'));
@@ -319,18 +317,12 @@ async function renderHomeSection(main, category, programmes, isLive) {
       : `${next.exercises.length} machine${next.exercises.length > 1 ? 's' : ''} · ${totalDur} min`;
 
     section.innerHTML = `
-      <p class="font-sans text-[10px] uppercase tracking-eyebrow text-a-acid flex items-center gap-3 font-semibold">
-        <span>${labelMap[category]} · Prochaine séance</span>
-        <span class="flex-1 h-px bg-a-border"></span>
-      </p>
-      <button data-role="next-card" class="block w-full text-left bg-a-inkAlt border border-a-border p-5 active:border-a-acid transition">
-        <h2 class="font-display text-[26px] font-semibold leading-tight text-a-paper">${escapeHtml(next.name)}</h2>
-        <span class="block w-12 h-px bg-a-acid my-3"></span>
-        ${muscles.length ? `<p class="font-sans text-[12px] text-a-acid leading-relaxed">${muscles.map(escapeHtml).join(' · ')}</p>` : ''}
-        <div class="mt-4 flex items-center justify-between">
-          <p class="font-sans text-[10px] uppercase tracking-eyebrow text-a-muted">${meta}</p>
-          <span class="font-sans text-[10px] uppercase tracking-eyebrow text-a-acid font-semibold">Démarrer →</span>
-        </div>
+      <p class="px-5 pb-2 font-sans text-[13px] text-mut">${labelMap[category]} · prochaine séance</p>
+      <button data-role="next-card" class="grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-1 items-baseline w-full text-left px-5 py-3 border-0 border-solid border-t-[1.5px] border-ink border-b border-b-rule active:bg-sheet transition">
+        <h2 class="font-display italic text-[20px] font-bold leading-[1.15] text-ink"><span class="${nameClass}">${escapeHtml(next.name)}</span></h2>
+        <span class="font-sans text-[14px] font-semibold text-ink whitespace-nowrap">Démarrer →</span>
+        ${muscles.length ? `<p class="col-start-1 font-sans text-[13px] text-mut leading-snug">${muscles.map(escapeHtml).join(' · ')}</p>` : ''}
+        <p class="col-start-1 font-sans text-[13px] text-mut num-stat">${meta}</p>
       </button>
     `;
     section.querySelector('[data-role="next-card"]').addEventListener('click', async () => {
@@ -340,10 +332,13 @@ async function renderHomeSection(main, category, programmes, isLive) {
 
     if (programmes.length > 1) {
       const other = document.createElement('button');
-      other.className = 'block w-full text-left py-3 px-4 border border-a-border font-sans text-[11px] uppercase tracking-eyebrow text-a-paper active:border-a-acid active:text-a-acid transition';
+      other.className = 'block w-full h-12 px-4 border-[1.5px] border-solid border-ink rounded font-sans text-[14px] font-medium text-ink text-center active:bg-sheet transition';
       other.textContent = `Choisir un autre programme ${category}`;
       other.addEventListener('click', () => { pendingSelectionCategory = category; showScreen('seance'); });
-      section.appendChild(other);
+      const otherWrap = document.createElement('div');
+      otherWrap.className = 'px-5 pt-4';
+      otherWrap.appendChild(other);
+      section.appendChild(otherWrap);
     }
   }
 
@@ -388,10 +383,10 @@ function buildUserDropdown() {
     }},
   ];
 
-  const baseClass = 'w-full text-left px-4 py-3 font-sans text-[12px] uppercase tracking-[0.20em] border-b border-a-border last:border-b-0 transition active:bg-[rgba(255,255,255,0.04)]';
+  const baseClass = 'w-full text-left px-4 py-3 font-sans text-[14px] border-0 border-solid border-b border-rule last:border-b-0 transition active:bg-paper';
   items.forEach(({ label, danger, action }) => {
     const btn = document.createElement('button');
-    const colorClass = danger ? 'text-a-blood' : 'text-a-paper';
+    const colorClass = danger ? 'text-alert' : 'text-ink';
     btn.className = `${baseClass} ${colorClass}`;
     btn.textContent = label;
     btn.addEventListener('click', action);
@@ -687,11 +682,11 @@ async function renderProgrammeSelection(tab) {
     const wrap = document.createElement('div');
     wrap.className = 'px-5 pt-10 space-y-4 text-center';
     wrap.innerHTML = `
-      <p class="font-display text-xl text-a-paper">Aucun programme.</p>
-      <p class="font-sans text-[13px] text-a-muted">Crées-en un dans Programmes.</p>
+      <p class="font-display italic text-[20px] font-bold text-ink">Aucun programme.</p>
+      <p class="font-sans text-[13px] text-mut">Crées-en un dans Programmes.</p>
     `;
     const btn = document.createElement('button');
-    btn.className = 'mt-6 w-full py-3 px-4 border border-a-border font-sans text-[11px] uppercase tracking-eyebrow text-a-paper active:border-a-acid active:text-a-acid transition';
+    btn.className = 'mt-6 w-full h-12 px-4 border-[1.5px] border-solid border-ink rounded font-sans text-[14px] font-medium text-ink active:bg-sheet transition';
     btn.textContent = '→ Programmes';
     btn.addEventListener('click', () => showScreen('params'));
     wrap.appendChild(btn);
@@ -700,15 +695,15 @@ async function renderProgrammeSelection(tab) {
   }
 
   const wrap = document.createElement('div');
-  wrap.className = 'px-5 py-6';
+  wrap.className = 'pt-6 pb-10';
 
   const eyebrow = document.createElement('p');
-  eyebrow.className = 'font-sans text-[10px] uppercase tracking-eyebrow text-a-muted mb-5 flex items-center gap-3';
-  eyebrow.innerHTML = `<span>Choisir un programme</span><span class="flex-1 h-px bg-a-border"></span>`;
+  eyebrow.className = 'px-5 pb-2 font-sans text-[13px] text-mut';
+  eyebrow.textContent = 'Choisir un programme';
   wrap.appendChild(eyebrow);
 
   const list = document.createElement('div');
-  list.className = 'border-y border-a-border';
+  list.className = 'border-0 border-solid border-t-[1.5px] border-ink';
   wrap.appendChild(list);
 
   const { ordered, lastDoneId, lastSession } = await cyclicProgrammes(programmes);
@@ -729,19 +724,18 @@ async function renderProgrammeSelection(tab) {
     }
 
     const card = document.createElement('button');
-    const borderLeft = isNext ? 'border-l-[3px] border-l-a-acid' : (isDone ? 'border-l-[3px] border-l-a-muted opacity-60' : 'border-l-[3px] border-l-transparent');
-    card.className = `w-full text-left flex items-center gap-4 px-5 py-4 border-b border-a-border/70 ${borderLeft} active:bg-a-inkAlt transition`;
+    card.className = 'grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-1 items-baseline w-full text-left px-5 py-3 border-0 border-solid border-b border-rule active:bg-sheet transition';
 
-    const status = isDone ? '<span class="font-sans text-[9px] uppercase tracking-eyebrow text-a-muted">Fait</span>'
-                  : isNext ? '<span class="font-sans text-[9px] uppercase tracking-eyebrow text-a-acid font-semibold">Suivant →</span>'
+    const status = isDone ? '<span class="font-sans text-[13px] font-semibold text-done">Fait</span>'
+                  : isNext ? '<span class="font-sans text-[14px] font-semibold text-ink">Suivant →</span>'
                   : '';
+    const nameColor = isDone ? 'text-mut' : 'text-ink';
+    const name = isNext ? `<span class="mark">${escapeHtml(prog.name)}</span>` : escapeHtml(prog.name);
 
     card.innerHTML = `
-      <div class="flex-1 min-w-0">
-        <h3 class="font-display font-bold italic text-[18px] leading-tight text-a-paper truncate">${escapeHtml(prog.name)}</h3>
-        <p class="font-sans text-[10px] uppercase tracking-eyebrow text-a-muted mt-1 truncate">${meta}</p>
-      </div>
-      <div class="shrink-0">${status}</div>
+      <h3 class="font-display font-bold italic text-[20px] leading-[1.15] ${nameColor} truncate">${name}</h3>
+      <div class="whitespace-nowrap">${status}</div>
+      <p class="col-start-1 font-sans text-[13px] text-mut num-stat truncate">${meta}</p>
     `;
     card.addEventListener('click', () => startSession(prog));
     list.appendChild(card);

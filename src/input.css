@@ -82,6 +82,15 @@
     font-feature-settings: "tnum", "lnum";
   }
   .num-stat { font-feature-settings: "tnum", "lnum"; }
+  /* Carnet highlighter stroke under inline text (mock .mark): the one thing to do now */
+  .mark {
+    background: linear-gradient(to bottom, transparent 18%, var(--hl) 18% 92%, transparent 92%);
+    padding: 0 3px;
+    margin: 0 -3px;
+    color: var(--ink);
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
+  }
   .h-display { font-size: clamp(2.5rem, 11.5vw, 3.75rem); line-height: 0.92; letter-spacing: -0.025em; }
   .accent-line::after { content:""; display:block; width:36px; height:2px; background: var(--a-acid); margin-top: 14px; }
 }
