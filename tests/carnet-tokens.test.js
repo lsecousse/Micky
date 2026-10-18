@@ -8,12 +8,14 @@ const read = (file) => readFileSync(new URL(file, root), 'utf8');
 
 const SCANNED_FILES = ['app.js', 'index.html', 'exercise-editor.js', 'backoffice.html', 'backoffice.js', 'set-password.html'];
 const A_TOKENS = 'ink|inkAlt|paper|muted|border|todo|cyan|acid|racing|blood';
+// Old unprefixed A variable names that Carnet does not reuse (Carnet owns --ink and --paper).
+const A_ONLY_TOKENS = 'inkAlt|muted|border|todo|cyan|acid|racing|blood';
 const A_HEX = ['#0A0A0A', '#141414', '#F5F4F0', '#888888', '#2A2A2A', '#444444', '#06B6D4', '#84CC16', '#FACC15', '#DC2626'];
 
 // Lists consumed by later tasks: each migrated unit must be free of Direction A leftovers.
-const MIGRATED_FUNCTIONS = [];
-const MIGRATED_HTML_BLOCKS = [];
-const MIGRATED_CSS_SELECTORS = [];
+const MIGRATED_FUNCTIONS = ['showConfirm', 'showAlert', 'showToast'];
+const MIGRATED_HTML_BLOCKS = ['DIALOG CUSTOM', 'TOAST', 'COUNTDOWN STICKY TOP BAR'];
+const MIGRATED_CSS_SELECTORS = ['#toast', '.dialog', '#countdown'];
 
 // Source of a top-level function, up to its closing brace at column 0.
 function functionSource(file, name) {
@@ -51,9 +53,9 @@ function cssRules(file, selectorPart) {
 
 function directionALeftovers(src) {
   const patterns = [
-    new RegExp(`(?<![\\w-])a-(${A_TOKENS})(?![\\w])`, 'g'),
+    new RegExp(`(?<![\\w])a-(${A_TOKENS})(?![\\w])`, 'g'),
     new RegExp(A_HEX.join('|'), 'gi'),
-    new RegExp(`var\\(--(${A_TOKENS})\\)`, 'g'),
+    new RegExp(`var\\(--(${A_ONLY_TOKENS})\\)`, 'g'),
     /text-\[(8|9|10|11)px\]/g,
     /tracking-eyebrow/g,
   ];
@@ -91,7 +93,53 @@ describe('carnetTokensShould', () => {
     const css = read('src/input.css');
 
     expect(css).toMatch(/--a-ink:\s*#0A0A0A/);
-    expect(css).not.toMatch(new RegExp(`--(${A_TOKENS}):`));
+    expect(css).not.toMatch(new RegExp(`--(${A_ONLY_TOKENS}):`));
+    expect(css).not.toMatch(/--(ink|paper):\s*#(0A0A0A|F5F4F0)/i);
+  });
+
+  it('flags prefixed Direction A classes but not Carnet variables', () => {
+    const found = directionALeftovers('<p class="!bg-a-ink text-a-paper" style="color:var(--ink);background:var(--paper)">');
+
+    expect(found).toEqual(['a-ink', 'a-paper']);
+  });
+
+  it('exposes Carnet tokens with exact hex', () => {
+    const colors = require('../tailwind.config.js').theme.extend.colors;
+    const css = read('src/input.css');
+    const carnet = {
+      paper: '#EEEDE8', sheet: '#F7F6F2', ink: '#1B1C1F', mut: '#6F6C64',
+      rule: '#D6D3C9', hl: '#FFE45C', done: '#1E6B4A', alert: '#A8321F',
+    };
+
+    for (const [name, hex] of Object.entries(carnet)) {
+      expect(colors[name]).toBe(hex);
+      expect(css).toMatch(new RegExp(`--${name}:\\s*${hex};`));
+    }
+  });
+
+  it('uses Newsreader, IBM Plex Sans and IBM Plex Mono', () => {
+    const fonts = require('../tailwind.config.js').theme.extend.fontFamily;
+
+    expect([fonts.display[0], fonts.sans[0], fonts.mono[0]])
+      .toEqual(['"Newsreader"', '"IBM Plex Sans"', '"IBM Plex Mono"']);
+  });
+
+  it('rounds corners at 6 px', () => {
+    const radius = require('../tailwind.config.js').theme.extend.borderRadius;
+
+    expect(radius.DEFAULT).toBe('6px');
+  });
+
+  it('loads Carnet fonts and a light status bar', () => {
+    const html = read('index.html');
+    const fontLink = html.match(/<link[^>]+fonts\.googleapis\.com\/css2[^>]+>/)[0];
+
+    expect(fontLink).toContain('Newsreader');
+    expect(fontLink).toContain('IBM+Plex+Sans');
+    expect(fontLink).toContain('IBM+Plex+Mono');
+    expect(fontLink).not.toMatch(/Fraunces|DM\+Sans/);
+    expect(html).toContain('<meta name="theme-color" content="#EEEDE8" />');
+    expect(html).toMatch(/<meta name="apple-mobile-web-app-status-bar-style" content="default"/);
   });
 
   it.each(MIGRATED_FUNCTIONS)('migrated function %s has no Direction A leftover', (name) => {

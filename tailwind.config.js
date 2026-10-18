@@ -16,7 +16,16 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // Base
+        // Carnet
+        paper: '#EEEDE8',
+        sheet: '#F7F6F2',
+        ink:   '#1B1C1F',
+        mut:   '#6F6C64',
+        rule:  '#D6D3C9',
+        hl:    '#FFE45C',
+        done:  '#1E6B4A',
+        alert: '#A8321F',
+        // Direction A (legacy, removed in lot 6) — base
         'a-ink':    '#0A0A0A',
         'a-inkAlt': '#141414',
         'a-paper':  '#F5F4F0',
@@ -30,12 +39,12 @@ module.exports = {
         'a-blood':  '#DC2626',
       },
       fontFamily: {
-        display: ['Fraunces', 'ui-serif', 'Georgia', 'serif'],
-        sans:    ['"DM Sans"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
-        mono:    ['"DM Mono"', 'ui-monospace', '"Courier New"', 'monospace'],
+        display: ['"Newsreader"', 'ui-serif', 'Georgia', 'serif'],
+        sans:    ['"IBM Plex Sans"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        mono:    ['"IBM Plex Mono"', 'ui-monospace', '"Courier New"', 'monospace'],
       },
       borderRadius: {
-        DEFAULT: '0.375rem',
+        DEFAULT: '6px',
       },
       letterSpacing: {
         eyebrow:      '0.28em',

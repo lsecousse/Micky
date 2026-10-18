@@ -3,16 +3,16 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
-  <meta name="theme-color" content="#0A0A0A" />
+  <meta name="theme-color" content="#EEEDE8" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="apple-mobile-web-app-title" content="Mike Coach" />
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
   <link rel="icon" type="image/png" href="icons/favicon.png" />
   <link rel="manifest" href="manifest.json" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;0,9..144,800;0,9..144,900;1,9..144,600;1,9..144,700;1,9..144,800;1,9..144,900&family=DM+Sans:wght@400;500;600;700&display=swap" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,500;0,6..72,700;1,6..72,500;1,6..72,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" />
   <link rel="stylesheet" href="style.css" />
   <link rel="stylesheet" href="dist/output.css" />
   <title>Mike Coach</title>
@@ -212,18 +212,16 @@
 
   <!-- COUNTDOWN STICKY TOP BAR -->
   <div id="countdown-bar" class="hidden">
-    <button id="countdown-skip" title="Passer le repos" aria-label="Passer le repos">⏭</button>
-    <div class="countdown-ring-wrap">
-      <svg class="countdown-ring" viewBox="0 0 100 100">
-        <circle class="ring-bg" cx="50" cy="50" r="42" />
-        <circle id="ring-progress" class="ring-progress" cx="50" cy="50" r="42" />
-      </svg>
-      <span id="countdown-display">00:00</span>
-    </div>
     <div class="countdown-info">
-      <span class="countdown-label">Repos</span>
-      <span id="countdown-exercise-name" class="overlay-exercise-name"></span>
+      <p class="countdown-head"><span class="countdown-label">Repos</span> <span id="countdown-exercise-name" class="overlay-exercise-name"></span></p>
+      <span id="countdown-display">00:00</span>
+      <!-- Linear progress: same dash mechanics as the former ring (length 264 = RING_CIRCUMFERENCE) -->
+      <svg class="countdown-ring" viewBox="0 0 264 4" preserveAspectRatio="none" aria-hidden="true">
+        <line class="ring-bg" x1="0" y1="2" x2="264" y2="2" />
+        <line id="ring-progress" class="ring-progress" x1="0" y1="2" x2="264" y2="2" />
+      </svg>
     </div>
+    <button id="countdown-skip" title="Passer le repos" aria-label="Passer le repos">⏭</button>
   </div>
 
   <!-- TOAST -->
@@ -231,11 +229,11 @@
 
   <!-- DIALOG CUSTOM -->
   <div id="dialog" class="dialog hidden">
-    <div class="!bg-a-ink !border !border-a-border !p-6 !rounded-none !max-w-[360px] w-full mx-4 space-y-5" style="background:var(--a-ink)">
-      <p id="dialog-msg" class="font-display italic font-medium text-[15px] text-a-paper leading-snug"></p>
-      <div class="grid grid-cols-2 gap-3">
-        <button id="dialog-cancel" class="py-3 border border-a-border text-a-paper font-sans text-[11px] uppercase tracking-eyebrow active:border-a-paper transition">Annuler</button>
-        <button id="dialog-ok" class="py-3 bg-a-acid text-a-ink font-display font-bold text-[12px] uppercase tracking-eyebrow active:bg-a-acid/80 transition">OK</button>
+    <div class="bg-sheet border-[1.5px] border-solid border-ink rounded p-6 max-w-[360px] w-full space-y-6">
+      <p id="dialog-msg" class="font-display italic font-medium text-[20px] text-ink leading-snug"></p>
+      <div class="flex gap-3">
+        <button id="dialog-cancel" class="flex-1 h-14 border-[1.5px] border-solid border-ink rounded text-ink font-sans text-[16px] font-semibold active:bg-ink/10 transition">Annuler</button>
+        <button id="dialog-ok" class="flex-1 h-14 bg-ink text-paper rounded font-sans text-[16px] font-semibold active:bg-ink/80 transition">OK</button>
       </div>
     </div>
   </div>

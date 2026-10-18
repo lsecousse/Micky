@@ -172,7 +172,7 @@ input:focus { border-color: var(--accent); }
 
 .hidden { display: none !important; }
 
-/* ── Countdown fixed top bar — Direction A ──────────────── */
+/* ── Countdown fixed top bar — Carnet (highlighter band, mock .timer) ── */
 #countdown-bar {
   position: fixed;
   top: 0;
@@ -181,121 +181,105 @@ input:focus { border-color: var(--accent); }
   z-index: 150;
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
   padding: 12px 16px;
   padding-top: calc(env(safe-area-inset-top) + 12px);
-  background: #0A0A0A; /* ink */
-  border-bottom: 2px solid #FACC15; /* racing */
-  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.5);
+  background: var(--hl);
+  color: var(--ink);
+  border-bottom: 1.5px solid var(--ink);
+  font-family: var(--f-sans);
 }
 
 #countdown-bar.hidden { display: none; }
 #countdown-bar.in-rest-split { display: none; }
-
-.countdown-label {
-  font-size: 10px;
-  font-weight: 600;
-  color: #FACC15; /* racing */
-  text-transform: uppercase;
-  letter-spacing: 0.28em;
-  font-family: 'DM Sans', sans-serif;
-}
 
 .countdown-info {
   display: flex;
   flex-direction: column;
   flex: 1;
   min-width: 0;
-  line-height: 1.2;
-  gap: 2px;
 }
 
-.overlay-exercise-name {
-  font-family: 'Fraunces', 'ui-serif', serif;
-  font-style: italic;
-  font-weight: 600;
+.countdown-head {
+  margin: 0;
   font-size: 13px;
-  color: #F5F4F0; /* paper */
+  line-height: 1.3;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.countdown-ring-wrap {
-  position: relative;
-  width: 64px;
-  height: 64px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
+.countdown-label { font-weight: 600; }
 
-.countdown-ring {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  transform: rotate(-90deg);
+.overlay-exercise-name {
+  font-family: var(--f-display);
+  font-style: italic;
+  font-weight: 500;
 }
-
-.ring-bg {
-  fill: none;
-  stroke: #2A2A2A; /* border */
-  stroke-width: 6;
-}
-
-.ring-progress {
-  fill: none;
-  stroke: #FACC15; /* racing */
-  stroke-width: 6;
-  stroke-linecap: round;
-  stroke-dasharray: 264; /* = 2π × 42 — keep in sync with RING_CIRCUMFERENCE in app.js */
-  stroke-dashoffset: 0;
-  transition: stroke-dashoffset 0.9s linear, stroke 0.3s ease;
-}
-
-#countdown-bar.urgent .ring-progress { stroke: #DC2626; /* blood */ }
-#countdown-bar.urgent { border-bottom-color: #DC2626; }
 
 #countdown-display {
-  font-family: 'Fraunces', 'ui-serif', serif;
-  font-weight: 900;
-  font-size: 22px;
-  color: #FACC15; /* racing */
+  display: inline-block;
+  align-self: flex-start;
+  margin-top: 4px;
+  font-family: var(--f-mono);
+  font-weight: 600;
+  font-size: 42px;
   line-height: 1;
+  letter-spacing: -0.04em;
+  color: var(--ink);
   font-feature-settings: "tnum", "lnum";
+  transform-origin: left center;
   transition: color 0.3s;
-  z-index: 1;
 }
 
-#countdown-bar.urgent #countdown-display { color: #DC2626; /* blood */ }
+/* Urgent: the band stays highlighted, only the digits turn alert */
+#countdown-bar.urgent #countdown-display { color: var(--alert); }
 
 @keyframes tick-pulse {
   0%   { transform: scale(1); }
-  40%  { transform: scale(1.15); }
+  40%  { transform: scale(1.06); }
   100% { transform: scale(1); }
 }
 
 #countdown-display.pulse { animation: tick-pulse 0.35s ease-out; }
 
-#countdown-skip {
-  background: transparent;
-  border: 1px solid #2A2A2A; /* border */
-  color: #F5F4F0; /* paper */
-  font-family: 'DM Sans', sans-serif;
-  font-size: 18px;
-  font-weight: 500;
-  padding: 8px 14px;
-  cursor: pointer;
-  flex-shrink: 0;
-  transition: border-color 0.15s, color 0.15s;
+.countdown-ring {
+  display: block;
+  width: 100%;
+  height: 3px;
+  margin-top: 8px;
 }
 
-#countdown-skip:active {
-  border-color: #84CC16; /* acid */
-  color: #84CC16;
+.ring-bg {
+  stroke: var(--ink);
+  stroke-opacity: 0.15;
+  stroke-width: 4;
 }
+
+.ring-progress {
+  stroke: var(--ink);
+  stroke-width: 4;
+  stroke-dasharray: 264; /* = 2π × 42 — keep in sync with RING_CIRCUMFERENCE in app.js */
+  stroke-dashoffset: 0;
+  transition: stroke-dashoffset 0.9s linear;
+}
+
+#countdown-skip {
+  width: 58px;
+  height: 46px;
+  flex-shrink: 0;
+  border: 1.5px solid var(--ink);
+  border-radius: 6px;
+  color: var(--ink);
+  font-family: var(--f-sans);
+  font-size: 18px;
+  font-weight: 600;
+  text-align: center;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+#countdown-skip:active { background: rgba(27, 28, 31, 0.1); }
 
 /* ── Toast ────────────────────────────────────────────── */
 #toast {
@@ -303,13 +287,13 @@ input:focus { border-color: var(--accent); }
   bottom: calc(env(safe-area-inset-bottom) + 72px);
   left: 50%;
   transform: translateX(-50%);
-  background: #1e1e1e;
-  border: 1px solid #333;
-  color: var(--accent);
+  background: var(--ink);
+  color: var(--paper);
+  font-family: var(--f-sans);
   font-size: 15px;
-  font-weight: 600;
-  padding: 10px 20px;
-  border-radius: 24px;
+  font-weight: 500;
+  padding: 12px 20px;
+  border-radius: 6px;
   z-index: 300;
   white-space: nowrap;
   pointer-events: none;
@@ -379,7 +363,7 @@ input:focus { border-color: var(--accent); }
 .dialog {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.7);
+  background: rgba(27, 28, 31, 0.55); /* ink scrim */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -389,20 +373,7 @@ input:focus { border-color: var(--accent); }
 
 .dialog.hidden { display: none; }
 
-.dialog-box {
-  background: var(--surface);
-  border-radius: 14px;
-  padding: 24px 20px 20px;
-  width: 100%;
-  max-width: 320px;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-#dialog-msg { font-size: 15px; line-height: 1.5; text-align: center; }
-.dialog-actions { display: flex; gap: 10px; }
-.dialog-actions button { flex: 1; }
+#dialog-msg { margin: 0; }
 
 /* ── Live edit modal ─────────────────────────────────── */
 .live-edit-modal {

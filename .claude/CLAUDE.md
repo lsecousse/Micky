@@ -135,24 +135,6 @@ Après création du script, exécuter : `node generate-assets.js`
 - Pure HTML + Tailwind CSS (via Tailwind CLI, no bundler)
 - Optional: Alpine.js for light interactivity
 - NO React, Vue, Svelte, or framework JS
-- Design generation: AIDesigner MCP
-
-## Design workflow (NON-NEGOTIABLE)
-
-For ANY new UI screen, page, or significant component:
-
-1. **Always start with AIDesigner**. Never write UI from scratch.
-2. Check if a brand kit is active: `list_brand_kits` → `set_editor_brand_kit` if needed.
-   Active kit should be `main`.
-3. Generate via `generate_design` with desktop viewport by default.
-4. Iterate via `refine_design` — never regenerate from zero unless the user asks.
-5. Retrieve final HTML via `get_canvas`, save under `./designs/<feature>.html`.
-6. Adapt to project structure only after the design is validated.
-
-## When NOT to use AIDesigner
-- Pure logic, scripts, backend tasks
-- Tiny tweaks (text change, single class adjustment)
-- Bug fixes on existing markup
 
 ## Design philosophy (NON-NEGOTIABLE)
 
@@ -193,65 +175,46 @@ Aim for an **editorial / print-inspired** aesthetic. References: Tracksmith, Str
 - ❌ "Supercharge your..."
 - ❌ Generic AI-flavored taglines
 
-## Design system — Direction A (Athlete dense) — LOCKED
+## Design system — Carnet
 
-Validée le 2026-05-13. Tout l'app passe à ces tokens. **Aucune autre couleur d'accent autorisée hors anti-patterns ci-dessus.**
+Validé le 2026-10-18 (remplace Direction A). Écrans dessinés à la main d'après le Carnet (décision Lionel 2026-10-18, Guichet #1895).
 
-### Typo
-- **Display** : Fraunces (variable, opsz 9..144, weights 400/600/700/800/900) — H1, chiffres mega de séries, numéros d'exercices
-- **Sans** : DM Sans (400/500/600/700) — body, eyebrow, labels, tabular metrics
-- Pair Fraunces + DM Sans. **Jamais Manrope dans cette direction.**
-- Eyebrows : `letter-spacing: 0.28em` (eyebrow), `0.40em` (eyebrow-wide), `font-sans`, `text-[8-10px]`, uppercase
-  - **Exception séance live** (décision 2026-09-24) : aucun texte < 10px sur les écrans de séance en cours (lisibilité en salle).
-- Chiffres de séries : `clamp(2.375rem, 10.5vw, 2.625rem)` (validée/todo), `clamp(2.75rem, 12.2vw, 3rem)` (active)
-
-### Palette base (inchangée)
-| Token | Hex | Usage |
+### Tokens — chaque couleur a UN rôle unique
+| Token | Hex | Rôle unique |
 |---|---|---|
-| `ink` | `#0A0A0A` | Fond principal |
-| `inkAlt` | `#141414` | Surfaces secondaires (Σ row, recap blocks) |
-| `paper` | `#F5F4F0` | Texte principal |
-| `muted` | `#888888` | Labels, texte secondaire, inactif |
-| `border` | `#2A2A2A` | Séparateurs, bordures subtiles |
-| `todo` | `#444444` | Chiffres planifiés non encore exécutés |
+| `paper` | `#EEEDE8` | fond de page |
+| `sheet` | `#F7F6F2` | cartes, tiroirs, modales, ligne en préparation |
+| `ink` | `#1B1C1F` | texte, filets forts (1,5 px), boutons pleins, barre de progression |
+| `mut` | `#6F6C64` | texte secondaire, à venir, inactif |
+| `rule` | `#D6D3C9` | lignes du carnet (1 px) |
+| `hl` | `#FFE45C` | surligneur : **la seule chose à faire maintenant** (série en cours, décompte de repos, élément en cours). Toujours en **fond** sous un texte `ink`, jamais en couleur de texte |
+| `done` | `#1E6B4A` | fait : « fait », séries finies, temps réellement pris, hausse |
+| `alert` | `#A8321F` | événement / attention : PR, échec, suppression, baisse. Texte ou petite pastille, jamais en grande surface |
 
-### Accents sémantiques — chaque couleur a UN rôle unique
+Classes Tailwind : `bg-paper`, `bg-sheet`, `text-ink`, `text-mut`, `border-rule`, `bg-hl`, `text-done`, `text-alert`… Variables CSS `--paper` … `--alert` dans `src/input.css` (pour `style.css` et Chart.js).
 
-| Token | Hex | Rôle | Usage strict |
-|---|---|---|---|
-| `cyan` | `#06B6D4` | Mesure / donnée neutre | Bandeau métriques (Volume, Tonnage, Reps, RPE), totaux Σ, stats, séparateur Σ |
-| `acid` | `#84CC16` | Validé / accompli | Checkbox cochées (si présentes), badge "X/Y fait", barre progression remplie, "REPOS 1:45" des séries terminées, `&` du titre programme, `border-l-3` des lignes validées |
-| `racing` | `#FACC15` | Action en cours / focus | Série active uniquement (border-left 3px + bg-racing/[0.07] + chiffres jaunes), tab actif, numéro d'exercice en cours, repos qui tourne en live |
-| `blood` | `#DC2626` | Événement marquant / record | Badge "PR" (personal record), RPE ≥ 9, échec de série, charge max. **Ponctuel** — jamais en grande surface |
+### Polices
+- **Newsreader** (`font-display`) : titres, noms d'exercices en italique
+- **IBM Plex Sans** (`font-sans`) : texte
+- **IBM Plex Mono** (`font-mono`, `.num-set`, `.num-set-hot`) : chiffres — charges, reps, durées, décomptes, métriques
+
+### Forme
+- Rayon : 6 px (`rounded`) — jamais `rounded-2xl`
+- Boutons : primaire = fond `ink`, texte `paper` ; secondaire = contour 1,5 px `ink`
+- Filets : 1,5 px `ink` pour la structure (en-tête, dock, onglets, haut de tableau) ; 1 px `rule` pour les lignes
+- **Règle des 12 px** : aucun texte sous 12 px dans toute l'app ; pas de sur-titres en majuscules espacées : phrases 12-13 px `mut`
 
 ### Règles d'usage strictes
-1. **Une seule ligne en `racing` à la fois** — la série active. Quand la 03 devient active, la 02 passe en `acid`.
-2. **Le `blood` n'apparaît que sur événement** — pas pour décorer. Si rien d'exceptionnel, aucun rouge visible.
-3. **Le `cyan` reste constant et calme** — pas d'animation, pas de variation.
-4. **L'`acid` doit dominer en fin de séance** — écran "respire le vert" sourd quand tout est validé.
-5. **Plus d'orange `#FF6B00` nulle part.** Manifeste et accents : en `paper` ou semantic tokens.
-
-### Layout signature (Direction A)
-- Sticky header dense : status row + manifesto + compteur "X/Y séries" + barre progression `acid` + strip 4 stats `cyan`
-- H1 énorme Fraunces Black `clamp(2.5rem, 11.5vw, 3.75rem)`
-- Accent-line 36×2px `acid` sous H1
-- Tableau séries 3 colonnes (Charge / Reps / Repos), border-left 3px pour statut, **pas de checkbox ni de numéro de série dans le tableau** (l'ordre des lignes = numéro)
-- Mega numbers Fraunces black à gauche, repos eyebrow à droite
-- Σ row cyan avec separator `border-t-2 border-t-cyan`, fond `inkAlt`
-- Liste "Suite — X exercices" avec poids cible à droite
-- Tab bar 3 colonnes, indicateur `racing` 2px top sur actif, label Fraunces italique
-
-### Radius
-- `--radius: 0.375rem` — jamais `rounded-2xl`
-
-### Spacing rhythm
-- 6 / 12 / 24 / 48 / 96 px
+1. **Une seule zone `hl` visible à la fois** : la série en cours, ou le décompte de repos.
+2. **`alert` est ponctuel** : texte ou petite pastille, uniquement sur événement.
+3. **`done` domine en fin de séance.**
+4. Les métriques n'ont pas de couleur : `ink` en IBM Plex Mono.
 
 ### Référence canonique
-Le mock `./designs/explorations/v2/A-athlete-dense.html` est la source de vérité visuelle. Toute discordance entre le code et ce fichier → revenir au mock.
+La maquette `designs/supersets/supersets.html` (et `designs/supersets/NOTES.md`) est la source de vérité visuelle. Toute discordance entre le code et ce fichier → revenir à la maquette.
 
 ## Output structure
-- `./designs/` — raw HTML from AIDesigner canvas exports
+- `./designs/` — maquettes HTML
 - `./src/` — production HTML/CSS/JS, adapted from designs/
 - `./src/assets/` — extracted images, logos, icons
 
