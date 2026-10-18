@@ -4,6 +4,8 @@ import vm from 'node:vm';
 
 // Classic <script> tags share one global scope: a top-level const declared
 // twice across lib files makes the browser reject the second script.
+// A function declared twice is silently overwritten instead (not detected
+// here), hence the specific public names of the super set scripts.
 function libScriptsOf(page) {
   const html = readFileSync(page, 'utf8');
   return [...html.matchAll(/<script src="(lib\/[^"]+)"><\/script>/g)].map(m => m[1]);
@@ -16,12 +18,30 @@ function loadInSharedScope(scripts) {
   return context;
 }
 
+// Phase 2 loads the super set scripts after the existing lib scripts.
+const SUPERSET_SCRIPTS = ['lib/supersets.js', 'lib/superset-flow.js'];
+
+// Super set g1 = [A, B], 2 rounds, nothing done.
+function groupOfTwo() {
+  const group  = { id: 'g1', rounds: 2, transition: 15, roundRest: 90 };
+  const series = () => [0, 1].map(() => ({ activityStates: {}, values: [{ reps: 10, weight: 40 }] }));
+  const ex     = name => ({ name, activities: [{ type: 'weight', rest: 60 }], sets: 2, series: series(), group });
+  return [ex('A'), ex('B')];
+}
+
 describe('browser lib scripts', () => {
   it('load together in backoffice.html shared global scope', () => {
     const context = loadInSharedScope(libScriptsOf('backoffice.html'));
 
     expect(typeof context.buildProgrammeExerciseFromCatalog).toBe('function');
     expect(typeof context.escapeHtml).toBe('function');
+  });
+
+  it('estimate a programme duration in backoffice.html shared global scope', () => {
+    const context   = loadInSharedScope(libScriptsOf('backoffice.html'));
+    const programme = { exercises: [{ name: 'Curl', activities: [{ type: 'weight', rest: 60 }], sets: 4 }] };
+
+    expect(context.computeEstimatedDuration(programme, new Map())).toBe(420);
   });
 
   it('load together in index.html shared global scope', () => {
@@ -35,5 +55,32 @@ describe('browser lib scripts', () => {
     const context = loadInSharedScope(libScriptsOf('index.html'));
 
     expect(typeof context.createLocalWriteTracker).toBe('function');
+  });
+
+  it('load super set scripts with index.html lib scripts in one shared global scope', () => {
+    const context = loadInSharedScope([...libScriptsOf('index.html'), ...SUPERSET_SCRIPTS]);
+
+    expect(typeof context.groupExercises).toBe('function');
+    expect(typeof context.nextLiveStep).toBe('function');
+  });
+
+  it('load super set scripts with backoffice.html lib scripts in one shared global scope', () => {
+    const context = loadInSharedScope([...libScriptsOf('backoffice.html'), ...SUPERSET_SCRIPTS]);
+
+    expect(typeof context.dropExerciseOnto).toBe('function');
+  });
+
+  it('walk a super set with the browser globals', () => {
+    const context   = loadInSharedScope([...libScriptsOf('index.html'), ...SUPERSET_SCRIPTS]);
+    const exercises = groupOfTwo();
+    exercises[0].series[0].activityStates[0] = 'done';
+
+    expect(context.nextUndoneInBlock(exercises, 0)).toEqual({ exIdx: 1, sIdx: 0, actIdx: 0 });
+  });
+
+  it('estimate a super set duration with the browser globals', () => {
+    const context = loadInSharedScope([...libScriptsOf('backoffice.html'), ...SUPERSET_SCRIPTS]);
+
+    expect(context.computeEstimatedDuration({ exercises: groupOfTwo() }, new Map())).toBe(2 * (45 + 15 + 45 + 90));
   });
 });
