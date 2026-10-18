@@ -86,3 +86,46 @@ describe('computeEstimatedDuration', () => {
     expect(computeEstimatedDuration(programme, new Map())).toBe(210);
   });
 });
+
+describe('computeEstimatedDuration with super sets', () => {
+  const g1 = { id: 'g1', rounds: 4, transition: 15, roundRest: 90 };
+  const member = (name, extra = {}) => ({
+    name, normalized_name: name.toLowerCase(), activities: [{ type: 'weight', rest: 60 }], sets: 4, group: g1, ...extra,
+  });
+
+  it('walks the rounds with transition and round rest instead of the activity rest', () => {
+    const programme = { exercises: [member('A'), member('B')] };
+
+    expect(computeEstimatedDuration(programme, new Map())).toBe(780);
+  });
+
+  it('ignores the historical average of a member', () => {
+    const programme = { exercises: [member('A'), member('B')] };
+
+    expect(computeEstimatedDuration(programme, new Map([['a', 999]]))).toBe(780);
+  });
+
+  it('sums a single exercise and a group', () => {
+    const curl      = { name: 'Curl', activities: [{ type: 'weight', rest: 60 }], sets: 4 };
+    const programme = { exercises: [curl, member('A'), member('B')] };
+
+    expect(computeEstimatedDuration(programme, new Map())).toBe(420 + 780);
+  });
+
+  it('uses the planned duration of each series for a countdown member', () => {
+    const plank = member('Plank', {
+      activities: [{ type: 'countdown', rest: 60 }],
+      series: [20, 20, 20, 20].map(d => ({ values: [{ duration: d }] })),
+    });
+
+    expect(computeEstimatedDuration({ exercises: [plank, member('B')] }, new Map())).toBe(4 * 20 + 4 * (15 + 45 + 90));
+  });
+
+  it('rests between the activities of a member, then transition or round rest after the last one', () => {
+    const g      = { ...g1, rounds: 2 };
+    const multi  = member('A', { sets: 2, group: g, activities: [{ type: 'weight', rest: 30 }, { type: 'weight', rest: 60 }] });
+    const single = member('B', { sets: 2, group: g });
+
+    expect(computeEstimatedDuration({ exercises: [multi, single] }, new Map())).toBe(2 * (45 + 30 + 45 + 15 + 45 + 90));
+  });
+});
