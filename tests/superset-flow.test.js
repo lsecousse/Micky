@@ -222,3 +222,37 @@ describe('supersetProgress', () => {
     expect(supersetProgress(exercises, 0)).toEqual({ roundsDone: 2, rounds: 2 });
   });
 });
+
+describe('review fixes', () => {
+  it('groupableLiveIndices includes an isolated member not started', () => {
+    expect(groupableLiveIndices([liveEx('A', 2, { group: g1() }), liveEx('B', 2)])).toEqual([0, 1]);
+  });
+
+  it('nextLiveStep asks for a confirmed transition back to B1 after A2', () => {
+    const exercises = withDone(pair(), [[0, 0], [0, 1]]);
+
+    expect(nextLiveStep(exercises, step(0, 1))).toEqual({
+      next: step(1, 0), pause: { kind: 'transition', seconds: 15, confirm: true },
+    });
+  });
+
+  it('nextLiveStep rests the activity rest back to A1 after A2 on the same station', () => {
+    const exercises = withDone(pair(), [[0, 1]]);
+
+    expect(nextLiveStep(exercises, step(0, 1))).toEqual({ next: step(0, 0), pause: { kind: 'rest', seconds: 60 } });
+  });
+
+  it('nextLiveStep rests the round rest from B2 to A3 when B is shorter', () => {
+    const exercises = withDone(pair(3, 2), [[0, 0], [1, 0], [0, 1], [1, 1]]);
+
+    expect(nextLiveStep(exercises, step(1, 1))).toEqual({ next: step(0, 2), pause: { kind: 'roundRest', seconds: 90 } });
+  });
+
+  it('supersetProgress returns null for a single exercise', () => {
+    expect(supersetProgress([liveEx('S', 2)], 0)).toBeNull();
+  });
+
+  it('supersetProgress returns null for a cardio exercise', () => {
+    expect(supersetProgress([cardio()], 0)).toBeNull();
+  });
+});

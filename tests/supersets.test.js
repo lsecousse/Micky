@@ -491,3 +491,89 @@ describe('isGroupSize', () => {
     expect(isGroupSize(5)).toBe(false);
   });
 });
+
+describe('review fixes', () => {
+  // Group g1 = [A, B] with non default settings, then a single C.
+  const tuned = () => [
+    weightEx('A', 3, { group: group('g1', { transition: 40, roundRest: 120 }) }),
+    weightEx('B', 3, { group: group('g1', { transition: 40, roundRest: 120 }) }),
+    weightEx('C', 3),
+  ];
+
+  // Same programme where the first series of A is done (live session).
+  const withStates = () => {
+    const exercises = tuned();
+    exercises[0].series[0].activityStates = { 0: 'done' };
+    return exercises;
+  };
+
+  it('dropExerciseOnto refuses a cardio exercise dropped onto a group member', () => {
+    const exercises = [...tuned().slice(0, 2), { name: 'Rameur', type: 'cardio' }];
+
+    expect(() => dropExerciseOnto(exercises, 2, 0)).toThrow(/cardio/);
+  });
+
+  it('dropExerciseOnto does nothing when a member is dropped onto a member of its group of two', () => {
+    const exercises = tuned();
+
+    expect(dropExerciseOnto(exercises, 1, 0)).toEqual(exercises);
+  });
+
+  it('dropExerciseOnto does nothing when a member is dropped onto a member of its group of three', () => {
+    const exercises = [...tuned().slice(0, 2), weightEx('X', 3, { group: group('g1', { transition: 40, roundRest: 120 }) })];
+
+    expect(dropExerciseOnto(exercises, 0, 2)).toEqual(exercises);
+  });
+
+  it('setGroupSettings keeps the series states when only the transition changes', () => {
+    const result = setGroupSettings(withStates(), 'g1', { transition: 0 });
+
+    expect(result[0].series[0].activityStates).toEqual({ 0: 'done' });
+  });
+
+  it('linkNextExercise keeps the series of the members already grouped', () => {
+    const result = linkNextExercise(withStates(), 1);
+
+    expect(result[0].series[0].activityStates).toEqual({ 0: 'done' });
+  });
+
+  it('groupExercises accepts an isolated member as a single exercise', () => {
+    const exercises = [weightEx('A', 3, { group: group('g1') }), weightEx('B', 3), weightEx('C', 3)];
+
+    const result = groupExercises(exercises, [0, 1]);
+
+    expect(groupIds(result)).toEqual(['g2', 'g2', undefined]);
+  });
+
+  it('setGroupSettings refuses zero rounds', () => {
+    expect(() => setGroupSettings(tuned(), 'g1', { rounds: 0 })).toThrow(/entier/);
+  });
+
+  it('setGroupSettings refuses a fractional number of rounds', () => {
+    expect(() => setGroupSettings(tuned(), 'g1', { rounds: 1.5 })).toThrow(/entier/);
+  });
+
+  it('linkNextExercise refuses an index out of bounds', () => {
+    expect(() => linkNextExercise(tuned(), 9)).toThrow(/Exercice introuvable/);
+  });
+
+  it('moveExerciseBlock refuses an index out of bounds', () => {
+    expect(() => moveExerciseBlock(tuned(), 9, 1)).toThrow(/Exercice introuvable/);
+  });
+
+  it('moveWithinSuperset refuses an index out of bounds', () => {
+    expect(() => moveWithinSuperset(tuned(), 9, -1)).toThrow(/Exercice introuvable/);
+  });
+
+  it('dropExerciseOnto refuses a dropped index out of bounds', () => {
+    expect(() => dropExerciseOnto(tuned(), 9, 0)).toThrow(/Exercice introuvable/);
+  });
+
+  it('dropExerciseOnto refuses a target index out of bounds', () => {
+    expect(() => dropExerciseOnto(tuned(), 2, 9)).toThrow(/Exercice introuvable/);
+  });
+
+  it('removeExerciseKeepingGroups refuses an index out of bounds', () => {
+    expect(() => removeExerciseKeepingGroups(tuned(), 9)).toThrow(/Exercice introuvable/);
+  });
+});
