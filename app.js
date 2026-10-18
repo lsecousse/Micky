@@ -4473,10 +4473,10 @@ function buildStatsProgression(sessions) {
 
     const allDates = [...new Set(multiPointExos.flatMap(d => d.points.map(p => p.date)))].sort();
 
-    // Series: ink, done, mut, alert, then ink and done dashed
+    // Series: ink, done, mut solid, then dashed (alert is reserved for events)
     const seriesStyles = [
-      { token: 'ink' }, { token: 'done' }, { token: 'mut' }, { token: 'alert' },
-      { token: 'ink', dash: [6, 4] }, { token: 'done', dash: [6, 4] },
+      { token: 'ink' }, { token: 'done' }, { token: 'mut' },
+      { token: 'ink', dash: [6, 4] }, { token: 'done', dash: [6, 4] }, { token: 'mut', dash: [6, 4] },
     ];
     const ink = carnetColor('ink');
     const paper = carnetColor('paper');
@@ -4538,7 +4538,7 @@ function buildStatsProgression(sessions) {
         },
         scales: {
           x: {
-            ticks: { color: mut, font: mono(12), maxRotation: 45 },
+            ticks: { color: mut, font: mono(12), maxRotation: 45, padding: 8 },
             grid: { color: rule, drawTicks: false },
             border: { color: rule },
           },

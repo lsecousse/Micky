@@ -177,6 +177,12 @@ describe('carnetTokensShould', () => {
     expect(read('app.js')).not.toMatch(/\bCHART_COLORS\b/);
   });
 
+  it('chart series never use the alert colour', () => {
+    const chart = functionSource('app.js', 'buildStatsProgression');
+
+    expect(chart).not.toMatch(/token:\s*'alert'|carnetColor\('alert'\)/);
+  });
+
   it('carnetColor reads a Carnet CSS variable', () => {
     expect(functionSource('app.js', 'carnetColor'))
       .toContain("getComputedStyle(document.documentElement).getPropertyValue('--' + name).trim()");
