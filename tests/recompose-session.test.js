@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { recomposeSession, recomposeExercise } from '../lib/recompose-session.js';
+import { recomposeSession, recomposeExercise, fonteExecution } from '../lib/recompose-session.js';
 
 describe('recomposeSession', () => {
   const baseRow = {
@@ -109,5 +109,18 @@ describe('recomposeExercise with super sets', () => {
     const ex = recomposeExercise(row({ series: [] }), 'fonte');
 
     expect('group' in ex).toBe(false);
+  });
+});
+
+describe('fonteExecutionShould', () => {
+  it('return only the series for an exercise without group', () => {
+    expect(fonteExecution({ series: [{ a: 1 }] })).toEqual({ series: [{ a: 1 }] });
+  });
+
+  it('round-trip the group through recomposeExercise', () => {
+    const group = { id: 'g1', rounds: 2, transition: 15, roundRest: 90 };
+    const row   = { name: 'Curl', activities: [], execution: fonteExecution({ series: [], group }) };
+
+    expect(recomposeExercise(row, 'fonte').group).toEqual(group);
   });
 });

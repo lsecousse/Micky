@@ -14,11 +14,11 @@ function libScriptsOf(page) {
 function loadInSharedScope(scripts) {
   const context = vm.createContext({});
   context.window = context;
-  scripts.forEach(src => vm.runInContext(readFileSync(src, 'utf8'), context, { filename: src }));
+  [...new Set(scripts)].forEach(src => vm.runInContext(readFileSync(src, 'utf8'), context, { filename: src }));
   return context;
 }
 
-// Phase 2 loads the super set scripts after the existing lib scripts.
+// backoffice.html does not load the super set scripts yet (lot C).
 const SUPERSET_SCRIPTS = ['lib/supersets.js', 'lib/superset-flow.js'];
 
 // Super set g1 = [A, B], 2 rounds, nothing done.
@@ -58,7 +58,7 @@ describe('browser lib scripts', () => {
   });
 
   it('load super set scripts with index.html lib scripts in one shared global scope', () => {
-    const context = loadInSharedScope([...libScriptsOf('index.html'), ...SUPERSET_SCRIPTS]);
+    const context = loadInSharedScope(libScriptsOf('index.html'));
 
     expect(typeof context.groupExercises).toBe('function');
     expect(typeof context.nextLiveStep).toBe('function');
@@ -71,11 +71,17 @@ describe('browser lib scripts', () => {
   });
 
   it('walk a super set with the browser globals', () => {
-    const context   = loadInSharedScope([...libScriptsOf('index.html'), ...SUPERSET_SCRIPTS]);
+    const context   = loadInSharedScope(libScriptsOf('index.html'));
     const exercises = groupOfTwo();
     exercises[0].series[0].activityStates[0] = 'done';
 
     expect(context.nextUndoneInBlock(exercises, 0)).toEqual({ exIdx: 1, sIdx: 0, actIdx: 0 });
+  });
+
+  it('expose the live super set wiring in index.html shared global scope', () => {
+    const context = loadInSharedScope(libScriptsOf('index.html'));
+
+    expect(typeof context.liveFonteExercise).toBe('function');
   });
 
   it('estimate a super set duration with the browser globals', () => {

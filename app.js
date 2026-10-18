@@ -782,6 +782,7 @@ function liveSessionSnapshot(durationSecs = 0) {
           values:           s.values,
           duration_seconds: serieDurs[sIdx] ?? null,
         })),
+        ...(ex.group ? { group: ex.group } : {}),
       };
     }),
   };
@@ -836,24 +837,7 @@ async function startSession(programme) {
           prev:     null,
           state:    'pending',
         }))
-      : programme.exercises.map(ex => {
-          const m    = migrateExercise(ex);
-          const sets = ex.sets ?? m.series.length ?? (ex.count ?? 3);
-          return {
-            name:       ex.name,
-            comment:    ex.comment || '',
-            activities: m.activities,
-            prevSeries: null,
-            series: Array.from({ length: sets }, () => ({
-              activityStates: {},
-              values: m.activities.map(act =>
-                act.type === 'weight'
-                  ? { reps: act.reps || 0, weight: act.weight || 0 }
-                  : { duration: act.duration || 0 }
-              ),
-            })),
-          };
-        }),
+      : programme.exercises.map(ex => liveFonteExercise(ex, migrateExercise(ex))),
   };
   initLiveTimingMaps(null);
   await attachPrevValues(liveSession.exercises, programme.id, liveSession.category, liveSession.id);
@@ -1518,7 +1502,7 @@ function completeFocusedActivity() {
   }
 
   const allDone = ex.series.every(s => ex.activities.every((_, a) => s.activityStates?.[a] === 'done'));
-  if (allDone && !liveSession.exoDurations[exIdx]) {
+  if (allDone && !liveSession.exoDurations[exIdx] && liveExerciseDurationAllowed(liveSession.exercises, exIdx)) {
     liveSession.exoDurations[exIdx] = Math.max(1, Math.round((Date.now() - liveSession.exoStartedAt[exIdx]) / 1000));
   }
 
@@ -1949,8 +1933,9 @@ function updateProgrammeTemplate(exIdx, actIdx, field, val) {
   programmeTemplateQueue = programmeTemplateQueue.then(async () => {
     const programmes = await loadProgrammes();
     const prog = programmes.find(p => p.id === liveSession.programmeId);
-    if (!prog?.exercises[exIdx]?.activities?.[actIdx]) return;
-    prog.exercises[exIdx].activities[actIdx][field] = val;
+    const progIdx = programmeIndexOf(prog?.exercises || [], liveSession.exercises, exIdx);
+    if (!prog?.exercises[progIdx]?.activities?.[actIdx]) return;
+    prog.exercises[progIdx].activities[actIdx][field] = val;
     await updateProgrammeDB(prog);
   }).catch(err => console.error('updateProgrammeTemplate error:', err));
   return programmeTemplateQueue;
@@ -1993,7 +1978,7 @@ function finishSession() {
     stopAllChronos();
     stopSyncPolling();
     liveSession.exercises.forEach((ex, exIdx) => {
-      if (!liveSession.exoDurations[exIdx] && liveSession.exoStartedAt[exIdx]) {
+      if (!liveSession.exoDurations[exIdx] && liveSession.exoStartedAt[exIdx] && liveExerciseDurationAllowed(liveSession.exercises, exIdx)) {
         liveSession.exoDurations[exIdx] = Math.max(1, Math.round((Date.now() - liveSession.exoStartedAt[exIdx]) / 1000));
       }
     });
