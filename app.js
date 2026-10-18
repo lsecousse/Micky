@@ -1334,7 +1334,7 @@ function renderSeriesFocus(tab) {
         const el = document.getElementById('focus-suggestion');
         if (!el) return;
         if (!text) { el.classList.add('hidden'); return; }
-        el.innerHTML = `💡 ${escapeHtml(text)}`;
+        el.textContent = text;
       }).catch(() => {
         const el = document.getElementById('focus-suggestion');
         if (el) el.classList.add('hidden');
@@ -1688,49 +1688,41 @@ function openEditModalForActivity(exIdx, sIdx, actIdx) {
 
 function renderLiveCardio(tab) {
   const wrap = document.createElement('div');
-  wrap.className = 'py-5';
+  wrap.className = 'pt-5 pb-8 text-ink';
 
   liveSession.exercises.forEach((ex, exIdx) => {
     const isDone = ex.state === 'done';
-    const ord = String(exIdx + 1).padStart(2, '0');
 
     const article = document.createElement('article');
     article.className = 'mb-10';
 
-    // Header — numero + nom + status
+    // Header — counter + state (mock .kick), italic name (mock .h2), comment
     const header = document.createElement('header');
     header.className = 'px-5 mb-4';
     header.innerHTML = `
-      <div class="flex items-baseline gap-5">
-        <span class="font-display font-black text-[34px] ${isDone ? 'text-a-muted' : 'text-a-racing'} leading-none num-stat tracking-tight">${ord}</span>
-        <div class="flex-1 pt-1 space-y-2">
-          <div class="flex items-baseline gap-3 flex-wrap">
-            <h2 class="font-display font-bold text-[24px] leading-[1.1] text-a-paper">${escapeHtml(ex.name)}</h2>
-            <span class="font-sans text-[9px] uppercase tracking-eyebrow ${isDone ? 'text-a-acid' : 'text-a-muted'} font-semibold flex items-center gap-1.5 shrink-0">
-              <span aria-hidden class="w-1.5 h-1.5 ${isDone ? 'bg-a-acid' : 'bg-a-muted'}"></span>
-              ${isDone ? 'Fait' : 'À faire'}
-            </span>
-          </div>
-          ${ex.comment ? `<p class="font-sans text-[11px] uppercase tracking-eyebrow text-a-muted">${escapeHtml(ex.comment)}</p>` : ''}
-        </div>
-      </div>
+      <p class="flex justify-between gap-3 text-[13px] text-mut">
+        <span class="min-w-0 num-stat">Exercice <b class="font-semibold text-ink">${exIdx + 1}</b> sur ${liveSession.exercises.length}</span>
+        <span class="shrink-0 ${isDone ? 'font-semibold text-done' : ''}">${isDone ? 'fait' : 'à faire'}</span>
+      </p>
+      <h2 class="font-display italic font-medium text-[31px] leading-[1.05] tracking-[-0.01em] ${isDone ? 'text-mut' : 'text-ink'} mt-1.5">${escapeHtml(ex.name)}</h2>
+      ${ex.comment ? `<p class="text-[13px] text-mut mt-2.5">${escapeHtml(ex.comment)}</p>` : ''}
     `;
     article.appendChild(header);
 
-    // Fields — 3 inputs (Temps / Puissance / Distance)
+    // Fields — 3 underlined logbook inputs (Temps / Puissance / Distance)
     const fields = document.createElement('div');
-    fields.className = 'grid grid-cols-3 border-y border-a-border';
+    fields.className = 'grid grid-cols-3 gap-4 px-5 pt-3 border-0 border-solid border-t-[1.5px] border-ink';
 
     const makeField = (label, unit, value, type, step, onChange) => {
-      const wrap = document.createElement('div');
-      wrap.className = 'px-3 py-3 border-r border-a-border last:border-r-0';
+      const wrap = document.createElement('label');
+      wrap.className = 'block min-w-0';
       wrap.innerHTML = `
-        <p class="font-sans text-[8px] uppercase tracking-[0.40em] text-a-muted mb-1.5">${label}</p>
-        <div class="flex items-baseline gap-1.5">
+        <span class="block text-[12px] text-mut mb-1.5">${label}</span>
+        <span class="flex items-baseline gap-1 pb-1.5 border-0 border-solid border-b border-rule focus-within:border-ink">
           <input type="number" inputmode="${type}" ${step ? `step="${step}"` : ''} min="0" value="${value || ''}"
-            class="font-display font-bold text-[20px] num-stat text-a-cyan leading-none bg-transparent w-full min-w-0 outline-none focus:text-a-paper" />
-          <span class="font-sans text-[9px] uppercase tracking-eyebrow text-a-muted shrink-0">${unit}</span>
-        </div>
+            class="font-mono font-semibold text-[26px] leading-none tracking-[-0.03em] num-stat text-ink bg-transparent w-full min-w-0 outline-none" />
+          <span class="text-[13px] text-mut shrink-0">${unit}</span>
+        </span>
       `;
       const inp = wrap.querySelector('input');
       inp.addEventListener('input', onChange);
@@ -1754,28 +1746,28 @@ function renderLiveCardio(tab) {
     }));
     article.appendChild(fields);
 
-    // Prev — eyebrow muted
+    // Previous session — mono figures, muted
     if (ex.prev) {
       const parts = [
         `${ex.prev.duration || '—'} min`,
         `${ex.prev.power || '—'} W`,
       ];
-      if (ex.prev.km) parts.push(`${ex.prev.km} km`);
+      if (ex.prev.km) parts.push(`${formatKg(ex.prev.km)} km`);
       const prev = document.createElement('p');
-      prev.className = 'font-sans text-[10px] uppercase tracking-eyebrow text-a-muted mt-3 px-5';
-      prev.textContent = `Préc : ${parts.join(' · ')}`;
+      prev.className = 'text-[13px] text-mut num-stat mt-3 px-5';
+      prev.textContent = `Préc. : ${parts.join(' · ')}`;
       article.appendChild(prev);
     }
 
-    // State btn
+    // State btn — solid ink to validate, outlined in done once done
     const btnWrap = document.createElement('div');
     btnWrap.className = 'mt-4 px-5';
     const stateBtn = document.createElement('button');
     const refreshStateBtn = () => {
       const done = ex.state === 'done';
       stateBtn.className = done
-        ? 'w-full py-4 border border-a-acid text-a-acid font-display font-bold text-[14px] uppercase tracking-eyebrow active:bg-a-acid/[0.08] transition'
-        : 'w-full py-4 bg-a-acid text-a-ink font-display font-bold text-[14px] uppercase tracking-eyebrow active:bg-a-acid/80 transition';
+        ? 'w-full h-14 border-[1.5px] border-solid border-done rounded text-done text-[16px] font-semibold active:bg-done/10 transition'
+        : 'w-full h-14 bg-ink text-paper rounded text-[16px] font-semibold active:bg-ink/80 transition';
       stateBtn.textContent = done ? '✓ Fait' : '✓ Valider';
     };
     refreshStateBtn();

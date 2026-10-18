@@ -19,9 +19,12 @@ const MIGRATED_FUNCTIONS = [
   'renderLiveSession', 'renderExerciseList', 'renderExoMasthead', 'renderSeriesFocus', 'renderRestSplit',
   'renderExerciseDetail', 'openEditModalForActivity', 'openLiveEditModal', 'updateCountdownUI', 'finishSession',
   'showPostSessionFeedback',
+  'renderLiveCardio', 'openChronoOverlay', 'startChrono', 'stopChronoOverlay', 'openMinuterieOverlay',
+  'stopMinuterieOverlay',
 ];
-const MIGRATED_HTML_BLOCKS = ['DIALOG CUSTOM', 'TOAST', 'COUNTDOWN STICKY TOP BAR', 'HOME', 'À LA SALLE', 'MODAL ÉDITION ACTIVITÉ (live)'];
-const MIGRATED_CSS_SELECTORS = ['#toast', '.dialog', '#countdown', '.live-edit', '.feedback-ia'];
+const MIGRATED_HTML_BLOCKS = ['DIALOG CUSTOM', 'TOAST', 'COUNTDOWN STICKY TOP BAR', 'HOME', 'À LA SALLE', 'MODAL ÉDITION ACTIVITÉ (live)',
+  'CHRONO FULLSCREEN', 'MINUTERIE FULLSCREEN'];
+const MIGRATED_CSS_SELECTORS = ['#toast', '.dialog', '#countdown', '.live-edit', '.feedback-ia', '#chrono', '#minuterie'];
 
 // Source of a top-level function, up to its closing brace at column 0.
 function functionSource(file, name) {

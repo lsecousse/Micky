@@ -184,29 +184,35 @@
   </div>
 
   <!-- CHRONO FULLSCREEN -->
-  <div id="chrono-overlay" class="hidden fixed inset-0 z-[200] bg-a-ink flex flex-col items-center justify-center px-6 text-center">
-    <p class="font-sans text-[10px] uppercase tracking-[0.40em] text-a-racing font-semibold mb-3 flex items-center gap-2">
-      <span aria-hidden class="w-1.5 h-1.5 bg-a-racing animate-pulse"></span>
-      Chrono en cours
-    </p>
-    <p id="chrono-exercise-name" class="font-display font-bold italic text-[16px] text-a-paper mb-10 max-w-[28ch]"></p>
-    <div class="font-display font-black num-stat text-a-racing leading-none tracking-tight" style="font-size:clamp(4rem, 22vw, 7rem)">
-      <span id="chrono-display">00:00</span>
+  <div id="chrono-overlay" class="hidden fixed inset-0 z-[200] bg-paper text-ink font-sans flex flex-col pt-[env(safe-area-inset-top)]">
+    <div class="flex-1 flex flex-col justify-center">
+      <div class="px-5 mb-4">
+        <p class="text-[13px] text-mut">Chrono en cours</p>
+        <p id="chrono-exercise-name" class="font-display italic font-medium text-[31px] leading-[1.05] tracking-[-0.01em] text-ink mt-1.5"></p>
+      </div>
+      <div class="bg-hl px-5 py-6 border-0 border-solid border-y-[1.5px] border-ink text-center">
+        <span id="chrono-display" class="inline-block font-mono font-semibold num-stat text-ink leading-none tracking-[-0.04em] text-[clamp(4.5rem,24vw,7.5rem)]">00:00</span>
+      </div>
     </div>
-    <button id="chrono-stop" class="mt-12 py-4 px-10 bg-a-blood text-a-paper font-display font-bold text-[14px] uppercase tracking-eyebrow active:bg-a-blood/80 transition">Stop</button>
+    <div class="border-0 border-solid border-t-[1.5px] border-ink px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+12px)]">
+      <button id="chrono-stop" class="w-full h-14 bg-ink text-paper rounded text-[16px] font-semibold active:bg-ink/80 transition">Stop</button>
+    </div>
   </div>
 
   <!-- MINUTERIE FULLSCREEN -->
-  <div id="minuterie-overlay" class="hidden fixed inset-0 z-[200] bg-a-ink flex flex-col items-center justify-center px-6 text-center">
-    <p class="font-sans text-[10px] uppercase tracking-[0.40em] text-a-racing font-semibold mb-3 flex items-center gap-2">
-      <span aria-hidden class="w-1.5 h-1.5 bg-a-racing animate-pulse"></span>
-      Minuterie
-    </p>
-    <p id="minuterie-exercise-name" class="font-display font-bold italic text-[16px] text-a-paper mb-10 max-w-[28ch]"></p>
-    <div class="font-display font-black num-stat text-a-racing leading-none tracking-tight" style="font-size:clamp(4rem, 22vw, 7rem)">
-      <span id="minuterie-display">00:00</span>
+  <div id="minuterie-overlay" class="hidden fixed inset-0 z-[200] bg-paper text-ink font-sans flex flex-col pt-[env(safe-area-inset-top)]">
+    <div class="flex-1 flex flex-col justify-center">
+      <div class="px-5 mb-4">
+        <p class="text-[13px] text-mut">Minuterie</p>
+        <p id="minuterie-exercise-name" class="font-display italic font-medium text-[31px] leading-[1.05] tracking-[-0.01em] text-ink mt-1.5"></p>
+      </div>
+      <div class="bg-hl px-5 py-6 border-0 border-solid border-y-[1.5px] border-ink text-center">
+        <span id="minuterie-display" class="inline-block font-mono font-semibold num-stat text-ink leading-none tracking-[-0.04em] text-[clamp(4.5rem,24vw,7.5rem)]">00:00</span>
+      </div>
     </div>
-    <button id="minuterie-stop" class="mt-12 py-4 px-10 bg-a-blood text-a-paper font-display font-bold text-[14px] uppercase tracking-eyebrow active:bg-a-blood/80 transition">Stop</button>
+    <div class="border-0 border-solid border-t-[1.5px] border-ink px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+12px)]">
+      <button id="minuterie-stop" class="w-full h-14 bg-ink text-paper rounded text-[16px] font-semibold active:bg-ink/80 transition">Stop</button>
+    </div>
   </div>
 
 
