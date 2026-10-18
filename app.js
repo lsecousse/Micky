@@ -4308,24 +4308,19 @@ async function renderStats() {
 
   if (!sessions.length) {
     body.innerHTML = `
-      <div class="px-5 pt-12 text-center font-display italic text-[16px] text-a-muted">
+      <p class="px-5 pt-12 font-display italic text-[20px] text-mut">
         Aucune séance enregistrée.
-      </div>
+      </p>
     `;
     return;
   }
 
   // Masthead
   const masthead = document.createElement('section');
-  masthead.className = 'px-5 pt-9 pb-9 accent-line';
+  masthead.className = 'px-5 pt-8 pb-7';
   masthead.innerHTML = `
-    <h1 class="font-display font-black h-display text-a-paper">
-      Tes<br/>
-      <span class="text-a-paper/40"><span class="text-a-acid not-italic font-black">·</span> progrès.</span>
-    </h1>
-    <p class="font-sans text-[10px] uppercase tracking-eyebrow text-a-muted mt-5">
-      Évolution par exercice
-    </p>
+    <h1 class="font-display font-medium text-[52px] leading-[0.95] tracking-[-0.02em] text-ink">Tes <em class="text-mut">progrès.</em></h1>
+    <p class="font-sans text-[13px] text-mut mt-3">Évolution par exercice</p>
   `;
   body.appendChild(masthead);
 
@@ -4360,8 +4355,10 @@ function exoMetrics(ex, session) {
   };
 }
 
-// Palette Direction A — cyan (mesure) puis acid, racing, paper, en rotation
-const CHART_COLORS = ['#06B6D4', '#84CC16', '#FACC15', '#F5F4F0', '#DC2626'];
+// Carnet token value (hex) read from the CSS variables of src/input.css
+function carnetColor(name) {
+  return getComputedStyle(document.documentElement).getPropertyValue('--' + name).trim();
+}
 
 function buildStatsProgression(sessions) {
   const section = statsSection('Progression');
@@ -4369,34 +4366,36 @@ function buildStatsProgression(sessions) {
   const progNames = [...new Set(sessions.map(s => s.programmeName).filter(Boolean))].sort();
   if (!progNames.length) return section;
 
-  // Programme pills — eyebrow border default, racing accent active
+  // Programme pills — active: solid ink, others: rule outline
+  const pillClass = active => `shrink-0 px-3 py-2 rounded font-sans text-[13px] font-semibold border border-solid transition ${
+    active ? 'bg-ink border-ink text-paper' : 'bg-transparent border-rule text-mut active:text-ink'
+  }`;
   const pills = document.createElement('div');
-  pills.className = 'flex gap-2 overflow-x-auto px-5 pb-4 -mx-px';
+  pills.className = 'flex gap-2 overflow-x-auto px-5 pb-5';
   progNames.forEach((name, i) => {
     const btn = document.createElement('button');
-    const isActive = i === 0;
-    btn.className = `shrink-0 px-3 py-2 font-sans text-[10px] uppercase tracking-eyebrow font-semibold border transition ${
-      isActive ? 'border-a-racing text-a-racing bg-a-racing/[0.08]' : 'border-a-border text-a-muted active:border-a-paper active:text-a-paper'
-    }`;
+    btn.className = pillClass(i === 0);
     btn.textContent = name;
     btn.dataset.prog = name;
     pills.appendChild(btn);
   });
   section.appendChild(pills);
 
-  // Metric toggle — segmented bar acid active
+  // Metric toggle — tabs: ink rule on top, active tab bold with an ink marker
+  const tabClass = active => `relative h-[54px] bg-transparent border-0 font-display italic text-[16px] transition ${
+    active
+      ? "text-ink font-bold before:content-[''] before:absolute before:-top-[1.5px] before:left-[28%] before:right-[28%] before:h-[3px] before:bg-ink"
+      : 'text-mut font-normal active:text-ink'
+  }`;
   const toggle = document.createElement('div');
-  toggle.className = 'grid grid-cols-3 border-y border-a-border mb-6';
+  toggle.className = 'grid grid-cols-3 border-0 border-solid border-t-[1.5px] border-ink';
   [
     { label: 'Volume', metric: 'volume' },
     { label: '1RM',    metric: 'e1rm' },
     { label: 'Max',    metric: 'topWeight' },
   ].forEach(({ label, metric }, i) => {
     const btn = document.createElement('button');
-    const isActive = i === 0;
-    btn.className = `py-3 font-sans text-[11px] uppercase tracking-eyebrow font-semibold border-r border-a-border last:border-r-0 transition ${
-      isActive ? 'text-a-acid bg-a-acid/[0.06] border-t-2 border-t-a-acid -mt-px' : 'text-a-muted active:text-a-paper'
-    }`;
+    btn.className = tabClass(i === 0);
     btn.textContent = label;
     btn.dataset.metric = metric;
     toggle.appendChild(btn);
@@ -4404,13 +4403,13 @@ function buildStatsProgression(sessions) {
   section.appendChild(toggle);
 
   // Cards container
-  const cardsGrid = document.createElement('div');
-  cardsGrid.className = 'px-5 mb-6 space-y-2';
+  const cardsGrid = document.createElement('ul');
+  cardsGrid.className = 'list-none m-0 p-0 mb-8 border-0 border-solid border-t border-rule';
   section.appendChild(cardsGrid);
 
   // Chart container
   const chartWrap = document.createElement('div');
-  chartWrap.className = 'px-5 mb-12 h-[280px]';
+  chartWrap.className = 'px-5 mb-12 h-[300px]';
   const canvas = document.createElement('canvas');
   chartWrap.appendChild(canvas);
   section.appendChild(chartWrap);
@@ -4436,8 +4435,9 @@ function buildStatsProgression(sessions) {
   function render() {
     const exoData = buildExoData(activeProg);
     const unit = 'kg';
+    const fmt = v => activeMetric === 'volume' ? Math.round(v).toLocaleString('fr-FR') : formatKg(v.toFixed(1));
 
-    // Cards — delta acid (up) / blood (down) / muted (=)
+    // Cards — delta done (up) / alert (down) / mut (=)
     cardsGrid.innerHTML = '';
     exoData.forEach(exo => {
       if (!exo.points.length) return;
@@ -4445,22 +4445,18 @@ function buildStatsProgression(sessions) {
       const last = exo.points[exo.points.length - 1][activeMetric];
       const delta = first > 0 ? ((last - first) / first * 100) : 0;
       let deltaColor;
-      if (delta > 0)      deltaColor = 'text-a-acid';
-      else if (delta < 0) deltaColor = 'text-a-blood';
-      else                deltaColor = 'text-a-muted';
-      const deltaStr = delta === 0 ? '=' : `${delta > 0 ? '+' : ''}${Math.round(delta)}%`;
-      const fmt = v => activeMetric === 'volume' ? Math.round(v).toLocaleString('fr-FR') : v.toFixed(1);
+      if (delta > 0)      deltaColor = 'text-done';
+      else if (delta < 0) deltaColor = 'text-alert';
+      else                deltaColor = 'text-mut';
+      const deltaStr = delta === 0 ? '=' : `${delta > 0 ? '+' : ''}${Math.round(delta)} %`;
 
-      const card = document.createElement('div');
-      card.className = 'flex items-baseline justify-between gap-3 py-3 border-b border-a-border/70 last:border-b-0';
+      const card = document.createElement('li');
+      card.className = 'grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-1 items-baseline px-5 py-3 border-0 border-solid border-b border-rule';
       card.innerHTML = `
-        <span class="font-display font-bold italic text-[14px] text-a-paper truncate flex-1 min-w-0">${escapeHtml(exo.name)}</span>
-        <div class="flex items-baseline gap-2 shrink-0 font-display num-stat">
-          <span class="text-[12px] text-a-muted">${fmt(first)}</span>
-          <span class="font-sans text-[10px] text-a-muted">→</span>
-          <span class="text-[14px] font-bold text-a-cyan">${fmt(last)}<span class="font-sans font-medium text-[9px] tracking-eyebrow text-a-muted ml-1">${unit}</span></span>
-          <span class="font-sans text-[10px] uppercase tracking-eyebrow font-semibold ${deltaColor} num-stat min-w-[42px] text-right">${deltaStr}</span>
-        </div>
+        <span class="font-display font-bold italic text-[20px] leading-[1.15] text-ink truncate">${escapeHtml(exo.name)}</span>
+        <span class="font-mono text-[14px] text-ink num-stat whitespace-nowrap">${fmt(last)} ${unit}</span>
+        <span class="font-sans text-[13px] text-mut num-stat">depuis <span class="font-mono">${fmt(first)} ${unit}</span></span>
+        <span class="font-mono text-[13px] font-semibold ${deltaColor} num-stat text-right whitespace-nowrap">${deltaStr}</span>
       `;
       cardsGrid.appendChild(card);
     });
@@ -4477,8 +4473,20 @@ function buildStatsProgression(sessions) {
 
     const allDates = [...new Set(multiPointExos.flatMap(d => d.points.map(p => p.date)))].sort();
 
+    // Series: ink, done, mut, alert, then ink and done dashed
+    const seriesStyles = [
+      { token: 'ink' }, { token: 'done' }, { token: 'mut' }, { token: 'alert' },
+      { token: 'ink', dash: [6, 4] }, { token: 'done', dash: [6, 4] },
+    ];
+    const ink = carnetColor('ink');
+    const paper = carnetColor('paper');
+    const mut = carnetColor('mut');
+    const rule = carnetColor('rule');
+    const mono = size => ({ family: "'IBM Plex Mono', monospace", size });
+
     const datasets = multiPointExos.map((exo, i) => {
-      const color = CHART_COLORS[i % CHART_COLORS.length];
+      const style = seriesStyles[i % seriesStyles.length];
+      const color = carnetColor(style.token);
       const dateMap = {};
       exo.points.forEach(p => { dateMap[p.date] = p[activeMetric]; });
       return {
@@ -4486,6 +4494,7 @@ function buildStatsProgression(sessions) {
         data: allDates.map(d => dateMap[d] ?? null),
         borderColor: color,
         backgroundColor: color + '22',
+        borderDash: style.dash ?? [],
         borderWidth: 2,
         pointRadius: 3,
         pointHoverRadius: 5,
@@ -4506,43 +4515,41 @@ function buildStatsProgression(sessions) {
           legend: {
             position: 'bottom',
             labels: {
-              color: '#888888',
-              font: { family: "'DM Sans', sans-serif", size: 10, weight: '500' },
-              boxWidth: 8,
-              boxHeight: 8,
-              padding: 10,
-              usePointStyle: false,
+              color: mut,
+              font: mono(12),
+              boxWidth: 24,
+              boxHeight: 0,
+              padding: 12,
             },
           },
           tooltip: {
-            backgroundColor: '#0A0A0A',
-            borderColor: '#2A2A2A',
-            borderWidth: 1,
-            titleColor: '#F5F4F0',
-            bodyColor: '#F5F4F0',
-            titleFont: { family: "'DM Sans', sans-serif", size: 11, weight: '600' },
-            bodyFont: { family: "'DM Sans', sans-serif", size: 11 },
-            cornerRadius: 0,
+            backgroundColor: ink,
+            borderWidth: 0,
+            titleColor: paper,
+            bodyColor: paper,
+            titleFont: { ...mono(12), weight: '600' },
+            bodyFont: mono(12),
+            cornerRadius: 6,
             padding: 10,
             callbacks: {
-              label: ctx => `${ctx.dataset.label}: ${activeMetric === 'volume' ? Math.round(ctx.parsed.y) : ctx.parsed.y.toFixed(1)} ${unit}`,
+              label: ctx => `${ctx.dataset.label}: ${fmt(ctx.parsed.y)} ${unit}`,
             },
           },
         },
         scales: {
           x: {
-            ticks: { color: '#888888', font: { family: "'DM Sans', sans-serif", size: 9 }, maxRotation: 45 },
-            grid: { color: '#2A2A2A', drawTicks: false },
-            border: { color: '#2A2A2A' },
+            ticks: { color: mut, font: mono(12), maxRotation: 45 },
+            grid: { color: rule, drawTicks: false },
+            border: { color: rule },
           },
           y: {
             ticks: {
-              color: '#888888',
-              font: { family: "'DM Sans', sans-serif", size: 9 },
-              callback: v => activeMetric === 'volume' ? Math.round(v) : v.toFixed(1),
+              color: mut,
+              font: mono(12),
+              callback: v => fmt(v),
             },
-            grid: { color: '#2A2A2A', drawTicks: false },
-            border: { color: '#2A2A2A' },
+            grid: { color: rule, drawTicks: false },
+            border: { color: rule },
           },
         },
       },
@@ -4551,26 +4558,20 @@ function buildStatsProgression(sessions) {
 
   render();
 
-  // Programme pill click — re-render with active state racing
+  // Programme pill click — re-render with the selected programme
   pills.addEventListener('click', e => {
     const btn = e.target.closest('button[data-prog]');
     if (!btn) return;
-    pills.querySelectorAll('button[data-prog]').forEach(b => {
-      b.className = 'shrink-0 px-3 py-2 font-sans text-[10px] uppercase tracking-eyebrow font-semibold border transition border-a-border text-a-muted active:border-a-paper active:text-a-paper';
-    });
-    btn.className = 'shrink-0 px-3 py-2 font-sans text-[10px] uppercase tracking-eyebrow font-semibold border transition border-a-racing text-a-racing bg-a-racing/[0.08]';
+    pills.querySelectorAll('button[data-prog]').forEach(b => { b.className = pillClass(b === btn); });
     activeProg = btn.dataset.prog;
     render();
   });
 
-  // Metric toggle click — acid active
+  // Metric toggle click — re-render with the selected metric
   toggle.addEventListener('click', e => {
     const btn = e.target.closest('button[data-metric]');
     if (!btn) return;
-    toggle.querySelectorAll('button[data-metric]').forEach(b => {
-      b.className = 'py-3 font-sans text-[11px] uppercase tracking-eyebrow font-semibold border-r border-a-border last:border-r-0 transition text-a-muted active:text-a-paper';
-    });
-    btn.className = 'py-3 font-sans text-[11px] uppercase tracking-eyebrow font-semibold border-r border-a-border last:border-r-0 transition text-a-acid bg-a-acid/[0.06] border-t-2 border-t-a-acid -mt-px';
+    toggle.querySelectorAll('button[data-metric]').forEach(b => { b.className = tabClass(b === btn); });
     activeMetric = btn.dataset.metric;
     render();
   });
