@@ -43,4 +43,40 @@ describe('browser lib scripts', () => {
 
     expect(typeof context.createLocalWriteTracker).toBe('function');
   });
+
+  // Phase 2 loads the super set scripts after the existing lib scripts.
+  const SUPERSET_SCRIPTS = ['lib/supersets.js', 'lib/superset-flow.js'];
+  const groupOfTwo = () => {
+    const group = { id: 'g1', rounds: 2, transition: 15, roundRest: 90 };
+    const ex    = name => ({ name, activities: [{ type: 'weight', rest: 60 }], sets: 2, group });
+    return [ex('A'), ex('B')];
+  };
+
+  it('load super set scripts with index.html lib scripts in one shared global scope', () => {
+    const context = loadInSharedScope([...libScriptsOf('index.html'), ...SUPERSET_SCRIPTS]);
+
+    expect(typeof context.groupExercises).toBe('function');
+    expect(typeof context.nextStep).toBe('function');
+  });
+
+  it('load super set scripts with backoffice.html lib scripts in one shared global scope', () => {
+    const context = loadInSharedScope([...libScriptsOf('backoffice.html'), ...SUPERSET_SCRIPTS]);
+
+    expect(typeof context.dropOnto).toBe('function');
+  });
+
+  it('walk a super set with the browser globals', () => {
+    const context   = loadInSharedScope([...libScriptsOf('index.html'), ...SUPERSET_SCRIPTS]);
+    const exercises = context.groupExercises([{ name: 'A', activities: [{ type: 'weight' }], sets: 2 },
+      { name: 'B', activities: [{ type: 'weight' }], sets: 2 }], [0, 1]);
+    exercises[0].series[0].activityStates[0] = 'done';
+
+    expect(context.nextUndoneInBlock(exercises, 0)).toEqual({ exIdx: 1, sIdx: 0, actIdx: 0 });
+  });
+
+  it('estimate a super set duration with the browser globals', () => {
+    const context = loadInSharedScope([...libScriptsOf('backoffice.html'), ...SUPERSET_SCRIPTS]);
+
+    expect(context.computeEstimatedDuration({ exercises: groupOfTwo() }, new Map())).toBe(2 * (45 + 15 + 45 + 90));
+  });
 });
