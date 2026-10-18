@@ -375,15 +375,13 @@ input:focus { border-color: var(--accent); }
 
 #dialog-msg { margin: 0; }
 
-/* ── Live edit modal ─────────────────────────────────── */
+/* ── Live edit modal — Carnet bottom sheet (mock .sheet) ── */
 .live-edit-modal {
   position: fixed;
   inset: 0;
   z-index: 220; /* au-dessus de #countdown-bar (150), chrono-overlay (200), .modal (210) */
   display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 16px;
+  align-items: flex-end;
 }
 
 .live-edit-modal.hidden { display: none; }
@@ -391,33 +389,18 @@ input:focus { border-color: var(--accent); }
 .live-edit-modal-overlay {
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(27, 28, 31, 0.45);
 }
 
-.live-edit-modal-card {
+.live-edit-modal-sheet {
   position: relative;
-  background: var(--surface);
-  border: 1px solid var(--a-border);
-  border-radius: var(--radius);
-  padding: 20px;
   width: 100%;
-  max-width: 360px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding-bottom: calc(env(safe-area-inset-bottom) + 16px);
 }
 
-.live-edit-modal-title {
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--accent);
-}
-
-/* Legacy .live-edit-modal-body styles (display:flex + input[type="number"] override)
-   retirés : la nouvelle structure utilise les utilities Tailwind
-   (grid grid-cols-2 + bg-transparent border-b text-[22px] py-2). Les anciennes
-   règles écrasaient w-full + bg-transparent et tronquaient l'affichage. */
-
+/* Shared two-button row (also used by the alimentation modals) */
 .live-edit-modal-actions {
   display: flex;
   justify-content: space-between;
@@ -426,42 +409,18 @@ input:focus { border-color: var(--accent); }
 
 .live-edit-modal-actions button { flex: 1; }
 
-/* Feedback IA — bouton de génération à la demande dans l'historique */
-.feedback-ia-generate {
-  margin-top: 20px;
-  display: flex;
-  justify-content: center;
-}
-.feedback-ia-generate .btn-disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  background: var(--surface);
-  color: var(--text-muted);
-}
-
-/* Suggestion IA inline dans le modal d'édition */
-.live-edit-suggestion {
-  background: rgba(255, 107, 0, 0.08);
-  border: 1px solid rgba(255, 107, 0, 0.3);
-  border-radius: 8px;
-  padding: 10px 12px;
-  font-size: 13px;
-  color: var(--text);
-  line-height: 1.4;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.live-edit-suggestion.hidden { display: none; }
+/* Loading mark of the AI suggestion (series focus) and the post-session feedback */
 .live-edit-suggestion-spinner {
   width: 14px;
   height: 14px;
-  border: 2px solid rgba(255, 107, 0, 0.3);
-  border-top-color: var(--accent);
+  border: 2px solid var(--rule);
+  border-top-color: var(--ink);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
   flex-shrink: 0;
 }
+
+@keyframes spin { to { transform: rotate(360deg); } }
 
 /* Analyse bienveillante des données corporelles */
 .corps-analysis {

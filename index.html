@@ -248,14 +248,19 @@
 
   <!-- MODAL ÉDITION ACTIVITÉ (live) -->
   <div id="live-edit-modal" class="live-edit-modal hidden">
-    <div class="live-edit-modal-overlay !bg-a-ink/80"></div>
-    <div class="!relative !bg-a-ink !border !border-a-border !rounded-none !p-6 !max-w-[380px] !w-full mx-4 space-y-5" style="background:var(--a-ink);max-height:90vh;overflow-y:auto">
-      <p class="font-sans text-[9px] uppercase tracking-[0.40em] text-a-acid font-semibold">Modifier</p>
-      <h2 id="live-edit-modal-title" class="font-display font-bold italic text-[20px] leading-tight text-a-paper">Activité</h2>
-      <div id="live-edit-modal-body" class="space-y-4"></div>
-      <div class="grid grid-cols-2 gap-3 pt-2">
-        <button id="live-edit-modal-cancel" class="py-3 border border-a-border text-a-paper font-sans text-[11px] uppercase tracking-eyebrow active:border-a-paper transition">Annuler</button>
-        <button id="live-edit-modal-ok" class="py-3 bg-a-acid text-a-ink font-display font-bold text-[12px] uppercase tracking-eyebrow active:bg-a-acid/80 transition">Valider</button>
+    <div class="live-edit-modal-overlay"></div>
+    <div class="live-edit-modal-sheet bg-sheet text-ink font-sans border-0 border-solid border-t-[1.5px] border-ink">
+      <div class="flex justify-center pt-2.5" aria-hidden="true"><span class="w-10 h-1 rounded-sm bg-rule"></span></div>
+      <div class="px-5 pt-3 space-y-5">
+        <div>
+          <p class="text-[13px] text-mut">Modifier</p>
+          <h2 id="live-edit-modal-title" class="font-display italic font-bold text-[28px] leading-[1.1] text-ink mt-1">Activité</h2>
+        </div>
+        <div id="live-edit-modal-body" class="space-y-4"></div>
+        <div class="flex gap-2.5 pt-1">
+          <button id="live-edit-modal-cancel" class="flex-1 h-14 border-[1.5px] border-solid border-ink rounded text-ink text-[16px] font-semibold active:bg-ink/10 transition">Annuler</button>
+          <button id="live-edit-modal-ok" class="flex-1 h-14 bg-ink text-paper rounded text-[16px] font-semibold active:bg-ink/80 transition">Valider</button>
+        </div>
       </div>
     </div>
   </div>

@@ -16,9 +16,12 @@ const A_HEX = ['#0A0A0A', '#141414', '#F5F4F0', '#888888', '#2A2A2A', '#444444',
 const MIGRATED_FUNCTIONS = [
   'showConfirm', 'showAlert', 'showToast',
   'renderHome', 'renderHomeSection', 'buildUserDropdown', 'renderSeanceScreen', 'renderProgrammeSelection',
+  'renderLiveSession', 'renderExerciseList', 'renderExoMasthead', 'renderSeriesFocus', 'renderRestSplit',
+  'renderExerciseDetail', 'openEditModalForActivity', 'openLiveEditModal', 'updateCountdownUI', 'finishSession',
+  'showPostSessionFeedback',
 ];
-const MIGRATED_HTML_BLOCKS = ['DIALOG CUSTOM', 'TOAST', 'COUNTDOWN STICKY TOP BAR', 'HOME', 'À LA SALLE'];
-const MIGRATED_CSS_SELECTORS = ['#toast', '.dialog', '#countdown'];
+const MIGRATED_HTML_BLOCKS = ['DIALOG CUSTOM', 'TOAST', 'COUNTDOWN STICKY TOP BAR', 'HOME', 'À LA SALLE', 'MODAL ÉDITION ACTIVITÉ (live)'];
+const MIGRATED_CSS_SELECTORS = ['#toast', '.dialog', '#countdown', '.live-edit', '.feedback-ia'];
 
 // Source of a top-level function, up to its closing brace at column 0.
 function functionSource(file, name) {

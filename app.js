@@ -643,6 +643,7 @@ document.addEventListener('visibilitychange', () => {
 async function renderSeanceScreen() {
   const body = document.getElementById('screen-seance-body');
   body.innerHTML = '';
+  body.classList.remove('flex', 'flex-col'); // set again by the exercise views
   liveSession ? renderLiveSession(body) : await renderProgrammeSelection(body);
 }
 
@@ -903,6 +904,27 @@ document.getElementById('live-edit-modal-ok').addEventListener('click', () => {
   if (liveEditModalCtx?.onOk) liveEditModalCtx.onOk();
 });
 
+// Carnet display helpers for the live session
+function formatRest(secs) {
+  return `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}`;
+}
+
+function formatKg(value) {
+  return String(value).replace('.', ',');
+}
+
+function isExerciseDone(ex) {
+  return ex.series.every(s => ex.activities.every((_, a) => s.activityStates?.[a] === 'done'));
+}
+
+function showExerciseList() {
+  liveFocus = null;
+  liveRest = null;
+  renderSeanceScreen();
+}
+
+const OUTLINE_BTN = 'border-[1.5px] border-solid border-ink rounded text-ink active:bg-ink/10 transition';
+
 function renderLiveSession(tab) {
   const inDetail = liveFocus && liveSession.category !== 'cardio';
   const isCardio = liveSession.category === 'cardio';
@@ -931,122 +953,50 @@ function renderLiveSession(tab) {
       });
     });
   }
-  const pct      = totalSeries > 0 ? Math.round((doneSeries / totalSeries) * 100) : 0;
-  const tonnage  = (doneVolume / 1000).toFixed(1).replace('.', ',');
-  const cibleTon = (totalVolume / 1000).toFixed(1).replace('.', ',');
+  const pct = totalSeries > 0 ? Math.round((doneSeries / totalSeries) * 100) : 0;
 
   const header = document.createElement('header');
-  header.className = 'sticky top-0 z-10 bg-a-ink/96 backdrop-blur-sm border-b border-a-border';
+  header.className = 'sticky top-0 z-10 bg-paper text-ink font-sans';
+  const finishBtn = (label) =>
+    `<button id="finish-session" class="shrink-0 h-10 px-3.5 font-medium text-[13px] ${OUTLINE_BTN}">${label}</button>`;
+  const progress = `
+    <div class="relative mx-5 mt-2 h-[2px] bg-rule" aria-hidden="true">
+      <div class="absolute left-0 top-0 h-full bg-ink" style="width:${pct}%"></div>
+    </div>`;
 
-  if (inDetail) {
+  if (isCardio) {
     header.innerHTML = `
-      <!-- Status row : back + date + En cours + Fin -->
-      <div class="px-5 pt-4 pb-3 flex items-center justify-between font-sans text-[10px] uppercase tracking-eyebrow text-a-muted">
-        <button id="back-to-list" class="flex items-center gap-2 active:text-a-paper transition">
-          <span aria-hidden>←</span><span>Liste</span>
-        </button>
-        <div class="flex items-center gap-2">
-          <span>${formatDate(liveSession.date)}</span>
-          <span class="text-a-muted/50">·</span>
-          <span class="text-a-racing">En cours</span>
+      <div class="px-5 pt-3 pb-3 flex items-center justify-between gap-3">
+        <div class="min-w-0">
+          <div class="font-display italic font-bold text-[20px] leading-tight text-ink truncate">${escapeHtml(liveSession.programmeName)}</div>
+          <div class="text-[13px] text-mut mt-1 num-stat">${formatDate(liveSession.date)} · en cours</div>
         </div>
-        <button id="finish-session" class="font-semibold text-a-acid border border-a-acid bg-a-acid/[0.10] px-3 py-1.5 active:bg-a-acid active:text-a-ink transition text-[10px]">Fin</button>
-      </div>
-
-      <!-- Counter + progress -->
-      <div class="px-5 pb-3">
-        <div class="flex items-baseline justify-end mb-2">
-          <span class="font-display text-[13px] num-stat font-bold leading-none">
-            <span class="text-a-acid">${String(doneSeries).padStart(2, '0')}</span><span class="text-a-muted">/${String(totalSeries).padStart(2, '0')}</span>
-            <span class="font-sans font-medium text-[9px] uppercase tracking-eyebrow text-a-muted ml-1">séries</span>
-          </span>
-        </div>
-        <div class="h-[3px] bg-a-border relative overflow-hidden">
-          <div class="absolute left-0 top-0 h-full bg-a-acid" style="width:${pct}%"></div>
-        </div>
-      </div>
-
-      <!-- Stats strip 4 cols cyan -->
-      <div class="grid grid-cols-4 border-t border-a-border">
-        <div class="px-2.5 py-3 border-r border-a-border min-w-0">
-          <p class="font-sans text-[8px] uppercase tracking-[0.40em] text-a-muted mb-1.5">Volume</p>
-          <p class="font-display font-bold text-[17px] num-stat text-a-cyan leading-none truncate">${Math.round(doneVolume)}<span class="font-sans text-[9px] uppercase tracking-eyebrow text-a-muted ml-1">kg</span></p>
-        </div>
-        <div class="px-2.5 py-3 border-r border-a-border min-w-0">
-          <p class="font-sans text-[8px] uppercase tracking-[0.40em] text-a-muted mb-1.5">Tonnage</p>
-          <p class="font-display font-bold text-[17px] num-stat text-a-cyan leading-none truncate">${tonnage}<span class="font-sans text-[9px] uppercase tracking-eyebrow text-a-muted ml-1">t</span></p>
-        </div>
-        <div class="px-2.5 py-3 border-r border-a-border min-w-0">
-          <p class="font-sans text-[8px] uppercase tracking-[0.40em] text-a-muted mb-1.5">Reps</p>
-          <p class="font-display font-bold text-[17px] num-stat text-a-cyan leading-none truncate">${doneReps}<span class="font-sans text-[9px] uppercase tracking-eyebrow text-a-muted ml-1">/${totalReps}</span></p>
-        </div>
-        <div class="px-2.5 py-3 min-w-0">
-          <p class="font-sans text-[8px] uppercase tracking-[0.40em] text-a-muted mb-1.5">Cible</p>
-          <p class="font-display font-bold text-[17px] num-stat text-a-cyan leading-none truncate">${cibleTon}<span class="font-sans text-[9px] uppercase tracking-eyebrow text-a-muted ml-1">t</span></p>
-        </div>
+        ${finishBtn('Terminer')}
       </div>
     `;
-  } else if (isCardio) {
+  } else if (inDetail || liveRest) {
+    // Exercise views (series, rest): back to the list + programme · session counter
     header.innerHTML = `
-      <div class="px-5 py-4 flex items-center justify-between gap-3">
-        <div class="min-w-0">
-          <div class="font-display font-bold text-[20px] leading-tight text-a-paper truncate">${escapeHtml(liveSession.programmeName)}</div>
-          <div class="font-sans text-[10px] uppercase tracking-eyebrow text-a-muted mt-1">${formatDate(liveSession.date)} · En cours</div>
-        </div>
-        <button id="finish-session" class="shrink-0 font-sans text-[11px] uppercase tracking-eyebrow font-semibold text-a-acid border border-a-acid bg-a-acid/[0.10] px-4 py-2 active:bg-a-acid active:text-a-ink transition">Terminer</button>
+      <div class="px-5 pt-1.5 flex items-center justify-between gap-3 text-[13px] text-mut">
+        ${inDetail ? `<button id="back-to-list" class="shrink-0 h-10 font-medium text-ink active:text-mut transition">‹ Liste</button>` : ''}
+        <span class="min-w-0 truncate num-stat"><b class="font-medium text-ink">${escapeHtml(liveSession.programmeName)}</b> · ${doneSeries}/${totalSeries}</span>
+        ${finishBtn('Fin')}
       </div>
+      ${progress}
     `;
   } else {
-    // Sticky riche pour la vue liste — calque le mock Direction A
     header.innerHTML = `
-      <!-- Status row : date · En cours + Terminer -->
-      <div class="px-5 pt-4 pb-3 flex items-center justify-between font-sans text-[10px] uppercase tracking-eyebrow text-a-muted">
-        <div class="flex items-center gap-2">
-          <span>${formatDate(liveSession.date)}</span>
-          <span class="text-a-muted/50">·</span>
-          <span class="text-a-racing">En cours</span>
-        </div>
-        <button id="finish-session" class="font-semibold text-a-acid border border-a-acid bg-a-acid/[0.10] px-3 py-1.5 active:bg-a-acid active:text-a-ink transition text-[10px]">Fin</button>
+      <div class="px-5 pt-1.5 flex items-center justify-between gap-3 text-[13px] text-mut">
+        <span class="min-w-0 truncate num-stat">${formatDate(liveSession.date)} · en cours</span>
+        ${finishBtn('Fin')}
       </div>
-
-      <!-- Counter + progress -->
-      <div class="px-5 pb-3">
-        <div class="flex items-baseline justify-end mb-2">
-          <span class="font-display text-[13px] num-stat font-bold leading-none">
-            <span class="text-a-acid">${String(doneSeries).padStart(2, '0')}</span><span class="text-a-muted">/${String(totalSeries).padStart(2, '0')}</span>
-            <span class="font-sans font-medium text-[9px] uppercase tracking-eyebrow text-a-muted ml-1">séries</span>
-          </span>
-        </div>
-        <div class="h-[3px] bg-a-border relative overflow-hidden">
-          <div class="absolute left-0 top-0 h-full bg-a-acid" style="width:${pct}%"></div>
-        </div>
-      </div>
-
-      <!-- Stats strip 4 cols cyan -->
-      <div class="grid grid-cols-4 border-t border-a-border">
-        <div class="px-2.5 py-3 border-r border-a-border min-w-0">
-          <p class="font-sans text-[8px] uppercase tracking-[0.40em] text-a-muted mb-1.5">Volume</p>
-          <p class="font-display font-bold text-[17px] num-stat text-a-cyan leading-none truncate">${Math.round(doneVolume)}<span class="font-sans text-[9px] uppercase tracking-eyebrow text-a-muted ml-1">kg</span></p>
-        </div>
-        <div class="px-2.5 py-3 border-r border-a-border min-w-0">
-          <p class="font-sans text-[8px] uppercase tracking-[0.40em] text-a-muted mb-1.5">Tonnage</p>
-          <p class="font-display font-bold text-[17px] num-stat text-a-cyan leading-none truncate">${tonnage}<span class="font-sans text-[9px] uppercase tracking-eyebrow text-a-muted ml-1">t</span></p>
-        </div>
-        <div class="px-2.5 py-3 border-r border-a-border min-w-0">
-          <p class="font-sans text-[8px] uppercase tracking-[0.40em] text-a-muted mb-1.5">Reps</p>
-          <p class="font-display font-bold text-[17px] num-stat text-a-cyan leading-none truncate">${doneReps}<span class="font-sans text-[9px] uppercase tracking-eyebrow text-a-muted ml-1">/${totalReps}</span></p>
-        </div>
-        <div class="px-2.5 py-3 min-w-0">
-          <p class="font-sans text-[8px] uppercase tracking-[0.40em] text-a-muted mb-1.5">Cible</p>
-          <p class="font-display font-bold text-[17px] num-stat text-a-cyan leading-none truncate">${cibleTon}<span class="font-sans text-[9px] uppercase tracking-eyebrow text-a-muted ml-1">t</span></p>
-        </div>
-      </div>
+      ${progress}
     `;
   }
   tab.appendChild(header);
 
   document.getElementById('finish-session')?.addEventListener('click', finishSession);
-  document.getElementById('back-to-list')?.addEventListener('click', () => { liveFocus = null; liveRest = null; renderSeanceScreen(); });
+  document.getElementById('back-to-list')?.addEventListener('click', showExerciseList);
   document.getElementById('back-home')?.addEventListener('click', () => showScreen('home'));
 
   if (isCardio) {
@@ -1054,7 +1004,7 @@ function renderLiveSession(tab) {
     return;
   }
 
-  // Masque la sticky countdown bar quand on est en rest split (chrono mid-screen visible)
+  // Masque la sticky countdown bar quand on est en rest split (chrono dans le dock)
   const cdBar = document.getElementById('countdown-bar');
   if (cdBar) cdBar.classList.toggle('in-rest-split', liveRest !== null);
 
@@ -1064,7 +1014,7 @@ function renderLiveSession(tab) {
 }
 
 function renderExerciseList(tab, totals = {}) {
-  const { totalSeries = 0 } = totals;
+  const { totalSeries = 0, doneSeries = 0, totalVolume = 0, doneVolume = 0, totalReps = 0, doneReps = 0 } = totals;
 
   // Compteurs pour le sous-titre du masthead
   const exoCount = liveSession.exercises.filter(ex => ex.type !== 'cardio').length;
@@ -1073,23 +1023,40 @@ function renderExerciseList(tab, totals = {}) {
     return s + ex.series.length * (ex.activities[0]?.rest || 60);
   }, 0);
   const estimMin = Math.round((totalSeries * 30 + avgRest) / 60);
+  const tonnage  = (doneVolume / 1000).toFixed(1).replace('.', ',');
+  const cibleTon = (totalVolume / 1000).toFixed(1).replace('.', ',');
 
   const wrap = document.createElement('div');
-  wrap.className = '';
+  wrap.className = 'pb-8 text-ink';
 
-  // Masthead H1 — split title sur premier sep, ligne 2 paper/40 avec sep acid
+  // Masthead H1 — split title on its first separator, second part muted
   const { line1, sep, rest } = splitProgrammeTitle(liveSession.programmeName);
   const masthead = document.createElement('section');
-  masthead.className = 'px-5 pt-9 pb-9 accent-line';
+  masthead.className = 'px-5 pt-5 pb-4';
   masthead.innerHTML = `
-    <h1 class="font-display font-black h-display text-a-paper">
-      ${escapeHtml(line1)}${sep ? `<br/><span class="text-a-paper/40"><span class="text-a-acid not-italic font-black">${escapeHtml(sep)}</span> ${escapeHtml(rest)}.</span>` : ''}
+    <h1 class="font-display font-medium leading-[0.95] tracking-[-0.02em] text-ink" style="font-size:clamp(2.5rem, 12vw, 3.25rem)">
+      ${escapeHtml(line1)}${sep ? ` <em class="text-mut">${escapeHtml(sep)} ${escapeHtml(rest)}</em>` : ''}
     </h1>
-    <p class="font-sans text-[10px] uppercase tracking-eyebrow text-a-muted mt-5">
-      ${String(exoCount).padStart(2, '0')} exercice${exoCount > 1 ? 's' : ''} · ${String(totalSeries).padStart(2, '0')} séries${estimMin ? ` · ≈ ${estimMin} min` : ''}
+    <p class="text-[13px] text-mut mt-2.5 num-stat">
+      ${exoCount} exercice${exoCount > 1 ? 's' : ''} · ${totalSeries} séries${estimMin ? ` · ≈ ${estimMin} min` : ''}${doneSeries ? ` · <b class="font-semibold text-done">${doneSeries}/${totalSeries} faites</b>` : ''}
     </p>
   `;
   wrap.appendChild(masthead);
+
+  // Session metrics — no colour, IBM Plex Mono ink
+  const metrics = document.createElement('div');
+  metrics.className = 'grid grid-cols-4 gap-2 px-5 pb-4';
+  metrics.innerHTML = [
+    ['Volume', Math.round(doneVolume), 'kg'],
+    ['Tonnage', tonnage, 't'],
+    ['Reps', doneReps, `/${totalReps}`],
+    ['Cible', cibleTon, 't'],
+  ].map(([label, value, unit]) => `
+    <div class="min-w-0">
+      <p class="text-[12px] text-mut">${label}</p>
+      <p class="font-mono font-medium text-[17px] leading-none text-ink num-stat truncate mt-1">${value}<span class="font-sans text-[12px] text-mut ml-1">${unit}</span></p>
+    </div>`).join('');
+  wrap.appendChild(metrics);
 
   // Exercise list — done at the bottom
   const indexed = liveSession.exercises.map((ex, exIdx) => {
@@ -1106,8 +1073,9 @@ function renderExerciseList(tab, totals = {}) {
   });
 
   const list = document.createElement('div');
-  list.className = 'border-y border-a-border';
+  list.className = 'border-0 border-solid border-t-[1.5px] border-ink';
 
+  let marked = false; // one highlighter at a time: the first exercise in progress
   indexed.forEach(({ ex, exIdx, totalSets, doneSets }) => {
     const startedSets = ex.series.filter(s =>
       ex.activities.some((_, a) => s.activityStates?.[a])
@@ -1115,39 +1083,8 @@ function renderExerciseList(tab, totals = {}) {
 
     const isDone    = doneSets === totalSets;
     const isStarted = !isDone && startedSets > 0;
-
-    let statusHtml, borderLeft, nameColor, weightColor, unitColor, repsColor, muscleColor, xColor, dotColor;
-    if (isDone) {
-      statusHtml  = `<span class="font-display italic font-semibold text-[10px] uppercase tracking-eyebrow text-a-acid">Fait</span>`;
-      borderLeft  = 'border-l-[3px] border-l-a-acid bg-a-acid/[0.03]';
-      nameColor   = 'text-a-muted';
-      weightColor = 'text-a-muted';
-      unitColor   = 'text-a-muted';
-      repsColor   = 'text-a-muted';
-      muscleColor = 'text-a-acid/70';
-      xColor      = 'text-a-acid/60';
-      dotColor    = 'bg-a-acid';
-    } else if (isStarted) {
-      statusHtml  = `<span class="font-display italic font-semibold text-[10px] uppercase tracking-eyebrow text-a-racing flex items-center gap-1.5"><span aria-hidden class="w-1.5 h-1.5 bg-a-racing animate-pulse"></span>${doneSets}/${totalSets}</span>`;
-      borderLeft  = 'border-l-[3px] border-l-a-racing bg-a-racing/[0.07]';
-      nameColor   = 'text-a-paper';
-      weightColor = 'text-a-racing';
-      unitColor   = 'text-a-muted';
-      repsColor   = 'text-a-paper';
-      muscleColor = 'text-a-racing';
-      xColor      = 'text-a-racing';
-      dotColor    = 'bg-a-racing';
-    } else {
-      statusHtml  = '';
-      borderLeft  = 'border-l-[3px] border-l-transparent';
-      nameColor   = 'text-a-paper';
-      weightColor = 'text-a-paper';
-      unitColor   = 'text-a-muted';
-      repsColor   = 'text-a-paper';
-      muscleColor = 'text-a-paper';
-      xColor      = 'text-a-acid';
-      dotColor    = 'bg-a-paper';
-    }
+    const isMarked  = isStarted && !marked;
+    if (isMarked) marked = true;
 
     const muscle = (ex.activities?.[0]?.name) || '';
     const wActIdx = ex.activities.findIndex(a => a.type === 'weight');
@@ -1163,25 +1100,19 @@ function renderExerciseList(tab, totals = {}) {
     })();
     const dispWeight = latestVal?.weight ?? wAct?.weight ?? 0;
     const dispReps   = latestVal?.reps   ?? wAct?.reps   ?? 0;
-    const weightTxt  = wAct ? `${dispWeight}` : '';
-    const repsTxt    = wAct
-      ? `${totalSets}<span class="${xColor} mx-1 font-display font-black not-italic">×</span>${dispReps}`
-      : `${totalSets} série${totalSets > 1 ? 's' : ''}`;
+    const summary = [
+      wAct ? `${totalSets} × ${dispReps} · ${formatKg(dispWeight)} kg` : `${totalSets} série${totalSets > 1 ? 's' : ''}`,
+      muscle ? escapeHtml(muscle) : '',
+    ].filter(Boolean).join(' · ');
+    const name = escapeHtml(ex.name);
+    const countCls = isDone ? 'font-semibold text-done' : (isStarted ? 'text-ink' : 'text-mut');
 
     const card = document.createElement('button');
-    card.className = `w-full text-left flex items-center gap-4 px-5 py-5 border-b border-a-border/70 ${borderLeft} active:bg-a-inkAlt transition`;
+    card.className = 'w-full text-left grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-1 items-baseline px-5 py-3 border-0 border-solid border-b border-rule text-ink active:bg-sheet transition';
     card.innerHTML = `
-      <div class="flex-1 min-w-0">
-        <h3 class="font-display font-black italic text-[22px] leading-[1.05] ${nameColor} truncate">${escapeHtml(ex.name)}</h3>
-        <p class="font-sans text-[9px] uppercase tracking-eyebrow ${muscleColor} mt-1.5 flex items-center gap-2 truncate">
-          ${muscle ? `<span aria-hidden class="w-1 h-1 ${dotColor} shrink-0"></span><span class="truncate">${escapeHtml(muscle)}</span>` : ''}
-          ${statusHtml ? `<span aria-hidden class="w-2 h-px ${isDone ? 'bg-a-acid/40' : 'bg-a-racing/40'}"></span>${statusHtml}` : ''}
-        </p>
-      </div>
-      <div class="text-right shrink-0 leading-none">
-        ${weightTxt ? `<p class="font-display font-black text-[26px] num-stat ${weightColor} leading-none tracking-tight">${weightTxt}<span class="font-sans font-medium text-[10px] tracking-eyebrow ${unitColor} ml-1 align-baseline">kg</span></p>` : ''}
-        <p class="font-sans font-medium text-[11px] uppercase tracking-eyebrow ${repsColor} num-stat mt-1.5">${repsTxt}</p>
-      </div>
+      <h3 class="font-display italic font-bold text-[20px] leading-[1.15] ${isDone ? 'text-mut' : 'text-ink'}">${isMarked ? `<span class="mark">${name}</span>` : name}</h3>
+      <span class="font-mono text-[14px] num-stat ${countCls}">${doneSets}/${totalSets}</span>
+      <p class="col-start-1 text-[13px] text-mut num-stat">${summary}</p>
     `;
     card.addEventListener('click', () => {
       const next = nextUndoneActivity(exIdx);
@@ -1197,8 +1128,8 @@ function renderExerciseList(tab, totals = {}) {
   tab.appendChild(wrap);
 }
 
-// Header commun (masthead session + exo header) — utilisé par focus et rest split
-function renderExoMasthead(wrap, exIdx) {
+// Exercise header (mock .head) — shared by the series focus and the rest split
+function renderExoMasthead(wrap, exIdx, kick) {
   const ex = liveSession.exercises[exIdx];
   let doneSeries = 0;
   const totalSeries = ex.series.length;
@@ -1207,124 +1138,187 @@ function renderExoMasthead(wrap, exIdx) {
     if (allDone) doneSeries++;
   });
 
-  // Session masthead
-  const { line1, sep, rest } = splitProgrammeTitle(liveSession.programmeName);
-  const sessionMast = document.createElement('section');
-  sessionMast.className = 'px-5 pt-9 pb-9 accent-line';
-  const exoCount = liveSession.exercises.filter(e => e.type !== 'cardio').length;
-  const totalSeriesAll = liveSession.exercises.reduce((s, e) => e.type === 'cardio' ? s : s + e.series.length, 0);
-  sessionMast.innerHTML = `
-    <h1 class="font-display font-black h-display text-a-paper">
-      ${escapeHtml(line1)}${sep ? `<br/><span class="text-a-paper/40"><span class="text-a-acid not-italic font-black">${escapeHtml(sep)}</span> ${escapeHtml(rest)}.</span>` : ''}
-    </h1>
-    <p class="font-sans text-[10px] uppercase tracking-eyebrow text-a-muted mt-5">
-      ${String(exoCount).padStart(2, '0')} exercices · ${String(totalSeriesAll).padStart(2, '0')} séries
-    </p>
-  `;
-  wrap.appendChild(sessionMast);
-
-  // Exercise header
   const muscle = ex.activities?.[0]?.name || '';
   const restSecs = ex.activities?.[0]?.rest || 0;
-  const restStr = restSecs > 0 ? `Repos ${Math.floor(restSecs / 60)}:${String(restSecs % 60).padStart(2, '0')}` : '';
+  const details = [
+    muscle ? escapeHtml(muscle) : '',
+    restSecs > 0 ? `repos <b class="font-medium text-ink num-stat">${formatRest(restSecs)}</b>` : '',
+  ].filter(Boolean).join(' · ');
   const exoHead = document.createElement('header');
-  exoHead.className = 'px-5 mb-5';
+  exoHead.className = 'px-5 pt-5 pb-3.5';
   exoHead.innerHTML = `
-    <div class="flex items-baseline gap-3 flex-wrap">
-      <h2 class="font-display font-bold text-[24px] leading-[1.1] text-a-paper">${escapeHtml(ex.name)}</h2>
-      <span class="font-sans text-[9px] uppercase tracking-eyebrow text-a-acid font-semibold flex items-center gap-1.5 shrink-0">
-        <span aria-hidden class="w-1.5 h-1.5 bg-a-acid"></span>
-        ${String(doneSeries).padStart(2, '0')}/${String(totalSeries).padStart(2, '0')} fait
-      </span>
-    </div>
-    ${(muscle || restStr) ? `<p class="font-sans text-[11px] uppercase tracking-eyebrow text-a-muted mt-2">${escapeHtml([muscle, restStr].filter(Boolean).join(' · '))}</p>` : ''}
+    <p class="flex justify-between gap-3 text-[13px] text-mut">
+      <span class="min-w-0">${kick}</span>
+      <span class="shrink-0 num-stat ${doneSeries ? 'font-semibold text-done' : ''}">${doneSeries}/${totalSeries} séries</span>
+    </p>
+    <h2 class="font-display italic font-medium text-[31px] leading-[1.05] tracking-[-0.01em] text-ink mt-1.5">${escapeHtml(ex.name)}</h2>
+    ${details ? `<p class="text-[13px] text-mut mt-2.5">${details}</p>` : ''}
   `;
   wrap.appendChild(exoHead);
 }
 
-// Vue focus série — affiche UNE seule série à valider, avec mega values
+function activityLabel(ex, actIdx) {
+  const act = ex.activities[actIdx];
+  return act.label || act.name || `Activité ${actIdx + 1}`;
+}
+
+// "Préc." line of a series, from the previous session
+function previousValueText(ex, sIdx, actIdx) {
+  const act = ex.activities[actIdx];
+  const prevVal = ex.prevSeries?.[sIdx]?.values?.[actIdx];
+  if (act.type === 'weight' && (prevVal?.reps || prevVal?.weight)) {
+    return `Préc. : ${prevVal.weight != null ? formatKg(prevVal.weight) : '—'} × ${prevVal.reps ?? '—'}`;
+  }
+  if (act.type === 'countdown' && prevVal?.duration) return `Préc. : ${prevVal.duration} s`;
+  if (act.type === 'stopwatch' && prevVal?.duration) return `Préc. : ${formatSeconds(prevVal.duration)}`;
+  return '';
+}
+
+// Highlighted (act) or framed (prep) series band: who + big mono values + optional action
+function seriesBandHtml(ex, sIdx, actIdx, { prep = false, action = '' } = {}) {
+  const act = ex.activities[actIdx];
+  const v = ex.series[sIdx].values?.[actIdx] || {};
+  const unit = (u) => `<small class="font-sans text-[14px] font-medium tracking-normal ml-1">${u}</small>`;
+  let values;
+  if (act.type === 'weight') {
+    values = `${formatKg(v.weight ?? act.weight ?? 0)}${unit('kg')}<span class="text-[28px] ml-3">× ${v.reps ?? act.reps ?? 0}</span>`;
+  } else if (act.type === 'countdown') {
+    values = `${v.duration ?? act.duration ?? 0}${unit('s')}`;
+  } else {
+    values = `<span class="font-display italic font-bold tracking-normal">Chrono</span>`;
+  }
+  const who = [`Série ${sIdx + 1} sur ${ex.series.length}`];
+  if (ex.activities.length > 1) who.push(escapeHtml(activityLabel(ex, actIdx)));
+  const prevText = previousValueText(ex, sIdx, actIdx);
+  const tone = prep
+    ? 'bg-sheet border-y-[1.5px] border-ink'
+    : 'bg-hl border-b border-rule';
+  return `
+    <div class="px-5 pt-3.5 pb-4 border-0 border-solid ${tone}">
+      <div class="flex justify-between items-baseline gap-2.5 text-[13px]">
+        <b class="min-w-0 font-display italic font-bold text-[20px] leading-tight text-ink">${who.join(' · ')}</b>
+        ${prevText ? `<span class="shrink-0 num-stat ${prep ? 'text-mut' : 'text-ink/75'}">${prevText}</span>` : ''}
+      </div>
+      <div class="flex items-end justify-between gap-3 mt-2.5">
+        <p class="min-w-0 font-mono font-semibold ${prep ? 'text-[38px]' : 'text-[44px]'} leading-none tracking-[-0.04em] num-stat text-ink">${values}</p>
+        ${action}
+      </div>
+    </div>
+  `;
+}
+
+// One logbook row (mock .lr): series number, activity, kg, reps, rest or state
+function seriesLogRow(ex, sIdx, actIdx, stateHtml) {
+  const act = ex.activities[actIdx];
+  const v = ex.series[sIdx].values?.[actIdx] || {};
+  const done = ex.series[sIdx].activityStates?.[actIdx] === 'done';
+  const num = 'font-mono font-medium text-[17px] leading-none num-stat text-right';
+  let values;
+  if (act.type === 'weight') {
+    values = `<span class="${num}">${formatKg(v.weight ?? act.weight ?? 0)}</span><span class="${num}">${v.reps ?? act.reps ?? 0}</span>`;
+  } else {
+    const dur = act.type === 'countdown' ? `${v.duration ?? act.duration ?? 0} s` : (v.duration ? formatSeconds(v.duration) : '—');
+    values = `<span class="col-span-2 ${num}">${dur}</span>`;
+  }
+  const state = stateHtml || (done
+    ? `<span class="text-right text-[13px] font-semibold text-done">fait</span>`
+    : `<span class="text-right text-[12px] text-mut num-stat">${act.rest ? formatRest(act.rest) : ''}</span>`);
+  return `
+    <div class="grid grid-cols-[30px_minmax(0,1fr)_52px_34px_66px] items-baseline min-h-[40px] px-5 py-2.5 border-0 border-solid border-b border-rule text-[14px] ${done ? 'text-ink' : 'text-mut'}">
+      <span class="text-[12px] text-mut num-stat">${actIdx === 0 ? sIdx + 1 : ''}</span>
+      <span class="truncate pr-1.5">${ex.activities.length > 1 ? escapeHtml(activityLabel(ex, actIdx)) : ''}</span>
+      ${values}
+      ${state}
+    </div>
+  `;
+}
+
+// Logbook of an exercise (mock .log): `band` replaces the row it targets, `rowState` overrides one row's state cell
+function seriesLogHtml(ex, band, rowState = null) {
+  const hasWeight = ex.activities.some(a => a.type === 'weight');
+  const head = `
+    <div class="grid grid-cols-[30px_minmax(0,1fr)_52px_34px_66px] items-baseline min-h-[30px] px-5 pt-2 pb-1.5 border-0 border-solid border-b border-rule text-[12px] text-mut">
+      <span class="whitespace-nowrap">Série</span><span></span>
+      ${hasWeight ? '<span class="text-right">kg</span><span class="text-right">reps</span>' : '<span class="col-span-2 text-right">durée</span>'}
+      <span class="text-right">repos</span>
+    </div>`;
+  const rows = ex.series.flatMap((_, sIdx) => ex.activities.map((__, actIdx) => {
+    if (band && band.sIdx === sIdx && band.actIdx === actIdx) return band.html;
+    const state = rowState && rowState.sIdx === sIdx && rowState.actIdx === actIdx ? rowState.html : '';
+    return seriesLogRow(ex, sIdx, actIdx, state);
+  }));
+  return `<div class="border-0 border-solid border-t-[1.5px] border-ink">${head}${rows.join('')}</div>`;
+}
+
+// What the validate button leads to (mirrors completeFocusedActivity)
+function nextStepHint(ex, sIdx, actIdx) {
+  const act = ex.activities[actIdx];
+  const others = ex.series.some((s, j) => ex.activities.some((_, a) =>
+    (j !== sIdx || a !== actIdx) && s.activityStates?.[a] !== 'done'));
+  if (!others) return 'puis retour à la liste';
+  return act.rest > 0 ? `puis repos ${formatRest(act.rest)}` : 'puis série suivante';
+}
+
+// Exercise view laid out as a column filling the screen, so the dock sits at the bottom
+function exerciseViewWrap(tab) {
+  tab.classList.add('flex', 'flex-col');
+  const wrap = document.createElement('div');
+  wrap.className = 'flex-1 flex flex-col text-ink';
+  return wrap;
+}
+
+// Thumb dock (mock .dock) pinned at the bottom of the scrolling screen
+function createDock(innerHtml) {
+  const dock = document.createElement('div');
+  dock.className = 'sticky bottom-0 z-10 mt-auto';
+  dock.innerHTML = `
+    <div class="bg-paper border-0 border-solid border-t-[1.5px] border-ink px-4 pb-[calc(env(safe-area-inset-bottom)+12px)]">
+      ${innerHtml}
+    </div>
+  `;
+  return dock;
+}
+
+// Vue focus série — tableau-carnet de l'exercice, la série en cours surlignée
 function renderSeriesFocus(tab) {
   const { exIdx, sIdx, actIdx } = liveFocus;
   const ex = liveSession.exercises[exIdx];
   const act = ex.activities[actIdx];
-  const v = ex.series[sIdx].values?.[actIdx] || {};
   const totalSets = ex.series.length;
 
-  const wrap = document.createElement('div');
-  wrap.className = 'pb-8';
+  const wrap = exerciseViewWrap(tab);
 
-  renderExoMasthead(wrap, exIdx);
+  renderExoMasthead(wrap, exIdx, `Série <b class="font-semibold text-ink">${sIdx + 1}</b> sur ${totalSets}`);
 
-  // Bloc focus série — eyebrow racing + mega values + accent line racing
-  const focus = document.createElement('section');
-  focus.className = 'px-5 mt-8';
-  const subParts = [`Série ${sIdx + 1} / ${totalSets}`];
-  if (ex.activities.length > 1) subParts.push(act.label || act.name || `Activité ${actIdx + 1}`);
-
-  let valuesHtml;
-  if (act.type === 'weight') {
-    const reps = v.reps ?? act.reps ?? 0;
-    const kg   = v.weight ?? act.weight ?? 0;
-    valuesHtml = `
-      <span class="font-display font-black num-set-hot text-a-racing">${kg}<span class="font-sans font-medium text-[14px] uppercase tracking-eyebrow text-a-racing/80 ml-2 align-baseline">kg</span></span>
-      <span class="font-display font-bold text-[28px] num-stat text-a-paper pb-3">× ${reps}</span>
-    `;
-  } else if (act.type === 'countdown') {
-    const dur = v.duration ?? act.duration ?? 0;
-    valuesHtml = `<span class="font-display font-black num-set-hot text-a-racing">${dur}<span class="font-sans font-medium text-[14px] uppercase tracking-eyebrow text-a-racing/80 ml-2 align-baseline">s</span></span>`;
-  } else {
-    valuesHtml = `<span class="font-display font-black num-set-hot text-a-racing">Chrono</span>`;
-  }
-
-  // Préc
-  const prevVal = ex.prevSeries?.[sIdx]?.values?.[actIdx];
-  let prevText = '';
-  if (act.type === 'weight' && (prevVal?.reps || prevVal?.weight)) {
-    prevText = `Préc : ${prevVal.weight ?? '—'}×${prevVal.reps ?? '—'} kg`;
-  } else if (act.type === 'countdown' && prevVal?.duration) {
-    prevText = `Préc : ${prevVal.duration}s`;
-  } else if (act.type === 'stopwatch' && prevVal?.duration) {
-    prevText = `Préc : ${formatSeconds(prevVal.duration)}`;
-  }
-
-  focus.innerHTML = `
-    <p class="font-sans text-[10px] uppercase tracking-eyebrow text-a-racing font-semibold mb-4 flex items-center gap-2">
-      <span aria-hidden class="w-1.5 h-1.5 bg-a-racing animate-pulse"></span>
-      ${subParts.join(' · ')}
-    </p>
-    <div class="flex items-end gap-5 mb-3">
-      ${valuesHtml}
-    </div>
-    <span aria-hidden class="block w-10 h-px bg-a-racing mt-3"></span>
-    ${prevText ? `<p class="font-sans text-[11px] uppercase tracking-eyebrow text-a-muted mt-5">${prevText}</p>` : ''}
-  `;
-  wrap.appendChild(focus);
+  const editBtn = act.type === 'stopwatch'
+    ? ''
+    : `<button id="focus-edit" class="shrink-0 h-12 px-4 text-[14px] font-medium ${OUTLINE_BTN}">Modifier</button>`;
+  const log = document.createElement('section');
+  log.className = 'mb-6';
+  log.innerHTML = seriesLogHtml(ex, { sIdx, actIdx, html: seriesBandHtml(ex, sIdx, actIdx, { action: editBtn }) });
+  wrap.appendChild(log);
 
   // Suggestion IA placeholder
   if (act.type === 'weight') {
     const sug = document.createElement('div');
     sug.id = 'focus-suggestion';
-    sug.className = 'hidden font-sans text-[12px] text-a-muted italic mx-5 mt-5 mb-2 px-3 py-2 border border-a-border bg-a-inkAlt';
+    sug.className = 'hidden mx-5 -mt-2 mb-6 flex items-center gap-2 text-[13px] leading-snug text-mut italic';
     wrap.appendChild(sug);
   }
 
-  // Actions — Modifier border + Valider/Démarrer acid
-  const isTimed = (act.type === 'stopwatch' || act.type === 'countdown');
+  // Dock — exercise list + validate (or start the timer)
   const validateLabel = act.type === 'stopwatch'
-    ? '▶ Démarrer chrono'
-    : (act.type === 'countdown' ? '▶ Démarrer minuterie' : '✓ Valider');
-
-  const actions = document.createElement('div');
-  actions.className = 'mt-10 px-5 grid grid-cols-2 gap-3';
-  let actionsHtml = '';
-  if (act.type !== 'stopwatch') {
-    actionsHtml += `<button id="focus-edit" class="py-4 border border-a-border text-a-paper font-sans text-[12px] uppercase tracking-eyebrow active:border-a-acid active:text-a-acid transition">✎ Modifier</button>`;
-  } else {
-    actionsHtml += `<span></span>`;
-  }
-  actionsHtml += `<button id="focus-validate" class="py-4 bg-a-acid text-a-ink font-display font-bold text-[14px] uppercase tracking-eyebrow active:bg-a-acid/80 transition">${validateLabel}</button>`;
-  actions.innerHTML = actionsHtml;
-  wrap.appendChild(actions);
+    ? 'Démarrer chrono'
+    : (act.type === 'countdown' ? 'Démarrer minuterie' : 'Valider');
+  const hint = act.type === 'weight' ? nextStepHint(ex, sIdx, actIdx) : '';
+  const doneExos = liveSession.exercises.filter(isExerciseDone).length;
+  const dock = createDock(`
+    <div class="flex gap-2.5 pt-3">
+      <button id="dock-exos" class="w-[84px] h-14 shrink-0 text-[13px] leading-tight text-center ${OUTLINE_BTN}">Exercices<span class="block text-[12px] text-mut num-stat">${doneExos}/${liveSession.exercises.length} faits</span></button>
+      <button id="focus-validate" class="flex-1 min-w-0 h-14 px-3 bg-ink text-paper rounded text-[16px] font-semibold leading-tight text-center active:bg-ink/80 transition">${validateLabel}${hint ? `<span class="block text-[12px] font-normal opacity-70 truncate">${hint}</span>` : ''}</button>
+    </div>
+  `);
+  wrap.appendChild(dock);
 
   tab.appendChild(wrap);
 
@@ -1348,6 +1342,7 @@ function renderSeriesFocus(tab) {
     }
   }
 
+  document.getElementById('dock-exos').addEventListener('click', showExerciseList);
   document.getElementById('focus-edit')?.addEventListener('click', () => {
     openEditModalForActivity(exIdx, sIdx, actIdx);
   });
@@ -1362,69 +1357,38 @@ function renderSeriesFocus(tab) {
   });
 }
 
-// Vue repos split — mega chrono central + recap série modifiable
+// Vue repos split — décompte surligné dans le dock, série suivante encadrée (jamais surlignée)
 function renderRestSplit(tab) {
   const { exIdx, sIdx, actIdx } = liveRest;
   const ex = liveSession.exercises[exIdx];
   const act = ex.activities[actIdx];
-  const v = ex.series[sIdx].values?.[actIdx] || {};
   const totalSets = ex.series.length;
 
-  const wrap = document.createElement('div');
-  wrap.className = 'flex flex-col min-h-[calc(100svh-180px)] pb-8';
+  const wrap = exerciseViewWrap(tab);
 
-  // Top mini header — exo name + série done badge
-  const muscle = ex.activities?.[0]?.name || '';
-  const topHeader = document.createElement('header');
-  topHeader.className = 'px-5 pt-6 pb-3';
-  topHeader.innerHTML = `
-    <p class="font-sans text-[9px] uppercase tracking-eyebrow text-a-acid font-semibold mb-1.5 flex items-center gap-2">
-      <span aria-hidden class="w-1.5 h-1.5 bg-a-acid"></span>
-      Série ${sIdx + 1} / ${totalSets} validée
-    </p>
-    <h2 class="font-display font-bold italic text-[20px] leading-tight text-a-paper truncate">${escapeHtml(ex.name)}</h2>
-    ${muscle ? `<p class="font-sans text-[9px] uppercase tracking-eyebrow text-a-muted mt-1">${escapeHtml(muscle)}</p>` : ''}
-  `;
-  wrap.appendChild(topHeader);
+  renderExoMasthead(wrap, exIdx, `Série <b class="font-semibold text-ink">${sIdx + 1}</b> sur ${totalSets} validée`);
 
-  // Mega chrono central
-  const center = document.createElement('div');
-  center.className = 'flex-1 flex flex-col items-center justify-center text-center px-6 py-10 gap-5';
-  center.innerHTML = `
-    <p class="font-sans text-[10px] uppercase tracking-[0.40em] text-a-racing font-semibold flex items-center gap-2">
-      <span aria-hidden class="w-1.5 h-1.5 bg-a-racing animate-pulse"></span>
-      Repos
-    </p>
-    <div id="rest-split-time" class="font-display font-black num-stat text-a-racing leading-none tracking-tight" style="font-size:clamp(4.5rem, 24vw, 7.5rem)">--:--</div>
-    <p id="rest-split-next" class="font-sans text-[11px] uppercase tracking-eyebrow text-a-muted max-w-[30ch]"></p>
-    <button id="rest-split-skip" class="mt-2 py-3 px-6 border border-a-border text-a-paper font-sans text-[11px] uppercase tracking-eyebrow active:border-a-acid active:text-a-acid transition">⏭ Passer le repos</button>
-  `;
-  wrap.appendChild(center);
-
-  // Recap série juste validée — modifiable
-  let valHtml;
-  if (act.type === 'weight') {
-    valHtml = `
-      <span class="font-display font-bold text-[26px] num-stat text-a-paper">${v.weight ?? 0}<span class="font-sans font-medium text-[11px] uppercase tracking-eyebrow text-a-muted ml-1.5 align-baseline">kg</span></span>
-      <span class="font-display font-bold text-[18px] num-stat text-a-paper">× ${v.reps ?? 0}</span>
-    `;
-  } else {
-    valHtml = `<span class="font-display font-bold text-[26px] num-stat text-a-paper">${v.duration ?? 0}<span class="font-sans font-medium text-[11px] uppercase tracking-eyebrow text-a-muted ml-1.5 align-baseline">s</span></span>`;
-  }
+  // Logbook — the series just done stays editable, the next one is framed (prep)
   const editBtn = act.type === 'stopwatch'
     ? ''
-    : `<button id="rest-edit" class="shrink-0 py-2 px-4 border border-a-border text-a-paper font-sans text-[10px] uppercase tracking-eyebrow active:border-a-acid active:text-a-acid transition">✎ Modifier</button>`;
+    : `<button id="rest-edit" class="text-right text-[13px] font-semibold text-ink underline underline-offset-4">modifier</button>`;
+  const next = nextUndoneActivity(exIdx);
+  const band = next ? { ...next, html: seriesBandHtml(ex, next.sIdx, next.actIdx, { prep: true }) } : null;
+  const log = document.createElement('section');
+  log.className = 'mb-6';
+  log.innerHTML = seriesLogHtml(ex, band, editBtn ? { sIdx, actIdx, html: editBtn } : null);
+  wrap.appendChild(log);
 
-  const recap = document.createElement('div');
-  recap.className = 'border-y border-a-border border-l-[3px] border-l-a-acid bg-a-acid/[0.04] px-5 py-4 mt-6 mx-5 flex items-center justify-between gap-4';
-  recap.innerHTML = `
-    <div class="min-w-0 space-y-1">
-      <p class="font-sans text-[9px] uppercase tracking-eyebrow text-a-acid font-semibold">Série ${sIdx + 1} ✓</p>
-      <div class="flex items-baseline gap-3 flex-wrap">${valHtml}</div>
+  // Dock — the rest countdown is the one highlighted zone
+  const dock = createDock(`
+    <div class="-mx-4 mb-3 px-4 py-3 bg-hl">
+      <p class="text-[13px] text-ink truncate"><span class="font-semibold">Repos</span> · <span id="rest-split-next"></span></p>
+      <p id="rest-split-time" class="font-mono font-semibold text-[42px] leading-none tracking-[-0.04em] num-stat text-ink mt-1">--:--</p>
+      <div class="relative h-[3px] bg-ink/15 mt-2" aria-hidden="true"><div id="rest-split-bar" class="absolute left-0 top-0 h-full bg-ink" style="width:100%"></div></div>
     </div>
-    ${editBtn}
-  `;
-  wrap.appendChild(recap);
+    <button id="rest-split-skip" class="w-full h-14 text-[16px] font-semibold text-center ${OUTLINE_BTN}">Passer le repos</button>
+  `);
+  wrap.appendChild(dock);
 
   tab.appendChild(wrap);
 
@@ -1434,8 +1398,15 @@ function renderRestSplit(tab) {
     const splitTime = document.getElementById('rest-split-time');
     const nextLabel = document.getElementById('countdown-exercise-name');
     const splitNext = document.getElementById('rest-split-next');
-    if (cdDisplay && splitTime) splitTime.textContent = cdDisplay.textContent;
+    const splitBar  = document.getElementById('rest-split-bar');
+    if (cdDisplay && splitTime) {
+      splitTime.textContent = cdDisplay.textContent;
+      const urgent = document.getElementById('countdown-bar')?.classList.contains('urgent') ?? false;
+      splitTime.classList.toggle('text-alert', urgent);
+      splitTime.classList.toggle('text-ink', !urgent);
+    }
     if (nextLabel && splitNext) splitNext.textContent = nextLabel.textContent ? `À suivre : ${nextLabel.textContent.replace(/^À suivre :\s*/, '')}` : '';
+    if (splitBar && countdownTotal > 0) splitBar.style.width = `${(countdownSecs / countdownTotal) * 100}%`;
   };
   sync();
   const restSyncId = setInterval(sync, 200);
@@ -1590,9 +1561,8 @@ function completeFocusedActivity() {
 
 function labelOfActivity({ exIdx, sIdx, actIdx }) {
   const ex = liveSession.exercises[exIdx];
-  const act = ex.activities[actIdx];
   const parts = [ex.name, `Série ${sIdx + 1}`];
-  if (ex.activities.length > 1) parts.push(act.label || act.name || `Activité ${actIdx + 1}`);
+  if (ex.activities.length > 1) parts.push(activityLabel(ex, actIdx));
   return parts.join(' · ');
 }
 
@@ -1604,6 +1574,9 @@ function openEditModalForActivity(exIdx, sIdx, actIdx) {
 
   const actLabel = act.label || act.name || '';
   const title = actLabel ? `${ex.name} — ${actLabel}` : ex.name;
+  const inputCls = 'w-full bg-transparent border-0 border-solid border-b border-rule focus:border-ink font-mono font-semibold text-[26px] num-stat text-ink py-1.5 outline-none transition';
+  const labelCls = 'text-[13px] text-mut mb-1';
+  const unitCls  = 'text-[13px] text-mut shrink-0';
 
   if (act.type === 'weight') {
     const currentReps   = v.reps   ?? act.reps   ?? 0;
@@ -1611,22 +1584,20 @@ function openEditModalForActivity(exIdx, sIdx, actIdx) {
     const currentRest   = act.rest ?? 0;
     const originalWeight = currentWeight;
 
-    const inputCls = 'w-full bg-transparent border-b border-a-border focus:border-a-acid font-display font-bold text-[22px] num-stat text-a-paper py-2 outline-none transition';
-    const labelCls = 'font-sans text-[9px] uppercase tracking-[0.40em] text-a-muted mb-1.5';
     const bodyHTML = `
       <div class="grid grid-cols-2 gap-4">
         <div>
           <p class="${labelCls}">Poids</p>
           <div class="flex items-baseline gap-2">
             <input type="number" inputmode="decimal" class="live-weight ${inputCls}" value="${currentWeight}" min="0" step="0.5">
-            <span class="font-sans text-[10px] uppercase tracking-eyebrow text-a-muted shrink-0">kg</span>
+            <span class="${unitCls}">kg</span>
           </div>
         </div>
         <div>
           <p class="${labelCls}">Reps</p>
           <div class="flex items-baseline gap-2">
             <input type="number" inputmode="decimal" class="live-reps ${inputCls}" value="${currentReps}" min="1">
-            <span class="font-sans text-[10px] uppercase tracking-eyebrow text-a-muted shrink-0">×</span>
+            <span class="${unitCls}">×</span>
           </div>
         </div>
       </div>
@@ -1634,7 +1605,7 @@ function openEditModalForActivity(exIdx, sIdx, actIdx) {
         <p class="${labelCls}">Repos</p>
         <div class="flex items-baseline gap-2">
           <input type="number" inputmode="numeric" class="live-rest ${inputCls}" value="${currentRest}" min="0">
-          <span class="font-sans text-[10px] uppercase tracking-eyebrow text-a-muted shrink-0">s</span>
+          <span class="${unitCls}">s</span>
         </div>
       </div>
     `;
@@ -1675,22 +1646,20 @@ function openEditModalForActivity(exIdx, sIdx, actIdx) {
     const currentDur  = v.duration ?? act.duration ?? 0;
     const currentRest = act.rest ?? 0;
 
-    const inputCls = 'w-full bg-transparent border-b border-a-border focus:border-a-acid font-display font-bold text-[22px] num-stat text-a-paper py-2 outline-none transition';
-    const labelCls = 'font-sans text-[9px] uppercase tracking-[0.40em] text-a-muted mb-1.5';
     const bodyHTML = `
       <div class="grid grid-cols-2 gap-4">
         <div>
           <p class="${labelCls}">Durée</p>
           <div class="flex items-baseline gap-2">
             <input type="number" inputmode="numeric" class="live-duration ${inputCls}" value="${currentDur}" min="1">
-            <span class="font-sans text-[10px] uppercase tracking-eyebrow text-a-muted shrink-0">s</span>
+            <span class="${unitCls}">s</span>
           </div>
         </div>
         <div>
           <p class="${labelCls}">Repos</p>
           <div class="flex items-baseline gap-2">
             <input type="number" inputmode="numeric" class="live-rest ${inputCls}" value="${currentRest}" min="0">
-            <span class="font-sans text-[10px] uppercase tracking-eyebrow text-a-muted shrink-0">s</span>
+            <span class="${unitCls}">s</span>
           </div>
         </div>
       </div>
@@ -3358,41 +3327,36 @@ async function showPostSessionFeedback(session) {
   const name = session.programmeName || session.name || 'Séance';
   const vol = totalVolume(session.exercises);
   const durStr = session.duration ? formatDuration(session.duration) : '';
-
-  body.innerHTML = `
-    <div class="feedback-ia-modal">
-      <div class="modal-title">${escapeHtml(name)}</div>
-      <div class="modal-date">${formatDate(session.date)}${durStr ? ' · ' + durStr : ''} · ${vol.toLocaleString('fr-FR')} kg</div>
-      <div class="feedback-ia-loading">
-        <div class="feedback-ia-spinner"></div>
-        <p>Analyse en cours...</p>
-      </div>
+  // Carnet sheet laid over the (not yet migrated) modal shell
+  const sheet = (content) => `
+    <div class="feedback-ia-modal bg-sheet text-ink font-sans px-5 pt-14 pb-10 border-0 border-solid border-t-[1.5px] border-ink">
+      <p class="text-[13px] text-mut">Fin de séance</p>
+      <h2 class="font-display italic font-bold text-[28px] leading-[1.1] text-ink mt-1">${escapeHtml(name)}</h2>
+      ${content}
     </div>
   `;
+  const meta = `<p class="text-[13px] text-mut mt-2 num-stat">${formatDate(session.date)}${durStr ? ' · ' + durStr : ''} · <span class="font-mono text-ink">${vol.toLocaleString('fr-FR')}</span> kg</p>`;
+  const card = (title, content, titleCls) => `
+    <div class="mt-5 pt-3 border-0 border-solid border-t-[1.5px] border-ink">
+      <p class="text-[13px] font-semibold ${titleCls}">${title}</p>
+      <div class="text-[15px] leading-relaxed text-ink mt-2">${content}</div>
+    </div>
+  `;
+
+  body.innerHTML = sheet(`
+    ${meta}
+    <div class="flex items-center gap-2 mt-5 text-[13px] text-mut">
+      <div class="live-edit-suggestion-spinner"></div>
+      <p>Analyse en cours...</p>
+    </div>
+  `);
   modal.classList.remove('hidden');
 
   try {
     const feedback = await generateAndPersistFeedback(session);
-    body.innerHTML = `
-      <div class="feedback-ia-modal">
-        <div class="modal-title">${escapeHtml(name)}</div>
-        <div class="modal-date">${formatDate(session.date)}${durStr ? ' · ' + durStr : ''} · ${vol.toLocaleString('fr-FR')} kg</div>
-        <div class="feedback-ia-card">
-          <div class="feedback-ia-title">🤖 Feedback IA</div>
-          <div class="feedback-ia-content">${formatFeedback(feedback)}</div>
-        </div>
-      </div>
-    `;
+    body.innerHTML = sheet(`${meta}${card('Feedback IA', formatFeedback(feedback), 'text-ink')}`);
   } catch (e) {
-    body.innerHTML = `
-      <div class="feedback-ia-modal">
-        <div class="modal-title">${escapeHtml(name)}</div>
-        <div class="feedback-ia-card" style="border-color:#ff5c5c">
-          <div class="feedback-ia-title" style="color:#ff5c5c">Erreur</div>
-          <div class="feedback-ia-content">${escapeHtml(e.message)}</div>
-        </div>
-      </div>
-    `;
+    body.innerHTML = sheet(card('Erreur', escapeHtml(e.message), 'text-alert'));
   }
 }
 
