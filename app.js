@@ -3615,7 +3615,7 @@ async function renderAlimentation() {
         ${cell('Apports', hasMeal ? kcal(Math.round(apports)) : dash, 'border-0 border-solid border-r border-b border-rule')}
         ${cell(bmrLabel, bmr ? kcal(Math.round(bmrToday)) : dash, 'border-0 border-solid border-b border-rule')}
         ${cell('Dépenses', hasBurn ? kcal(Math.round(depenses)) : dash, 'border-0 border-solid border-r border-rule')}
-        ${cell('Net', hasMeal ? kcal(`${net >= 0 ? '+' : ''}${Math.round(net)}`, netColor) : dash)}
+        ${cell('Net', (hasMeal || hasBurn) ? kcal(`${net >= 0 ? '+' : ''}${Math.round(net)}`, netColor) : dash)}
       </div>
       ${bmrNote}
       <p class="flex flex-wrap gap-x-4 gap-y-1 px-5 mt-3 font-sans text-[13px]">
@@ -3645,7 +3645,7 @@ async function renderAlimentation() {
       const arrow = isMeal ? '↑' : '↓';
       const time = (e.time || '').slice(0, 5);
       const macros = isMeal && e.proteines_g != null
-        ? `<p class="font-sans text-[13px] text-mut num-stat mt-1">P <span class="font-mono">${e.proteines_g}</span> g · G <span class="font-mono">${e.glucides_g}</span> g · L <span class="font-mono">${e.lipides_g}</span> g</p>`
+        ? `<p class="font-sans text-[13px] text-mut num-stat mt-1">P <span class="font-mono text-ink">${e.proteines_g}</span> g · G <span class="font-mono text-ink">${e.glucides_g}</span> g · L <span class="font-mono text-ink">${e.lipides_g}</span> g</p>`
         : '';
 
       const li = document.createElement('li');
@@ -3655,13 +3655,13 @@ async function renderAlimentation() {
         <div class="${photoClickable}">
           <p class="font-mono text-[13px] num-stat text-mut leading-none">${time}</p>
         </div>
-        <div class="min-w-0 ${photoClickable}" data-photo="${e.photo_path || ''}">
+        <div class="min-w-0 ${photoClickable}" data-photo="${escapeHtml(e.photo_path || '')}">
           <p class="font-sans text-[15px] leading-snug text-ink break-words">${escapeHtml(e.description)}</p>
           ${macros}
         </div>
         <div class="text-right">
           <p class="font-mono text-[14px] num-stat text-ink whitespace-nowrap leading-none">${arrow} ${Math.round(e.kcal || 0)}<span class="font-sans text-[13px] text-mut ml-1">kcal</span></p>
-          <button class="font-sans text-[13px] text-mut active:text-alert transition mt-2 alim-entry-del" data-id="${e.id}" data-photo="${e.photo_path || ''}">✕ Suppr</button>
+          <button class="font-sans text-[13px] text-mut active:text-alert transition mt-2 alim-entry-del" data-id="${e.id}" data-photo="${escapeHtml(e.photo_path || '')}">✕ Suppr</button>
         </div>
       `;
 
@@ -4081,7 +4081,7 @@ async function openEveningAdviceModal(dateIso) {
   sendBtn.onclick = async () => {
     const txt = input.value.trim();
     if (!txt) return;
-    appendBubble('user', txt);
+    appendBubble('user', escapeHtml(txt));
     conversation.push({ role: 'user', content: txt });
     input.value = '';
     const loading = appendBubble('assistant', `<div class="flex items-center gap-2 text-[13px] text-mut"><div class="live-edit-suggestion-spinner"></div><span>…</span></div>`);

@@ -199,6 +199,10 @@ describe('carnetTokensShould', () => {
     expect(found).toEqual([]);
   });
 
+  it('advice thread escapes the user text', () => {
+    expect(functionSource('app.js', 'openEveningAdviceModal')).toContain("appendBubble('user', escapeHtml(txt))");
+  });
+
   it('legacy .btn-* rules are gone', () => {
     const legacy = /\.btn-(primary|secondary|danger|ghost)\b/g;
 
