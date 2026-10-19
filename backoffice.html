@@ -380,8 +380,9 @@
       width: 100%;
       outline: none;
     }
-    input::placeholder, textarea::placeholder { color: var(--mut); }
-    input:focus, textarea:focus { border-color: var(--ink); }
+    /* body prefix: outranks the @tailwindcss/forms rules loaded later in dist/output.css */
+    body input::placeholder, body textarea::placeholder { color: var(--mut); }
+    body input:focus, body textarea:focus { border-color: var(--ink); box-shadow: 0 0 0 1px var(--ink); }
     textarea { resize: vertical; min-height: 48px; }
 
     /* ── BUTTONS — Carnet ── */

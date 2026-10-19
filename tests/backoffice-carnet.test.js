@@ -77,6 +77,13 @@ describe('backofficeCarnetShould', () => {
     expect(rules).not.toMatch(/text-transform:\s*uppercase/);
   });
 
+  it('beat the forms plugin on input focus and placeholder (ink, mut)', () => {
+    const html = read('backoffice.html');
+
+    expect(html).toMatch(/body input:focus, body textarea:focus \{[^}]*border-color: var\(--ink\)[^}]*box-shadow: 0 0 0 1px var\(--ink\)/);
+    expect(html).toMatch(/body input::placeholder, body textarea::placeholder \{ color: var\(--mut\); \}/);
+  });
+
   it('read chart colours from the CSS variables', () => {
     expect(boFunction('boColor')).toContain("getComputedStyle(document.documentElement).getPropertyValue('--' + name).trim()");
   });
