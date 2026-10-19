@@ -283,6 +283,19 @@ describe('newEditorExerciseShould', () => {
   });
 });
 
+// Back-office shape: planned values live in the series only.
+const SERIES_ONLY = {
+  name: 'DC', sets: 2, comment: '', activities: [{ type: 'weight', label: '', name: '', rest: 90 }],
+  series: [{ activityStates: {}, values: [{ reps: 10, weight: 60 }] }, { activityStates: {}, values: [{ reps: 8, weight: 65 }] }],
+};
+
+// What the card reads back from a displayed activity (empty field = 0).
+function readBack(act) {
+  const num = v => Number(v) || 0;
+  return { type: act.type, label: act.label, name: act.name,
+    reps: num(act.reps), weight: num(act.weight), duration: num(act.duration), rest: num(act.rest) };
+}
+
 describe('editorCardFieldsShould', () => {
   it('show the weight values and leave the duration empty', () => {
     const fields = editorCardFields(ex('A', { comment: 'lent' }));
@@ -313,6 +326,20 @@ describe('editorCardFieldsShould', () => {
     const [act] = editorCardFields(ex('A', { activities: [{ ...WEIGHT, weight: 0.5, rest: 90 }] })).activities;
 
     expect([act.reps, act.weight, act.rest]).toEqual([10, 0.5, 90]);
+  });
+
+  it('show the first series values when the activity has none of its own', () => {
+    const [act] = editorCardFields(SERIES_ONLY).activities;
+
+    expect([act.reps, act.weight]).toEqual([10, 60]);
+  });
+
+  it('save an exercise with series only unchanged when its card is untouched', () => {
+    const fields = editorCardFields(SERIES_ONLY);
+    const rows   = fields.activities.map((shown, j) => ({ sourceIndex: j, shown: readBack(shown), current: readBack(shown) }));
+    const card   = { name: fields.name, sets: fields.sets, comment: fields.comment };
+
+    expect(mergeEditedExercise(SERIES_ONLY, { shown: card, current: card, rows })).toEqual(SERIES_ONLY);
   });
 
   it('fall back on three series', () => {

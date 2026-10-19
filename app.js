@@ -5237,7 +5237,16 @@ function openProgrammeEditor(programme = null) {
   saveBtn.type = 'button';
   saveBtn.className = 'h-10 px-3.5 bg-ink text-paper rounded text-[14px] font-medium active:opacity-80 transition';
   saveBtn.textContent = 'Enregistrer';
-  saveBtn.addEventListener('click', () => saveProgrammeFromEditor(programme ? programme.id : null, category, exercisesToSave()));
+  saveBtn.addEventListener('click', () => {
+    let toSave;
+    try {
+      toSave = exercisesToSave();
+    } catch (err) {
+      showToast(err.message);
+      return;
+    }
+    saveProgrammeFromEditor(programme ? programme.id : null, category, toSave);
+  });
   setParamsHeader({ editing: true, title: programme?.name || 'Nouveau programme', action: saveBtn });
 
   const form = document.createElement('div');
