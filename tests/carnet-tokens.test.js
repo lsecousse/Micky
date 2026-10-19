@@ -1,10 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
+import { read, functionSource, cssRules } from './source-helpers.js';
 
 const require = createRequire(import.meta.url);
-const root = new URL('../', import.meta.url);
-const read = (file) => readFileSync(new URL(file, root), 'utf8');
 
 const SCANNED_FILES = ['app.js', 'index.html', 'exercise-editor.js', 'backoffice.html', 'backoffice.js', 'set-password.html'];
 const A_TOKENS = 'ink|inkAlt|paper|muted|border|todo|cyan|acid|racing|blood';
@@ -45,16 +43,6 @@ const MIGRATED_HTML_BLOCKS = ['DIALOG CUSTOM', 'TOAST', 'COUNTDOWN STICKY TOP BA
 const MIGRATED_CSS_SELECTORS = ['#toast', '.dialog', '#countdown', '.live-edit', '.feedback-ia', '#chrono', '#minuterie', '.modal',
   '.series-not-done', '#loading-screen'];
 
-// Source of a top-level function, up to its closing brace at column 0.
-function functionSource(file, name) {
-  const src = read(file);
-  const start = src.search(new RegExp(`^(async )?function ${name}\\(`, 'm'));
-  if (start === -1) throw new Error(`function ${name} not found in ${file}`);
-  const end = src.indexOf('\n}', start);
-  if (end === -1) throw new Error(`end of function ${name} not found in ${file}`);
-  return src.slice(start, end + 2);
-}
-
 // Text between `<!-- MARKER` and the next comment of the same indentation.
 function htmlBlock(file, marker) {
   const src = read(file);
@@ -65,18 +53,6 @@ function htmlBlock(file, marker) {
   const rest = src.slice(from + open[0].length);
   const m = next.exec(rest);
   return m ? src.slice(from, from + open[0].length + m.index) : src.slice(from);
-}
-
-// Concatenation of the CSS rules whose selector contains selectorPart.
-function cssRules(file, selectorPart) {
-  const src = read(file);
-  const rules = [];
-  const re = /([^{}]+)\{([^{}]*)\}/g;
-  let m;
-  while ((m = re.exec(src))) {
-    if (m[1].includes(selectorPart)) rules.push(m[0].trim());
-  }
-  return rules.join('\n');
 }
 
 function directionALeftovers(src) {
