@@ -12,7 +12,7 @@ const root = document.getElementById('bo-root');
 const STATE_META = {
   new:              { label: 'Nouveau',      icon: '○' },
   invited:          { label: 'Invité',       icon: '✉' },
-  password_created: { label: 'Mot de passe créé', icon: '🔑' },
+  password_created: { label: 'Mot de passe créé', icon: '●' },
   connected:        { label: 'Connecté',     icon: '✓' },
 };
 function stateLabel(state) { return STATE_META[state || 'new']?.label || state; }
@@ -184,10 +184,10 @@ async function renderClientDetail() {
     <div class="bo-detail">
       <div class="bo-detail-header">
         <div class="bo-detail-title">
-          ${escapeHtml(selClient.prenom || '')} ${escapeHtml(selClient.nom || '')}
-          <span style="font-size:12px;color:var(--muted);font-weight:normal">${escapeHtml(selClient.email || '')}</span>
+          <span class="bo-detail-name">${escapeHtml(selClient.prenom || '')} ${escapeHtml(selClient.nom || '')}</span>
+          <span class="bo-detail-email">${escapeHtml(selClient.email || '')}</span>
           <span class="bo-state bo-state--${selClient.state || 'new'}">${stateLabel(selClient.state)}</span>
-          ${(selClient.state || 'new') === 'new' ? '<button class="btn-primary btn-sm" id="send-invite">✉ Envoyer l\'invitation</button>' : ''}
+          ${(selClient.state || 'new') === 'new' ? '<button class="btn-primary btn-sm" id="send-invite">Envoyer l\'invitation</button>' : ''}
           <button class="btn-danger btn-sm" id="del-client">Supprimer</button>
         </div>
         <div class="bo-tabs">
@@ -198,7 +198,7 @@ async function renderClientDetail() {
         </div>
       </div>
       <div class="bo-detail-body" id="bo-detail-body">
-        <p style="color:var(--muted)">Chargement…</p>
+        <p class="bo-note">Chargement…</p>
       </div>
     </div>`;
 
@@ -237,7 +237,7 @@ async function renderProgrammeList(body) {
 
   let html = `<button class="btn-primary btn-sm" id="new-prog" style="margin-bottom:16px">+ Nouveau programme</button>`;
   if (!progs.length) {
-    html += '<p style="color:var(--muted);font-size:13px">Aucun programme pour ce client.</p>';
+    html += '<p class="bo-note">Aucun programme pour ce client.</p>';
   } else {
     html += progs.map(p => {
       const total = p.estimated_duration_seconds != null
@@ -248,7 +248,7 @@ async function renderProgrammeList(body) {
       <div class="prog-row">
         <div>
           <div class="prog-row-name">${escapeHtml(p.name)}</div>
-          <div class="prog-row-count">${(p.exercises || []).length} exercice(s) · ~${minutes} min</div>
+          <div class="prog-row-count"><span class="bo-num">${(p.exercises || []).length}</span> exercice(s) · <span class="bo-num">~${minutes} min</span></div>
         </div>
         <div class="prog-row-actions">
           <button class="btn-secondary btn-sm" data-edit="${p.id}">Modifier</button>
@@ -285,7 +285,7 @@ function showCopyProgrammeModal(prog) {
     overlay.innerHTML = `
       <div class="modal">
         <h2>Copier "${escapeHtml(prog.name)}"</h2>
-        <p style="color:var(--muted);font-size:13px">Aucun autre client à qui copier ce programme.</p>
+        <p class="bo-note">Aucun autre client à qui copier ce programme.</p>
         <div class="flex-row" style="justify-content:flex-end">
           <button class="btn-secondary" id="cp-close">Fermer</button>
         </div>
@@ -300,7 +300,7 @@ function showCopyProgrammeModal(prog) {
       <div id="cp-targets" style="display:flex;flex-direction:column;gap:6px;max-height:50vh;overflow-y:auto">
         ${targets.map(c => `
           <button class="btn-secondary" data-target="${c.id}" style="text-align:left">
-            ${escapeHtml((c.prenom || '') + ' ' + (c.nom || ''))} <span style="color:var(--muted);font-size:12px">${escapeHtml(c.email || '')}</span>
+            ${escapeHtml((c.prenom || '') + ' ' + (c.nom || ''))} <span class="bo-copy-email">${escapeHtml(c.email || '')}</span>
           </button>
         `).join('')}
       </div>
@@ -780,7 +780,7 @@ async function deleteProgramme(id) {
 async function renderSessionList(body) {
   const sessions = await loadSessions(selClient.id);
   if (!sessions.length) {
-    body.innerHTML = '<p style="color:var(--muted);font-size:13px">Aucune séance enregistrée.</p>';
+    body.innerHTML = '<p class="bo-note">Aucune séance enregistrée.</p>';
     return;
   }
   body.innerHTML = sessions.map(s => {
@@ -792,7 +792,7 @@ async function renderSessionList(body) {
           <span class="session-prog">${escapeHtml(s.programmeName || 'Séance libre')}</span>
           <span class="session-date">${s.date || ''}</span>
         </div>
-        <div class="session-meta">${exCount} exercice(s)${dur ? ' · ' + dur : ''}</div>
+        <div class="session-meta"><span class="bo-num">${exCount}</span> exercice(s)${dur ? ' · <span class="bo-num">' + dur + '</span>' : ''}</div>
       </div>`;
   }).join('');
 }
@@ -820,7 +820,7 @@ async function renderUserData(body) {
         <span class="bo-id-tag"><span class="bo-id-label">Email</span> ${escapeHtml(selClient.email || '—')}</span>
         <span class="bo-id-tag"><span class="bo-id-label">Statut</span> <span class="bo-state bo-state--${selClient.state || 'new'}">${stateLabel(selClient.state)}</span></span>
         <span class="bo-id-tag"><span class="bo-id-label">Inscrit</span> ${createdAt}</span>
-        <span class="bo-id-tag"><span class="bo-id-label">Séances</span> ${sessions.filter(s => s.duration > 0).length}</span>
+        <span class="bo-id-tag"><span class="bo-id-label">Séances</span> <span class="bo-num">${sessions.filter(s => s.duration > 0).length}</span></span>
       </div>
     </div>
     <div class="bo-compact-section" style="margin-top:12px">
@@ -835,7 +835,7 @@ async function renderUserData(body) {
           <input type="number" id="bo-poids" min="20" max="400" step="0.1" value="${latestPoids}" style="width:80px" />
         </label>
         <button class="btn-primary btn-sm" id="bo-save-mesures">Enregistrer</button>
-        <span id="bo-save-msg" style="font-size:12px;color:var(--muted)"></span>
+        <span id="bo-save-msg" class="bo-save-msg"></span>
       </div>
     </div>`;
 
@@ -858,7 +858,7 @@ async function saveMesures() {
   const poids  = poidsEl.value  ? parseFloat(poidsEl.value)    : null;
 
   btn.disabled = true;
-  msgEl.style.color = 'var(--muted)';
+  msgEl.style.color = 'var(--mut)';
   msgEl.textContent = 'Enregistrement…';
 
   try {
@@ -880,10 +880,10 @@ async function saveMesures() {
       if (error) throw error;
     }
 
-    msgEl.style.color = '#4caf50';
+    msgEl.style.color = 'var(--done)';
     msgEl.textContent = '✓ Enregistré';
   } catch (e) {
-    msgEl.style.color = 'var(--danger)';
+    msgEl.style.color = 'var(--alert)';
     msgEl.textContent = e.message || 'Erreur';
   } finally {
     btn.disabled = false;
@@ -925,7 +925,7 @@ async function renderBodyTracking(body) {
   const measurements = await loadBodyMeasurements(selClient.id);
 
   if (!measurements.length) {
-    body.innerHTML = '<p style="color:var(--muted);font-size:13px">Aucune mesure enregistrée.</p>';
+    body.innerHTML = '<p class="bo-note">Aucune mesure enregistrée.</p>';
     return;
   }
 
@@ -936,15 +936,15 @@ async function renderBodyTracking(body) {
 
   const metrics = [
     {
-      label: 'Poids', unit: 'kg', color: '#9A7A30',
+      label: 'Poids', unit: 'kg',
       extract: m => m.poids ?? null,
     },
     {
-      label: 'Masse grasse', unit: '%', color: '#e53e3e',
+      label: 'Masse grasse', unit: '%',
       extract: m => m.img ?? null,
     },
     {
-      label: 'Prise de muscle', unit: 'kg', color: '#4caf50',
+      label: 'Prise de muscle', unit: 'kg',
       extract: m => {
         if (!firstLean) return null;
         const lean = leanMassKg(m);
@@ -972,9 +972,9 @@ async function renderBodyTracking(body) {
     card.innerHTML = `
       <span class="stats-exo-name">${m.label}</span>
       <div class="stats-exo-values">
-        <span class="stats-exo-start">${first.toFixed(1)} ${m.unit}</span>
+        <span class="stats-exo-start">${first.toFixed(1)}\u202F${m.unit}</span>
         <span class="stats-exo-arrow">→</span>
-        <span class="stats-exo-end">${last.toFixed(1)} ${m.unit}</span>
+        <span class="stats-exo-end">${last.toFixed(1)}\u202F${m.unit}</span>
         <span class="stats-exo-delta ${deltaClass}">${deltaStr}</span>
       </div>
     `;
@@ -1000,6 +1000,7 @@ async function renderBodyTracking(body) {
 
     const values = points.map(p => p.value);
     const trend  = linearTrend(values);
+    const ink = boColor('ink');
 
     new Chart(canvas, {
       type: 'line',
@@ -1009,18 +1010,19 @@ async function renderBodyTracking(body) {
           {
             label: m.label,
             data: values,
-            borderColor: m.color,
-            backgroundColor: m.color + '33',
+            borderColor: ink,
+            backgroundColor: ink + '14',
             borderWidth: 2,
             pointRadius: 3,
             pointHoverRadius: 5,
+            pointBackgroundColor: ink,
             tension: 0.3,
             fill: true,
           },
           {
             label: 'Tendance',
             data: trend,
-            borderColor: m.color,
+            borderColor: boColor('mut'),
             borderDash: [6, 4],
             borderWidth: 1.5,
             pointRadius: 0,
@@ -1029,38 +1031,7 @@ async function renderBodyTracking(body) {
           },
         ],
       },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: {
-            display: true, position: 'bottom',
-            labels: { color: '#888', font: { family: "'DM Mono', monospace", size: 11 }, boxWidth: 12, padding: 10 },
-          },
-          tooltip: {
-            backgroundColor: '#1a1a1a',
-            borderColor: '#2e2e2e',
-            borderWidth: 1,
-            titleColor: '#f0f0f0',
-            bodyColor: '#f0f0f0',
-            titleFont: { family: "'DM Mono', monospace" },
-            bodyFont: { family: "'DM Mono', monospace" },
-            callbacks: {
-              label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y.toFixed(1)} ${m.unit}`,
-            },
-          },
-        },
-        scales: {
-          x: {
-            ticks: { color: '#888', font: { family: "'DM Mono', monospace", size: 10 } },
-            grid:  { color: '#2e2e2e' },
-          },
-          y: {
-            ticks: { color: '#888', font: { family: "'DM Mono', monospace", size: 10 } },
-            grid:  { color: '#2e2e2e' },
-          },
-        },
-      },
+      options: boChartOptions(ctx => `${ctx.dataset.label}: ${ctx.parsed.y.toFixed(1)} ${m.unit}`),
     });
   });
 }
@@ -1093,10 +1064,51 @@ function boExoMetrics(ex, session) {
   return { date: session.date, volume, e1rm: Math.round(best1RM * 10) / 10 };
 }
 
-const CHART_COLORS = [
-  '#9A7A30', '#4caf50', '#2196f3', '#e53e3e', '#ff9800',
-  '#9c27b0', '#00bcd4', '#8bc34a', '#ff5722', '#607d8b',
-];
+// A Carnet colour, read from the CSS variables of backoffice.html.
+function boColor(name) {
+  return getComputedStyle(document.documentElement).getPropertyValue('--' + name).trim();
+}
+
+// Series i of a chart: ink, done, mut solid, then the same dashed (alert is kept for events).
+function boSeriesStyle(i) {
+  const tokens = ['ink', 'done', 'mut'];
+  return { token: tokens[i % 3], dash: i % 6 >= 3 ? [6, 4] : [] };
+}
+
+// Shared Chart.js look: rule axes and grid, mut IBM Plex Mono 12 px labels, ink tooltip.
+function boChartOptions(tooltipLabel, yTick) {
+  const ink = boColor('ink');
+  const paper = boColor('paper');
+  const mut = boColor('mut');
+  const rule = boColor('rule');
+  const mono = { family: "'IBM Plex Mono', monospace", size: 12 };
+  const axis = { grid: { color: rule, drawTicks: false }, border: { color: rule } };
+  return {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        display: true, position: 'bottom',
+        labels: { color: mut, font: mono, boxWidth: 24, boxHeight: 0, padding: 12 },
+      },
+      tooltip: {
+        backgroundColor: ink,
+        borderWidth: 0,
+        titleColor: paper,
+        bodyColor: paper,
+        titleFont: { ...mono, weight: '600' },
+        bodyFont: mono,
+        cornerRadius: 6,
+        padding: 10,
+        callbacks: { label: tooltipLabel },
+      },
+    },
+    scales: {
+      x: { ...axis, ticks: { color: mut, font: mono, maxRotation: 45, padding: 8 } },
+      y: { ...axis, ticks: { color: mut, font: mono, padding: 8, ...(yTick ? { callback: yTick } : {}) } },
+    },
+  };
+}
 
 function boStatsProgression(sessions) {
   const section = boStatsSection('Progression');
@@ -1179,9 +1191,9 @@ function boStatsProgression(sessions) {
       card.innerHTML = `
         <span class="stats-exo-name">${escapeHtml(exo.name)}</span>
         <div class="stats-exo-values">
-          <span class="stats-exo-start">${fmt(first)} ${unit}</span>
+          <span class="stats-exo-start">${fmt(first)}\u202F${unit}</span>
           <span class="stats-exo-arrow">→</span>
-          <span class="stats-exo-end">${fmt(last)} ${unit}</span>
+          <span class="stats-exo-end">${fmt(last)}\u202F${unit}</span>
           <span class="stats-exo-delta ${deltaClass}">${deltaStr}</span>
         </div>
       `;
@@ -1201,61 +1213,32 @@ function boStatsProgression(sessions) {
     const allDates = [...new Set(multiPointExos.flatMap(d => d.points.map(p => p.date)))].sort();
 
     const datasets = multiPointExos.map((exo, i) => {
-      const color = CHART_COLORS[i % CHART_COLORS.length];
+      const style = boSeriesStyle(i);
+      const color = boColor(style.token);
       const dateMap = {};
       exo.points.forEach(p => { dateMap[p.date] = p[activeMetric]; });
       return {
         label: exo.name,
         data: allDates.map(d => dateMap[d] ?? null),
         borderColor: color,
-        backgroundColor: color + '33',
+        backgroundColor: color + '22',
+        borderDash: style.dash,
         borderWidth: 2,
         pointRadius: 3,
         pointHoverRadius: 5,
+        pointBackgroundColor: color,
         tension: 0.3,
         spanGaps: true,
       };
     });
 
+    const fmtValue = v => activeMetric === 'volume' ? Math.round(v) : v.toFixed(1);
     chartInstance = new Chart(canvas, {
       type: 'line',
       data: { labels: allDates.map(d => d.slice(5).replace('-', '/')), datasets },
       options: {
-        responsive: true,
-        maintainAspectRatio: false,
+        ...boChartOptions(ctx => `${ctx.dataset.label}: ${fmtValue(ctx.parsed.y)} ${unit}`, fmtValue),
         interaction: { mode: 'index', intersect: false },
-        plugins: {
-          legend: {
-            position: 'bottom',
-            labels: { color: '#888', font: { family: "'DM Mono', monospace", size: 11 }, boxWidth: 12, padding: 10 },
-          },
-          tooltip: {
-            backgroundColor: '#1a1a1a',
-            borderColor: '#2e2e2e',
-            borderWidth: 1,
-            titleColor: '#f0f0f0',
-            bodyColor: '#f0f0f0',
-            titleFont: { family: "'DM Mono', monospace" },
-            bodyFont: { family: "'DM Mono', monospace" },
-            callbacks: {
-              label: ctx => `${ctx.dataset.label}: ${activeMetric === 'volume' ? Math.round(ctx.parsed.y) : ctx.parsed.y.toFixed(1)} ${unit}`,
-            },
-          },
-        },
-        scales: {
-          x: {
-            ticks: { color: '#555', font: { family: "'DM Mono', monospace", size: 10 } },
-            grid: { color: '#1a1a1a' },
-          },
-          y: {
-            ticks: {
-              color: '#555',
-              font: { family: "'DM Mono', monospace", size: 10 },
-              callback: v => activeMetric === 'volume' ? Math.round(v) : v.toFixed(1),
-            },
-            grid: { color: '#1a1a1a' },
-          },
-        },
       },
     });
   }
@@ -1291,7 +1274,7 @@ function showConfirmModal(message, onConfirm) {
   overlay.className = 'modal-overlay';
   overlay.innerHTML = `
     <div class="modal">
-      <p style="font-size:14px;line-height:1.6">${message}</p>
+      <p class="bo-confirm-msg">${message}</p>
       <div class="flex-row" style="justify-content:flex-end">
         <button class="btn-secondary" id="cm-cancel">Annuler</button>
         <button class="btn-danger"    id="cm-ok">Supprimer</button>
@@ -1317,7 +1300,7 @@ async function sendInvite(client) {
     showSuccessModal(client.email);
   } catch (err) {
     btn.disabled = false;
-    btn.textContent = '✉ Envoyer l\'invitation';
+    btn.textContent = 'Envoyer l\'invitation';
     alert('Erreur : ' + err.message);
   }
 }
@@ -1326,12 +1309,12 @@ function showSuccessModal(email) {
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay';
   overlay.innerHTML = `
-    <div class="modal" style="text-align:center;gap:16px">
-      <div style="font-size:40px">✓</div>
+    <div class="modal">
+      <p class="bo-success-mark">✓</p>
       <h2>Compte créé !</h2>
-      <p style="color:var(--muted);font-size:13px;line-height:1.6">
+      <p class="bo-note">
         Un email d'invitation a été envoyé à<br>
-        <strong style="color:var(--text)">${escapeHtml(email)}</strong><br>
+        <strong class="bo-strong">${escapeHtml(email)}</strong><br>
         pour que le client définisse son mot de passe.
       </p>
       <button class="btn-primary btn-full" id="sm-ok">Fermer</button>
@@ -1406,7 +1389,7 @@ function showAddClientModal() {
 
 /* ─── DELETE CLIENT ─────────────────────────────────── */
 async function deleteClient(id) {
-  showConfirmModal('Supprimer ce client et toutes ses données ?<br><span style="color:var(--danger);font-size:12px">Programmes et séances seront définitivement supprimés.</span>', async () => {
+  showConfirmModal('Supprimer ce client et toutes ses données ?<span class="bo-confirm-note">Programmes et séances seront définitivement supprimés.</span>', async () => {
     const { error } = await db.rpc('delete_client', { p_client_id: id, p_coach_id: coachId });
     if (error) { alert('Erreur : ' + error.message); return; }
     selClient = null;
