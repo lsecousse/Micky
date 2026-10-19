@@ -782,6 +782,7 @@ function liveSessionSnapshot(durationSecs = 0) {
           values:           s.values,
           duration_seconds: serieDurs[sIdx] ?? null,
         })),
+        ...(ex.group ? { group: ex.group } : {}),
       };
     }),
   };
@@ -836,24 +837,7 @@ async function startSession(programme) {
           prev:     null,
           state:    'pending',
         }))
-      : programme.exercises.map(ex => {
-          const m    = migrateExercise(ex);
-          const sets = ex.sets ?? m.series.length ?? (ex.count ?? 3);
-          return {
-            name:       ex.name,
-            comment:    ex.comment || '',
-            activities: m.activities,
-            prevSeries: null,
-            series: Array.from({ length: sets }, () => ({
-              activityStates: {},
-              values: m.activities.map(act =>
-                act.type === 'weight'
-                  ? { reps: act.reps || 0, weight: act.weight || 0 }
-                  : { duration: act.duration || 0 }
-              ),
-            })),
-          };
-        }),
+      : programme.exercises.map(ex => liveFonteExercise(ex, migrateExercise(ex))),
   };
   initLiveTimingMaps(null);
   await attachPrevValues(liveSession.exercises, programme.id, liveSession.category, liveSession.id);
@@ -1008,7 +992,10 @@ function renderLiveSession(tab) {
   const cdBar = document.getElementById('countdown-bar');
   if (cdBar) cdBar.classList.toggle('in-rest-split', liveRest !== null);
 
-  if (liveRest)       renderRestSplit(tab);
+  const supersetPause = liveRest && (liveRest.kind === 'roundRest' || liveRest.kind === 'transition');
+  if (supersetPause)  renderSupersetPause(tab);
+  else if (liveRest)  renderRestSplit(tab);
+  else if (liveFocus && liveSupersetBlock(liveSession.exercises, liveFocus.exIdx)) renderSupersetFocus(tab);
   else if (liveFocus) renderSeriesFocus(tab);
   else                renderExerciseList(tab, { totalSeries, doneSeries, totalVolume, doneVolume, totalReps, doneReps });
 }
@@ -1058,74 +1045,387 @@ function renderExerciseList(tab, totals = {}) {
     </div>`).join('');
   wrap.appendChild(metrics);
 
-  // Exercise list — done at the bottom
-  const indexed = liveSession.exercises.map((ex, exIdx) => {
-    const totalSets = ex.series.length;
-    const doneSets = ex.series.filter(s =>
-      ex.activities.every((_, a) => s.activityStates?.[a] === 'done')
-    ).length;
-    return { ex, exIdx, totalSets, doneSets };
-  });
-  indexed.sort((a, b) => {
-    const aDone = a.doneSets === a.totalSets ? 1 : 0;
-    const bDone = b.doneSets === b.totalSets ? 1 : 0;
-    return aDone - bDone;
-  });
-
+  // Exercise list — one entry per block, finished blocks at the bottom
   const list = document.createElement('div');
   list.className = 'border-0 border-solid border-t-[1.5px] border-ink';
 
-  let marked = false; // one highlighter at a time: the first exercise in progress
-  indexed.forEach(({ ex, exIdx, totalSets, doneSets }) => {
-    const startedSets = ex.series.filter(s =>
-      ex.activities.some((_, a) => s.activityStates?.[a])
-    ).length;
-
-    const isDone    = doneSets === totalSets;
-    const isStarted = !isDone && startedSets > 0;
-    const isMarked  = isStarted && !marked;
+  let marked = false; // one highlighter at a time: the first block in progress
+  liveListBlocks(liveSession.exercises).forEach(block => {
+    const isMarked = block.started && !block.done && !marked;
     if (isMarked) marked = true;
+    list.appendChild(block.kind === 'group'
+      ? supersetListEntry(block, isMarked)
+      : singleExerciseCard(block.indices[0], isMarked));
+  });
 
-    const muscle = (ex.activities?.[0]?.name) || '';
-    const wActIdx = ex.activities.findIndex(a => a.type === 'weight');
-    const wAct = wActIdx >= 0 ? ex.activities[wActIdx] : null;
-    // Affiche la dernière valeur saisie (sinon le planifié)
-    const latestVal = (() => {
-      if (wActIdx < 0) return null;
-      for (let i = ex.series.length - 1; i >= 0; i--) {
-        const v = ex.series[i]?.values?.[wActIdx];
-        if (v && (v.weight != null || v.reps != null)) return v;
-      }
-      return null;
-    })();
-    const dispWeight = latestVal?.weight ?? wAct?.weight ?? 0;
-    const dispReps   = latestVal?.reps   ?? wAct?.reps   ?? 0;
-    const summary = [
-      wAct ? `${totalSets} × ${dispReps} · ${formatKg(dispWeight)} kg` : `${totalSets} série${totalSets > 1 ? 's' : ''}`,
-      muscle ? escapeHtml(muscle) : '',
-    ].filter(Boolean).join(' · ');
-    const name = escapeHtml(ex.name);
-    const countCls = isDone ? 'font-semibold text-done' : (isStarted ? 'text-ink' : 'text-mut');
+  wrap.appendChild(list);
+  if (canOpenLiveGrouping(liveSession.exercises, Boolean(countdownTimer))) wrap.appendChild(groupOpenButton());
+  tab.appendChild(wrap);
+}
 
-    const card = document.createElement('button');
-    card.className = 'w-full text-left grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-1 items-baseline px-5 py-3 border-0 border-solid border-b border-rule text-ink active:bg-sheet transition';
-    card.innerHTML = `
+// Opens the next undone step of the block of `exIdx` (or its first activity when finished)
+function openListEntry(exIdx) {
+  const next = nextUndoneInBlock(liveSession.exercises, exIdx);
+  // Si exo entièrement fait, on ouvre la première activité de la première série pour permettre l'édition
+  liveFocus = next || { exIdx, sIdx: 0, actIdx: 0 };
+  if (next) markExoSerieStart(next.exIdx, next.sIdx);
+  renderSeanceScreen();
+}
+
+// Last entered weight value of an exercise (null when none)
+function latestWeightValue(ex, wActIdx) {
+  if (wActIdx < 0) return null;
+  for (let i = ex.series.length - 1; i >= 0; i--) {
+    const v = ex.series[i]?.values?.[wActIdx];
+    if (v && (v.weight != null || v.reps != null)) return v;
+  }
+  return null;
+}
+
+// List card of a single exercise (mock .item)
+function singleExerciseCard(exIdx, isMarked) {
+  const ex = liveSession.exercises[exIdx];
+  const totalSets = ex.series.length;
+  const doneSets = ex.series.filter(s =>
+    ex.activities.every((_, a) => s.activityStates?.[a] === 'done')
+  ).length;
+  const startedSets = ex.series.filter(s =>
+    ex.activities.some((_, a) => s.activityStates?.[a])
+  ).length;
+
+  const isDone    = doneSets === totalSets;
+  const isStarted = !isDone && startedSets > 0;
+
+  const muscle = (ex.activities?.[0]?.name) || '';
+  const wActIdx = ex.activities.findIndex(a => a.type === 'weight');
+  const wAct = wActIdx >= 0 ? ex.activities[wActIdx] : null;
+  // Affiche la dernière valeur saisie (sinon le planifié)
+  const latestVal = latestWeightValue(ex, wActIdx);
+  const dispWeight = latestVal?.weight ?? wAct?.weight ?? 0;
+  const dispReps   = latestVal?.reps   ?? wAct?.reps   ?? 0;
+  const summary = [
+    wAct ? `${totalSets} × ${dispReps} · ${formatKg(dispWeight)} kg` : `${totalSets} série${totalSets > 1 ? 's' : ''}`,
+    muscle ? escapeHtml(muscle) : '',
+  ].filter(Boolean).join(' · ');
+  const name = escapeHtml(ex.name);
+  const countCls = isDone ? 'font-semibold text-done' : (isStarted ? 'text-ink' : 'text-mut');
+
+  const card = document.createElement('button');
+  card.className = 'w-full text-left grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-1 items-baseline px-5 py-3 border-0 border-solid border-b border-rule text-ink active:bg-sheet transition';
+  card.innerHTML = `
       <h3 class="font-display italic font-bold text-[20px] leading-[1.15] ${isDone ? 'text-mut' : 'text-ink'}">${isMarked ? `<span class="mark">${name}</span>` : name}</h3>
       <span class="font-mono text-[14px] num-stat ${countCls}">${doneSets}/${totalSets}</span>
       <p class="col-start-1 text-[13px] text-mut num-stat">${summary}</p>
     `;
-    card.addEventListener('click', () => {
-      const next = nextUndoneActivity(exIdx);
-      // Si exo entièrement fait, on ouvre la première activité de la première série pour permettre l'édition
-      liveFocus = next || { exIdx, sIdx: 0, actIdx: 0 };
-      if (next) markExoSerieStart(next.exIdx, next.sIdx);
-      renderSeanceScreen();
-    });
-    list.appendChild(card);
-  });
+  card.addEventListener('click', () => openListEntry(exIdx));
+  return card;
+}
 
-  wrap.appendChild(list);
-  tab.appendChild(wrap);
+// Load of a group member in the list: last entered weight, else the planned one
+function memberLoadText(ex) {
+  const wActIdx = ex.activities.findIndex(a => a.type === 'weight');
+  if (wActIdx < 0) return '';
+  const weight = latestWeightValue(ex, wActIdx)?.weight ?? ex.activities[wActIdx].weight ?? 0;
+  return `${formatKg(weight)} kg`;
+}
+
+function supersetMemberRowHtml(exIdx, position, isDone) {
+  const ex = liveSession.exercises[exIdx];
+  return `
+      <span class="font-display italic font-bold text-[17px] ${isDone ? 'text-mut' : 'text-ink'}">${supersetMemberLetter(position)}</span>
+      <span class="font-display italic font-bold text-[19px] leading-[1.3] truncate ${isDone ? 'text-mut' : 'text-ink'}">${escapeHtml(ex.name)}</span>
+      <span class="font-mono text-[13px] text-mut num-stat">${memberLoadText(ex)}</span>`;
+}
+
+// List entry of a group (mock .grp): header, rounds counter, bracket of members
+function supersetListEntry(block, isMarked) {
+  const { roundsDone, rounds } = block.progress;
+  const label = `${supersetKindLabel(block.indices.length)} · ${rounds} tour${rounds > 1 ? 's' : ''}`;
+  const head = isMarked
+    ? `<span class="mark font-semibold">${label} · en cours</span>`
+    : `<span class="text-mut">${label}</span>`;
+  const countCls = block.done ? 'font-semibold text-done' : (block.started ? 'text-ink' : 'text-mut');
+
+  const entry = document.createElement('button');
+  entry.className = 'w-full text-left block px-5 pt-3 pb-3.5 border-0 border-solid border-b border-rule text-ink active:bg-sheet transition select-none';
+  entry.innerHTML = `
+      <div class="flex justify-between items-baseline gap-3 text-[13px]">
+        ${head}
+        <span class="font-mono text-[14px] num-stat ${countCls}">${roundsDone}/${rounds}</span>
+      </div>
+      <div class="mt-2 pl-3 border-0 border-solid border-l-2 border-ink grid grid-cols-[20px_minmax(0,1fr)_auto] gap-x-2 gap-y-1.5 items-baseline">
+        ${block.indices.map((exIdx, pos) => supersetMemberRowHtml(exIdx, pos, block.done)).join('')}
+      </div>
+    `;
+  entry.style.webkitTouchCallout = 'none';
+  onLongPress(entry, 500, () => openUngroupDialog(block.indices));
+  entry.addEventListener('click', () => openListEntry(block.indices[0]));
+  return entry;
+}
+
+// Dashed button under the list (mock .dashed): opens the « Grouper » sheet
+function groupOpenButton() {
+  const box = document.createElement('div');
+  box.className = 'px-5 pt-[18px] pb-5';
+  box.innerHTML = `<button id="group-open" class="w-full h-12 border-[1.5px] border-dashed border-ink rounded text-center text-[14px] font-medium text-ink active:bg-ink/10 transition">Grouper des exercices</button>`;
+  box.querySelector('#group-open').addEventListener('click', openGroupSheet);
+  return box;
+}
+
+/* ── « Grouper » sheet (mock screen 05) ──────────────── */
+let groupSheetState = null; // { picked, rounds (null = default), transition, roundRest, keep, escHandler }
+
+const GROUP_SHEET_STEPS = {
+  rounds:     { step: 1,  min: 1 },
+  transition: { step: 5,  min: 0 },
+  roundRest:  { step: 15, min: 0 },
+};
+const GROUP_COUNT_WORDS = { 2: 'des deux', 3: 'des trois', 4: 'des quatre' };
+
+function openGroupSheet() {
+  const escHandler = (e) => { if (e.key === 'Escape') closeGroupSheet(); };
+  document.addEventListener('keydown', escHandler);
+  groupSheetState = {
+    picked: [], rounds: null, keep: false, escHandler,
+    transition: SUPERSET_DEFAULT_TRANSITION, roundRest: SUPERSET_DEFAULT_ROUND_REST,
+  };
+  renderGroupSheet();
+  document.getElementById('group-sheet').classList.remove('hidden');
+}
+
+function closeGroupSheet() {
+  document.getElementById('group-sheet').classList.add('hidden');
+  document.getElementById('group-sheet-body').innerHTML = '';
+  if (groupSheetState) document.removeEventListener('keydown', groupSheetState.escHandler);
+  groupSheetState = null;
+}
+
+function groupSheetSettings(state) {
+  return {
+    rounds:     groupDraftRounds(liveSession.exercises, state.picked, state.rounds),
+    transition: state.transition,
+    roundRest:  state.roundRest,
+  };
+}
+
+// "4 × 8" for a weight exercise, "3 séries" otherwise
+function groupPickPlanText(ex) {
+  const wActIdx = ex.activities.findIndex(a => a.type === 'weight');
+  const sets = ex.series.length;
+  if (wActIdx < 0) return `${sets} série${sets > 1 ? 's' : ''}`;
+  return `${sets} × ${latestWeightValue(ex, wActIdx)?.reps ?? ex.activities[wActIdx].reps ?? 0}`;
+}
+
+function groupPickRowHtml(exIdx, picked) {
+  const pos = picked.indexOf(exIdx);
+  const box = pos >= 0
+    ? `<span class="w-[30px] h-[30px] shrink-0 flex items-center justify-center rounded border-[1.5px] border-solid border-ink bg-ink text-paper font-display italic font-bold text-[17px]">${supersetMemberLetter(pos)}</span>`
+    : `<span class="w-[30px] h-[30px] shrink-0 rounded border-[1.5px] border-solid border-ink"></span>`;
+  return `
+    <li><button data-group-pick="${exIdx}" class="w-full flex items-center gap-3 h-[54px] px-5 text-left text-ink border-0 border-solid border-b border-rule active:bg-ink/10 transition">
+      ${box}
+      <span class="flex-1 min-w-0 truncate font-display italic font-bold text-[18px] leading-[1.3]">${escapeHtml(liveSession.exercises[exIdx].name)}</span>
+      <small class="font-mono text-[12px] text-mut num-stat">${groupPickPlanText(liveSession.exercises[exIdx])}</small>
+    </button></li>`;
+}
+
+function groupOffRowHtml(name, reason) {
+  return `
+    <li class="flex items-center gap-3 h-[54px] px-5 text-mut border-0 border-solid border-b border-rule">
+      <span class="w-[30px] h-[30px] shrink-0 rounded border-[1.5px] border-solid border-rule"></span>
+      <span class="flex-1 min-w-0 truncate font-display italic font-bold text-[18px] leading-[1.3]">${name}</span>
+      <small class="text-[12px] text-mut">${reason}</small>
+    </li>`;
+}
+
+// One row per fonte block: groupable exercises are pickable, the others greyed; cardio absent
+function groupPickListHtml(picked) {
+  const exs = liveSession.exercises;
+  const groupable = groupableLiveIndices(exs);
+  return exerciseBlocks(exs).map(({ kind, indices }) => {
+    const ex = exs[indices[0]];
+    if (kind === 'group') {
+      const names = indices.map(i => escapeHtml(exs[i].name)).join(' + ');
+      return groupOffRowHtml(`${supersetKindLabel(indices.length)} · ${names}`, 'déjà groupé');
+    }
+    if (ex.type === 'cardio') return '';
+    if (groupable.includes(indices[0])) return groupPickRowHtml(indices[0], picked);
+    return groupOffRowHtml(escapeHtml(ex.name), 'commencé');
+  }).join('');
+}
+
+function groupCounterHtml(key, label, hint, valueText) {
+  const btn = 'w-[38px] h-[38px] rounded border-[1.5px] border-solid border-ink font-mono text-[18px] text-center text-ink active:bg-ink/10 transition';
+  return `
+    <div class="flex items-center justify-between gap-3 px-5 py-2.5">
+      <p class="text-[14px] font-medium text-ink">${label}<span class="block text-[12px] font-normal text-mut">${hint}</span></p>
+      <div class="flex items-center gap-2">
+        <button data-group-step="${key}" data-dir="-1" class="${btn}" aria-label="${label} moins">−</button>
+        <b class="w-16 text-center font-mono font-semibold text-[22px] text-ink num-stat">${valueText}</b>
+        <button data-group-step="${key}" data-dir="1" class="${btn}" aria-label="${label} plus">+</button>
+      </div>
+    </div>`;
+}
+
+function groupRoundsHint(picked) {
+  const longest = groupDraftRounds(liveSession.exercises, picked, null);
+  const among = GROUP_COUNT_WORDS[picked.length] || 'des exercices';
+  return `le plus long ${among} : <span class="font-mono num-stat">${longest}</span>`;
+}
+
+// Labelled checkbox row (« Garder dans le programme », « Retirer aussi du programme »)
+function checkboxRowHtml(id, label, hint, checked, rowCls = 'px-5 pt-3 pb-2.5') {
+  return `
+    <div class="flex items-center justify-between gap-3 ${rowCls}">
+      <p class="text-[14px] font-medium text-ink">${label}<span class="block text-[12px] font-normal text-mut">${hint}</span></p>
+      <button id="${id}" role="checkbox" aria-checked="${checked}" aria-label="${label}"
+        class="w-[30px] h-[30px] shrink-0 flex items-center justify-center rounded border-[1.5px] border-solid border-ink text-[16px] ${checked ? 'bg-ink text-paper' : 'text-ink'}">${checked ? '✓' : ''}</button>
+    </div>`;
+}
+
+function groupKeepRowHtml(keep) {
+  return checkboxRowHtml('group-keep', 'Garder dans le programme', 'sinon, pour cette séance seulement', keep);
+}
+
+function groupSheetBodyHtml(state) {
+  const settings = groupSheetSettings(state);
+  const n = state.picked.length;
+  return `
+    <p class="px-5 text-[13px] leading-normal text-mut">Touche 2 à 4 exercices pas encore commencés, dans l'ordre voulu : le premier touché devient A.</p>
+    <ul class="list-none mt-3.5 border-0 border-solid border-t border-rule">${groupPickListHtml(state.picked)}</ul>
+    <div class="pt-2">
+      ${groupCounterHtml('rounds', 'Tours', groupRoundsHint(state.picked), settings.rounds)}
+      ${groupCounterHtml('transition', 'Transition', 'entre exercices', formatRest(settings.transition))}
+      ${groupCounterHtml('roundRest', 'Repos de tour', 'après le dernier', formatRest(settings.roundRest))}
+    </div>
+    ${groupKeepRowHtml(state.keep)}
+    <div class="px-4 pt-3.5">
+      <button id="group-submit" ${n < 2 ? 'disabled' : ''} class="w-full h-14 bg-ink text-paper rounded text-[16px] font-semibold active:bg-ink/80 disabled:opacity-40 transition">Grouper ${n} exercice${n > 1 ? 's' : ''}</button>
+    </div>`;
+}
+
+function renderGroupSheet() {
+  document.getElementById('group-sheet-body').innerHTML = groupSheetBodyHtml(groupSheetState);
+}
+
+function stepGroupSetting(key, dir) {
+  const { step, min } = GROUP_SHEET_STEPS[key];
+  const current = groupSheetSettings(groupSheetState)[key];
+  groupSheetState[key] = Math.max(min, current + dir * step);
+}
+
+function handleGroupSheetClick(e) {
+  if (!liveSession) return closeGroupSheet();
+  if (!groupSheetState) return;
+  const pick = e.target.closest('[data-group-pick]');
+  const step = e.target.closest('[data-group-step]');
+  if (pick) groupSheetState.picked = togglePickedExercise(groupSheetState.picked, Number(pick.dataset.groupPick));
+  else if (step) stepGroupSetting(step.dataset.groupStep, Number(step.dataset.dir));
+  else if (e.target.closest('#group-keep')) groupSheetState.keep = !groupSheetState.keep;
+  else if (e.target.closest('#group-submit')) return submitLiveGrouping();
+  else return;
+  renderGroupSheet();
+}
+
+// Groups the picked exercises in the live session (timing maps follow), optionally in the programme too
+function submitLiveGrouping() {
+  const { picked, keep } = groupSheetState;
+  if (countdownTimer) return closeGroupSheet();
+  if (!canGroupLive(liveSession.exercises, picked)) return;
+  const settings = groupSheetSettings(groupSheetState);
+  const before = liveSession.exercises;
+  const { exercises, timing } = applyLiveGrouping(liveSession, picked, settings);
+  liveSession.exercises = exercises;
+  Object.assign(liveSession, timing);
+  closeGroupSheet();
+  pushSessionSafe(liveSessionSnapshot()).catch(() => {});
+  if (keep) keepGroupInProgramme(before, picked, settings);
+  renderSeanceScreen();
+}
+
+// Carries a live change over to the programme on its write queue; `transform(programmeExercises)`
+// gives the new exercises, or null when it cannot apply (the session keeps the change, a toast says so)
+function applyToProgramme(transform, fallbackToast, label) {
+  const programmeId = liveSession.programmeId;
+  programmeTemplateQueue = programmeTemplateQueue.then(async () => {
+    const prog = programmeId ? (await loadProgrammes()).find(p => p.id === programmeId) : null;
+    const exercises = prog ? transform(prog.exercises || []) : null;
+    if (!exercises) return showToast(fallbackToast);
+    await updateProgrammeDB({ ...prog, exercises });
+  }).catch(err => console.error(`${label} error:`, err));
+  return programmeTemplateQueue;
+}
+
+// Same grouping on the programme; a refusal keeps the session grouped
+function keepGroupInProgramme(sessionExercises, picked, settings) {
+  return applyToProgramme(exercises => programmeGrouping(exercises, sessionExercises, picked, settings),
+    'Groupe gardé pour cette séance seulement', 'keepGroupInProgramme');
+}
+
+document.getElementById('group-sheet-body').addEventListener('click', handleGroupSheetClick);
+document.getElementById('group-close').addEventListener('click', closeGroupSheet);
+document.querySelector('#group-sheet .live-edit-modal-overlay').addEventListener('click', closeGroupSheet);
+
+/* ── « Dégrouper » dialog (long press on a group entry) ── */
+let ungroupDialogState = null; // { indices, groupId, remove }
+
+function openUngroupDialog(indices) {
+  if (countdownTimer) return showToast('Dégrouper après le décompte');
+  ungroupDialogState = { indices, groupId: liveSession.exercises[indices[0]].group.id, remove: false };
+  renderUngroupDialog();
+  document.getElementById('ungroup-dialog').classList.remove('hidden');
+}
+
+function renderUngroupDialog() {
+  const { title, members } = ungroupDialogText(liveSession.exercises, ungroupDialogState.indices);
+  document.getElementById('ungroup-title').textContent = title;
+  document.getElementById('ungroup-members').textContent = members;
+  document.getElementById('ungroup-programme-slot').innerHTML =
+    checkboxRowHtml('ungroup-programme', 'Retirer aussi du programme', 'sinon, il revient à la prochaine séance',
+      ungroupDialogState.remove, '');
+}
+
+function closeUngroupDialog() {
+  document.getElementById('ungroup-dialog').classList.add('hidden');
+  ungroupDialogState = null;
+}
+
+function handleUngroupDialogClick(e) {
+  if (!liveSession) return closeUngroupDialog();
+  if (!ungroupDialogState) return;
+  if (e.target.closest('#ungroup-cancel')) return closeUngroupDialog();
+  if (e.target.closest('#ungroup-ok')) return submitLiveUngrouping();
+  if (!e.target.closest('#ungroup-programme')) return;
+  ungroupDialogState.remove = !ungroupDialogState.remove;
+  renderUngroupDialog();
+}
+
+// Ungroups in the live session (no reorder, timing maps untouched), optionally in the programme too
+function submitLiveUngrouping() {
+  const { groupId, remove } = ungroupDialogState;
+  closeUngroupDialog();
+  if (countdownTimer) return showToast('Dégrouper après le décompte');
+  const before = liveSession.exercises;
+  const indices = before.flatMap((ex, i) => (ex.group && ex.group.id === groupId ? [i] : []));
+  if (!indices.length) return;
+  liveSession.exercises = ungroupSuperset(before, groupId);
+  pushSessionSafe(liveSessionSnapshot()).catch(() => {});
+  if (remove) removeGroupFromProgramme(before, indices);
+  renderSeanceScreen();
+}
+
+// Same ungrouping on the programme
+function removeGroupFromProgramme(sessionExercises, memberIndices) {
+  return applyToProgramme(exercises => programmeUngrouping(exercises, sessionExercises, memberIndices),
+    'Dégroupé pour cette séance seulement', 'removeGroupFromProgramme');
+}
+
+document.getElementById('ungroup-dialog').addEventListener('click', handleUngroupDialogClick);
+
+// The live session ended: its sheets must not outlive it
+function closeLiveGroupingSheets() {
+  closeGroupSheet();
+  closeUngroupDialog();
 }
 
 // Exercise header (mock .head) — shared by the series focus and the rest split
@@ -1175,7 +1475,7 @@ function previousValueText(ex, sIdx, actIdx) {
 }
 
 // Highlighted (act) or framed (prep) series band: who + big mono values + optional action
-function seriesBandHtml(ex, sIdx, actIdx, { prep = false, action = '' } = {}) {
+function seriesBandHtml(ex, sIdx, actIdx, { prep = false, action = '', who: whoText = '' } = {}) {
   const act = ex.activities[actIdx];
   const v = ex.series[sIdx].values?.[actIdx] || {};
   const unit = (u) => `<small class="font-sans text-[14px] font-medium tracking-normal ml-1">${u}</small>`;
@@ -1187,7 +1487,7 @@ function seriesBandHtml(ex, sIdx, actIdx, { prep = false, action = '' } = {}) {
   } else {
     values = `<span class="font-display italic font-bold tracking-normal">Chrono</span>`;
   }
-  const who = [`Série ${sIdx + 1} sur ${ex.series.length}`];
+  const who = whoText ? [whoText] : [`Série ${sIdx + 1} sur ${ex.series.length}`];
   if (ex.activities.length > 1) who.push(escapeHtml(activityLabel(ex, actIdx)));
   const prevText = previousValueText(ex, sIdx, actIdx);
   const tone = prep
@@ -1290,58 +1590,75 @@ function renderSeriesFocus(tab) {
 
   renderExoMasthead(wrap, exIdx, `Série <b class="font-semibold text-ink">${sIdx + 1}</b> sur ${totalSets}`);
 
-  const editBtn = act.type === 'stopwatch'
-    ? ''
-    : `<button id="focus-edit" class="shrink-0 h-12 px-4 text-[14px] font-medium ${OUTLINE_BTN}">Modifier</button>`;
   const log = document.createElement('section');
   log.className = 'mb-6';
-  log.innerHTML = seriesLogHtml(ex, { sIdx, actIdx, html: seriesBandHtml(ex, sIdx, actIdx, { action: editBtn }) });
+  log.innerHTML = seriesLogHtml(ex, { sIdx, actIdx, html: seriesBandHtml(ex, sIdx, actIdx, { action: focusEditButtonHtml(act) }) });
   wrap.appendChild(log);
 
-  // Suggestion IA placeholder
-  if (act.type === 'weight') {
-    const sug = document.createElement('div');
-    sug.id = 'focus-suggestion';
-    sug.className = 'hidden mx-5 -mt-2 mb-6 flex items-center gap-2 text-[13px] leading-snug text-mut italic';
-    wrap.appendChild(sug);
-  }
+  if (act.type === 'weight') wrap.appendChild(weightSuggestionSlot());
 
-  // Dock — exercise list + validate (or start the timer)
-  const validateLabel = act.type === 'stopwatch'
-    ? 'Démarrer chrono'
-    : (act.type === 'countdown' ? 'Démarrer minuterie' : 'Valider');
   const hint = act.type === 'weight' ? nextStepHint(ex, sIdx, actIdx) : '';
-  const doneExos = liveSession.exercises.filter(isExerciseDone).length;
-  const dock = createDock(`
-    <div class="flex gap-2.5 pt-3">
-      <button id="dock-exos" class="w-[84px] h-14 shrink-0 text-[13px] leading-tight text-center ${OUTLINE_BTN}">Exercices<span class="block text-[12px] text-mut num-stat">${doneExos}/${liveSession.exercises.length} faits</span></button>
-      <button id="focus-validate" class="flex-1 min-w-0 h-14 px-3 bg-ink text-paper rounded text-[16px] font-semibold leading-tight text-center active:bg-ink/80 transition">${validateLabel}${hint ? `<span class="block text-[12px] font-normal opacity-70 truncate">${hint}</span>` : ''}</button>
-    </div>
-  `);
-  wrap.appendChild(dock);
+  wrap.appendChild(createDock(focusDockHtml(act, hint)));
 
   tab.appendChild(wrap);
 
-  // Suggestion IA — async
-  if (act.type === 'weight') {
-    const sugEl = document.getElementById('focus-suggestion');
-    if (sugEl) {
-      sugEl.innerHTML = `<div class="live-edit-suggestion-spinner"></div><span>Suggestion…</span>`;
-      sugEl.classList.remove('hidden');
-      const targetExName = ex.name;
-      generateWeightSuggestion(targetExName).then(text => {
-        if (!liveFocus || liveSession.exercises[liveFocus.exIdx]?.name !== targetExName) return;
-        const el = document.getElementById('focus-suggestion');
-        if (!el) return;
-        if (!text) { el.classList.add('hidden'); return; }
-        el.textContent = text;
-      }).catch(() => {
-        const el = document.getElementById('focus-suggestion');
-        if (el) el.classList.add('hidden');
-      });
-    }
-  }
+  if (act.type === 'weight') loadWeightSuggestion(ex.name);
+  bindFocusActions(exIdx, sIdx, actIdx);
+}
 
+// "Modifier" button of the highlighted band (a stopwatch is edited by its overlay)
+function focusEditButtonHtml(act) {
+  return act.type === 'stopwatch'
+    ? ''
+    : `<button id="focus-edit" class="shrink-0 h-12 px-4 text-[14px] font-medium ${OUTLINE_BTN}">Modifier</button>`;
+}
+
+// Placeholder of the async AI weight suggestion under the logbook
+function weightSuggestionSlot() {
+  const sug = document.createElement('div');
+  sug.id = 'focus-suggestion';
+  sug.className = 'hidden mx-5 -mt-2 mb-6 flex items-center gap-2 text-[13px] leading-snug text-mut italic';
+  return sug;
+}
+
+function loadWeightSuggestion(targetExName) {
+  const sugEl = document.getElementById('focus-suggestion');
+  if (!sugEl) return;
+  sugEl.innerHTML = `<div class="live-edit-suggestion-spinner"></div><span>Suggestion…</span>`;
+  sugEl.classList.remove('hidden');
+  generateWeightSuggestion(targetExName).then(text => {
+    if (!liveFocus || liveSession.exercises[liveFocus.exIdx]?.name !== targetExName) return;
+    const el = document.getElementById('focus-suggestion');
+    if (!el) return;
+    if (!text) { el.classList.add('hidden'); return; }
+    el.textContent = text;
+  }).catch(() => {
+    const el = document.getElementById('focus-suggestion');
+    if (el) el.classList.add('hidden');
+  });
+}
+
+// "Exercices · n/N faits" button of the thumb dock
+function dockExosButtonHtml() {
+  const doneExos = liveSession.exercises.filter(isExerciseDone).length;
+  return `<button id="dock-exos" class="w-[84px] h-14 shrink-0 text-[13px] leading-tight text-center ${OUTLINE_BTN}">Exercices<span class="block text-[12px] text-mut num-stat">${doneExos}/${liveSession.exercises.length} faits</span></button>`;
+}
+
+// Dock of a focused activity: exercise list + validate (or start the timer)
+function focusDockHtml(act, hint) {
+  const validateLabel = act.type === 'stopwatch'
+    ? 'Démarrer chrono'
+    : (act.type === 'countdown' ? 'Démarrer minuterie' : 'Valider');
+  return `
+    <div class="flex gap-2.5 pt-3">
+      ${dockExosButtonHtml()}
+      <button id="focus-validate" class="flex-1 min-w-0 h-14 px-3 bg-ink text-paper rounded text-[16px] font-semibold leading-tight text-center active:bg-ink/80 transition">${validateLabel}${hint ? `<span class="block text-[12px] font-normal opacity-70 truncate">${hint}</span>` : ''}</button>
+    </div>
+  `;
+}
+
+function bindFocusActions(exIdx, sIdx, actIdx) {
+  const act = liveSession.exercises[exIdx].activities[actIdx];
   document.getElementById('dock-exos').addEventListener('click', showExerciseList);
   document.getElementById('focus-edit')?.addEventListener('click', () => {
     openEditModalForActivity(exIdx, sIdx, actIdx);
@@ -1372,7 +1689,7 @@ function renderRestSplit(tab) {
   const editBtn = act.type === 'stopwatch'
     ? ''
     : `<button id="rest-edit" class="text-right text-[13px] font-semibold text-ink underline underline-offset-4">modifier</button>`;
-  const next = nextUndoneActivity(exIdx);
+  const next = liveRest.next || nextUndoneActivity(exIdx);
   const band = next ? { ...next, html: seriesBandHtml(ex, next.sIdx, next.actIdx, { prep: true }) } : null;
   const log = document.createElement('section');
   log.className = 'mb-6';
@@ -1392,7 +1709,18 @@ function renderRestSplit(tab) {
 
   tab.appendChild(wrap);
 
-  // Mirror du countdown du bandeau sticky (qui est masqué via .in-rest-split)
+  startRestDockSync();
+
+  document.getElementById('rest-edit')?.addEventListener('click', () => {
+    openEditModalForActivity(exIdx, sIdx, actIdx);
+  });
+  document.getElementById('rest-split-skip').addEventListener('click', () => {
+    showConfirm('Passer le repos ?', finishCountdown);
+  });
+}
+
+// Mirrors the sticky countdown (hidden via .in-rest-split) into the dock of a rest screen
+function startRestDockSync() {
   const sync = () => {
     const cdDisplay = document.getElementById('countdown-display');
     const splitTime = document.getElementById('rest-split-time');
@@ -1412,11 +1740,203 @@ function renderRestSplit(tab) {
   const restSyncId = setInterval(sync, 200);
   if (window.__restSyncId) clearInterval(window.__restSyncId);
   window.__restSyncId = restSyncId;
+}
 
-  document.getElementById('rest-edit')?.addEventListener('click', () => {
-    openEditModalForActivity(exIdx, sIdx, actIdx);
+/* ── Super set views (screens 01, 02, 02b, 03) ───────── */
+
+const SUPERSET_LOG_GRID = 'grid grid-cols-[30px_22px_minmax(0,1fr)_52px_34px_66px] items-baseline px-5 border-0 border-solid border-b border-rule';
+
+// Group header (mock .head): kind · round, rounds done, "A + B", optional settings line
+function supersetHeadHtml(block, model, withSettings) {
+  const names = block.indices.map(i => escapeHtml(liveSession.exercises[i].name));
+  const done = model.roundsDone;
+  const plural = done > 1 ? 's' : '';
+  const doneCount = done ? `<span class="shrink-0 num-stat font-semibold text-done">${done} tour${plural} fait${plural}</span>` : '';
+  const settings = withSettings
+    ? `<p class="text-[13px] text-mut mt-2.5">Transition <b class="font-medium text-ink num-stat">${supersetSettingText(block.transition ?? 0)}</b> · repos de tour <b class="font-medium text-ink num-stat">${supersetSettingText(block.roundRest ?? 0)}</b></p>`
+    : '';
+  return `
+    <header class="px-5 pt-5 pb-3.5">
+      <p class="flex justify-between gap-3 text-[13px] text-mut">
+        <span class="min-w-0">${supersetKindLabel(block.indices.length)} · <b class="font-semibold text-ink num-stat">tour ${model.round}</b> sur ${model.rounds}</span>
+        ${doneCount}
+      </p>
+      <h2 class="font-display italic font-medium text-[31px] leading-[1.05] tracking-[-0.01em] text-ink mt-1.5">${names[0]}${names.slice(1).map(n => `<br><span class="text-mut">+ ${n}</span>`).join('')}</h2>
+      ${settings}
+    </header>
+  `;
+}
+
+// "2 · A · Développé couché": who line of the band of a group step
+function supersetBandWho(model, row) {
+  return `${model.round} · ${row.letter} · ${escapeHtml(row.name)}`;
+}
+
+// One summary row (mock .lr.sum): a finished round, or the remaining rounds
+function supersetSummaryRowHtml(label, text, stateHtml, tone) {
+  return `
+    <div class="grid grid-cols-[34px_minmax(0,1fr)_auto] gap-x-2 items-baseline min-h-[40px] px-5 py-2.5 border-0 border-solid border-b border-rule text-[14px] ${tone}">
+      <span class="text-[12px] text-mut num-stat">${label}</span>
+      <span class="truncate num-stat">${escapeHtml(text)}</span>
+      ${stateHtml || '<span></span>'}
+    </div>
+  `;
+}
+
+// One row of the current round (mock .lr): round, letter, exercise, kg, reps, planned pause after it
+function supersetLogRowHtml(row, roundLabel, stateHtml) {
+  const ex = liveSession.exercises[row.exIdx];
+  const label = row.actIdx === 0 ? row.name : activityLabel(ex, row.actIdx);
+  const num = 'font-mono font-medium text-[17px] leading-none num-stat text-right';
+  const values = row.duration === null
+    ? `<span class="${num}">${formatKg(row.weight)}</span><span class="${num}">${row.reps}</span>`
+    : `<span class="col-span-2 ${num}">${formatRest(row.duration)}</span>`;
+  const after = row.after ? formatRest(row.after.seconds) : '';
+  return `
+    <div class="${SUPERSET_LOG_GRID} min-h-[40px] py-2.5 text-[14px] ${row.state === 'done' ? 'text-ink' : 'text-mut'}">
+      <span class="text-[12px] text-mut num-stat">${roundLabel}</span>
+      <span class="font-display italic font-bold text-[18px] leading-none">${row.actIdx === 0 ? row.letter : ''}</span>
+      <span class="truncate pr-1.5">${escapeHtml(label)}</span>
+      ${values}
+      ${stateHtml || `<span class="text-right text-[12px] text-mut num-stat">${after}</span>`}
+    </div>
+  `;
+}
+
+// Group logbook (mock .log): finished rounds summed up, the current round row by row
+// (`bandHtml(row)` replaces the focused step, `rowAction` overrides one row's last cell), remaining rounds summed up
+function supersetLogHtml(model, bandHtml, rowAction = null) {
+  const head = `
+    <div class="${SUPERSET_LOG_GRID} min-h-[30px] pt-2 pb-1.5 text-[12px] text-mut">
+      <span>Tour</span><span></span><span>Exercice</span><span class="text-right">kg</span><span class="text-right">reps</span><span class="text-right">puis</span>
+    </div>`;
+  const doneCell = '<span class="text-right text-[13px] font-semibold text-done">fait</span>';
+  const finished = model.finished.map(f => supersetSummaryRowHtml(f.round, f.text, doneCell, 'text-ink'));
+  const current = model.current.map((row, k) => {
+    if (row.state === 'focus') return bandHtml(row);
+    const action = rowAction && rowAction.exIdx === row.exIdx && rowAction.actIdx === row.actIdx ? rowAction.html : '';
+    return supersetLogRowHtml(row, k === 0 ? model.round : '', action);
   });
-  document.getElementById('rest-split-skip').addEventListener('click', () => {
+  const { remaining } = model;
+  const rest = remaining
+    ? supersetSummaryRowHtml(remaining.from === remaining.to ? remaining.from : `${remaining.from}–${remaining.to}`, remaining.text, '', 'text-mut')
+    : '';
+  return `<div class="border-0 border-solid border-t-[1.5px] border-ink">${head}${finished.join('')}${current.join('')}${rest}</div>`;
+}
+
+// Screen 01 — a step of a group in focus: the group logbook, the step highlighted
+function renderSupersetFocus(tab) {
+  const { exIdx, sIdx, actIdx } = liveFocus;
+  const ex = liveSession.exercises[exIdx];
+  const act = ex.activities[actIdx];
+  const block = liveSupersetBlock(liveSession.exercises, exIdx);
+  const model = supersetRoundLog(liveSession.exercises, block.indices, liveFocus);
+
+  const wrap = exerciseViewWrap(tab);
+  wrap.insertAdjacentHTML('beforeend', supersetHeadHtml(block, model, true));
+
+  const log = document.createElement('section');
+  log.className = 'mb-6';
+  log.innerHTML = supersetLogHtml(model, row =>
+    seriesBandHtml(ex, sIdx, actIdx, { action: focusEditButtonHtml(act), who: supersetBandWho(model, row) }));
+  wrap.appendChild(log);
+
+  if (act.type === 'weight') wrap.appendChild(weightSuggestionSlot());
+
+  const hint = supersetNextHint(liveSession.exercises, liveFocus)
+    ?? (act.type === 'weight' ? nextStepHint(ex, sIdx, actIdx) : '');
+  wrap.appendChild(createDock(focusDockHtml(act, hint)));
+
+  tab.appendChild(wrap);
+
+  if (act.type === 'weight') loadWeightSuggestion(ex.name);
+  bindFocusActions(exIdx, sIdx, actIdx);
+}
+
+// Highlighted countdown block of a pause dock, with its ± buttons
+function pauseTimerHtml(label, buttons) {
+  return `
+    <div class="-mx-4 mb-3 px-4 py-3 bg-hl flex items-center gap-2.5">
+      <div class="flex-1 min-w-0">
+        <p class="text-[13px] text-ink truncate">${label}</p>
+        <p id="rest-split-time" class="font-mono font-semibold text-[42px] leading-none tracking-[-0.04em] num-stat text-ink mt-1">--:--</p>
+        <div class="relative h-[3px] bg-ink/15 mt-2" aria-hidden="true"><div id="rest-split-bar" class="absolute left-0 top-0 h-full bg-ink" style="width:100%"></div></div>
+      </div>
+      ${buttons}
+    </div>
+  `;
+}
+
+function pauseStepButtonHtml(id, label) {
+  return `<button id="${id}" class="w-[58px] h-[46px] shrink-0 text-[13px] font-semibold text-center ${OUTLINE_BTN}">${label}</button>`;
+}
+
+// Dock of a group pause: highlighted countdown (or stop) + exercise list + the way on
+function supersetPauseDockHtml(view, nextWho, nextName, round) {
+  const line = (id, label) => `
+    <div class="flex gap-2.5">
+      ${dockExosButtonHtml()}
+      <button id="${id}" class="flex-1 min-w-0 h-14 text-[16px] font-semibold text-center ${OUTLINE_BTN}">${label}</button>
+    </div>`;
+  if (view === 'transitionStop') {
+    return `
+      <div class="-mx-4 mb-3 px-4 py-3 bg-hl">
+        <p class="text-[13px] text-ink">Va au poste suivant</p>
+        <p class="font-display italic font-bold text-[28px] leading-tight text-ink mt-1 truncate">${nextWho}</p>
+      </div>
+      ${line('transition-ready', "J'y suis")}`;
+  }
+  if (view === 'transitionCountdown') {
+    return pauseTimerHtml(`<span class="font-semibold">Transition</span> · va au ${escapeHtml(nextName.toLowerCase())}`,
+      pauseStepButtonHtml('transition-more', '+15 s')) + line('transition-ready', 'Je suis prêt');
+  }
+  return pauseTimerHtml(`<span class="font-semibold">Repos</span> · fin du tour ${round}`,
+    pauseStepButtonHtml('round-rest-less', '−15 s') + pauseStepButtonHtml('round-rest-more', '+15 s'))
+    + line('rest-split-skip', 'Passer le repos');
+}
+
+// Screens 02, 02b, 03 — transition or round rest: the next step framed, the countdown highlighted
+function renderSupersetPause(tab) {
+  const { exIdx, sIdx, actIdx, next } = liveRest;
+  const nextEx = liveSession.exercises[next.exIdx];
+  const block = liveSupersetBlock(liveSession.exercises, exIdx);
+  const model = supersetRoundLog(liveSession.exercises, block.indices, next);
+  const view = livePauseView(liveRest);
+
+  const wrap = exerciseViewWrap(tab);
+  wrap.insertAdjacentHTML('beforeend', supersetHeadHtml(block, model, false));
+
+  // The step just done stays correctable while it is in the round shown
+  const doneAct = liveSession.exercises[exIdx].activities[actIdx];
+  const fix = sIdx === next.sIdx && doneAct.type !== 'stopwatch'
+    ? { exIdx, actIdx, html: '<button id="rest-edit" class="text-right text-[13px] font-semibold text-ink underline underline-offset-4">corriger</button>' }
+    : null;
+  const log = document.createElement('section');
+  log.className = 'mb-6';
+  log.innerHTML = supersetLogHtml(model, row =>
+    seriesBandHtml(nextEx, next.sIdx, next.actIdx, { prep: true, who: supersetBandWho(model, row) }), fix);
+  wrap.appendChild(log);
+
+  const letter = supersetMemberLetter(block.indices.indexOf(next.exIdx));
+  const nextWho = `${letter} · ${escapeHtml(nextEx.name)}`;
+  wrap.appendChild(createDock(supersetPauseDockHtml(view, nextWho, nextEx.name, sIdx + 1)));
+  tab.appendChild(wrap);
+
+  if (view !== 'transitionStop') startRestDockSync();
+  bindSupersetPause(exIdx, sIdx, actIdx, next);
+}
+
+function bindSupersetPause(exIdx, sIdx, actIdx, next) {
+  document.getElementById('dock-exos').addEventListener('click', showExerciseList);
+  document.getElementById('rest-edit')?.addEventListener('click', () => openEditModalForActivity(exIdx, sIdx, actIdx));
+  document.getElementById('transition-more')?.addEventListener('click', () => adjustCountdown(15));
+  document.getElementById('round-rest-more')?.addEventListener('click', () => adjustCountdown(15));
+  document.getElementById('round-rest-less')?.addEventListener('click', () => adjustCountdown(-15));
+  document.getElementById('transition-ready')?.addEventListener('click', () => {
+    stopCountdown();
+    focusLiveStep(next);
+  });
+  document.getElementById('rest-split-skip')?.addEventListener('click', () => {
     showConfirm('Passer le repos ?', finishCountdown);
   });
 }
@@ -1518,19 +2038,16 @@ function completeFocusedActivity() {
   }
 
   const allDone = ex.series.every(s => ex.activities.every((_, a) => s.activityStates?.[a] === 'done'));
-  if (allDone && !liveSession.exoDurations[exIdx]) {
+  if (allDone && !liveSession.exoDurations[exIdx] && liveExerciseDurationAllowed(liveSession.exercises, exIdx)) {
     liveSession.exoDurations[exIdx] = Math.max(1, Math.round((Date.now() - liveSession.exoStartedAt[exIdx]) / 1000));
   }
 
   pushSessionSafe(liveSessionSnapshot()).catch(() => {});
 
-  const act = ex.activities[actIdx];
-  const restSecs = act.rest || 0;
+  const { next, pause } = nextLiveStep(liveSession.exercises, { exIdx, sIdx, actIdx });
 
-  const nextInSame = nextUndoneActivity(exIdx);
-
-  // Plus aucune série non faite dans cet exo → retour à la liste
-  if (!nextInSame) {
+  // Plus aucune étape non faite dans ce bloc → retour à la liste
+  if (!next) {
     liveFocus = null;
     liveRest = null;
     stopCountdown();
@@ -1538,25 +2055,41 @@ function completeFocusedActivity() {
     return;
   }
 
-  if (restSecs > 0) {
+  if (pause.kind !== 'rest') {
+    startSupersetPause({ exIdx, sIdx, actIdx }, next, pause);
+  } else if (pause.seconds > 0) {
     // Mode rest split : chrono mega + recap série juste faite + Modifier
-    liveRest = { exIdx, sIdx, actIdx };
+    liveRest = { exIdx, sIdx, actIdx, next };
     liveFocus = null;
     renderSeanceScreen();
-    const nextLabel = labelOfActivity(nextInSame);
-    startCountdown(restSecs, nextLabel, () => {
-      liveRest = null;
-      liveFocus = nextInSame; // bascule sur la série suivante
-      markExoSerieStart(nextInSame.exIdx, nextInSame.sIdx);
-      renderSeanceScreen();
-    });
+    startCountdown(pause.seconds, labelOfActivity(next), () => focusLiveStep(next));
   } else {
     // Pas de repos → direct série suivante
-    liveRest = null;
-    liveFocus = nextInSame;
-    markExoSerieStart(nextInSame.exIdx, nextInSame.sIdx);
-    renderSeanceScreen();
+    focusLiveStep(next);
   }
+}
+
+// Focus a step of the session and stamp its start
+function focusLiveStep(step) {
+  liveRest = null;
+  liveFocus = step;
+  markExoSerieStart(step.exIdx, step.sIdx);
+  renderSeanceScreen();
+}
+
+// Transition or round rest between two steps of a group (screens 02, 02b, 03)
+function startSupersetPause(done, next, pause) {
+  const state = { ...done, next, kind: pause.kind, seconds: pause.seconds, stop: false };
+  liveRest = { ...state, stop: livePauseView(state) === 'transitionStop' };
+  liveFocus = null;
+  renderSeanceScreen();
+  if (liveRest.stop) { stopCountdown(); return; }
+  // A transition always ends on a stop to confirm, never on an automatic focus
+  const onFinish = pause.kind === 'roundRest'
+    ? () => focusLiveStep(next)
+    : () => { liveRest = { ...state, stop: true }; liveFocus = null; renderSeanceScreen(); };
+  // Quiet on a transition: the toast would cover the exercise name of screen 02b
+  startCountdown(pause.seconds, labelOfActivity(next), onFinish, pause.kind === 'transition');
 }
 
 function labelOfActivity({ exIdx, sIdx, actIdx }) {
@@ -1949,8 +2482,9 @@ function updateProgrammeTemplate(exIdx, actIdx, field, val) {
   programmeTemplateQueue = programmeTemplateQueue.then(async () => {
     const programmes = await loadProgrammes();
     const prog = programmes.find(p => p.id === liveSession.programmeId);
-    if (!prog?.exercises[exIdx]?.activities?.[actIdx]) return;
-    prog.exercises[exIdx].activities[actIdx][field] = val;
+    const progIdx = programmeIndexOf(prog?.exercises || [], liveSession.exercises, exIdx);
+    if (!prog?.exercises[progIdx]?.activities?.[actIdx]) return;
+    prog.exercises[progIdx].activities[actIdx][field] = val;
     await updateProgrammeDB(prog);
   }).catch(err => console.error('updateProgrammeTemplate error:', err));
   return programmeTemplateQueue;
@@ -1993,7 +2527,7 @@ function finishSession() {
     stopAllChronos();
     stopSyncPolling();
     liveSession.exercises.forEach((ex, exIdx) => {
-      if (!liveSession.exoDurations[exIdx] && liveSession.exoStartedAt[exIdx]) {
+      if (!liveSession.exoDurations[exIdx] && liveSession.exoStartedAt[exIdx] && liveExerciseDurationAllowed(liveSession.exercises, exIdx)) {
         liveSession.exoDurations[exIdx] = Math.max(1, Math.round((Date.now() - liveSession.exoStartedAt[exIdx]) / 1000));
       }
     });
@@ -2025,6 +2559,7 @@ function finishSession() {
     liveSession = null;
     liveFocus = null;
     liveRest = null;
+    closeLiveGroupingSheets();
     releaseWakeLock();
     stopCountdown();
     showScreen('home');
@@ -2063,6 +2598,7 @@ async function syncFromDB() {
       liveSession = null;
       liveFocus = null;
       liveRest = null;
+      closeLiveGroupingSheets();
       stopCountdown();
       stopAllChronos();
       stopSyncPolling();
@@ -2189,6 +2725,7 @@ let countdownTimer    = null;
 let countdownSecs     = 0;
 let countdownTotal    = 0;
 let countdownOnFinish = null;
+let countdownQuiet = false;
 // Keep in sync with stroke-dasharray on .ring-progress in style.css
 const RING_CIRCUMFERENCE = 2 * Math.PI * 42; // ≈ 264 (ring compact, r=42)
 
@@ -2210,7 +2747,7 @@ function updateCountdownUI() {
   bar.classList.toggle('urgent', countdownSecs <= 5);
 }
 
-function startCountdown(seconds, nextLabel, onFinish) {
+function startCountdown(seconds, nextLabel, onFinish, quiet = false) {
   stopCountdown();
   if (!seconds || seconds <= 0) {
     if (onFinish) onFinish();
@@ -2219,6 +2756,7 @@ function startCountdown(seconds, nextLabel, onFinish) {
   countdownSecs     = seconds;
   countdownTotal    = seconds;
   countdownOnFinish = onFinish;
+  countdownQuiet    = quiet;
 
   // Sync countdown to watch
   if (liveSession) {
@@ -2242,11 +2780,24 @@ function startCountdown(seconds, nextLabel, onFinish) {
       if (countdownSecs <= 5) {
         beep(660, 80, 0.2);
         if (navigator.vibrate) navigator.vibrate(80);
-        if (countdownSecs === 5) showToast('Prenez place !');
+        if (countdownSecs === 5 && !countdownQuiet) showToast('Prenez place !');
       }
       updateCountdownUI();
     }
   }, 1000);
+}
+
+// ±15 s buttons of the superset pauses: shifts the running countdown and the watch sync
+function adjustCountdown(delta) {
+  if (!countdownTimer) return;
+  countdownSecs = Math.max(0, countdownSecs + delta);
+  if (countdownSecs > countdownTotal) countdownTotal = countdownSecs;
+  if (liveSession?.sync?.type === 'rest') {
+    liveSession.sync.duration = Math.max(0, liveSession.sync.duration + delta);
+    pushSessionSafe(liveSessionSnapshot()).catch(() => {});
+  }
+  if (countdownSecs === 0) { finishCountdown(); return; }
+  updateCountdownUI();
 }
 
 function showToast(msg) {
@@ -2262,8 +2813,9 @@ function showToast(msg) {
 
 function finishCountdown() {
   const fn = countdownOnFinish;
+  const quiet = countdownQuiet;
   stopCountdown();
-  showToast(randomFrom(goMessages()));
+  if (!quiet) showToast(randomFrom(goMessages()));
   if (fn) fn();
 }
 
@@ -2271,6 +2823,7 @@ function stopCountdown() {
   clearInterval(countdownTimer);
   countdownTimer    = null;
   countdownOnFinish = null;
+  countdownQuiet    = false;
   const bar = document.getElementById('countdown-bar');
   bar.classList.add('hidden');
   bar.classList.remove('urgent');

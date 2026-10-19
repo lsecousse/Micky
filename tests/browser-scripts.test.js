@@ -18,7 +18,7 @@ function loadInSharedScope(scripts) {
   return context;
 }
 
-// Phase 2 loads the super set scripts after the existing lib scripts.
+// backoffice.html does not load the super set scripts yet (lot C).
 const SUPERSET_SCRIPTS = ['lib/supersets.js', 'lib/superset-flow.js'];
 
 // Super set g1 = [A, B], 2 rounds, nothing done.
@@ -44,6 +44,12 @@ describe('browser lib scripts', () => {
     expect(context.computeEstimatedDuration(programme, new Map())).toBe(420);
   });
 
+  it('list each lib script once in index.html', () => {
+    const scripts = libScriptsOf('index.html');
+
+    expect(new Set(scripts).size).toBe(scripts.length);
+  });
+
   it('load together in index.html shared global scope', () => {
     const context = loadInSharedScope(libScriptsOf('index.html'));
 
@@ -58,7 +64,7 @@ describe('browser lib scripts', () => {
   });
 
   it('load super set scripts with index.html lib scripts in one shared global scope', () => {
-    const context = loadInSharedScope([...libScriptsOf('index.html'), ...SUPERSET_SCRIPTS]);
+    const context = loadInSharedScope(libScriptsOf('index.html'));
 
     expect(typeof context.groupExercises).toBe('function');
     expect(typeof context.nextLiveStep).toBe('function');
@@ -71,11 +77,32 @@ describe('browser lib scripts', () => {
   });
 
   it('walk a super set with the browser globals', () => {
-    const context   = loadInSharedScope([...libScriptsOf('index.html'), ...SUPERSET_SCRIPTS]);
+    const context   = loadInSharedScope(libScriptsOf('index.html'));
     const exercises = groupOfTwo();
     exercises[0].series[0].activityStates[0] = 'done';
 
     expect(context.nextUndoneInBlock(exercises, 0)).toEqual({ exIdx: 1, sIdx: 0, actIdx: 0 });
+  });
+
+  it('expose the live super set wiring in index.html shared global scope', () => {
+    const context = loadInSharedScope(libScriptsOf('index.html'));
+
+    expect(typeof context.liveFonteExercise).toBe('function');
+  });
+
+  it('expose the long press helper in index.html shared global scope', () => {
+    const context = loadInSharedScope(libScriptsOf('index.html'));
+
+    expect(typeof context.onLongPress).toBe('function');
+  });
+
+  it('ungroup a programme super set with the browser globals', () => {
+    const context   = loadInSharedScope(libScriptsOf('index.html'));
+    const programme = groupOfTwo();
+
+    const result = context.programmeUngrouping(programme, groupOfTwo(), [0, 1]);
+
+    expect(result.map(e => e.group)).toEqual([undefined, undefined]);
   });
 
   it('estimate a super set duration with the browser globals', () => {

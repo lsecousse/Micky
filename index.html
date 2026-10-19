@@ -242,6 +242,21 @@
     </div>
   </div>
 
+  <!-- DIALOG DÉGROUPER -->
+  <div id="ungroup-dialog" class="dialog hidden">
+    <div class="bg-sheet font-sans border-[1.5px] border-solid border-ink rounded p-6 max-w-[360px] w-full space-y-5">
+      <div>
+        <p id="ungroup-title" class="font-display italic font-medium text-[20px] text-ink leading-snug"></p>
+        <p id="ungroup-members" class="mt-1.5 font-display italic text-[16px] text-mut leading-snug"></p>
+      </div>
+      <div id="ungroup-programme-slot"></div>
+      <div class="flex gap-3">
+        <button id="ungroup-cancel" class="flex-1 h-14 border-[1.5px] border-solid border-ink rounded text-ink font-sans text-[16px] font-semibold active:bg-ink/10 transition">Annuler</button>
+        <button id="ungroup-ok" class="flex-1 h-14 bg-ink text-paper rounded font-sans text-[16px] font-semibold active:bg-ink/80 transition">Dégrouper</button>
+      </div>
+    </div>
+  </div>
+
   <!-- MODAL DÉTAIL SÉANCE -->
   <div id="modal" class="modal hidden">
     <div class="modal-content">
@@ -266,6 +281,19 @@
           <button id="live-edit-modal-ok" class="flex-1 h-14 bg-ink text-paper rounded text-[16px] font-semibold active:bg-ink/80 transition">Valider</button>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- TIROIR GROUPER (live) -->
+  <div id="group-sheet" class="live-edit-modal hidden">
+    <div class="live-edit-modal-overlay"></div>
+    <div class="live-edit-modal-sheet bg-sheet text-ink font-sans border-0 border-solid border-t-[1.5px] border-ink">
+      <div class="flex justify-center pt-2.5" aria-hidden="true"><span class="w-10 h-1 rounded-sm bg-rule"></span></div>
+      <div class="flex justify-between items-baseline px-5 pt-3 pb-1">
+        <h2 class="font-display italic font-bold text-[28px] leading-[1.1] text-ink">Grouper</h2>
+        <button id="group-close" class="h-10 text-[14px] text-mut">Fermer</button>
+      </div>
+      <div id="group-sheet-body"></div>
     </div>
   </div>
 
@@ -324,6 +352,10 @@
   <script src="lib/prefill-series.js"></script>
   <script src="lib/live-resume.js"></script>
   <script src="lib/watch-sync.js"></script>
+  <script src="lib/supersets.js"></script>
+  <script src="lib/superset-flow.js"></script>
+  <script src="lib/live-superset.js"></script>
+  <script src="lib/long-press.js"></script>
   <script src="supabase.js"></script>
   <script src="exercise-editor.js"></script>
   <script src="app.js"></script>
