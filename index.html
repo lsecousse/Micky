@@ -125,15 +125,14 @@
     </div>
 
     <!-- ALIMENTATION -->
-    <div id="screen-alim" class="screen">
-      <header class="sticky top-0 z-10 bg-a-ink/96 backdrop-blur-sm border-b border-a-border px-5 py-4 flex items-center gap-4">
-        <button id="back-alim" class="flex items-center gap-2 font-sans text-[11px] uppercase tracking-eyebrow text-a-paper active:text-a-acid transition">
-          <span aria-hidden class="text-[18px] leading-none">←</span>
-          <span>Retour</span>
+    <div id="screen-alim" class="screen bg-paper text-ink font-sans">
+      <header class="relative flex items-center gap-3 px-5 pt-5 pb-4 border-0 border-solid border-b-[1.5px] border-ink shrink-0">
+        <button id="back-alim" class="w-10 h-10 -ml-2 flex items-center justify-center text-ink active:text-mut transition" aria-label="Retour">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
         </button>
-        <div class="font-display font-bold italic text-[15px] leading-tight text-a-paper">Alimentation</div>
+        <span class="font-display italic text-[20px] font-bold tracking-tight text-ink">Alimentation</span>
       </header>
-      <main id="screen-alim-body" class="flex-1 min-h-0 overflow-y-auto"></main>
+      <main id="screen-alim-body" class="flex-1 min-h-0 overflow-y-auto pb-10"></main>
     </div>
 
     <!-- PARAMÈTRES -->
@@ -271,45 +270,51 @@
 
   <!-- MODAL AJOUTER REPAS -->
   <div id="add-meal-modal" class="live-edit-modal hidden">
-    <div class="live-edit-modal-overlay !bg-a-ink/80"></div>
-    <div class="!relative !bg-a-ink !border !border-a-border !rounded-none !p-6 !max-w-[400px] !w-full mx-4 space-y-5" style="background:var(--a-ink);max-height:90vh;overflow-y:auto">
-      <div>
-        <p class="font-sans text-[9px] uppercase tracking-[0.40em] text-a-acid font-semibold mb-2">Repas</p>
-        <h2 class="font-display font-bold italic text-[20px] leading-tight text-a-paper">Ajouter</h2>
-      </div>
-      <div>
-        <p class="font-sans text-[9px] uppercase tracking-[0.40em] text-a-muted mb-1.5">Description</p>
-        <textarea id="meal-text" placeholder="3 weetabix, miel, banane…" rows="3"
-          class="w-full bg-transparent border border-a-border focus:border-a-acid font-sans text-[14px] text-a-paper p-3 outline-none transition resize-y"></textarea>
-      </div>
-      <input type="file" id="meal-photo" accept="image/*" capture="environment" class="hidden" />
-      <button type="button" id="meal-photo-btn" class="w-full py-3 border border-a-border text-a-paper font-sans text-[11px] uppercase tracking-eyebrow active:border-a-acid active:text-a-acid transition">📸 Joindre une photo</button>
-      <div id="meal-photo-preview" class="hidden text-center"></div>
-      <p id="meal-error" class="hidden font-sans text-[11px] text-a-blood"></p>
-      <div class="grid grid-cols-2 gap-3">
-        <button id="meal-cancel" class="py-3 border border-a-border text-a-paper font-sans text-[11px] uppercase tracking-eyebrow active:border-a-paper transition">Annuler</button>
-        <button id="meal-save" class="py-3 bg-a-acid text-a-ink font-display font-bold text-[12px] uppercase tracking-eyebrow active:bg-a-acid/80 transition">Estimer →</button>
+    <div class="live-edit-modal-overlay"></div>
+    <div class="live-edit-modal-sheet bg-sheet text-ink font-sans border-0 border-solid border-t-[1.5px] border-ink">
+      <div class="flex justify-center pt-2.5" aria-hidden="true"><span class="w-10 h-1 rounded-sm bg-rule"></span></div>
+      <div class="px-5 pt-3 space-y-5">
+        <div>
+          <p class="text-[13px] text-mut">Repas</p>
+          <h2 class="font-display italic font-bold text-[28px] leading-[1.1] text-ink mt-1">Ajouter</h2>
+        </div>
+        <div>
+          <p class="text-[13px] text-mut mb-1.5">Description</p>
+          <textarea id="meal-text" placeholder="3 weetabix, miel, banane…" rows="3"
+            class="w-full bg-paper border border-solid border-rule rounded focus:border-ink focus:ring-0 font-sans text-[15px] leading-normal text-ink placeholder:text-mut p-3 outline-none transition resize-y"></textarea>
+        </div>
+        <input type="file" id="meal-photo" accept="image/*" capture="environment" class="hidden" />
+        <button type="button" id="meal-photo-btn" class="w-full h-14 border-[1.5px] border-solid border-ink rounded font-sans text-ink text-[16px] font-semibold active:bg-ink/10 transition">Joindre une photo</button>
+        <div id="meal-photo-preview" class="hidden text-center"></div>
+        <p id="meal-error" class="hidden text-[13px] text-alert"></p>
+        <div class="flex gap-2.5 pt-1">
+          <button id="meal-cancel" class="flex-1 h-14 border-[1.5px] border-solid border-ink rounded font-sans text-ink text-[16px] font-semibold active:bg-ink/10 transition">Annuler</button>
+          <button id="meal-save" class="flex-1 min-h-14 px-3 py-2 leading-tight bg-ink text-paper rounded font-sans text-[16px] font-semibold active:bg-ink/80 disabled:opacity-60 transition">Estimer →</button>
+        </div>
       </div>
     </div>
   </div>
 
   <!-- MODAL PRESET PETIT-DEJ -->
   <div id="meal-preset-modal" class="live-edit-modal hidden">
-    <div class="live-edit-modal-overlay !bg-a-ink/80"></div>
-    <div class="!relative !bg-a-ink !border !border-a-border !rounded-none !p-6 !max-w-[400px] !w-full mx-4 space-y-5" style="background:var(--a-ink)">
-      <div>
-        <p class="font-sans text-[9px] uppercase tracking-[0.40em] text-a-acid font-semibold mb-2">Preset</p>
-        <h2 id="meal-preset-title" class="font-display font-bold italic text-[20px] leading-tight text-a-paper">Définir petit-dej</h2>
-      </div>
-      <div>
-        <p class="font-sans text-[9px] uppercase tracking-[0.40em] text-a-muted mb-1.5">Description</p>
-        <textarea id="meal-preset-text" placeholder="3 weetabix, miel, banane…" rows="3"
-          class="w-full bg-transparent border border-a-border focus:border-a-acid font-sans text-[14px] text-a-paper p-3 outline-none transition resize-y"></textarea>
-      </div>
-      <p id="meal-preset-error" class="hidden font-sans text-[11px] text-a-blood"></p>
-      <div class="grid grid-cols-2 gap-3">
-        <button id="meal-preset-cancel" class="py-3 border border-a-border text-a-paper font-sans text-[11px] uppercase tracking-eyebrow active:border-a-paper transition">Annuler</button>
-        <button id="meal-preset-save" class="py-3 bg-a-acid text-a-ink font-display font-bold text-[12px] uppercase tracking-eyebrow active:bg-a-acid/80 transition">Estimer →</button>
+    <div class="live-edit-modal-overlay"></div>
+    <div class="live-edit-modal-sheet bg-sheet text-ink font-sans border-0 border-solid border-t-[1.5px] border-ink">
+      <div class="flex justify-center pt-2.5" aria-hidden="true"><span class="w-10 h-1 rounded-sm bg-rule"></span></div>
+      <div class="px-5 pt-3 space-y-5">
+        <div>
+          <p class="text-[13px] text-mut">Preset</p>
+          <h2 id="meal-preset-title" class="font-display italic font-bold text-[28px] leading-[1.1] text-ink mt-1">Définir petit-dej</h2>
+        </div>
+        <div>
+          <p class="text-[13px] text-mut mb-1.5">Description</p>
+          <textarea id="meal-preset-text" placeholder="3 weetabix, miel, banane…" rows="3"
+            class="w-full bg-paper border border-solid border-rule rounded focus:border-ink focus:ring-0 font-sans text-[15px] leading-normal text-ink placeholder:text-mut p-3 outline-none transition resize-y"></textarea>
+        </div>
+        <p id="meal-preset-error" class="hidden text-[13px] text-alert"></p>
+        <div class="flex gap-2.5 pt-1">
+          <button id="meal-preset-cancel" class="flex-1 h-14 border-[1.5px] border-solid border-ink rounded font-sans text-ink text-[16px] font-semibold active:bg-ink/10 transition">Annuler</button>
+          <button id="meal-preset-save" class="flex-1 min-h-14 px-3 py-2 leading-tight bg-ink text-paper rounded font-sans text-[16px] font-semibold active:bg-ink/80 disabled:opacity-60 transition">Estimer →</button>
+        </div>
       </div>
     </div>
   </div>

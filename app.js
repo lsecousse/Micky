@@ -3039,7 +3039,6 @@ async function openModal(session) {
     if (!apiKey) {
       generateBtn.disabled = true;
       generateBtn.textContent = 'Configurez votre clé API Claude dans Profil';
-      generateBtn.classList.add('btn-disabled');
     } else {
       generateBtn.addEventListener('click', async () => {
         const wrap = document.getElementById('feedback-ia-generate-wrap');
@@ -3417,21 +3416,22 @@ async function renderMealPresetButtons(container, dateIso, onChanged) {
   const bySlot = Object.fromEntries(presets.map(p => [p.slot, p]));
 
   const slots = [
-    { slot: 'pre_gym',  emoji: '☕', label: 'Petit-dej avant salle' },
-    { slot: 'post_gym', emoji: '🥛', label: 'Petit-dej après salle' },
+    { slot: 'pre_gym',  label: 'Petit-dej avant salle' },
+    { slot: 'post_gym', label: 'Petit-dej après salle' },
   ];
 
-  for (const { slot, emoji, label } of slots) {
+  for (const { slot, label } of slots) {
     const preset = bySlot[slot] || null;
     const row = document.createElement('div');
     row.className = 'flex items-stretch gap-2 mb-2';
 
     const mainBtn = document.createElement('button');
-    mainBtn.className = 'flex-1 py-3 px-4 border border-a-border text-a-paper font-sans text-[11px] uppercase tracking-eyebrow text-left active:border-a-acid active:text-a-acid transition';
-    mainBtn.innerHTML = `<span class="text-[14px] mr-2">${emoji}</span>${label}`;
+    mainBtn.className = 'flex-1 min-h-12 px-4 py-2.5 border-[1.5px] border-solid border-ink rounded font-sans text-[15px] font-semibold text-ink text-left active:bg-sheet transition';
+    mainBtn.textContent = label;
 
     const editBtn = document.createElement('button');
-    editBtn.className = 'shrink-0 py-3 px-3 border border-a-border text-a-muted active:text-a-paper active:border-a-paper transition';
+    editBtn.className = 'shrink-0 w-12 border-[1.5px] border-solid border-ink rounded font-sans text-[18px] text-ink active:bg-sheet transition';
+    editBtn.setAttribute('aria-label', 'Modifier');
     editBtn.textContent = '⚙';
     if (!preset) editBtn.classList.add('hidden');
 
@@ -3471,23 +3471,18 @@ async function renderMealPresetButtons(container, dateIso, onChanged) {
 async function renderAlimentation() {
   const body = document.getElementById('screen-alim-body');
   body.innerHTML = `
-    <div class="px-5 pt-12 text-center font-display italic text-[16px] text-a-muted">Chargement…</div>
+    <p class="px-5 pt-12 font-display italic text-[20px] text-mut">Chargement…</p>
   `;
 
   const apiKey = await getClaudeApiKeyDB();
   if (!apiKey) {
     body.innerHTML = `
-      <section class="px-5 pt-9 pb-9 accent-line">
-        <h1 class="font-display font-black h-display text-a-paper">
-          Clé<br/>
-          <span class="text-a-paper/40"><span class="text-a-acid not-italic font-black">·</span> manquante.</span>
-        </h1>
-        <p class="font-sans text-[10px] uppercase tracking-eyebrow text-a-muted mt-5">
-          Configure ta clé API Claude pour activer le suivi
-        </p>
+      <section class="px-5 pt-8 pb-7">
+        <h1 class="font-display font-medium text-[52px] leading-[0.95] tracking-[-0.02em] text-ink">Clé <em class="text-mut">manquante.</em></h1>
+        <p class="font-sans text-[13px] text-mut mt-3">Configure ta clé API Claude pour activer le suivi</p>
       </section>
-      <div class="px-5 mt-4">
-        <button id="alim-go-key" class="w-full py-4 bg-a-acid text-a-ink font-display font-bold text-[14px] uppercase tracking-eyebrow active:bg-a-acid/80 transition">→ Configurer la clé</button>
+      <div class="px-5">
+        <button id="alim-go-key" class="w-full h-14 bg-ink text-paper rounded font-sans text-[16px] font-semibold active:bg-ink/80 transition">→ Configurer la clé</button>
       </div>
     `;
     document.getElementById('alim-go-key').addEventListener('click', () => showScreen('claude-api'));
@@ -3496,58 +3491,53 @@ async function renderAlimentation() {
 
   body.innerHTML = '';
 
-  // Masthead H1 split
   const masthead = document.createElement('section');
-  masthead.className = 'px-5 pt-9 pb-9 accent-line';
+  masthead.className = 'px-5 pt-8 pb-6';
   masthead.innerHTML = `
-    <h1 class="font-display font-black h-display text-a-paper">
-      Tes<br/>
-      <span class="text-a-paper/40"><span class="text-a-acid not-italic font-black">·</span> apports.</span>
-    </h1>
+    <h1 class="font-display font-medium text-[52px] leading-[0.95] tracking-[-0.02em] text-ink">Ton <em class="text-mut">assiette.</em></h1>
   `;
   body.appendChild(masthead);
 
-  // Date selector (Tailwind-styled)
+  // Day navigation: the date field drives every block below
   const dateRow = document.createElement('div');
-  dateRow.className = 'px-5 mt-6 mb-3 flex items-center gap-3';
-  dateRow.innerHTML = `
-    <p class="font-sans text-[10px] uppercase tracking-eyebrow text-a-muted">Jour</p>
-    <span class="flex-1 h-px bg-a-border"></span>
-  `;
+  dateRow.className = 'px-5 mb-5 flex items-center gap-3';
+  dateRow.innerHTML = `<p class="font-sans text-[13px] text-mut">Jour</p>`;
   const dateInput = document.createElement('input');
   dateInput.type = 'date';
   dateInput.value = todayIso();
-  dateInput.className = 'font-sans text-[12px] text-a-paper border border-a-border bg-transparent px-3 py-1.5 focus:border-a-acid focus:outline-none';
+  dateInput.className = 'flex-1 min-w-0 h-11 bg-sheet border border-solid border-rule rounded focus:border-ink focus:ring-0 focus:outline-none font-mono text-[15px] text-ink px-3';
   dateRow.appendChild(dateInput);
   body.appendChild(dateRow);
 
-  // Bilan strip cyan
+  // Day balance
   const bilanCard = document.createElement('div');
   bilanCard.id = 'alim-bilan';
   body.appendChild(bilanCard);
 
   // Preset buttons (petit-dej avant/après salle)
   const presetContainer = document.createElement('div');
-  presetContainer.className = 'px-5 mt-6';
+  presetContainer.className = 'px-5 mt-8';
   body.appendChild(presetContainer);
 
   // Actions
   const actions = document.createElement('div');
-  actions.className = 'px-5 mt-4 space-y-3';
+  actions.className = 'px-5 mt-3 grid grid-cols-2 gap-2.5';
   body.appendChild(actions);
 
+  const lineBtnCls = 'min-h-14 px-3 py-2 border-[1.5px] border-solid border-ink rounded font-sans text-[15px] font-semibold leading-tight text-ink active:bg-sheet transition';
+
   const addBtn = document.createElement('button');
-  addBtn.className = 'w-full py-4 bg-a-acid text-a-ink font-display font-bold text-[14px] uppercase tracking-eyebrow active:bg-a-acid/80 transition';
+  addBtn.className = 'col-span-2 h-14 bg-ink text-paper rounded font-sans text-[16px] font-semibold active:bg-ink/80 transition';
   addBtn.textContent = '+ Ajouter un repas';
   actions.appendChild(addBtn);
 
   const adviceBtn = document.createElement('button');
-  adviceBtn.className = 'w-full py-3 border border-a-border text-a-paper font-sans text-[11px] uppercase tracking-eyebrow active:border-a-acid active:text-a-acid transition';
+  adviceBtn.className = lineBtnCls;
   adviceBtn.textContent = 'Conseil pour ce soir';
   actions.appendChild(adviceBtn);
 
   const askBtn = document.createElement('button');
-  askBtn.className = 'w-full py-3 border border-a-border text-a-paper font-sans text-[11px] uppercase tracking-eyebrow active:border-a-acid active:text-a-acid transition';
+  askBtn.className = lineBtnCls;
   askBtn.textContent = 'Poser une question';
   actions.appendChild(askBtn);
 
@@ -3555,9 +3545,9 @@ async function renderAlimentation() {
   const timelineSec = document.createElement('section');
   timelineSec.className = 'mt-10';
   const timelineHdr = document.createElement('header');
-  timelineHdr.className = 'flex items-baseline justify-between mb-3 px-5';
+  timelineHdr.className = 'px-5 pb-2';
   timelineHdr.innerHTML = `
-    <h3 class="font-display italic font-bold text-[14px] uppercase tracking-eyebrow text-a-paper">Timeline</h3>
+    <h2 class="font-display italic font-medium text-[22px] leading-tight text-ink">Timeline</h2>
   `;
   timelineSec.appendChild(timelineHdr);
   const timeline = document.createElement('div');
@@ -3602,84 +3592,76 @@ async function renderAlimentation() {
         bmrLabel = 'Métabolisme · 24h';
       }
     } else {
-      bmrNote = `<p class="font-sans text-[10px] uppercase tracking-eyebrow text-a-muted px-5 mt-3 italic">Configure taille / âge / sexe / activité dans Profil</p>`;
+      bmrNote = `<p class="font-sans text-[13px] text-mut px-5 mt-3">Configure taille / âge / sexe / activité dans Profil</p>`;
     }
 
     const net = apports - depenses - bmrToday;
-    const netColor = net > 200 ? 'text-a-blood' : net < -200 ? 'text-a-acid' : 'text-a-cyan';
+    const netColor = net > 200 ? 'text-alert' : net < -200 ? 'text-done' : 'text-ink';
+    const hasMeal = entries.some(e => e.type === 'meal');
+    const hasBurn = entries.some(e => e.type === 'session_burn');
 
-    // Stats 4 cols cyan (Apports / Métabolisme / Dépenses / Net)
+    // A dash instead of a misleading 0 when nothing is known yet
+    const dash = `<span class="font-mono text-[22px] text-mut leading-none">—</span>`;
+    const kcal = (value, cls = 'text-ink') => `<span class="font-mono text-[22px] num-stat ${cls} leading-none">${value}</span><span class="font-sans text-[13px] text-mut ml-1">kcal</span>`;
+    const cell = (label, value, cls = '') => `
+      <div class="px-5 py-3 min-w-0 ${cls}">
+        <p class="font-sans text-[13px] text-mut mb-1.5 truncate">${label}</p>
+        <p class="whitespace-nowrap">${value}</p>
+      </div>`;
+    const macro = (label, grams) => `<span class="whitespace-nowrap"><span class="text-mut">${label}</span> ${hasMeal ? `<span class="font-mono text-ink num-stat">${Math.round(grams)}</span><span class="text-mut"> g</span>` : `<span class="font-mono text-mut">—</span>`}</span>`;
+
     bilanCard.innerHTML = `
-      <div class="grid grid-cols-4 border-y border-a-border">
-        <div class="px-2.5 py-3 border-r border-a-border min-w-0">
-          <p class="font-sans text-[8px] uppercase tracking-[0.40em] text-a-muted mb-1.5">Apports</p>
-          <p class="font-display font-bold text-[17px] num-stat text-a-cyan leading-none truncate">${Math.round(apports)}<span class="font-sans text-[9px] uppercase tracking-eyebrow text-a-muted ml-1">kcal</span></p>
-        </div>
-        <div class="px-2.5 py-3 border-r border-a-border min-w-0">
-          <p class="font-sans text-[8px] uppercase tracking-[0.40em] text-a-muted mb-1.5 truncate">${bmrLabel}</p>
-          <p class="font-display font-bold text-[17px] num-stat text-a-cyan leading-none truncate">${Math.round(bmrToday)}<span class="font-sans text-[9px] uppercase tracking-eyebrow text-a-muted ml-1">kcal</span></p>
-        </div>
-        <div class="px-2.5 py-3 border-r border-a-border min-w-0">
-          <p class="font-sans text-[8px] uppercase tracking-[0.40em] text-a-muted mb-1.5">Dépenses</p>
-          <p class="font-display font-bold text-[17px] num-stat text-a-cyan leading-none truncate">${Math.round(depenses)}<span class="font-sans text-[9px] uppercase tracking-eyebrow text-a-muted ml-1">kcal</span></p>
-        </div>
-        <div class="px-2.5 py-3 min-w-0">
-          <p class="font-sans text-[8px] uppercase tracking-[0.40em] text-a-muted mb-1.5">Net</p>
-          <p class="font-display font-bold text-[17px] num-stat ${netColor} leading-none truncate">${net >= 0 ? '+' : ''}${Math.round(net)}<span class="font-sans text-[9px] uppercase tracking-eyebrow text-a-muted ml-1">kcal</span></p>
-        </div>
+      <div class="grid grid-cols-2 border-0 border-solid border-t-[1.5px] border-b border-t-ink border-b-rule">
+        ${cell('Apports', hasMeal ? kcal(Math.round(apports)) : dash, 'border-0 border-solid border-r border-b border-rule')}
+        ${cell(bmrLabel, bmr ? kcal(Math.round(bmrToday)) : dash, 'border-0 border-solid border-b border-rule')}
+        ${cell('Dépenses', hasBurn ? kcal(Math.round(depenses)) : dash, 'border-0 border-solid border-r border-rule')}
+        ${cell('Net', hasMeal ? kcal(`${net >= 0 ? '+' : ''}${Math.round(net)}`, netColor) : dash)}
       </div>
       ${bmrNote}
-      <div class="grid grid-cols-3 px-5 mt-3 gap-x-3 gap-y-1 font-sans text-[10px] uppercase tracking-eyebrow">
-        <div class="flex items-baseline gap-1.5"><span class="text-a-muted">Prot</span><span class="text-a-paper font-semibold num-stat">${Math.round(totP)}<span class="text-a-muted ml-0.5">g</span></span></div>
-        <div class="flex items-baseline gap-1.5"><span class="text-a-muted">Gluc</span><span class="text-a-paper font-semibold num-stat">${Math.round(totG)}<span class="text-a-muted ml-0.5">g</span></span></div>
-        <div class="flex items-baseline gap-1.5"><span class="text-a-muted">Lip</span><span class="text-a-paper font-semibold num-stat">${Math.round(totL)}<span class="text-a-muted ml-0.5">g</span></span></div>
-      </div>
+      <p class="flex flex-wrap gap-x-4 gap-y-1 px-5 mt-3 font-sans text-[13px]">
+        ${macro('Prot', totP)}${macro('Gluc', totG)}${macro('Lip', totL)}
+      </p>
       ${(depFonte > 0 || depCardio > 0) ? `
-        <div class="flex items-center gap-3 px-5 mt-3 font-sans text-[10px] uppercase tracking-eyebrow text-a-muted">
-          ${depFonte > 0  ? `<span>↳ Fonte ${Math.round(depFonte)} kcal</span>` : ''}
-          ${depCardio > 0 ? `<span>↳ Cardio ${Math.round(depCardio)} kcal</span>` : ''}
-        </div>` : ''}
+        <p class="flex flex-wrap gap-x-4 px-5 mt-1.5 font-sans text-[13px] text-mut">
+          ${depFonte > 0  ? `<span>↳ Fonte <span class="font-mono text-ink num-stat">${Math.round(depFonte)}</span> kcal</span>` : ''}
+          ${depCardio > 0 ? `<span>↳ Cardio <span class="font-mono text-ink num-stat">${Math.round(depCardio)}</span> kcal</span>` : ''}
+        </p>` : ''}
     `;
 
     // Timeline
     timeline.innerHTML = '';
     if (!entries.length) {
       timeline.innerHTML = `
-        <p class="font-display italic text-[14px] text-a-muted px-5 py-4">Aucune entrée pour ce jour.</p>
+        <p class="px-5 py-4 border-0 border-solid border-t-[1.5px] border-ink font-display italic text-[20px] text-mut">Aucune entrée pour ce jour.</p>
       `;
       return;
     }
 
     const ul = document.createElement('ul');
-    ul.className = 'border-y border-a-border';
+    ul.className = 'list-none border-0 border-solid border-t-[1.5px] border-ink';
 
-    entries.forEach((e, idx) => {
+    entries.forEach((e) => {
       const isMeal  = e.type === 'meal';
-      const borderLeft = isMeal
-        ? 'border-l-[3px] border-l-a-acid'
-        : 'border-l-[3px] border-l-a-racing bg-a-racing/[0.04]';
-      const kcalColor = isMeal ? 'text-a-acid' : 'text-a-racing';
       const arrow = isMeal ? '↑' : '↓';
-      const isLast = idx === entries.length - 1;
       const time = (e.time || '').slice(0, 5);
       const macros = isMeal && e.proteines_g != null
-        ? `<p class="font-sans text-[9px] uppercase tracking-eyebrow text-a-muted num-stat mt-1.5">P ${e.proteines_g}g · G ${e.glucides_g}g · L ${e.lipides_g}g</p>`
+        ? `<p class="font-sans text-[13px] text-mut num-stat mt-1">P <span class="font-mono">${e.proteines_g}</span> g · G <span class="font-mono">${e.glucides_g}</span> g · L <span class="font-mono">${e.lipides_g}</span> g</p>`
         : '';
 
       const li = document.createElement('li');
-      li.className = `flex items-start gap-3 px-5 py-4 ${isLast ? '' : 'border-b border-a-border/70'} ${borderLeft}`;
+      li.className = 'grid grid-cols-[44px_minmax(0,1fr)_auto] gap-x-3 items-baseline px-5 py-3 border-0 border-solid border-b border-rule';
       const photoClickable = e.photo_path ? 'cursor-pointer' : '';
       li.innerHTML = `
-        <div class="shrink-0 w-12 pt-1 ${photoClickable}">
-          <p class="font-display font-bold text-[14px] num-stat text-a-paper leading-none">${time}</p>
+        <div class="${photoClickable}">
+          <p class="font-mono text-[13px] num-stat text-mut leading-none">${time}</p>
         </div>
-        <div class="flex-1 min-w-0 ${photoClickable}" data-photo="${e.photo_path || ''}">
-          <p class="font-display font-bold italic text-[15px] leading-tight text-a-paper">${escapeHtml(e.description)}</p>
+        <div class="min-w-0 ${photoClickable}" data-photo="${e.photo_path || ''}">
+          <p class="font-sans text-[15px] leading-snug text-ink break-words">${escapeHtml(e.description)}</p>
           ${macros}
         </div>
-        <div class="text-right shrink-0 leading-none">
-          <p class="font-display font-bold text-[16px] num-stat ${kcalColor} leading-none">${arrow} ${Math.round(e.kcal || 0)}<span class="font-sans font-medium text-[9px] tracking-eyebrow text-a-muted ml-1">kcal</span></p>
-          <button class="font-sans text-[10px] uppercase tracking-eyebrow text-a-muted active:text-a-blood transition mt-2 alim-entry-del" data-id="${e.id}" data-photo="${e.photo_path || ''}">✕ Suppr</button>
+        <div class="text-right">
+          <p class="font-mono text-[14px] num-stat text-ink whitespace-nowrap leading-none">${arrow} ${Math.round(e.kcal || 0)}<span class="font-sans text-[13px] text-mut ml-1">kcal</span></p>
+          <button class="font-sans text-[13px] text-mut active:text-alert transition mt-2 alim-entry-del" data-id="${e.id}" data-photo="${e.photo_path || ''}">✕ Suppr</button>
         </div>
       `;
 
@@ -3725,7 +3707,7 @@ async function renderAlimentation() {
 function showFoodPhotoModal(url) {
   const modal = document.getElementById('modal');
   const body = document.getElementById('modal-body');
-  body.innerHTML = `<img src="${url}" style="width:100%;height:auto;border-radius:8px" />`;
+  body.innerHTML = `<div class="px-5 pt-16 pb-10"><img src="${url}" alt="" class="block w-full h-auto rounded border border-solid border-rule" /></div>`;
   modal.classList.remove('hidden');
 }
 
@@ -3755,7 +3737,7 @@ function openAddMealModal(dateIso, onSaved) {
     pendingFile = photoInput.files?.[0] || null;
     if (pendingFile) {
       const url = URL.createObjectURL(pendingFile);
-      preview.innerHTML = `<img src="${url}" style="max-width:100%;max-height:180px;border-radius:8px;margin-top:8px" />`;
+      preview.innerHTML = `<img src="${url}" alt="" class="inline-block max-w-full max-h-[180px] rounded border border-solid border-rule" />`;
       preview.classList.remove('hidden');
     } else {
       preview.innerHTML = '';
@@ -4023,14 +4005,14 @@ async function openEveningAdviceModal(dateIso) {
   const conversation = [{ role: 'user', content: initialPayload }];
 
   body.innerHTML = `
-    <div class="feedback-ia-modal" style="display:flex;flex-direction:column;gap:10px">
-      <div class="modal-title" style="color:#5abe78">🌙 Conseil pour ce soir</div>
-      <div id="advice-thread" style="display:flex;flex-direction:column;gap:10px;max-height:50vh;overflow-y:auto;padding-right:4px"></div>
+    <div class="feedback-ia-modal bg-sheet text-ink font-sans px-5 pt-14 pb-10 flex flex-col gap-4">
+      <h2 class="font-display italic font-bold text-[28px] leading-[1.1] text-ink pr-12">Conseil pour ce soir</h2>
+      <div id="advice-thread" class="flex flex-col gap-3 max-h-[50vh] overflow-y-auto pt-3 border-0 border-solid border-t-[1.5px] border-ink"></div>
       <textarea id="advice-input" placeholder="Une question, une précision…" rows="2"
-                style="width:100%;padding:10px;background:var(--bg);border:1px solid var(--a-border);border-radius:8px;color:var(--text);font-family:var(--font);font-size:14px;resize:vertical"></textarea>
-      <div class="live-edit-modal-actions">
-        <button class="btn-secondary" id="advice-close" style="color:var(--ink);border-color:var(--ink)">Fermer</button>
-        <button class="btn-primary"   id="advice-send">Envoyer</button>
+                class="w-full bg-paper border border-solid border-rule rounded focus:border-ink focus:ring-0 font-sans text-[15px] leading-normal text-ink placeholder:text-mut p-3 outline-none transition resize-y"></textarea>
+      <div class="flex gap-2.5">
+        <button class="flex-1 h-14 border-[1.5px] border-solid border-ink rounded font-sans text-ink text-[16px] font-semibold active:bg-ink/10 transition" id="advice-close">Fermer</button>
+        <button class="flex-1 min-h-14 px-3 py-2 leading-tight bg-ink text-paper rounded font-sans text-[16px] font-semibold active:bg-ink/80 disabled:opacity-60 transition" id="advice-send">Envoyer</button>
       </div>
     </div>
   `;
@@ -4043,9 +4025,10 @@ async function openEveningAdviceModal(dateIso) {
 
   function appendBubble(role, html) {
     const div = document.createElement('div');
-    div.style.cssText = role === 'assistant'
-      ? 'background:rgba(90,190,120,0.08);border-left:3px solid #5abe78;padding:10px 12px;border-radius:6px;font-size:14px;line-height:1.5'
-      : 'background:rgba(255,255,255,0.05);padding:8px 12px;border-radius:6px;align-self:flex-end;max-width:90%;font-size:14px';
+    // AI speaks plainly on the sheet; the user's lines sit on paper, right-aligned
+    div.className = role === 'assistant'
+      ? 'font-sans text-[15px] leading-relaxed text-ink break-words'
+      : 'self-end max-w-[90%] bg-paper border border-solid border-rule rounded px-3 py-2 font-sans text-[15px] leading-snug text-ink break-words';
     div.innerHTML = html;
     thread.appendChild(div);
     thread.scrollTop = thread.scrollHeight;
@@ -4083,14 +4066,14 @@ async function openEveningAdviceModal(dateIso) {
       conversation.push({ role: 'assistant', content: reply });
       loadingBubble.innerHTML = formatFeedback(reply);
     } catch (e) {
-      loadingBubble.innerHTML = `<span style="color:#ff5c5c">${escapeHtml(e.message)}</span>`;
+      loadingBubble.innerHTML = `<span class="text-alert">${escapeHtml(e.message)}</span>`;
     }
     sendBtn.disabled = false;
     sendBtn.textContent = 'Envoyer';
   }
 
   // Initial assistant reply
-  const firstLoading = appendBubble('assistant', `<div class="feedback-ia-loading" style="margin:0"><div class="feedback-ia-spinner"></div><span>Réflexion en cours…</span></div>`);
+  const firstLoading = appendBubble('assistant', `<div class="flex items-center gap-2 text-[13px] text-mut"><div class="live-edit-suggestion-spinner"></div><span>Réflexion en cours…</span></div>`);
   await sendAndRender(firstLoading);
 
   setTimeout(() => input.focus(), 100);
@@ -4101,7 +4084,7 @@ async function openEveningAdviceModal(dateIso) {
     appendBubble('user', txt);
     conversation.push({ role: 'user', content: txt });
     input.value = '';
-    const loading = appendBubble('assistant', `<div class="feedback-ia-loading" style="margin:0"><div class="feedback-ia-spinner"></div><span>…</span></div>`);
+    const loading = appendBubble('assistant', `<div class="flex items-center gap-2 text-[13px] text-mut"><div class="live-edit-suggestion-spinner"></div><span>…</span></div>`);
     await sendAndRender(loading);
     input.focus();
   };
@@ -4112,14 +4095,14 @@ async function openAskQuestionModal(dateIso) {
   const body = document.getElementById('modal-body');
 
   body.innerHTML = `
-    <div class="feedback-ia-modal">
-      <div class="modal-title" style="color:#5abe78">💬 Poser une question</div>
+    <div class="feedback-ia-modal bg-sheet text-ink font-sans px-5 pt-14 pb-10 flex flex-col gap-4">
+      <h2 class="font-display italic font-bold text-[28px] leading-[1.1] text-ink pr-12">Poser une question</h2>
       <textarea id="ask-text" placeholder="Ex : je repars à la salle à 18h, je dois manger quelque chose avant ?" rows="3"
-                style="width:100%;padding:12px;background:var(--bg);border:1px solid var(--a-border);border-radius:8px;color:var(--text);font-family:var(--font);font-size:14px;resize:vertical;margin-top:8px"></textarea>
-      <div id="ask-response" class="hidden" style="margin-top:12px"></div>
-      <div class="live-edit-modal-actions" style="margin-top:12px">
-        <button class="btn-secondary" id="ask-close" style="color:var(--ink);border-color:var(--ink)">Fermer</button>
-        <button class="btn-primary"   id="ask-send">Envoyer</button>
+                class="w-full bg-paper border border-solid border-rule rounded focus:border-ink focus:ring-0 font-sans text-[15px] leading-normal text-ink placeholder:text-mut p-3 outline-none transition resize-y"></textarea>
+      <div id="ask-response" class="hidden pt-3 border-0 border-solid border-t-[1.5px] border-ink"></div>
+      <div class="flex gap-2.5">
+        <button class="flex-1 h-14 border-[1.5px] border-solid border-ink rounded font-sans text-ink text-[16px] font-semibold active:bg-ink/10 transition" id="ask-close">Fermer</button>
+        <button class="flex-1 min-h-14 px-3 py-2 leading-tight bg-ink text-paper rounded font-sans text-[16px] font-semibold active:bg-ink/80 disabled:opacity-60 transition" id="ask-send">Envoyer</button>
       </div>
     </div>
   `;
@@ -4138,7 +4121,7 @@ async function openAskQuestionModal(dateIso) {
     if (!question) return;
     sendBtn.disabled = true;
     sendBtn.textContent = 'Réflexion…';
-    responseEl.innerHTML = `<div class="feedback-ia-loading"><div class="feedback-ia-spinner"></div><p>Réflexion en cours…</p></div>`;
+    responseEl.innerHTML = `<div class="flex items-center gap-2 text-[13px] text-mut"><div class="live-edit-suggestion-spinner"></div><span>Réflexion en cours…</span></div>`;
     responseEl.classList.remove('hidden');
 
     try {
@@ -4221,13 +4204,13 @@ async function openAskQuestionModal(dateIso) {
       const data = await response.json();
       const text = data.content?.[0]?.text || 'Pas de réponse.';
 
-      responseEl.innerHTML = `<div class="corps-analysis-content">${formatFeedback(text)}</div>`;
+      responseEl.innerHTML = `<div class="font-sans text-[15px] leading-relaxed text-ink break-words">${formatFeedback(text)}</div>`;
       sendBtn.textContent = 'Reposer';
       sendBtn.disabled = false;
       textEl.value = '';
       textEl.focus();
     } catch (e) {
-      responseEl.innerHTML = `<div class="corps-analysis-content" style="color:#ff5c5c">${escapeHtml(e.message)}</div>`;
+      responseEl.innerHTML = `<div class="font-sans text-[15px] leading-relaxed text-alert break-words">${escapeHtml(e.message)}</div>`;
       sendBtn.disabled = false;
       sendBtn.textContent = 'Envoyer';
     }

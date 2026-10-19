@@ -26,10 +26,12 @@ const MIGRATED_FUNCTIONS = [
   'renderHistory', 'resumeSessionFromHistory', 'openModal', 'closeModal', 'formatFeedback', 'feedbackCard',
   'openBodyAnalysisPopupLoading', 'fillBodyAnalysisPopup',
   'renderStats', 'statsSection', 'exoMetrics', 'buildStatsProgression', 'carnetColor',
+  'renderMealPresetButtons', 'renderAlimentation', 'showFoodPhotoModal', 'openAddMealModal',
+  'openMealPresetEditModal', 'openEveningAdviceModal', 'openAskQuestionModal',
 ];
 const MIGRATED_HTML_BLOCKS = ['DIALOG CUSTOM', 'TOAST', 'COUNTDOWN STICKY TOP BAR', 'HOME', 'À LA SALLE', 'MODAL ÉDITION ACTIVITÉ (live)',
   'CHRONO FULLSCREEN', 'MINUTERIE FULLSCREEN', 'HISTORIQUE', 'MODAL DÉTAIL SÉANCE',
-  'STATS'];
+  'STATS', 'ALIMENTATION', 'MODAL AJOUTER REPAS', 'MODAL PRESET PETIT-DEJ'];
 const MIGRATED_CSS_SELECTORS = ['#toast', '.dialog', '#countdown', '.live-edit', '.feedback-ia', '#chrono', '#minuterie', '.modal',
   '.series-not-done'];
 
@@ -187,6 +189,23 @@ describe('carnetTokensShould', () => {
   it('carnetColor reads a Carnet CSS variable', () => {
     expect(functionSource('app.js', 'carnetColor'))
       .toContain("getComputedStyle(document.documentElement).getPropertyValue('--' + name).trim()");
+  });
+
+  it('alimentation modals have no inline colour', () => {
+    const found = ['openEveningAdviceModal', 'openAskQuestionModal', 'openAddMealModal', 'openMealPresetEditModal']
+      .flatMap((name) => (functionSource('app.js', name).match(/#[0-9a-fA-F]{3,6}\b|var\(--bg\)|var\(--a-|var\(--text/g) ?? [])
+        .map((hit) => `${name}: ${hit}`));
+
+    expect(found).toEqual([]);
+  });
+
+  it('legacy .btn-* rules are gone', () => {
+    const legacy = /\.btn-(primary|secondary|danger|ghost)\b/g;
+
+    expect([
+      ...(read('style.css').match(legacy) ?? []),
+      ...(read('app.js').match(/\bbtn-(primary|secondary|danger|ghost|disabled)\b/g) ?? []),
+    ]).toEqual([]);
   });
 
   it.each(MIGRATED_FUNCTIONS)('migrated function %s has no Direction A leftover', (name) => {
