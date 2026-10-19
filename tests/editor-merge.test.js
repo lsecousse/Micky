@@ -120,6 +120,27 @@ describe('mergeEditedExerciseShould', () => {
     expect(result.series.map(s => s.values)).toEqual(benchPress().series.map(s => s.values));
   });
 
+  it('leave the source object untouched', () => {
+    const source = benchPress();
+    const edit = shownBenchPress();
+    edit.rows[0].current.weight = 60;
+
+    mergeEditedExercise(source, edit);
+
+    expect(source).toEqual(benchPress());
+  });
+
+  it('give a kept activity whose type changed a fresh column', () => {
+    const edit = shownBenchPress();
+    edit.rows[0].current = { ...edit.rows[0].current, type: 'countdown', duration: 45 };
+
+    const result = mergeEditedExercise(benchPress(), edit);
+
+    expect(result.series.map(s => s.values[0])).toEqual([
+      { duration: 45 }, { duration: 45 }, { duration: 45 }, { duration: 45 },
+    ]);
+  });
+
   it('build the exercise from the card alone when it has no source', () => {
     const edit = shownBenchPress();
     edit.rows[0].sourceIndex = null;
