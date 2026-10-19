@@ -14,7 +14,7 @@ function libScriptsOf(page) {
 function loadInSharedScope(scripts) {
   const context = vm.createContext({});
   context.window = context;
-  [...new Set(scripts)].forEach(src => vm.runInContext(readFileSync(src, 'utf8'), context, { filename: src }));
+  scripts.forEach(src => vm.runInContext(readFileSync(src, 'utf8'), context, { filename: src }));
   return context;
 }
 
@@ -42,6 +42,12 @@ describe('browser lib scripts', () => {
     const programme = { exercises: [{ name: 'Curl', activities: [{ type: 'weight', rest: 60 }], sets: 4 }] };
 
     expect(context.computeEstimatedDuration(programme, new Map())).toBe(420);
+  });
+
+  it('list each lib script once in index.html', () => {
+    const scripts = libScriptsOf('index.html');
+
+    expect(new Set(scripts).size).toBe(scripts.length);
   });
 
   it('load together in index.html shared global scope', () => {

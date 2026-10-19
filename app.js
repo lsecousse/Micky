@@ -1315,6 +1315,7 @@ function stepGroupSetting(key, dir) {
 }
 
 function handleGroupSheetClick(e) {
+  if (!liveSession) return closeGroupSheet();
   if (!groupSheetState) return;
   const pick = e.target.closest('[data-group-pick]');
   const step = e.target.closest('[data-group-step]');
@@ -1390,6 +1391,7 @@ function closeUngroupDialog() {
 }
 
 function handleUngroupDialogClick(e) {
+  if (!liveSession) return closeUngroupDialog();
   if (!ungroupDialogState) return;
   if (e.target.closest('#ungroup-cancel')) return closeUngroupDialog();
   if (e.target.closest('#ungroup-ok')) return submitLiveUngrouping();
@@ -1419,6 +1421,12 @@ function removeGroupFromProgramme(sessionExercises, memberIndices) {
 }
 
 document.getElementById('ungroup-dialog').addEventListener('click', handleUngroupDialogClick);
+
+// The live session ended: its sheets must not outlive it
+function closeLiveGroupingSheets() {
+  closeGroupSheet();
+  closeUngroupDialog();
+}
 
 // Exercise header (mock .head) — shared by the series focus and the rest split
 function renderExoMasthead(wrap, exIdx, kick) {
@@ -2551,6 +2559,7 @@ function finishSession() {
     liveSession = null;
     liveFocus = null;
     liveRest = null;
+    closeLiveGroupingSheets();
     releaseWakeLock();
     stopCountdown();
     showScreen('home');
@@ -2589,6 +2598,7 @@ async function syncFromDB() {
       liveSession = null;
       liveFocus = null;
       liveRest = null;
+      closeLiveGroupingSheets();
       stopCountdown();
       stopAllChronos();
       stopSyncPolling();

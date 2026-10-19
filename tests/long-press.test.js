@@ -7,8 +7,13 @@ function pointer(type, clientX = 0, clientY = 0) {
   return event;
 }
 
+// Node's EventTarget has no isConnected: a fake element attached to the page.
+function element() {
+  return Object.assign(new EventTarget(), { isConnected: true });
+}
+
 function pressed(ms = 500) {
-  const el = new EventTarget();
+  const el = element();
   const onLong = vi.fn();
   onLongPress(el, ms, onLong);
   el.dispatchEvent(pointer('pointerdown', 100, 100));
@@ -97,8 +102,34 @@ describe('onLongPressShould', () => {
     expect(onClick).toHaveBeenCalledTimes(1);
   });
 
+  it('not call back when the element was detached during the press', () => {
+    const el = element();
+    const onLong = vi.fn();
+    onLongPress(el, 500, onLong);
+    el.dispatchEvent(pointer('pointerdown', 100, 100));
+    el.isConnected = false;
+
+    vi.advanceTimersByTime(500);
+
+    expect(onLong).not.toHaveBeenCalled();
+  });
+
+  it('not guard page clicks when the element was detached during the press', () => {
+    const el = element();
+    const page = new EventTarget();
+    onLongPress(el, 500, () => {}, page);
+    el.dispatchEvent(pointer('pointerdown', 100, 100));
+    el.isConnected = false;
+    vi.advanceTimersByTime(500);
+    const click = pointer('click');
+
+    page.dispatchEvent(click);
+
+    expect(click.defaultPrevented).toBe(false);
+  });
+
   it('prevent the context menu', () => {
-    const el = new EventTarget();
+    const el = element();
     onLongPress(el, 500, () => {});
     const menu = pointer('contextmenu');
 
@@ -110,7 +141,7 @@ describe('onLongPressShould', () => {
   describe('at page level', () => {
     // Node's EventTarget has no capture phase: assert on the event, not on page listeners.
     function heldOnPage() {
-      const el = new EventTarget();
+      const el = element();
       const page = new EventTarget();
       onLongPress(el, 500, () => {}, page);
       el.dispatchEvent(pointer('pointerdown', 100, 100));
