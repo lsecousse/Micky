@@ -5226,9 +5226,7 @@ function openProgrammeEditor(programme = null) {
   saveBtn.type = 'button';
   saveBtn.className = 'h-10 px-3.5 bg-ink text-paper rounded text-[14px] font-medium active:opacity-80 transition';
   saveBtn.textContent = 'Enregistrer';
-  saveBtn.addEventListener('click', () => saveProgrammeFromEditor(programme ? programme.id : null, category, category === 'cardio'
-    ? Array.from(exercisesList.querySelectorAll('.exercise-card')).map(readCardioExerciseCard)
-    : programmeForSave(syncEditorFromDom(exercisesList))));
+  saveBtn.addEventListener('click', () => saveProgrammeFromEditor(programme ? programme.id : null, category, exercisesToSave()));
   setParamsHeader({ editing: true, title: programme?.name || 'Nouveau programme', action: saveBtn });
 
   const form = document.createElement('div');
@@ -5287,8 +5285,15 @@ function openProgrammeEditor(programme = null) {
         card.hidden = closed;
         card.classList.toggle('hidden', closed);
       });
+      exercisesList.querySelectorAll('[data-member-index]').forEach(row => row.querySelector('[data-member-toggle]')
+        .setAttribute('aria-expanded', String(Number(row.dataset.memberIndex) === openMember)));
     },
   };
+
+  function exercisesToSave() {
+    if (category === 'cardio') return Array.from(exercisesList.querySelectorAll('.exercise-card')).map(readCardioExerciseCard);
+    return programmeForSave(syncEditorFromDom(exercisesList));
+  }
 
   function render() {
     const scroll = tab.scrollTop;
@@ -5398,7 +5403,9 @@ function onGroupCardClick(e, block, ui) {
   if (move) ui.act(xs => moveWithinSuperset(xs, Number(row.dataset.memberIndex), Number(move.dataset.memberMove)));
   else if (e.target.closest('[data-action="link-next"]')) ui.act(xs => linkNextExercise(xs, last));
   else if (e.target.closest('[data-action="ungroup"]')) ui.act(xs => ungroupSuperset(xs, groupId));
-  else if (row && !e.target.closest('button')) ui.toggleMember(Number(row.dataset.memberIndex));
+  else if (row && (e.target.closest('[data-member-toggle]') || !e.target.closest('button'))) {
+    ui.toggleMember(Number(row.dataset.memberIndex));
+  }
 }
 
 const GROUP_SETTING_FIELDS = [
@@ -5429,10 +5436,10 @@ function groupMemberRowHtml(ex, pos, count, index) {
   return `
     <div class="ge flex items-center gap-2.5 ml-3.5 py-2.5 pl-3 pr-3.5 border-0 border-solid border-b border-l-2 border-rule border-l-ink cursor-pointer" data-member-index="${index}">
       <span class="let w-4 shrink-0 font-display italic font-bold text-[18px] text-ink">${supersetMemberLetter(pos)}</span>
-      <div class="flex-1 min-w-0">
-        <p class="m-0 font-display italic font-bold text-[17px] text-ink truncate">${escapeHtml(ex.name || 'Sans nom')}</p>
-        <p class="m-0 mt-0.5 font-mono text-[12px] text-mut">${escapeHtml(memberSummary(ex))}</p>
-      </div>
+      <button type="button" data-member-toggle class="flex-1 min-w-0 text-left" aria-expanded="false">
+        <span class="block font-display italic font-bold text-[17px] text-ink truncate">${escapeHtml(ex.name || 'Sans nom')}</span>
+        <span class="block mt-0.5 font-mono text-[12px] text-mut">${escapeHtml(memberSummary(ex))}</span>
+      </button>
       <div class="flex gap-2 shrink-0">${arrows}</div>
     </div>`;
 }

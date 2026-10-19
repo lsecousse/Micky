@@ -3,6 +3,7 @@ import {
   editorBlocks, readGroupSettings, programmeForSave, memberSummary, programmeListMeta,
   memberMoveDirs, applyGroupSettingsInput, newEditorExercise, editorCardFields,
 } from '../lib/programme-editor.js';
+import { mergeEditedExercise } from '../lib/planned-series.js';
 
 const WEIGHT = { type: 'weight', reps: 10, weight: 60 };
 const TIMER  = { type: 'countdown', duration: 45 };
@@ -135,11 +136,34 @@ describe('programmeForSaveShould', () => {
   });
 
   it('not mutate its input', () => {
-    const input = [member('A', { ...GROUP, rounds: 6 })];
+    const input = [member('A', { ...GROUP, rounds: 6 }), member('B', { ...GROUP, rounds: 6 })];
 
     programmeForSave(input);
 
     expect(input[0].sets).toBe(3);
+  });
+
+  it('name a blank exercise « Sans nom »', () => {
+    const result = programmeForSave([ex('  ')]);
+
+    expect(result[0].name).toBe('Sans nom');
+  });
+
+  it('save an untouched new exercise like the editor without source did', () => {
+    const blank = { type: 'weight', label: '', name: '', reps: 0, weight: 0, duration: 0, rest: 0 };
+    const read  = mergeEditedExercise(newEditorExercise(), {
+      shown:   { name: 'Sans nom', sets: 3, comment: '' },
+      current: { name: 'Sans nom', sets: 3, comment: '' },
+      rows:    [{ sourceIndex: 0, shown: blank, current: blank }],
+    });
+
+    expect(programmeForSave([read])[0]).toEqual({ name: 'Sans nom', sets: 3, comment: '', activities: [blank] });
+  });
+
+  it('drop the group of a lone member and keep its own sets', () => {
+    const result = programmeForSave([member('A', { ...GROUP, rounds: 6 }), ex('B')]);
+
+    expect([result[0].group, result[0].sets]).toEqual([undefined, 3]);
   });
 });
 
@@ -247,8 +271,11 @@ describe('applyGroupSettingsInputShould', () => {
 });
 
 describe('newEditorExerciseShould', () => {
-  it('start with three series of one weight activity', () => {
-    expect(newEditorExercise()).toEqual({ name: '', sets: 3, activities: [{ type: 'weight' }], comment: '' });
+  it('start with three series of one complete blank weight activity', () => {
+    expect(newEditorExercise()).toEqual({
+      name: '', sets: 3, comment: '',
+      activities: [{ type: 'weight', label: '', name: '', reps: 0, weight: 0, duration: 0, rest: 0 }],
+    });
   });
 
   it('return a fresh object each time', () => {
@@ -276,7 +303,11 @@ describe('editorCardFieldsShould', () => {
     expect(editorCardFields({ name: 'A', activities: [WEIGHT], series: [{}, {}] }).sets).toBe(2);
   });
 
-  it('fall back on three series and an empty name', () => {
-    expect([editorCardFields({ activities: [WEIGHT] }).sets, editorCardFields({ activities: [WEIGHT] }).name]).toEqual([3, '']);
+  it('fall back on three series', () => {
+    expect(editorCardFields({ activities: [WEIGHT] }).sets).toBe(3);
+  });
+
+  it('fall back on an empty name', () => {
+    expect(editorCardFields({ activities: [WEIGHT] }).name).toBe('');
   });
 });
