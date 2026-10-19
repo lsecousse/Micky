@@ -1357,7 +1357,7 @@ function applyToProgramme(transform, fallbackToast, label) {
 
 // Same grouping on the programme; a refusal keeps the session grouped
 function keepGroupInProgramme(sessionExercises, picked, settings) {
-  return applyToProgramme(prog => programmeGrouping(prog, sessionExercises, picked, settings),
+  return applyToProgramme(exercises => programmeGrouping(exercises, sessionExercises, picked, settings),
     'Groupe gardé pour cette séance seulement', 'keepGroupInProgramme');
 }
 
@@ -1414,7 +1414,7 @@ function submitLiveUngrouping() {
 
 // Same ungrouping on the programme
 function removeGroupFromProgramme(sessionExercises, memberIndices) {
-  return applyToProgramme(prog => programmeUngrouping(prog, sessionExercises, memberIndices),
+  return applyToProgramme(exercises => programmeUngrouping(exercises, sessionExercises, memberIndices),
     'Dégroupé pour cette séance seulement', 'removeGroupFromProgramme');
 }
 

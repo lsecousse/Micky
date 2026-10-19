@@ -151,9 +151,43 @@ describe('onLongPressShould', () => {
       expect(result).toEqual([false, false]);
     });
 
-    it('stop swallowing page clicks 400 ms after the long press', () => {
+    it('swallow the release click of a hold lasting well after the long press', () => {
       const { page } = heldOnPage();
-      vi.advanceTimersByTime(500 + 400);
+      vi.advanceTimersByTime(500 + 1000);
+      page.dispatchEvent(pointer('pointerup', 100, 100));
+
+      const result = pageClick(page);
+
+      expect(result).toEqual([true, true]);
+    });
+
+    it('stop swallowing page clicks 400 ms after the release', () => {
+      const { page } = heldOnPage();
+      vi.advanceTimersByTime(500);
+      page.dispatchEvent(pointer('pointerup', 100, 100));
+      vi.advanceTimersByTime(400);
+
+      const result = pageClick(page);
+
+      expect(result).toEqual([false, false]);
+    });
+
+    it('keep swallowing up to 400 ms after a pointercancel ending a long hold', () => {
+      const { page } = heldOnPage();
+      vi.advanceTimersByTime(500 + 1000);
+      page.dispatchEvent(pointer('pointercancel', 100, 100));
+      vi.advanceTimersByTime(399);
+
+      const result = pageClick(page);
+
+      expect(result).toEqual([true, true]);
+    });
+
+    it('stop swallowing page clicks 400 ms after a pointercancel', () => {
+      const { page } = heldOnPage();
+      vi.advanceTimersByTime(500);
+      page.dispatchEvent(pointer('pointercancel', 100, 100));
+      vi.advanceTimersByTime(400);
 
       const result = pageClick(page);
 
