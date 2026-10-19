@@ -5290,6 +5290,7 @@ function openProgrammeEditor(programme = null) {
       if (exercises?.length) {
         exercises.forEach(ex => exercisesList.appendChild(makeCardioExerciseCard({
           name: ex.name || '', duration: ex.duration ?? '', power: ex.power ?? '', comment: ex.comment || '',
+          source: ex,
         })));
       } else {
         exercisesList.appendChild(makeCardioExerciseCard());
@@ -5307,7 +5308,7 @@ function openProgrammeEditor(programme = null) {
           }));
           exercisesList.appendChild(makeExerciseCard({
             name: ex.name || '', sets: ex.sets || m.series?.length || ex.count || 3,
-            activities: acts, comment: ex.comment || '',
+            activities: acts, comment: ex.comment || '', source: m,
           }));
         });
       } else {

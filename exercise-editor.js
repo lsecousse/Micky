@@ -144,7 +144,9 @@ function makeActivityRow({ type = 'weight', label = '', name = '', reps = '', we
 }
 
 /* ── Éditeur d'exercice ────────────────────────────────── */
-function makeExerciseCard({ name = '', sets = 3, activities = null, comment = '' } = {}) {
+// `source` = programme exercise shown by the card: saving keeps what the card does not edit
+// (_shown = what the card and its rows displayed when built, to tell which fields changed).
+function makeExerciseCard({ name = '', sets = 3, activities = null, comment = '', source = null } = {}) {
   const card = document.createElement('div');
   card.className = 'exercise-card border-l-[3px] border-l-a-acid border-y border-r border-a-border bg-a-inkAlt/30 px-5 py-5 space-y-5';
 
@@ -191,7 +193,11 @@ function makeExerciseCard({ name = '', sets = 3, activities = null, comment = ''
   const activitiesList = document.createElement('div');
   activitiesList.className = 'activities-list space-y-3';
   const defaultActs = activities || [{ type: 'weight' }];
-  defaultActs.forEach(act => activitiesList.appendChild(makeActivityRow(act)));
+  defaultActs.forEach((act, j) => {
+    const row = makeActivityRow(act);
+    if (source) Object.assign(row, { _shown: _readActivityFields(row), _sourceIndex: j });
+    activitiesList.appendChild(row);
+  });
   syncActivityLabels(activitiesList);
   card.appendChild(activitiesList);
 
@@ -213,12 +219,12 @@ function makeExerciseCard({ name = '', sets = 3, activities = null, comment = ''
   commentInput.value = comment;
   card.appendChild(commentInput);
 
+  if (source) Object.assign(card, { _shown: _readExerciseFields(card), _source: source });
   return card;
 }
 
-/* Lit une exercise-card DOM → objet exercise */
-function readExerciseCard(card) {
-  const activities = Array.from(card.querySelectorAll('.activity-row')).map(row => ({
+function _readActivityFields(row) {
+  return {
     type:     row.querySelector('.activity-type-btn').dataset.type || 'weight',
     label:    row.querySelector('.activity-label').value.trim(),
     name:     row.querySelector('.activity-name').value.trim(),
@@ -226,20 +232,34 @@ function readExerciseCard(card) {
     weight:   parseFloat(row.querySelector('.activity-weight')?.value)   || 0,
     duration: parseFloat(row.querySelector('.activity-duration')?.value) || 0,
     rest:     parseInt(row.querySelector('.activity-rest')?.value)       || 0,
-  }));
-  return {
-    name:       card.querySelector('.exercise-name').value.trim() || 'Sans nom',
-    sets:       parseInt(card.querySelector('.exercise-sets').value) || 1,
-    activities,
-    comment:    card.querySelector('.exercise-comment').value.trim(),
   };
+}
+
+function _readExerciseFields(card) {
+  return {
+    name:    card.querySelector('.exercise-name').value.trim() || 'Sans nom',
+    sets:    parseInt(card.querySelector('.exercise-sets').value) || 1,
+    comment: card.querySelector('.exercise-comment').value.trim(),
+  };
+}
+
+/* Lit une exercise-card DOM → objet exercise (l'exercice d'origine est conservé) */
+function readExerciseCard(card) {
+  const rows = Array.from(card.querySelectorAll('.activity-row')).map(row => ({
+    sourceIndex: row._sourceIndex ?? null,
+    shown:       row._shown || null,
+    current:     _readActivityFields(row),
+  }));
+  return mergeEditedExercise(card._source || null, {
+    shown: card._shown || null, current: _readExerciseFields(card), rows,
+  });
 }
 
 /* ═══════════════════════════════════════════════════════
    CARDIO EXERCISE EDITOR
 ═══════════════════════════════════════════════════════ */
 
-function makeCardioExerciseCard({ name = '', duration = '', power = '', comment = '' } = {}) {
+function makeCardioExerciseCard({ name = '', duration = '', power = '', comment = '', source = null } = {}) {
   const card = document.createElement('div');
   card.className = 'exercise-card cardio-card border-l-[3px] border-l-a-racing border-y border-r border-a-border bg-a-inkAlt/30 px-5 py-5 space-y-5';
 
@@ -284,10 +304,11 @@ function makeCardioExerciseCard({ name = '', duration = '', power = '', comment 
   commentInput.value = comment;
   card.appendChild(commentInput);
 
+  if (source) Object.assign(card, { _shown: _readCardioFields(card), _source: source });
   return card;
 }
 
-function readCardioExerciseCard(card) {
+function _readCardioFields(card) {
   return {
     name:     card.querySelector('.exercise-name').value.trim() || 'Sans nom',
     type:     'cardio',
@@ -295,4 +316,8 @@ function readCardioExerciseCard(card) {
     power:    parseInt(card.querySelector('.cardio-power').value)    || 0,
     comment:  card.querySelector('.exercise-comment').value.trim(),
   };
+}
+
+function readCardioExerciseCard(card) {
+  return mergeEditedFields(card._source || null, card._shown || null, _readCardioFields(card));
 }
