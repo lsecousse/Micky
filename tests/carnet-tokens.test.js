@@ -36,10 +36,12 @@ const MIGRATED_FUNCTIONS = [
   'renderMealPresetButtons', 'renderAlimentation', 'showFoodPhotoModal', 'openAddMealModal',
   'openMealPresetEditModal', 'openEveningAdviceModal', 'openAskQuestionModal',
   'fatCategory', 'corpsTrend', 'renderCorps', 'closeBodyAnalysisPopup', 'drawCorpsChart',
+  'makeField', 'makeSegment', 'makeOptionList', 'accountMasthead', 'renderProfil', 'renderClaudeApi', 'renderLogin',
 ];
 const MIGRATED_HTML_BLOCKS = ['DIALOG CUSTOM', 'TOAST', 'COUNTDOWN STICKY TOP BAR', 'HOME', 'À LA SALLE', 'MODAL ÉDITION ACTIVITÉ (live)',
   'TIROIR GROUPER (live)', 'CHRONO FULLSCREEN', 'MINUTERIE FULLSCREEN', 'DIALOG DÉGROUPER', 'HISTORIQUE', 'MODAL DÉTAIL SÉANCE',
-  'STATS', 'ALIMENTATION', 'MODAL AJOUTER REPAS', 'MODAL PRESET PETIT-DEJ', 'COMPOSITION CORPORELLE'];
+  'STATS', 'ALIMENTATION', 'MODAL AJOUTER REPAS', 'MODAL PRESET PETIT-DEJ', 'COMPOSITION CORPORELLE',
+  'PROFIL', 'CLÉ API CLAUDE', 'LOGIN'];
 const MIGRATED_CSS_SELECTORS = ['#toast', '.dialog', '#countdown', '.live-edit', '.feedback-ia', '#chrono', '#minuterie', '.modal',
   '.series-not-done'];
 
@@ -229,6 +231,14 @@ describe('carnetTokensShould', () => {
   it('alimentation modals have no inline colour', () => {
     const found = ['openEveningAdviceModal', 'openAskQuestionModal', 'openAddMealModal', 'openMealPresetEditModal']
       .flatMap((name) => (functionSource('app.js', name).match(/#[0-9a-fA-F]{3,6}\b|var\(--bg\)|var\(--a-|var\(--text/g) ?? [])
+        .map((hit) => `${name}: ${hit}`));
+
+    expect(found).toEqual([]);
+  });
+
+  it('account screens have no inline colour', () => {
+    const found = ['makeField', 'makeSegment', 'makeOptionList', 'accountMasthead', 'renderProfil', 'renderClaudeApi', 'renderLogin']
+      .flatMap((name) => (functionSource('app.js', name).match(/#[0-9a-fA-F]{3,6}\b|var\(--bg\)|var\(--text|var\(--a-/g) ?? [])
         .map((hit) => `${name}: ${hit}`));
 
     expect(found).toEqual([]);
