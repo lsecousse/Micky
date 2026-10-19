@@ -5127,15 +5127,21 @@ function setParamsHeader({ editing, title, action = null }) {
   back.innerHTML = editing ? 'Annuler' : PARAMS_BACK_ARROW;
   if (editing) back.removeAttribute('aria-label');
   else back.setAttribute('aria-label', 'Retour');
-  document.getElementById('params-title').textContent = title;
+  const titleEl = document.getElementById('params-title');
+  titleEl.textContent = title;
+  // Editor title follows mock .top b (13 px sans); list title matches the other screen headers
+  titleEl.className = editing
+    ? 'flex-1 min-w-0 truncate text-center font-sans text-[13px] font-medium text-ink'
+    : 'flex-1 min-w-0 truncate font-display italic text-[20px] font-bold tracking-tight text-ink';
   const slot = document.getElementById('params-action');
   slot.innerHTML = '';
   if (action) slot.appendChild(action);
 }
 
-function paramsDashedButton(label, onClick) {
+// gutter: px-5 on the list (header alignment), px-4 in the editor (mock .ed, aligned with the cards)
+function paramsDashedButton(label, onClick, gutter = 'px-5') {
   const box = document.createElement('div');
-  box.className = 'px-5 pt-[18px] pb-5';
+  box.className = `${gutter} pt-[18px] pb-5`;
   box.innerHTML = `<button type="button" class="${DASHED_BTN}">${label}</button>`;
   box.querySelector('button').addEventListener('click', onClick);
   return box;
@@ -5293,7 +5299,7 @@ function openProgrammeEditor(programme = null) {
 
   tab.appendChild(paramsDashedButton('+ Exercice', () => {
     exercisesList.appendChild(category === 'cardio' ? makeCardioExerciseCard() : makeExerciseCard());
-  }));
+  }, 'px-4'));
 }
 
 async function saveProgrammeFromEditor(existingId, category) {

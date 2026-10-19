@@ -38,7 +38,7 @@ const _INPUT_LABEL = 'w-full bg-transparent border-0 border-solid border-b borde
 const _INPUT_NUM  = 'flex-1 min-w-0 bg-transparent border-0 rounded-none focus:ring-0 font-mono font-semibold text-[18px] num-stat text-ink placeholder:text-mut px-0 py-1.5 outline-none';
 const _LABEL_EYE  = 'm-0 mb-1.5 text-[13px] text-mut';
 const _UNIT       = 'text-[13px] text-mut shrink-0';
-const _BTN_GHOST  = 'mv w-9 h-9 flex items-center justify-center border-[1.5px] border-solid border-ink rounded text-[14px] text-ink active:bg-ink/10 transition shrink-0';
+const _BTN_GHOST  = 'w-9 h-9 flex items-center justify-center border-[1.5px] border-solid border-ink rounded text-[14px] text-ink active:bg-ink/10 transition shrink-0';
 const _BTN_DEL    = 'h-9 px-1 text-[13px] font-medium text-alert active:opacity-60 transition shrink-0';
 const _BTN_BORDER = 'h-10 px-4 border-[1.5px] border-solid border-ink rounded text-[13px] font-medium text-ink active:bg-ink/10 transition';
 const _CARD       = 'exercise-card bg-sheet border-[1.5px] border-solid border-ink rounded px-3.5 py-3 space-y-4';
@@ -85,7 +85,8 @@ function syncActivityLabels(activitiesList) {
 
 function makeActivityRow({ type = 'weight', label = '', name = '', reps = '', weight = '', duration = '', rest = '' } = {}) {
   const row = document.createElement('div');
-  row.className = 'activity-row border-0 border-solid border-t border-rule pt-3 space-y-3';
+  // bg-transparent / rounded-none / px-0 pb-0 override backoffice.html's dark .activity-row rule
+  row.className = 'activity-row flex flex-col gap-3 bg-transparent rounded-none border-0 border-solid border-t border-rule px-0 pt-3 pb-0';
 
   // Ligne 0 : nom de l'activité (caché si une seule activité)
   const labelRow = document.createElement('div');

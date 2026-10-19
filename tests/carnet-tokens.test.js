@@ -328,6 +328,21 @@ describe('carnetTokensShould', () => {
     expect(functionSource('app.js', 'saveProgrammeFromEditor')).not.toContain('.prog-cat-btn');
   });
 
+  it('activity rows override the back-office dark row and skip the hidden label line', () => {
+    const row = functionSource('exercise-editor.js', 'makeActivityRow');
+
+    expect(row).toMatch(/activity-row flex flex-col gap-3 bg-transparent/);
+    expect(row).not.toContain('space-y-');
+  });
+
+  it('editor title uses the mock top bar 13 px sans', () => {
+    expect(functionSource('app.js', 'setParamsHeader')).toContain('font-sans text-[13px]');
+  });
+
+  it('« + Exercice » shares the editor form gutter', () => {
+    expect(functionSource('app.js', 'openProgrammeEditor')).toMatch(/form\.className = 'px-4 [\s\S]*'px-4'\)\);/);
+  });
+
   it.each(MIGRATED_HTML_BLOCKS)('migrated HTML block %s has no Direction A leftover', (marker) => {
     expect(directionALeftovers(htmlBlock('index.html', marker))).toEqual([]);
   });
