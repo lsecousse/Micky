@@ -32,7 +32,7 @@ const MIGRATED_FUNCTIONS = [
   'checkboxRowHtml', 'openUngroupDialog', 'renderUngroupDialog',
   'renderHistory', 'resumeSessionFromHistory', 'openModal', 'closeModal', 'formatFeedback', 'feedbackCard',
   'openBodyAnalysisPopupLoading', 'fillBodyAnalysisPopup',
-  'renderStats', 'statsSection', 'exoMetrics', 'buildStatsProgression', 'carnetColor',
+  'renderStats', 'statsSection', 'shortDayMonth', 'exoMetrics', 'buildStatsProgression', 'carnetColor',
   'renderMealPresetButtons', 'renderAlimentation', 'showFoodPhotoModal', 'openAddMealModal',
   'openMealPresetEditModal', 'openEveningAdviceModal', 'openAskQuestionModal',
   'fatCategory', 'corpsTrend', 'renderCorps', 'closeBodyAnalysisPopup', 'drawCorpsChart',
@@ -192,6 +192,33 @@ describe('carnetTokensShould', () => {
     const chart = functionSource('app.js', 'buildStatsProgression');
 
     expect(chart).not.toMatch(/token:\s*'alert'|carnetColor\('alert'\)/);
+  });
+
+  it('shortDayMonth turns an ISO date into JJ/MM', () => {
+    const src = functionSource('app.js', 'shortDayMonth');
+    const shortDayMonth = new Function(`${src}; return shortDayMonth;`)();
+
+    expect(shortDayMonth('2026-08-18')).toBe('18/08');
+  });
+
+  it('both charts label their date axis with shortDayMonth', () => {
+    expect(functionSource('app.js', 'buildStatsProgression')).toContain('shortDayMonth(d)');
+    expect(functionSource('app.js', 'drawCorpsChart')).toContain('shortDayMonth(m.date)');
+    expect(read('app.js')).not.toContain("d.slice(5).replace('-', '/')");
+  });
+
+  it('stats and history cards glue units with a narrow no-break space', () => {
+    expect(functionSource('app.js', 'buildStatsProgression')).toContain('${fmt(last)}\\u202F${unit}');
+    expect(functionSource('app.js', 'buildStatsProgression')).toContain('}${Math.round(delta)}\\u202F%');
+    expect(functionSource('app.js', 'renderHistory')).toContain("toLocaleString('fr-FR')}\\u202Fkg");
+  });
+
+  it('history session title is not a heading inside the button', () => {
+    expect(functionSource('app.js', 'renderHistory')).not.toContain('<h3');
+  });
+
+  it('the modal backdrop has no click handler (sheets are full screen)', () => {
+    expect(read('app.js')).not.toContain("document.getElementById('modal').addEventListener('click'");
   });
 
   it('carnetColor reads a Carnet CSS variable', () => {

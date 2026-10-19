@@ -3315,7 +3315,7 @@ function drawCorpsChart(canvas, data, field, unit) {
       ctx.fillStyle = C_MUT;
       ctx.font = FONT;
       ctx.textAlign = i === 0 ? 'left' : 'right';
-      ctx.fillText(m.date.slice(5), xOf(i), H - 4);
+      ctx.fillText(shortDayMonth(m.date), xOf(i), H - 4);
     }
   });
 }
@@ -3405,19 +3405,19 @@ async function renderHistory() {
       const name = session.programmeName || session.name || 'Séance';
       const nameHtml = session === markedSession ? `<span class="mark">${escapeHtml(name)}</span>` : escapeHtml(name);
       const volume = done > 0
-        ? `<span class="font-mono text-[14px] text-ink num-stat whitespace-nowrap">${done.toLocaleString('fr-FR')} kg</span>`
+        ? `<span class="font-mono text-[14px] text-ink num-stat whitespace-nowrap">${done.toLocaleString('fr-FR')}\u202Fkg</span>`
         : `<span class="font-mono text-[14px] text-mut">—</span>`;
       const li = document.createElement('li');
       li.innerHTML = `
         <button class="grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-1 items-baseline w-full text-left px-5 py-3 border-0 border-solid border-b border-rule active:bg-sheet transition">
-          <h3 class="font-display font-bold italic text-[20px] leading-[1.15] text-ink truncate">${nameHtml}</h3>
+          <span class="block font-display font-bold italic text-[20px] leading-[1.15] text-ink truncate">${nameHtml}</span>
           ${volume}
           <p class="font-sans text-[13px] text-mut num-stat">
             ${formatDate(session.date)}
             · ${session.duration ? formatDuration(session.duration) : `<span class="font-semibold text-ink">En cours</span>`}
             · ${session.exercises.length} exo${session.exercises.length > 1 ? 's' : ''}
           </p>
-          ${reps > 0 ? `<span class="font-sans text-[13px] text-mut num-stat text-right whitespace-nowrap">${reps} reps</span>` : ''}
+          ${reps > 0 ? `<span class="font-sans text-[13px] text-mut num-stat text-right whitespace-nowrap">${reps}\u202Freps</span>` : ''}
         </button>
       `;
       li.querySelector('button').addEventListener('click', () => openModal(session));
@@ -3607,14 +3607,17 @@ async function openModal(session) {
   document.getElementById('modal').classList.remove('hidden');
 }
 
+// "2026-08-18" -> "18/08"
+function shortDayMonth(isoDate) {
+  const [, month, day] = isoDate.split('-');
+  return `${day}/${month}`;
+}
+
 function closeModal() {
   document.getElementById('modal').classList.add('hidden');
 }
 
 document.getElementById('modal-close').addEventListener('click', closeModal);
-document.getElementById('modal').addEventListener('click', e => {
-  if (e.target === e.currentTarget) closeModal();
-});
 
 /* ═══════════════════════════════════════════════════════
    FEEDBACK IA (Claude API)
@@ -4970,14 +4973,14 @@ function buildStatsProgression(sessions) {
       if (delta > 0)      deltaColor = 'text-done';
       else if (delta < 0) deltaColor = 'text-alert';
       else                deltaColor = 'text-mut';
-      const deltaStr = delta === 0 ? '=' : `${delta > 0 ? '+' : ''}${Math.round(delta)} %`;
+      const deltaStr = delta === 0 ? '=' : `${delta > 0 ? '+' : ''}${Math.round(delta)}\u202F%`;
 
       const card = document.createElement('li');
       card.className = 'grid grid-cols-[minmax(0,1fr)_auto] gap-x-3 gap-y-1 items-baseline px-5 py-3 border-0 border-solid border-b border-rule';
       card.innerHTML = `
         <span class="font-display font-bold italic text-[20px] leading-[1.15] text-ink truncate">${escapeHtml(exo.name)}</span>
-        <span class="font-mono text-[14px] text-ink num-stat whitespace-nowrap">${fmt(last)} ${unit}</span>
-        <span class="font-sans text-[13px] text-mut num-stat">depuis <span class="font-mono">${fmt(first)} ${unit}</span></span>
+        <span class="font-mono text-[14px] text-ink num-stat whitespace-nowrap">${fmt(last)}\u202F${unit}</span>
+        <span class="font-sans text-[13px] text-mut num-stat">depuis <span class="font-mono">${fmt(first)}\u202F${unit}</span></span>
         <span class="font-mono text-[13px] font-semibold ${deltaColor} num-stat text-right whitespace-nowrap">${deltaStr}</span>
       `;
       cardsGrid.appendChild(card);
@@ -5028,7 +5031,7 @@ function buildStatsProgression(sessions) {
 
     chartInstance = new Chart(canvas, {
       type: 'line',
-      data: { labels: allDates.map(d => d.slice(5).replace('-', '/')), datasets },
+      data: { labels: allDates.map(d => shortDayMonth(d)), datasets },
       options: {
         responsive: true,
         maintainAspectRatio: false,
