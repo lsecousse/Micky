@@ -106,4 +106,68 @@ describe('onLongPressShould', () => {
 
     expect(menu.defaultPrevented).toBe(true);
   });
+
+  describe('at page level', () => {
+    // Node's EventTarget has no capture phase: assert on the event, not on page listeners.
+    function heldOnPage() {
+      const el = new EventTarget();
+      const page = new EventTarget();
+      onLongPress(el, 500, () => {}, page);
+      el.dispatchEvent(pointer('pointerdown', 100, 100));
+      return { page };
+    }
+
+    function pageClick(page) {
+      const click = pointer('click');
+      page.dispatchEvent(click);
+      return [click.defaultPrevented, click.cancelBubble];
+    }
+
+    it('swallow a click landing elsewhere on the page right after a long press', () => {
+      const { page } = heldOnPage();
+      vi.advanceTimersByTime(500);
+
+      const result = pageClick(page);
+
+      expect(result).toEqual([true, true]);
+    });
+
+    it('let page clicks through when no long press fired', () => {
+      const { page } = heldOnPage();
+      vi.advanceTimersByTime(499);
+
+      const result = pageClick(page);
+
+      expect(result).toEqual([false, false]);
+    });
+
+    it('swallow only one page click', () => {
+      const { page } = heldOnPage();
+      vi.advanceTimersByTime(500);
+      pageClick(page);
+
+      const result = pageClick(page);
+
+      expect(result).toEqual([false, false]);
+    });
+
+    it('stop swallowing page clicks 400 ms after the long press', () => {
+      const { page } = heldOnPage();
+      vi.advanceTimersByTime(500 + 400);
+
+      const result = pageClick(page);
+
+      expect(result).toEqual([false, false]);
+    });
+
+    it('stop swallowing page clicks on the next pointerdown', () => {
+      const { page } = heldOnPage();
+      vi.advanceTimersByTime(500);
+      page.dispatchEvent(pointer('pointerdown', 10, 10));
+
+      const result = pageClick(page);
+
+      expect(result).toEqual([false, false]);
+    });
+  });
 });

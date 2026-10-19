@@ -1274,17 +1274,17 @@ function groupRoundsHint(picked) {
 }
 
 // Labelled checkbox row (« Garder dans le programme », « Retirer aussi du programme »)
-function checkboxRowHtml(id, label, checked, rowCls = 'px-5 pt-3 pb-2.5') {
+function checkboxRowHtml(id, label, hint, checked, rowCls = 'px-5 pt-3 pb-2.5') {
   return `
     <div class="flex items-center justify-between gap-3 ${rowCls}">
-      <p class="text-[14px] font-medium text-ink">${label}<span class="block text-[12px] font-normal text-mut">sinon, pour cette séance seulement</span></p>
+      <p class="text-[14px] font-medium text-ink">${label}<span class="block text-[12px] font-normal text-mut">${hint}</span></p>
       <button id="${id}" role="checkbox" aria-checked="${checked}" aria-label="${label}"
         class="w-[30px] h-[30px] shrink-0 flex items-center justify-center rounded border-[1.5px] border-solid border-ink text-[16px] ${checked ? 'bg-ink text-paper' : 'text-ink'}">${checked ? '✓' : ''}</button>
     </div>`;
 }
 
 function groupKeepRowHtml(keep) {
-  return checkboxRowHtml('group-keep', 'Garder dans le programme', keep);
+  return checkboxRowHtml('group-keep', 'Garder dans le programme', 'sinon, pour cette séance seulement', keep);
 }
 
 function groupSheetBodyHtml(state) {
@@ -1342,16 +1342,23 @@ function submitLiveGrouping() {
   renderSeanceScreen();
 }
 
-// Same grouping on the programme, on the programme write queue; a refusal keeps the session grouped
-function keepGroupInProgramme(sessionExercises, picked, settings) {
+// Carries a live change over to the programme on its write queue; `transform(programmeExercises)`
+// gives the new exercises, or null when it cannot apply (the session keeps the change, a toast says so)
+function applyToProgramme(transform, fallbackToast, label) {
   const programmeId = liveSession.programmeId;
   programmeTemplateQueue = programmeTemplateQueue.then(async () => {
     const prog = programmeId ? (await loadProgrammes()).find(p => p.id === programmeId) : null;
-    const grouped = prog ? programmeGrouping(prog.exercises || [], sessionExercises, picked, settings) : null;
-    if (!grouped) return showToast('Groupe gardé pour cette séance seulement');
-    await updateProgrammeDB({ ...prog, exercises: grouped });
-  }).catch(err => console.error('keepGroupInProgramme error:', err));
+    const exercises = prog ? transform(prog.exercises || []) : null;
+    if (!exercises) return showToast(fallbackToast);
+    await updateProgrammeDB({ ...prog, exercises });
+  }).catch(err => console.error(`${label} error:`, err));
   return programmeTemplateQueue;
+}
+
+// Same grouping on the programme; a refusal keeps the session grouped
+function keepGroupInProgramme(sessionExercises, picked, settings) {
+  return applyToProgramme(prog => programmeGrouping(prog, sessionExercises, picked, settings),
+    'Groupe gardé pour cette séance seulement', 'keepGroupInProgramme');
 }
 
 document.getElementById('group-sheet-body').addEventListener('click', handleGroupSheetClick);
@@ -1359,11 +1366,11 @@ document.getElementById('group-close').addEventListener('click', closeGroupSheet
 document.querySelector('#group-sheet .live-edit-modal-overlay').addEventListener('click', closeGroupSheet);
 
 /* ── « Dégrouper » dialog (long press on a group entry) ── */
-let ungroupDialogState = null; // { indices, remove }
+let ungroupDialogState = null; // { indices, groupId, remove }
 
 function openUngroupDialog(indices) {
   if (countdownTimer) return showToast('Dégrouper après le décompte');
-  ungroupDialogState = { indices, remove: false };
+  ungroupDialogState = { indices, groupId: liveSession.exercises[indices[0]].group.id, remove: false };
   renderUngroupDialog();
   document.getElementById('ungroup-dialog').classList.remove('hidden');
 }
@@ -1373,7 +1380,8 @@ function renderUngroupDialog() {
   document.getElementById('ungroup-title').textContent = title;
   document.getElementById('ungroup-members').textContent = members;
   document.getElementById('ungroup-programme-slot').innerHTML =
-    checkboxRowHtml('ungroup-programme', 'Retirer aussi du programme', ungroupDialogState.remove, '');
+    checkboxRowHtml('ungroup-programme', 'Retirer aussi du programme', 'sinon, il revient à la prochaine séance',
+      ungroupDialogState.remove, '');
 }
 
 function closeUngroupDialog() {
@@ -1392,28 +1400,22 @@ function handleUngroupDialogClick(e) {
 
 // Ungroups in the live session (no reorder, timing maps untouched), optionally in the programme too
 function submitLiveUngrouping() {
-  const { indices, remove } = ungroupDialogState;
-  const group = liveSession.exercises[indices[0]].group;
+  const { groupId, remove } = ungroupDialogState;
   closeUngroupDialog();
   if (countdownTimer) return showToast('Dégrouper après le décompte');
-  if (!group) return;
   const before = liveSession.exercises;
-  liveSession.exercises = ungroupSuperset(before, group.id);
+  const indices = before.flatMap((ex, i) => (ex.group && ex.group.id === groupId ? [i] : []));
+  if (!indices.length) return;
+  liveSession.exercises = ungroupSuperset(before, groupId);
   pushSessionSafe(liveSessionSnapshot()).catch(() => {});
   if (remove) removeGroupFromProgramme(before, indices);
   renderSeanceScreen();
 }
 
-// Same ungrouping on the programme, on the programme write queue
+// Same ungrouping on the programme
 function removeGroupFromProgramme(sessionExercises, memberIndices) {
-  const programmeId = liveSession.programmeId;
-  programmeTemplateQueue = programmeTemplateQueue.then(async () => {
-    const prog = programmeId ? (await loadProgrammes()).find(p => p.id === programmeId) : null;
-    const ungrouped = prog ? programmeUngrouping(prog.exercises || [], sessionExercises, memberIndices) : null;
-    if (!ungrouped) return showToast('Dégroupé pour cette séance seulement');
-    await updateProgrammeDB({ ...prog, exercises: ungrouped });
-  }).catch(err => console.error('removeGroupFromProgramme error:', err));
-  return programmeTemplateQueue;
+  return applyToProgramme(prog => programmeUngrouping(prog, sessionExercises, memberIndices),
+    'Dégroupé pour cette séance seulement', 'removeGroupFromProgramme');
 }
 
 document.getElementById('ungroup-dialog').addEventListener('click', handleUngroupDialogClick);
