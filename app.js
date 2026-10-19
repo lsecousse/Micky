@@ -1147,7 +1147,7 @@ function supersetListEntry(block, isMarked) {
   const countCls = block.done ? 'font-semibold text-done' : (block.started ? 'text-ink' : 'text-mut');
 
   const entry = document.createElement('button');
-  entry.className = 'w-full text-left block px-5 pt-3 pb-3.5 border-0 border-solid border-b border-rule text-ink active:bg-sheet transition';
+  entry.className = 'w-full text-left block px-5 pt-3 pb-3.5 border-0 border-solid border-b border-rule text-ink active:bg-sheet transition select-none';
   entry.innerHTML = `
       <div class="flex justify-between items-baseline gap-3 text-[13px]">
         ${head}
@@ -1157,6 +1157,8 @@ function supersetListEntry(block, isMarked) {
         ${block.indices.map((exIdx, pos) => supersetMemberRowHtml(exIdx, pos, block.done)).join('')}
       </div>
     `;
+  entry.style.webkitTouchCallout = 'none';
+  onLongPress(entry, 500, () => openUngroupDialog(block.indices));
   entry.addEventListener('click', () => openListEntry(block.indices[0]));
   return entry;
 }
@@ -1271,13 +1273,18 @@ function groupRoundsHint(picked) {
   return `le plus long ${among} : <span class="font-mono num-stat">${longest}</span>`;
 }
 
-function groupKeepRowHtml(keep) {
+// Labelled checkbox row (« Garder dans le programme », « Retirer aussi du programme »)
+function checkboxRowHtml(id, label, checked, rowCls = 'px-5 pt-3 pb-2.5') {
   return `
-    <div class="flex items-center justify-between gap-3 px-5 pt-3 pb-2.5">
-      <p class="text-[14px] font-medium text-ink">Garder dans le programme<span class="block text-[12px] font-normal text-mut">sinon, pour cette séance seulement</span></p>
-      <button id="group-keep" role="checkbox" aria-checked="${keep}" aria-label="Garder dans le programme"
-        class="w-[30px] h-[30px] shrink-0 flex items-center justify-center rounded border-[1.5px] border-solid border-ink text-[16px] ${keep ? 'bg-ink text-paper' : 'text-ink'}">${keep ? '✓' : ''}</button>
+    <div class="flex items-center justify-between gap-3 ${rowCls}">
+      <p class="text-[14px] font-medium text-ink">${label}<span class="block text-[12px] font-normal text-mut">sinon, pour cette séance seulement</span></p>
+      <button id="${id}" role="checkbox" aria-checked="${checked}" aria-label="${label}"
+        class="w-[30px] h-[30px] shrink-0 flex items-center justify-center rounded border-[1.5px] border-solid border-ink text-[16px] ${checked ? 'bg-ink text-paper' : 'text-ink'}">${checked ? '✓' : ''}</button>
     </div>`;
+}
+
+function groupKeepRowHtml(keep) {
+  return checkboxRowHtml('group-keep', 'Garder dans le programme', keep);
 }
 
 function groupSheetBodyHtml(state) {
@@ -1350,6 +1357,66 @@ function keepGroupInProgramme(sessionExercises, picked, settings) {
 document.getElementById('group-sheet-body').addEventListener('click', handleGroupSheetClick);
 document.getElementById('group-close').addEventListener('click', closeGroupSheet);
 document.querySelector('#group-sheet .live-edit-modal-overlay').addEventListener('click', closeGroupSheet);
+
+/* ── « Dégrouper » dialog (long press on a group entry) ── */
+let ungroupDialogState = null; // { indices, remove }
+
+function openUngroupDialog(indices) {
+  if (countdownTimer) return showToast('Dégrouper après le décompte');
+  ungroupDialogState = { indices, remove: false };
+  renderUngroupDialog();
+  document.getElementById('ungroup-dialog').classList.remove('hidden');
+}
+
+function renderUngroupDialog() {
+  const { title, members } = ungroupDialogText(liveSession.exercises, ungroupDialogState.indices);
+  document.getElementById('ungroup-title').textContent = title;
+  document.getElementById('ungroup-members').textContent = members;
+  document.getElementById('ungroup-programme-slot').innerHTML =
+    checkboxRowHtml('ungroup-programme', 'Retirer aussi du programme', ungroupDialogState.remove, '');
+}
+
+function closeUngroupDialog() {
+  document.getElementById('ungroup-dialog').classList.add('hidden');
+  ungroupDialogState = null;
+}
+
+function handleUngroupDialogClick(e) {
+  if (!ungroupDialogState) return;
+  if (e.target.closest('#ungroup-cancel')) return closeUngroupDialog();
+  if (e.target.closest('#ungroup-ok')) return submitLiveUngrouping();
+  if (!e.target.closest('#ungroup-programme')) return;
+  ungroupDialogState.remove = !ungroupDialogState.remove;
+  renderUngroupDialog();
+}
+
+// Ungroups in the live session (no reorder, timing maps untouched), optionally in the programme too
+function submitLiveUngrouping() {
+  const { indices, remove } = ungroupDialogState;
+  const group = liveSession.exercises[indices[0]].group;
+  closeUngroupDialog();
+  if (countdownTimer) return showToast('Dégrouper après le décompte');
+  if (!group) return;
+  const before = liveSession.exercises;
+  liveSession.exercises = ungroupSuperset(before, group.id);
+  pushSessionSafe(liveSessionSnapshot()).catch(() => {});
+  if (remove) removeGroupFromProgramme(before, indices);
+  renderSeanceScreen();
+}
+
+// Same ungrouping on the programme, on the programme write queue
+function removeGroupFromProgramme(sessionExercises, memberIndices) {
+  const programmeId = liveSession.programmeId;
+  programmeTemplateQueue = programmeTemplateQueue.then(async () => {
+    const prog = programmeId ? (await loadProgrammes()).find(p => p.id === programmeId) : null;
+    const ungrouped = prog ? programmeUngrouping(prog.exercises || [], sessionExercises, memberIndices) : null;
+    if (!ungrouped) return showToast('Dégroupé pour cette séance seulement');
+    await updateProgrammeDB({ ...prog, exercises: ungrouped });
+  }).catch(err => console.error('removeGroupFromProgramme error:', err));
+  return programmeTemplateQueue;
+}
+
+document.getElementById('ungroup-dialog').addEventListener('click', handleUngroupDialogClick);
 
 // Exercise header (mock .head) — shared by the series focus and the rest split
 function renderExoMasthead(wrap, exIdx, kick) {

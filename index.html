@@ -244,6 +244,21 @@
     </div>
   </div>
 
+  <!-- DIALOG DÉGROUPER -->
+  <div id="ungroup-dialog" class="dialog hidden">
+    <div class="bg-sheet border-[1.5px] border-solid border-ink rounded p-6 max-w-[360px] w-full space-y-5">
+      <div>
+        <p id="ungroup-title" class="font-display italic font-medium text-[20px] text-ink leading-snug"></p>
+        <p id="ungroup-members" class="mt-1.5 font-display italic text-[16px] text-mut leading-snug"></p>
+      </div>
+      <div id="ungroup-programme-slot"></div>
+      <div class="flex gap-3">
+        <button id="ungroup-cancel" class="flex-1 h-14 border-[1.5px] border-solid border-ink rounded text-ink font-sans text-[16px] font-semibold active:bg-ink/10 transition">Annuler</button>
+        <button id="ungroup-ok" class="flex-1 h-14 bg-ink text-paper rounded font-sans text-[16px] font-semibold active:bg-ink/80 transition">Dégrouper</button>
+      </div>
+    </div>
+  </div>
+
   <!-- MODAL DÉTAIL SÉANCE -->
   <div id="modal" class="modal hidden">
     <div class="modal-content !bg-a-ink !p-0 !rounded-t-none border-t border-a-border">
@@ -342,6 +357,7 @@
   <script src="lib/supersets.js"></script>
   <script src="lib/superset-flow.js"></script>
   <script src="lib/live-superset.js"></script>
+  <script src="lib/long-press.js"></script>
   <script src="supabase.js"></script>
   <script src="exercise-editor.js"></script>
   <script src="app.js"></script>

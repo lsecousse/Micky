@@ -84,6 +84,21 @@ describe('browser lib scripts', () => {
     expect(typeof context.liveFonteExercise).toBe('function');
   });
 
+  it('expose the long press helper in index.html shared global scope', () => {
+    const context = loadInSharedScope(libScriptsOf('index.html'));
+
+    expect(typeof context.onLongPress).toBe('function');
+  });
+
+  it('ungroup a programme super set with the browser globals', () => {
+    const context   = loadInSharedScope(libScriptsOf('index.html'));
+    const programme = groupOfTwo();
+
+    const result = context.programmeUngrouping(programme, groupOfTwo(), [0, 1]);
+
+    expect(result.map(e => e.group)).toEqual([undefined, undefined]);
+  });
+
   it('estimate a super set duration with the browser globals', () => {
     const context = loadInSharedScope([...libScriptsOf('backoffice.html'), ...SUPERSET_SCRIPTS]);
 

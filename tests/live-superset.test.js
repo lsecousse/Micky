@@ -3,7 +3,7 @@ import {
   liveFonteExercise, programmeIndexOf, reorderLiveTiming, liveExerciseDurationAllowed,
   supersetKindLabel, supersetSettingText, liveSupersetBlock, supersetRoundLog, livePauseView, supersetNextHint,
   liveListBlocks, togglePickedExercise, groupDraftRounds, applyLiveGrouping, programmeGrouping,
-  canOpenLiveGrouping,
+  canOpenLiveGrouping, programmeUngrouping, ungroupDialogText,
 } from '../lib/live-superset.js';
 
 const WEIGHT = { type: 'weight', reps: 10, weight: 40, rest: 60 };
@@ -480,5 +480,76 @@ describe('canOpenLiveGroupingShould', () => {
     const result = canOpenLiveGrouping([single('Militaire'), single('Dips', 3, 1)], false);
 
     expect(result).toBe(false);
+  });
+});
+
+describe('programmeUngroupingShould', () => {
+  const inGroup = (name, id) => programmeEx({ name, group: { ...GROUP, id } });
+
+  it('ungroup the programme group that came with the session', () => {
+    const programme = [inGroup('Militaire', 'g1'), inGroup('Rowing', 'g1'), programmeEx({ name: 'Dips' })];
+    const session = [member('Militaire', 40, 10), member('Rowing', 50, 10), single('Dips')];
+
+    const result = programmeUngrouping(programme, session, [0, 1]);
+
+    expect(result.map(e => [e.name, e.group?.id])).toEqual([['Militaire', undefined], ['Rowing', undefined], ['Dips', undefined]]);
+  });
+
+  it('ungroup a kept group by its own programme id', () => {
+    const programme = [programmeEx({ name: 'Dips' }), inGroup('Militaire', 'p7'), inGroup('Rowing', 'p7')];
+    const session = [member('Militaire', 40, 10), member('Rowing', 50, 10), single('Dips')];
+
+    const result = programmeUngrouping(programme, session, [0, 1]);
+
+    expect(result.map(e => [e.name, e.group?.id])).toEqual([['Dips', undefined], ['Militaire', undefined], ['Rowing', undefined]]);
+  });
+
+  it('give null when the first member is not in the programme', () => {
+    const programme = [inGroup('Rowing', 'g1')];
+    const session = [member('Militaire', 40, 10), member('Rowing', 50, 10)];
+
+    const result = programmeUngrouping(programme, session, [0, 1]);
+
+    expect(result).toBeNull();
+  });
+
+  it('give null when the first member is not grouped in the programme', () => {
+    const programme = [programmeEx({ name: 'Militaire' }), programmeEx({ name: 'Rowing' })];
+    const session = [member('Militaire', 40, 10), member('Rowing', 50, 10)];
+
+    const result = programmeUngrouping(programme, session, [0, 1]);
+
+    expect(result).toBeNull();
+  });
+
+  it('keep the other groups of the programme', () => {
+    const programme = [inGroup('Militaire', 'g1'), inGroup('Rowing', 'g1'), inGroup('Dips', 'g2'), inGroup('Curl', 'g2')];
+    const session = [member('Militaire', 40, 10), member('Rowing', 50, 10)];
+
+    const result = programmeUngrouping(programme, session, [0, 1]);
+
+    expect(result.map(e => e.group?.id)).toEqual([undefined, undefined, 'g2', 'g2']);
+  });
+});
+
+describe('ungroupDialogTextShould', () => {
+  const session = [member('Militaire', 40, 10), member('Rowing', 50, 10), member('Dips', 0, 12), member('Curl', 12, 10)];
+
+  it('name a super set of two exercises', () => {
+    const result = ungroupDialogText(session, [0, 1]);
+
+    expect(result).toEqual({ title: 'Dégrouper le super set ?', members: 'Militaire + Rowing' });
+  });
+
+  it('name a tri-set of three exercises', () => {
+    const result = ungroupDialogText(session, [0, 1, 2]);
+
+    expect(result.title).toBe('Dégrouper le tri-set ?');
+  });
+
+  it('name a circuit of four exercises', () => {
+    const result = ungroupDialogText(session, [0, 1, 2, 3]);
+
+    expect(result).toEqual({ title: 'Dégrouper le circuit ?', members: 'Militaire + Rowing + Dips + Curl' });
   });
 });

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mikecoach-20261018235500';
+const CACHE_NAME = 'mikecoach-20261019093500';
 const SHELL = [
   '/',
   '/index.html',
@@ -15,6 +15,7 @@ const SHELL = [
   '/lib/supersets.js',
   '/lib/superset-flow.js',
   '/lib/live-superset.js',
+  '/lib/long-press.js',
   '/supabase.js',
   '/exercise-editor.js',
   '/dist/output.css',
