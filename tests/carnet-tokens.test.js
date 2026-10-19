@@ -28,12 +28,13 @@ const MIGRATED_FUNCTIONS = [
   'renderStats', 'statsSection', 'exoMetrics', 'buildStatsProgression', 'carnetColor',
   'renderMealPresetButtons', 'renderAlimentation', 'showFoodPhotoModal', 'openAddMealModal',
   'openMealPresetEditModal', 'openEveningAdviceModal', 'openAskQuestionModal',
+  'fatCategory', 'corpsTrend', 'renderCorps', 'closeBodyAnalysisPopup', 'drawCorpsChart',
 ];
 const MIGRATED_HTML_BLOCKS = ['DIALOG CUSTOM', 'TOAST', 'COUNTDOWN STICKY TOP BAR', 'HOME', 'À LA SALLE', 'MODAL ÉDITION ACTIVITÉ (live)',
   'CHRONO FULLSCREEN', 'MINUTERIE FULLSCREEN', 'HISTORIQUE', 'MODAL DÉTAIL SÉANCE',
-  'STATS', 'ALIMENTATION', 'MODAL AJOUTER REPAS', 'MODAL PRESET PETIT-DEJ'];
+  'STATS', 'ALIMENTATION', 'MODAL AJOUTER REPAS', 'MODAL PRESET PETIT-DEJ', 'COMPOSITION CORPORELLE'];
 const MIGRATED_CSS_SELECTORS = ['#toast', '.dialog', '#countdown', '.live-edit', '.feedback-ia', '#chrono', '#minuterie', '.modal',
-  '.series-not-done'];
+  '.series-not-done', '.corps-analysis'];
 
 // Source of a top-level function, up to its closing brace at column 0.
 function functionSource(file, name) {
@@ -197,6 +198,30 @@ describe('carnetTokensShould', () => {
         .map((hit) => `${name}: ${hit}`));
 
     expect(found).toEqual([]);
+  });
+
+  it('corps chart colours come from Carnet CSS variables', () => {
+    const chart = functionSource('app.js', 'drawCorpsChart');
+
+    expect(chart.match(/#[0-9a-fA-F]{3,6}\b/g) ?? []).toEqual([]);
+    expect(chart).not.toContain('DM Sans');
+    expect(chart).toContain('carnetColor(');
+  });
+
+  it('corps screen has no inline colour', () => {
+    const found = ['fatCategory', 'renderCorps']
+      .flatMap((name) => (functionSource('app.js', name).match(/#[0-9a-fA-F]{3,6}\b|style\.color|color:|var\(--text/g) ?? [])
+        .map((hit) => `${name}: ${hit}`));
+
+    expect(found).toEqual([]);
+  });
+
+  it('corps in-page analysis looks like the feedback card', () => {
+    expect(functionSource('app.js', 'renderCorps')).toContain('feedbackCard(');
+  });
+
+  it('corps analysis rules use Carnet variables', () => {
+    expect(cssRules('style.css', '.corps-analysis').match(/rgba\(|#[0-9a-fA-F]{3,6}\b|var\(--text/g) ?? []).toEqual([]);
   });
 
   it('advice thread escapes the user text', () => {

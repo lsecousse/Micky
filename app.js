@@ -2289,11 +2289,11 @@ document.getElementById('countdown-skip').addEventListener('click', () => {
 ═══════════════════════════════════════════════════════ */
 function fatCategory(pct) {
   if (pct === null || pct === undefined) return null;
-  if (pct < 10) return { label: 'Très maigre', color: '#6ab0f5' };
-  if (pct < 18) return { label: 'Athlétique',  color: '#5cb85c' };
-  if (pct < 25) return { label: 'Normal',       color: '#9A7A30' };
-  if (pct < 30) return { label: 'Élevé',        color: '#f0ad4e' };
-  return           { label: 'Obèse',            color: '#ff5c5c' };
+  if (pct < 10) return { label: 'Très maigre' };
+  if (pct < 18) return { label: 'Athlétique' };
+  if (pct < 25) return { label: 'Normal' };
+  if (pct < 30) return { label: 'Élevé' };
+  return           { label: 'Obèse' };
 }
 
 function corpsTrend(data, field) {
@@ -2331,12 +2331,9 @@ async function renderCorps() {
 
   // Masthead
   const masthead = document.createElement('section');
-  masthead.className = 'px-5 pt-9 pb-9 accent-line';
+  masthead.className = 'px-5 pt-8 pb-6';
   masthead.innerHTML = `
-    <h1 class="font-display font-black h-display text-a-paper">
-      Ton<br/>
-      <span class="text-a-paper/40"><span class="text-a-acid not-italic font-black">·</span> corps.</span>
-    </h1>
+    <h1 class="font-display font-medium text-[52px] leading-[0.95] tracking-[-0.02em] text-ink">Ton <em class="text-mut">corps.</em></h1>
   `;
   body.appendChild(masthead);
 
@@ -2344,7 +2341,7 @@ async function renderCorps() {
 
   // Formulaire
   const form = document.createElement('div');
-  form.className = 'px-5 pt-6 pb-6';
+  form.className = 'px-5 pb-6';
 
   const fields = [
     { key: 'poids',        label: 'Poids',          unit: 'kg', step: '0.1' },
@@ -2359,46 +2356,44 @@ async function renderCorps() {
   // Date input
   const dateRow = document.createElement('div');
   dateRow.className = 'mb-6 flex items-center gap-3';
-  dateRow.innerHTML = `
-    <p class="font-sans text-[9px] uppercase tracking-[0.40em] text-a-muted">Jour</p>
-    <span class="flex-1 h-px bg-a-border"></span>
-  `;
+  dateRow.innerHTML = `<p class="font-sans text-[13px] text-mut">Jour</p>`;
   const dateInput = document.createElement('input');
   dateInput.type = 'date';
   dateInput.value = todayIso();
-  dateInput.className = 'font-sans text-[12px] text-a-paper border border-a-border bg-transparent px-3 py-1.5 focus:border-a-acid focus:outline-none transition';
+  dateInput.className = 'flex-1 min-w-0 h-11 bg-paper border border-solid border-rule rounded focus:border-ink focus:ring-0 focus:outline-none font-mono text-[15px] text-ink px-3';
   dateRow.appendChild(dateInput);
   form.appendChild(dateRow);
 
   // Grid 2 cols
   const grid = document.createElement('div');
-  grid.className = 'grid grid-cols-2 gap-x-4 gap-y-5';
+  grid.className = 'grid grid-cols-2 gap-x-3 gap-y-4';
 
   const inputs = {};
   const diffSpans = {};
+  const DIFF_CLS = 'shrink-0 font-mono text-[12px] num-stat';
   fields.forEach(({ key, label, unit, step }) => {
     const cell = document.createElement('div');
     cell.className = 'min-w-0';
     const lbl = document.createElement('p');
-    lbl.className = 'font-sans text-[9px] uppercase tracking-[0.40em] text-a-muted mb-1.5';
+    lbl.className = 'font-sans text-[12px] text-mut mb-1.5';
     lbl.textContent = label;
     const row = document.createElement('div');
-    row.className = 'flex items-baseline gap-2 border-b border-a-border focus-within:border-a-acid transition';
+    row.className = 'flex items-baseline gap-1.5 px-3 bg-paper border border-solid border-rule rounded focus-within:border-ink transition';
     const inp = document.createElement('input');
     inp.type = 'number';
     inp.inputMode = 'decimal';
     inp.step = step;
     inp.min = '0';
     inp.placeholder = '—';
-    inp.className = 'flex-1 min-w-0 bg-transparent font-display font-bold text-[20px] num-stat text-a-paper py-1.5 outline-none';
+    inp.className = 'flex-1 min-w-0 bg-transparent font-mono text-[20px] num-stat text-ink py-2 outline-none';
     inputs[key] = inp;
     const unitSpan = document.createElement('span');
-    unitSpan.className = 'font-sans text-[10px] uppercase tracking-eyebrow text-a-muted shrink-0';
+    unitSpan.className = 'font-sans text-[13px] text-mut shrink-0';
     unitSpan.textContent = unit;
     row.append(inp, unitSpan);
     if (key === 'poids' || key === 'graisseKg') {
       const diff = document.createElement('span');
-      diff.className = 'shrink-0 font-sans text-[10px] uppercase tracking-eyebrow font-semibold ml-1';
+      diff.className = DIFF_CLS;
       diffSpans[key] = diff;
       row.appendChild(diff);
     }
@@ -2437,16 +2432,16 @@ async function renderCorps() {
     const span = diffSpans[formKey];
     if (!span) return;
     span.textContent = '';
-    span.className = 'shrink-0 font-sans text-[10px] uppercase tracking-eyebrow font-semibold ml-1';
+    span.className = DIFF_CLS;
     const dbKey = formKey === 'graisseKg' ? 'graisse_kg' : formKey;
     const cur = current?.[dbKey];
     const prv = prev?.[dbKey];
     if (cur == null || prv == null) return;
     const delta = +(cur - prv).toFixed(1);
     if (delta === 0) return;
-    span.textContent = (delta > 0 ? '+' : '') + delta;
-    // Pour poids/graisse : up = blood (mauvais), down = acid (mieux)
-    span.classList.add(delta > 0 ? 'text-a-blood' : 'text-a-acid');
+    span.textContent = (delta > 0 ? '+' : '') + formatKg(delta);
+    // Weight / fat: up = alert (worse), down = done (better)
+    span.classList.add(delta > 0 ? 'text-alert' : 'text-done');
   }
 
   fillFormForDate(dateInput.value);
@@ -2469,7 +2464,7 @@ async function renderCorps() {
   form.appendChild(grid);
 
   const saveBtn = document.createElement('button');
-  saveBtn.className = 'w-full mt-8 py-4 bg-a-acid text-a-ink font-display font-bold text-[14px] uppercase tracking-eyebrow active:bg-a-acid/80 transition';
+  saveBtn.className = 'w-full mt-6 h-14 bg-ink text-paper rounded font-sans text-[16px] font-semibold active:bg-ink/80 transition';
   saveBtn.textContent = 'Enregistrer';
   saveBtn.addEventListener('click', async () => {
     const m = {
@@ -2502,13 +2497,13 @@ async function renderCorps() {
 
   if (!measurements.length) {
     const empty = document.createElement('p');
-    empty.className = 'font-display italic text-[14px] text-a-muted px-5 py-4';
+    empty.className = 'px-5 pt-4 font-display italic text-[20px] text-mut';
     empty.textContent = 'Aucune mesure enregistrée.';
     body.appendChild(empty);
     return;
   }
 
-  // ── Tendance — stats strip cyan ───────────────────────
+  // ── Trend strip ───────────────────────────────────────
   const trendGraisse = corpsTrend(measurements, 'img');
 
   const trendItems = [
@@ -2526,49 +2521,45 @@ async function renderCorps() {
     const trendSection = document.createElement('section');
     trendSection.className = 'mt-4 mb-8';
     trendSection.innerHTML = `
-      <header class="px-5 mb-3">
-        <h3 class="font-display italic font-bold text-[14px] uppercase tracking-eyebrow text-a-paper">Tendance</h3>
-        <p class="font-sans text-[9px] uppercase tracking-eyebrow text-a-muted mt-1">10 dernières mesures · variation hebdo</p>
+      <header class="px-5 pb-2">
+        <h2 class="font-display italic font-medium text-[22px] leading-tight text-ink">Tendance</h2>
+        <p class="font-sans text-[13px] text-mut mt-1">10 dernières mesures · variation hebdo</p>
       </header>
     `;
     const grid4 = document.createElement('div');
-    grid4.className = 'grid grid-cols-2 border-y border-a-border';
+    grid4.className = 'grid grid-cols-2 border-0 border-solid border-t-[1.5px] border-ink border-b border-b-rule';
+    const lastRow = Math.floor((trendItems.length - 1) / 2);
 
     trendItems.forEach(({ label, field, unit, lowerIsBetter, latest, trend }, idx) => {
       const cell = document.createElement('div');
-      const borderR = (idx % 2 === 0) ? 'border-r border-a-border' : '';
-      const borderB = (idx < 2) ? 'border-b border-a-border' : '';
-      cell.className = `px-4 py-3 min-w-0 ${borderR} ${borderB}`;
+      const borderR = (idx % 2 === 0) ? 'border-r' : '';
+      const borderB = (Math.floor(idx / 2) < lastRow) ? 'border-b' : '';
+      cell.className = `px-5 py-3 min-w-0 border-0 border-solid border-rule ${borderR} ${borderB}`;
 
       let arrow = '';
-      let arrowColor = 'text-a-muted';
+      let arrowColor = 'text-mut';
       if (trend && !trend.neutral) {
-        arrow = trend.up ? `↑ ${trend.delta}/sem` : `↓ ${trend.delta}/sem`;
+        arrow = trend.up ? `↑ ${formatKg(trend.delta)}/sem` : `↓ ${formatKg(trend.delta)}/sem`;
         let positive;
         if (field === 'poids' && trend.up && trendGraisse && !trendGraisse.neutral && !trendGraisse.up) {
           positive = true;
         } else {
           positive = lowerIsBetter ? !trend.up : trend.up;
         }
-        arrowColor = positive ? 'text-a-acid' : 'text-a-blood';
+        arrowColor = positive ? 'text-done' : 'text-alert';
       } else if (trend?.neutral) {
         arrow = '→ stable';
-        arrowColor = 'text-a-muted';
+        arrowColor = 'text-mut';
       }
 
-      // Catégorie IMG en badge
-      let catBadge = '';
-      if (field === 'img') {
-        const cat = fatCategory(latest);
-        if (cat) {
-          catBadge = `<span class="font-sans text-[8px] uppercase tracking-eyebrow font-semibold ml-2" style="color:${cat.color}">${cat.label}</span>`;
-        }
-      }
+      // Fat category: plain mut text next to the label
+      const cat = field === 'img' ? fatCategory(latest) : null;
+      const catText = cat ? ` · ${cat.label}` : '';
 
       cell.innerHTML = `
-        <p class="font-sans text-[8px] uppercase tracking-[0.40em] text-a-muted mb-1.5 flex items-center">${label}${catBadge}</p>
-        <p class="font-display font-bold text-[18px] num-stat text-a-cyan leading-none truncate">${latest}<span class="font-sans text-[9px] uppercase tracking-eyebrow text-a-muted ml-1">${unit}</span></p>
-        ${arrow ? `<p class="font-sans text-[9px] uppercase tracking-eyebrow font-semibold ${arrowColor} num-stat mt-1.5">${arrow}</p>` : ''}
+        <p class="font-sans text-[12px] text-mut truncate">${label}${catText}</p>
+        <p class="font-mono text-[20px] leading-none num-stat text-ink truncate mt-1.5">${formatKg(latest)}<span class="font-sans text-[13px] text-mut ml-1">${unit}</span></p>
+        ${arrow ? `<p class="font-mono text-[12px] num-stat ${arrowColor} mt-1.5">${arrow}</p>` : ''}
       `;
       grid4.appendChild(cell);
     });
@@ -2576,7 +2567,7 @@ async function renderCorps() {
     body.appendChild(trendSection);
   }
 
-  // ── Courbes (poids, IMG, eau, muscle) ─────────────────
+  // ── Curves (weight, fat %, water, muscle) ─────────────
   const chartDefs = [
     { field: 'poids',  label: 'Poids',   unit: 'kg' },
     { field: 'img',    label: 'IMG',     unit: '%'  },
@@ -2589,9 +2580,9 @@ async function renderCorps() {
     const chartWrap = document.createElement('section');
     chartWrap.className = 'px-5 mb-8';
     chartWrap.innerHTML = `
-      <header class="mb-3 flex items-baseline justify-between">
-        <h3 class="font-display italic font-bold text-[14px] uppercase tracking-eyebrow text-a-paper">${label}</h3>
-        <span class="font-sans text-[10px] uppercase tracking-eyebrow text-a-muted num-stat">${chartData[chartData.length - 1][field]} ${unit}</span>
+      <header class="pb-2 mb-3 flex items-baseline justify-between gap-3 border-0 border-solid border-b-[1.5px] border-ink">
+        <h3 class="font-display italic font-bold text-[20px] leading-tight text-ink">${label}</h3>
+        <span class="font-mono text-[14px] num-stat text-ink whitespace-nowrap">${formatKg(chartData[chartData.length - 1][field])}<span class="font-sans text-[13px] text-mut ml-1">${unit}</span></span>
       </header>
     `;
     const canvas = document.createElement('canvas');
@@ -2603,14 +2594,11 @@ async function renderCorps() {
     requestAnimationFrame(() => drawCorpsChart(canvas, chartData, field, unit));
   });
 
-  // ── Analyse bienveillante (affichée seulement si déjà générée dans ce tab) ──
+  // ── Body analysis (shown only if already generated in this tab) ──
   if (bodyAnalysisCache !== null) {
     const analysisCard = document.createElement('div');
-    analysisCard.className = 'mx-5 mb-8 border border-a-border bg-a-inkAlt p-4 space-y-2';
-    analysisCard.innerHTML = `
-      <p class="font-sans text-[10px] uppercase tracking-eyebrow text-a-acid font-semibold">Ton évolution</p>
-      <div class="font-sans text-[13px] text-a-paper leading-relaxed">${formatFeedback(bodyAnalysisCache)}</div>
-    `;
+    analysisCard.className = 'mx-5 mb-8';
+    analysisCard.innerHTML = feedbackCard('Ton évolution', formatFeedback(bodyAnalysisCache));
     body.appendChild(analysisCard);
   }
 
@@ -2618,27 +2606,29 @@ async function renderCorps() {
   const histSection = document.createElement('section');
   histSection.className = 'mt-12';
   histSection.innerHTML = `
-    <header class="px-5 pb-6 accent-line mb-4">
-      <h2 class="font-display font-black text-a-paper" style="font-size:clamp(2rem, 9vw, 2.75rem); line-height:0.92; letter-spacing:-0.025em">
-        Tes<br/>
-        <span class="text-a-paper/40"><span class="text-a-acid not-italic font-black">·</span> mesures.</span>
-      </h2>
-      <p class="font-sans text-[10px] uppercase tracking-eyebrow text-a-muted mt-5">${measurements.length} entrée${measurements.length > 1 ? 's' : ''}</p>
+    <header class="px-5 pb-4">
+      <h2 class="font-display font-medium text-[40px] leading-[0.95] tracking-[-0.02em] text-ink">Tes <em class="text-mut">mesures.</em></h2>
+      <p class="font-sans text-[13px] text-mut mt-3 num-stat"><span class="font-mono text-ink">${measurements.length}</span> entrée${measurements.length > 1 ? 's' : ''}</p>
     </header>
   `;
   body.appendChild(histSection);
 
+  // Logbook (mock .log / .lr): ink rule on top, one rule-lined row per measurement
+  const log = document.createElement('ul');
+  log.className = 'list-none border-0 border-solid border-t-[1.5px] border-ink';
+  histSection.appendChild(log);
+
   measurements.forEach(m => {
-    const card = document.createElement('div');
-    card.className = 'px-5 py-4 border-b border-a-border/70';
+    const card = document.createElement('li');
+    card.className = 'px-5 py-3 border-0 border-solid border-b border-rule';
 
     const header = document.createElement('div');
-    header.className = 'flex items-center justify-between gap-3 mb-2';
+    header.className = 'flex items-baseline justify-between gap-3';
     const dateSpan = document.createElement('span');
-    dateSpan.className = 'font-sans text-[10px] uppercase tracking-eyebrow text-a-muted';
+    dateSpan.className = 'font-mono text-[14px] num-stat text-ink';
     dateSpan.textContent = formatDate(m.date);
     const delBtn = document.createElement('button');
-    delBtn.className = 'font-sans text-[10px] uppercase tracking-eyebrow text-a-muted active:text-a-blood transition';
+    delBtn.className = 'font-sans text-[13px] text-mut active:text-alert transition';
     delBtn.textContent = '✕ Suppr';
     delBtn.addEventListener('click', () => {
       showConfirm('Supprimer cette mesure ?', async () => {
@@ -2654,16 +2644,14 @@ async function renderCorps() {
       grPct = +((m.graisse_kg / m.poids) * 100).toFixed(1);
     const cat = fatCategory(grPct);
     if (cat) {
-      const badge = document.createElement('span');
-      badge.className = 'inline-block font-sans text-[9px] uppercase tracking-eyebrow font-semibold mb-2';
-      badge.style.color = cat.color;
-      badge.style.display = 'block';
-      badge.textContent = `Graisse ${grPct}% — ${cat.label}`;
+      const badge = document.createElement('p');
+      badge.className = 'font-sans text-[13px] text-mut mt-0.5';
+      badge.textContent = `Graisse ${formatKg(grPct)}% — ${cat.label}`;
       card.appendChild(badge);
     }
 
     const values = document.createElement('div');
-    values.className = 'flex flex-wrap gap-x-3 gap-y-1';
+    values.className = 'flex flex-wrap gap-x-4 gap-y-1 mt-1.5';
     [
       { label: 'Poids',    value: m.poids,          unit: 'kg' },
       { label: 'Gr.',      value: m.graisse_kg,     unit: 'kg' },
@@ -2674,13 +2662,13 @@ async function renderCorps() {
       { label: 'Ventre',   value: m.tour_de_ventre, unit: 'cm' },
     ].filter(e => e.value !== null && e.value !== undefined).forEach(({ label, value, unit }) => {
       const chip = document.createElement('span');
-      chip.className = 'font-sans text-[10px] uppercase tracking-eyebrow';
-      chip.innerHTML = `<span class="text-a-muted">${label}</span> <span class="text-a-paper font-semibold num-stat">${value}</span><span class="text-a-muted">${unit}</span>`;
+      chip.className = 'font-sans text-[13px] text-mut whitespace-nowrap';
+      chip.innerHTML = `${label} <span class="font-mono text-[14px] text-ink num-stat">${formatKg(value)}</span>${unit}`;
       values.appendChild(chip);
     });
 
     card.appendChild(values);
-    histSection.appendChild(card);
+    log.appendChild(card);
   });
 }
 
@@ -2716,14 +2704,14 @@ function closeBodyAnalysisPopup() {
 }
 
 function drawCorpsChart(canvas, data, field, unit) {
-  // Tokens Direction A
-  const C_BORDER = '#2A2A2A';
-  const C_MUTED  = '#888888';
-  const C_CYAN   = '#06B6D4';
+  const C_RULE = carnetColor('rule');
+  const C_MUT  = carnetColor('mut');
+  const C_INK  = carnetColor('ink');
+  const FONT   = '12px "IBM Plex Mono", monospace';
 
   const ctx = canvas.getContext('2d');
   const W = canvas.width, H = canvas.height;
-  const pad = { top: 10, right: 10, bottom: 24, left: 42 };
+  const pad = { top: 10, right: 10, bottom: 24, left: 48 };
   const iW = W - pad.left - pad.right;
   const iH = H - pad.top - pad.bottom;
 
@@ -2738,21 +2726,21 @@ function drawCorpsChart(canvas, data, field, unit) {
   const xOf = i => pad.left + (i / (data.length - 1)) * iW;
   const yOf = v => pad.top + iH - ((v - minV) / (maxV - minV)) * iH;
 
-  // Grille
-  ctx.strokeStyle = C_BORDER;
+  // Grid
+  ctx.strokeStyle = C_RULE;
   ctx.lineWidth = 1;
   [0, 0.5, 1].forEach(t => {
     const y = pad.top + iH * (1 - t);
     ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(W - pad.right, y); ctx.stroke();
-    ctx.fillStyle = C_MUTED;
-    ctx.font = '10px "DM Sans", sans-serif';
+    ctx.fillStyle = C_MUT;
+    ctx.font = FONT;
     ctx.textAlign = 'right';
-    ctx.fillText((minV + t * (maxV - minV)).toFixed(1), pad.left - 6, y + 4);
+    ctx.fillText(formatKg((minV + t * (maxV - minV)).toFixed(1)), pad.left - 6, y + 4);
   });
 
-  // Ligne — cyan
+  // Line
   ctx.beginPath();
-  ctx.strokeStyle = C_CYAN;
+  ctx.strokeStyle = C_INK;
   ctx.lineWidth = 2;
   ctx.lineJoin = 'round';
   data.forEach((m, i) => {
@@ -2764,12 +2752,12 @@ function drawCorpsChart(canvas, data, field, unit) {
   data.forEach((m, i) => {
     ctx.beginPath();
     ctx.arc(xOf(i), yOf(m[field]), 3, 0, Math.PI * 2);
-    ctx.fillStyle = C_CYAN;
+    ctx.fillStyle = C_INK;
     ctx.fill();
 
     if (i === 0 || i === data.length - 1) {
-      ctx.fillStyle = C_MUTED;
-      ctx.font = '9px "DM Sans", sans-serif';
+      ctx.fillStyle = C_MUT;
+      ctx.font = FONT;
       ctx.textAlign = i === 0 ? 'left' : 'right';
       ctx.fillText(m.date.slice(5), xOf(i), H - 4);
     }
