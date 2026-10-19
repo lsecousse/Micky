@@ -32,11 +32,14 @@ const MIGRATED_FUNCTIONS = [
   'checkboxRowHtml', 'openUngroupDialog', 'renderUngroupDialog',
   'renderHistory', 'resumeSessionFromHistory', 'openModal', 'closeModal', 'formatFeedback', 'feedbackCard',
   'openBodyAnalysisPopupLoading', 'fillBodyAnalysisPopup',
-  'renderStats', 'statsSection', 'exoMetrics', 'buildStatsProgression', 'carnetColor',
+  'renderStats', 'statsSection', 'shortDayMonth', 'exoMetrics', 'buildStatsProgression', 'carnetColor',
+  'renderMealPresetButtons', 'renderAlimentation', 'showFoodPhotoModal', 'openAddMealModal',
+  'openMealPresetEditModal', 'openEveningAdviceModal', 'openAskQuestionModal',
+  'fatCategory', 'corpsTrend', 'renderCorps', 'closeBodyAnalysisPopup', 'drawCorpsChart',
 ];
 const MIGRATED_HTML_BLOCKS = ['DIALOG CUSTOM', 'TOAST', 'COUNTDOWN STICKY TOP BAR', 'HOME', 'À LA SALLE', 'MODAL ÉDITION ACTIVITÉ (live)',
   'TIROIR GROUPER (live)', 'CHRONO FULLSCREEN', 'MINUTERIE FULLSCREEN', 'DIALOG DÉGROUPER', 'HISTORIQUE', 'MODAL DÉTAIL SÉANCE',
-  'STATS'];
+  'STATS', 'ALIMENTATION', 'MODAL AJOUTER REPAS', 'MODAL PRESET PETIT-DEJ', 'COMPOSITION CORPORELLE'];
 const MIGRATED_CSS_SELECTORS = ['#toast', '.dialog', '#countdown', '.live-edit', '.feedback-ia', '#chrono', '#minuterie', '.modal',
   '.series-not-done'];
 
@@ -191,9 +194,105 @@ describe('carnetTokensShould', () => {
     expect(chart).not.toMatch(/token:\s*'alert'|carnetColor\('alert'\)/);
   });
 
+  it('shortDayMonth turns an ISO date into JJ/MM', () => {
+    const src = functionSource('app.js', 'shortDayMonth');
+    const shortDayMonth = new Function(`${src}; return shortDayMonth;`)();
+
+    expect(shortDayMonth('2026-08-18')).toBe('18/08');
+  });
+
+  it('both charts label their date axis with shortDayMonth', () => {
+    expect(functionSource('app.js', 'buildStatsProgression')).toContain('shortDayMonth(d)');
+    expect(functionSource('app.js', 'drawCorpsChart')).toContain('shortDayMonth(m.date)');
+    expect(read('app.js')).not.toContain("d.slice(5).replace('-', '/')");
+  });
+
+  it('stats and history cards glue units with a narrow no-break space', () => {
+    expect(functionSource('app.js', 'buildStatsProgression')).toContain('${fmt(last)}\\u202F${unit}');
+    expect(functionSource('app.js', 'buildStatsProgression')).toContain('}${Math.round(delta)}\\u202F%');
+    expect(functionSource('app.js', 'renderHistory')).toContain("toLocaleString('fr-FR')}\\u202Fkg");
+  });
+
+  it('history session title is not a heading inside the button', () => {
+    expect(functionSource('app.js', 'renderHistory')).not.toContain('<h3');
+  });
+
+  it('the modal backdrop has no click handler (sheets are full screen)', () => {
+    expect(read('app.js')).not.toContain("document.getElementById('modal').addEventListener('click'");
+  });
+
   it('carnetColor reads a Carnet CSS variable', () => {
     expect(functionSource('app.js', 'carnetColor'))
       .toContain("getComputedStyle(document.documentElement).getPropertyValue('--' + name).trim()");
+  });
+
+  it('alimentation modals have no inline colour', () => {
+    const found = ['openEveningAdviceModal', 'openAskQuestionModal', 'openAddMealModal', 'openMealPresetEditModal']
+      .flatMap((name) => (functionSource('app.js', name).match(/#[0-9a-fA-F]{3,6}\b|var\(--bg\)|var\(--a-|var\(--text/g) ?? [])
+        .map((hit) => `${name}: ${hit}`));
+
+    expect(found).toEqual([]);
+  });
+
+  it('corps chart colours come from Carnet CSS variables', () => {
+    const chart = functionSource('app.js', 'drawCorpsChart');
+
+    expect(chart.match(/#[0-9a-fA-F]{3,6}\b/g) ?? []).toEqual([]);
+    expect(chart).not.toContain('DM Sans');
+    expect(chart).toContain('carnetColor(');
+  });
+
+  it('corps screen has no inline colour', () => {
+    const found = ['fatCategory', 'renderCorps']
+      .flatMap((name) => (functionSource('app.js', name).match(/#[0-9a-fA-F]{3,6}\b|style\.color|color:|var\(--text/g) ?? [])
+        .map((hit) => `${name}: ${hit}`));
+
+    expect(found).toEqual([]);
+  });
+
+  it('corps in-page analysis looks like the feedback card', () => {
+    expect(functionSource('app.js', 'renderCorps')).toContain('feedbackCard(');
+  });
+
+  it('dead corps analysis rules are gone', () => {
+    expect(read('style.css')).not.toContain('.corps-analysis');
+  });
+
+  it('corps chart is sized for the device pixel ratio', () => {
+    const chart = functionSource('app.js', 'drawCorpsChart');
+
+    expect(chart).toContain('devicePixelRatio');
+    expect(chart).toContain('ctx.scale(');
+  });
+
+  it('advice thread escapes the user text', () => {
+    expect(functionSource('app.js', 'openEveningAdviceModal')).toContain("appendBubble('user', escapeHtml(txt))");
+  });
+
+  it.each(['openModal', 'showPostSessionFeedback', 'openBodyAnalysisPopupLoading', 'showFoodPhotoModal',
+    'openEveningAdviceModal', 'openAskQuestionModal'])('%s opens the shared sheet scrolled to the top', (name) => {
+    expect(functionSource('app.js', name)).toContain('showModalSheet()');
+  });
+
+  it('showModalSheet resets the sheet scroll before showing it', () => {
+    expect(functionSource('app.js', 'showModalSheet')).toContain('scrollTop = 0');
+  });
+
+  it('measurement units keep a narrow no-break space', () => {
+    expect(functionSource('app.js', 'renderCorps')).not.toMatch(/<\/span>\$\{unit\}|\)\}% —/);
+  });
+
+  it('preset settings glyph is forced to text presentation', () => {
+    expect(functionSource('app.js', 'renderMealPresetButtons')).not.toContain("textContent = '⚙'");
+  });
+
+  it('legacy .btn-* rules are gone', () => {
+    const legacy = /\.btn-(primary|secondary|danger|ghost)\b/g;
+
+    expect([
+      ...(read('style.css').match(legacy) ?? []),
+      ...(read('app.js').match(/\bbtn-(primary|secondary|danger|ghost|disabled)\b/g) ?? []),
+    ]).toEqual([]);
   });
 
   it.each(MIGRATED_FUNCTIONS)('migrated function %s has no Direction A leftover', (name) => {

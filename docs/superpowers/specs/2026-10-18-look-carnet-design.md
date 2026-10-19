@@ -63,9 +63,9 @@ Polices : **Newsreader** (titres, noms d'exercices en italique), **IBM Plex Sans
 | 1 | Renommage A → `a-*`, tokens + polices Carnet, barre d'état, `.claude/CLAUDE.md`, accueil, séance live : choix du programme, liste d'exercices, série en cours, repos (barre de décompte), cardio, chrono/minuterie, modale d'édition en séance, fin de séance | `index.html` (home, seance, overlays), `app.js` renderHome…finishSession, countdown, toast, `style.css` |
 | 2 | Historique, détail de séance (modale), stats + Chart.js | renderHistory, openModal, renderStats, buildStatsProgression |
 | 3 | Alimentation (+ modales repas, conseil, question), corps (+ analyse) | renderAlimentation, renderCorps et modales |
-| 4 | Connexion, profil, clé Claude, paramètres, éditeur de programme mobile | renderLogin, renderProfil, renderClaudeApi, renderParams, `exercise-editor.js`, `set-password.html` |
+| 4 | Connexion, profil, clé Claude, paramètres (l'éditeur de programme mobile passe au Carnet chez micky-supersets-ecrans, lot B, décision orchestrateur 2026-10-19) | renderLogin, renderProfil, renderClaudeApi, renderParams, `set-password.html` |
 | 5 | Icône M&K, 15 splash, écran de chargement (wordmark), manifest | `generate-icons.js`, `generate-assets.js`, `icons/`, `manifest.json` |
-| 6 | Back-office (d'après l'écran 07), retrait des tokens A | `backoffice.html`, `backoffice.js` |
+| 6 | Back-office (d'après l'écran 07) sauf son éditeur de programme (micky-supersets-ecrans, lot C), retrait des tokens A ; coordination par `QUESTIONS/micky-look-carnet.md` avant de commencer | `backoffice.html`, `backoffice.js` |
 
 Chaque PR change des assets de l'app : bump de `CACHE_NAME` dans `service-worker.js`.
 
