@@ -41,9 +41,9 @@ const MIGRATED_FUNCTIONS = [
 const MIGRATED_HTML_BLOCKS = ['DIALOG CUSTOM', 'TOAST', 'COUNTDOWN STICKY TOP BAR', 'HOME', 'À LA SALLE', 'MODAL ÉDITION ACTIVITÉ (live)',
   'TIROIR GROUPER (live)', 'CHRONO FULLSCREEN', 'MINUTERIE FULLSCREEN', 'DIALOG DÉGROUPER', 'HISTORIQUE', 'MODAL DÉTAIL SÉANCE',
   'STATS', 'ALIMENTATION', 'MODAL AJOUTER REPAS', 'MODAL PRESET PETIT-DEJ', 'COMPOSITION CORPORELLE',
-  'PROFIL', 'CLÉ API CLAUDE', 'LOGIN'];
+  'PROFIL', 'CLÉ API CLAUDE', 'LOGIN', 'LOADING SCREEN'];
 const MIGRATED_CSS_SELECTORS = ['#toast', '.dialog', '#countdown', '.live-edit', '.feedback-ia', '#chrono', '#minuterie', '.modal',
-  '.series-not-done'];
+  '.series-not-done', '#loading-screen'];
 
 // Source of a top-level function, up to its closing brace at column 0.
 function functionSource(file, name) {
@@ -315,6 +315,12 @@ describe('carnetTokensShould', () => {
       ...(read('style.css').match(legacy) ?? []),
       ...(read('app.js').match(/\bbtn-(primary|secondary|danger|ghost|disabled)\b/g) ?? []),
     ]).toEqual([]);
+  });
+
+  it('CLAUDE.md no longer describes the dark orange PWA', () => {
+    const doc = read('.claude/CLAUDE.md');
+    const stale = ['#FF6B00', '#0f0f0f', 'Gym Tracker', 'black-translucent', 'Thème sombre', 'Onglet "Nouvelle séance"', 'Export JSON'].filter((s) => doc.includes(s));
+    expect(stale).toEqual([]);
   });
 
   it.each(MIGRATED_FUNCTIONS)('migrated function %s has no Direction A leftover', (name) => {
