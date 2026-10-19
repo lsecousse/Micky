@@ -143,10 +143,38 @@ Branchement :
 
 ### Task 4 : Dégrouper en séance
 
-Selon la réponse de Lionel (Guichet #1909), reportée ici avant de lancer la tâche. Appui long 500 ms sur l'entrée d'un
-groupe (`pointerdown` / `pointerup` / `pointerleave`, le clic court reste l'ouverture), confirmation `showConfirm` (ou
-feuille avec case si Lionel l'a choisie), `ungroupSuperset` sur la séance (pas de réordonnancement), push ; programme
-selon la réponse (indices traduits par `programmeIndexOf`, `ungroupSuperset` sur le `group.id` côté programme).
+Réponse de Lionel (Guichet #1909), telle quelle : « Même case : « Retirer aussi du programme », décochée par défaut (le
+super set revient la semaine prochaine sauf si tu coches) ». Voir la spec, section « Dégrouper en séance ».
+
+**Logique pure (TDD, `lib/live-superset.js`, tests dans `tests/live-superset.test.js`)**
+- `programmeUngrouping(programmeExercises, sessionExercises, memberIndices)` : indice programme du premier membre via
+  `programmeIndexOf` ; -1 ou exercice sans `group` → `null` ; sinon `ungroupSuperset(programmeExercises, group.id)`.
+  Cas : groupe venu du programme (même id) ; groupe « gardé » avec son propre id côté programme ; exercice absent du
+  programme → null ; exercice présent mais non groupé côté programme → null ; les autres groupes du programme restent.
+- `ungroupDialogText(exercises, memberIndices)` → `{ title, members }` : title « Dégrouper le super set ? » (libellé
+  via `supersetKindLabel` : « le tri-set », « le circuit »), members = noms joints par « + ».
+
+**Appui long (TDD, nouveau `lib/long-press.js`, tests `tests/long-press.test.js` avec `vi.useFakeTimers` et un
+`EventTarget` de Node)**
+- `onLongPress(el, ms, onLong)` : `pointerdown` arme un minuteur de `ms` ; `pointerup` / `pointerleave` /
+  `pointercancel` et un `pointermove` de plus de 10 px l'annulent ; quand il part, `onLong()` est appelé et le `click`
+  suivant est avalé (`preventDefault` + `stopImmediatePropagation`, enregistré en capture) ; `contextmenu` empêché.
+  Chargé dans `index.html` avec les autres scripts super sets, ajouté au `SHELL`, `tests/browser-scripts.test.js`
+  mis à jour.
+
+**Écran (`app.js`, `index.html`)**
+- Bloc `<!-- DIALOG DÉGROUPER -->` dans `index.html` (`#ungroup-dialog`, même look que `#dialog`), ajouté à
+  `MIGRATED_HTML_BLOCKS` : titre (`#ungroup-title`), membres en italique `mut`, case « Retirer aussi du programme »
+  (`#ungroup-programme`, `role=checkbox`, même rendu que `#group-keep` : extraire une fonction commune de rendu de case
+  si elle est dupliquée), boutons `#ungroup-cancel` « Annuler » (secondaire) et `#ungroup-ok` « Dégrouper » (primaire).
+- `supersetListEntry` branche `onLongPress(entry, 500, () => openUngroupDialog(block.indices))` ; l'entrée reçoit
+  `select-none` et `-webkit-touch-callout: none`.
+- `openUngroupDialog` : si `countdownTimer` → toast « Dégrouper après le décompte » et rien d'autre ; sinon ouvre la
+  fenêtre, case décochée.
+- Valider : `liveSession.exercises = ungroupSuperset(...)` (id du premier membre), fermer, `pushSessionSafe`, si case
+  cochée `removeGroupFromProgramme(before, memberIndices)` sur `programmeTemplateQueue` (même modèle que
+  `keepGroupInProgramme` ; `null` → toast « Dégroupé pour cette séance seulement »), `renderSeanceScreen()`.
+- Nouvelles fonctions de rendu dans `MIGRATED_FUNCTIONS` (`tests/carnet-tokens.test.js`). `CACHE_NAME` incrémenté.
 Commit `feat(supersets): dégrouper en séance`.
 
 ### Task 5 : Vérification (contrôleur)

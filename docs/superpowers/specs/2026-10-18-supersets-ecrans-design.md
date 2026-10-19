@@ -94,9 +94,19 @@ Les membres d'un groupe n'ont pas de durée d'exercice (`exoDurations` non rempl
 temps se chevauchent et pollueraient la moyenne historique (`load_avg_exercise_durations`) le jour où l'exercice est
 refait seul. Les durées de série (`serieDurations`) sont gardées.
 
-### Question ouverte (posée à Lionel, Guichet #1909)
+### Dégrouper en séance (Guichet #1909, réponse de Lionel)
 
-Dégrouper en séance : retirer aussi du programme ou non. Réponse reportée ici à réception.
+Réponse de Lionel, telle quelle : « Même case : « Retirer aussi du programme », décochée par défaut (le super set revient
+la semaine prochaine sauf si tu coches) ».
+
+- Appui long (500 ms) sur l'entrée d'un groupe dans la liste → fenêtre « Dégrouper » (maquette : « un appui long sur
+  l'entrée du groupe, puis « Dégrouper » ») : membres du groupe, case « Retirer aussi du programme » décochée, boutons
+  « Annuler » / « Dégrouper ». Le clic court garde l'ouverture du groupe.
+- Valider : `ungroupSuperset` sur la séance (aucun réordonnancement, les cartes de temps ne bougent pas), snapshot
+  poussé. Case cochée : le groupe du programme qui porte le premier membre (indice traduit par `programmeIndexOf`) est
+  dégroupé, puis `updateProgrammeDB` ; s'il n'existe pas côté programme, rien n'est écrit et un toast le dit.
+- Comme pour grouper, rien pendant un décompte (toast « Dégrouper après le décompte ») : un décompte de transition ou
+  de repos de tour tient une étape du groupe.
 
 ### Tests
 
