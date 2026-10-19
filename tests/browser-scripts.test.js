@@ -90,6 +90,12 @@ describe('browser lib scripts', () => {
     expect(typeof context.liveFonteExercise).toBe('function');
   });
 
+  it('read the editor blocks of a programme with the browser globals', () => {
+    const context = loadInSharedScope(libScriptsOf('index.html'));
+
+    expect(context.editorBlocks(groupOfTwo()).map(b => b.label)).toEqual(['Super set']);
+  });
+
   it('expose the long press helper in index.html shared global scope', () => {
     const context = loadInSharedScope(libScriptsOf('index.html'));
 
