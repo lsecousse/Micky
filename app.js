@@ -2586,9 +2586,7 @@ async function renderCorps() {
       </header>
     `;
     const canvas = document.createElement('canvas');
-    canvas.className = 'w-full';
-    canvas.width  = 340;
-    canvas.height = 120;
+    canvas.className = 'block w-full h-[120px]';
     chartWrap.appendChild(canvas);
     body.appendChild(chartWrap);
     requestAnimationFrame(() => drawCorpsChart(canvas, chartData, field, unit));
@@ -2709,8 +2707,13 @@ function drawCorpsChart(canvas, data, field, unit) {
   const C_INK  = carnetColor('ink');
   const FONT   = '12px "IBM Plex Mono", monospace';
 
+  // Bitmap at the rendered size × device pixel ratio; drawing in CSS pixels
+  const dpr = window.devicePixelRatio || 1;
+  const W = canvas.clientWidth || 340, H = canvas.clientHeight || 120;
+  canvas.width  = Math.round(W * dpr);
+  canvas.height = Math.round(H * dpr);
   const ctx = canvas.getContext('2d');
-  const W = canvas.width, H = canvas.height;
+  ctx.scale(dpr, dpr);
   const pad = { top: 10, right: 10, bottom: 24, left: 48 };
   const iW = W - pad.left - pad.right;
   const iH = H - pad.top - pad.bottom;

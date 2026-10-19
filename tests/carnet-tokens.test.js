@@ -34,7 +34,7 @@ const MIGRATED_HTML_BLOCKS = ['DIALOG CUSTOM', 'TOAST', 'COUNTDOWN STICKY TOP BA
   'CHRONO FULLSCREEN', 'MINUTERIE FULLSCREEN', 'HISTORIQUE', 'MODAL DÉTAIL SÉANCE',
   'STATS', 'ALIMENTATION', 'MODAL AJOUTER REPAS', 'MODAL PRESET PETIT-DEJ', 'COMPOSITION CORPORELLE'];
 const MIGRATED_CSS_SELECTORS = ['#toast', '.dialog', '#countdown', '.live-edit', '.feedback-ia', '#chrono', '#minuterie', '.modal',
-  '.series-not-done', '.corps-analysis'];
+  '.series-not-done'];
 
 // Source of a top-level function, up to its closing brace at column 0.
 function functionSource(file, name) {
@@ -220,8 +220,15 @@ describe('carnetTokensShould', () => {
     expect(functionSource('app.js', 'renderCorps')).toContain('feedbackCard(');
   });
 
-  it('corps analysis rules use Carnet variables', () => {
-    expect(cssRules('style.css', '.corps-analysis').match(/rgba\(|#[0-9a-fA-F]{3,6}\b|var\(--text/g) ?? []).toEqual([]);
+  it('dead corps analysis rules are gone', () => {
+    expect(read('style.css')).not.toContain('.corps-analysis');
+  });
+
+  it('corps chart is sized for the device pixel ratio', () => {
+    const chart = functionSource('app.js', 'drawCorpsChart');
+
+    expect(chart).toContain('devicePixelRatio');
+    expect(chart).toContain('ctx.scale(');
   });
 
   it('advice thread escapes the user text', () => {
