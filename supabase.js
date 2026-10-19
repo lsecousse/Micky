@@ -132,7 +132,7 @@ async function pushSession(session) {
           done:     ex.done     ?? null,
           state:    ex.state    ?? 'pending',
         }
-      : { series: ex.series };
+      : fonteExecution(ex);
 
     return {
       name:             ex.name || '',

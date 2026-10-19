@@ -23,6 +23,13 @@ const MIGRATED_FUNCTIONS = [
   'stopMinuterieOverlay',
   'seriesBandHtml', 'seriesLogRow', 'seriesLogHtml', 'createDock', 'exerciseViewWrap', 'previousValueText',
   'nextStepHint', 'activityLabel', 'formatKg',
+  'focusEditButtonHtml', 'weightSuggestionSlot', 'loadWeightSuggestion', 'dockExosButtonHtml', 'focusDockHtml',
+  'startRestDockSync', 'supersetHeadHtml', 'supersetSummaryRowHtml', 'supersetLogRowHtml', 'supersetLogHtml',
+  'renderSupersetFocus', 'pauseTimerHtml', 'pauseStepButtonHtml', 'supersetPauseDockHtml', 'renderSupersetPause',
+  'singleExerciseCard', 'memberLoadText', 'supersetMemberRowHtml', 'supersetListEntry', 'groupOpenButton',
+  'openGroupSheet', 'groupPickPlanText', 'groupPickRowHtml', 'groupOffRowHtml', 'groupPickListHtml', 'groupCounterHtml',
+  'groupRoundsHint', 'groupKeepRowHtml', 'groupSheetBodyHtml', 'renderGroupSheet',
+  'checkboxRowHtml', 'openUngroupDialog', 'renderUngroupDialog',
   'renderHistory', 'resumeSessionFromHistory', 'openModal', 'closeModal', 'formatFeedback', 'feedbackCard',
   'openBodyAnalysisPopupLoading', 'fillBodyAnalysisPopup',
   'renderStats', 'statsSection', 'exoMetrics', 'buildStatsProgression', 'carnetColor',
@@ -31,7 +38,7 @@ const MIGRATED_FUNCTIONS = [
   'fatCategory', 'corpsTrend', 'renderCorps', 'closeBodyAnalysisPopup', 'drawCorpsChart',
 ];
 const MIGRATED_HTML_BLOCKS = ['DIALOG CUSTOM', 'TOAST', 'COUNTDOWN STICKY TOP BAR', 'HOME', 'À LA SALLE', 'MODAL ÉDITION ACTIVITÉ (live)',
-  'CHRONO FULLSCREEN', 'MINUTERIE FULLSCREEN', 'HISTORIQUE', 'MODAL DÉTAIL SÉANCE',
+  'TIROIR GROUPER (live)', 'CHRONO FULLSCREEN', 'MINUTERIE FULLSCREEN', 'DIALOG DÉGROUPER', 'HISTORIQUE', 'MODAL DÉTAIL SÉANCE',
   'STATS', 'ALIMENTATION', 'MODAL AJOUTER REPAS', 'MODAL PRESET PETIT-DEJ', 'COMPOSITION CORPORELLE'];
 const MIGRATED_CSS_SELECTORS = ['#toast', '.dialog', '#countdown', '.live-edit', '.feedback-ia', '#chrono', '#minuterie', '.modal',
   '.series-not-done'];
