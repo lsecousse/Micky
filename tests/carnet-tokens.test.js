@@ -178,6 +178,18 @@ describe('carnetTokensShould', () => {
     expect(html).toContain('IBM+Plex+Mono');
   });
 
+  it('set-password page uses Carnet colours and fonts', () => {
+    const page = read('set-password.html');
+    const appFontLink = read('index.html').match(/<link[^>]+fonts\.googleapis\.com\/css2[^>]+>/)[0];
+
+    expect(page).toContain('#EEEDE8');
+    expect(page).toContain('#1B1C1F');
+    expect(page).toContain('#A8321F');
+    expect(page).toContain(appFontLink);
+    expect(directionALeftovers(page)).toEqual([]);
+    expect(page).not.toMatch(/DM Mono|#9A7A30|#0f0f0f/i);
+  });
+
   it('detail modal has no hard-coded colour', () => {
     expect(functionSource('app.js', 'openModal').match(/#[0-9a-fA-F]{3,6}\b/g) ?? []).toEqual([]);
   });
