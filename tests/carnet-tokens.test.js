@@ -39,12 +39,14 @@ const MIGRATED_FUNCTIONS = [
   'setParamsHeader', 'paramsDashedButton', 'renderParams', 'programmeRow', 'openProgrammeEditor', 'saveProgrammeFromEditor',
   'syncEditorFromDom', 'renderEditorExercises', 'editorSingleCard', 'editorLinkRow', 'editorGroupCard',
   'groupSettingsHtml', 'groupMemberRowHtml', 'groupFooterHtml', 'editorMemberCard', 'onGroupCardClick',
+  'makeField', 'makeSegment', 'makeOptionList', 'accountMasthead', 'renderProfil', 'renderClaudeApi', 'renderLogin',
 ];
 const MIGRATED_EDITOR_FUNCTIONS = ['updateActivityFields', 'makeActivityRow', 'makeExerciseCard', 'makeCardioExerciseCard',
   '_makeExerciseHeader'];
 const MIGRATED_HTML_BLOCKS = ['DIALOG CUSTOM', 'TOAST', 'COUNTDOWN STICKY TOP BAR', 'HOME', 'À LA SALLE', 'MODAL ÉDITION ACTIVITÉ (live)',
   'TIROIR GROUPER (live)', 'CHRONO FULLSCREEN', 'MINUTERIE FULLSCREEN', 'DIALOG DÉGROUPER', 'HISTORIQUE', 'MODAL DÉTAIL SÉANCE',
-  'STATS', 'ALIMENTATION', 'MODAL AJOUTER REPAS', 'MODAL PRESET PETIT-DEJ', 'COMPOSITION CORPORELLE', 'PARAMÈTRES'];
+  'STATS', 'ALIMENTATION', 'MODAL AJOUTER REPAS', 'MODAL PRESET PETIT-DEJ', 'COMPOSITION CORPORELLE', 'PARAMÈTRES',
+  'PROFIL', 'CLÉ API CLAUDE', 'LOGIN'];
 const MIGRATED_CSS_SELECTORS = ['#toast', '.dialog', '#countdown', '.live-edit', '.feedback-ia', '#chrono', '#minuterie', '.modal',
   '.series-not-done'];
 
@@ -181,6 +183,18 @@ describe('carnetTokensShould', () => {
     expect(html).toContain('IBM+Plex+Mono');
   });
 
+  it('set-password page uses Carnet colours and fonts', () => {
+    const page = read('set-password.html');
+    const appFontLink = read('index.html').match(/<link[^>]+fonts\.googleapis\.com\/css2[^>]+>/)[0];
+
+    expect(page).toContain('#EEEDE8');
+    expect(page).toContain('#1B1C1F');
+    expect(page).toContain('#A8321F');
+    expect(page).toContain(appFontLink);
+    expect(directionALeftovers(page)).toEqual([]);
+    expect(page).not.toMatch(/DM Mono|#9A7A30|#0f0f0f/i);
+  });
+
   it('detail modal has no hard-coded colour', () => {
     expect(functionSource('app.js', 'openModal').match(/#[0-9a-fA-F]{3,6}\b/g) ?? []).toEqual([]);
   });
@@ -234,6 +248,14 @@ describe('carnetTokensShould', () => {
   it('alimentation modals have no inline colour', () => {
     const found = ['openEveningAdviceModal', 'openAskQuestionModal', 'openAddMealModal', 'openMealPresetEditModal']
       .flatMap((name) => (functionSource('app.js', name).match(/#[0-9a-fA-F]{3,6}\b|var\(--bg\)|var\(--a-|var\(--text/g) ?? [])
+        .map((hit) => `${name}: ${hit}`));
+
+    expect(found).toEqual([]);
+  });
+
+  it('account screens have no inline colour', () => {
+    const found = ['makeField', 'makeSegment', 'makeOptionList', 'accountMasthead', 'renderProfil', 'renderClaudeApi', 'renderLogin']
+      .flatMap((name) => (functionSource('app.js', name).match(/#[0-9a-fA-F]{3,6}\b|var\(--bg\)|var\(--text|var\(--a-/g) ?? [])
         .map((hit) => `${name}: ${hit}`));
 
     expect(found).toEqual([]);

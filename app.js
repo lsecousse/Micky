@@ -397,38 +397,44 @@ function buildUserDropdown() {
 /* ═══════════════════════════════════════════════════════
    PROFIL
 ═══════════════════════════════════════════════════════ */
-// Helper : champ formulaire tokens A (label eyebrow muted + input border-bottom)
+// Carnet form styles shared by the account screens (profil, clé Claude)
+const FIELD_LABEL_CLS = 'block font-sans text-[13px] text-mut mb-1.5';
+const FIELD_INPUT_CLS = 'w-full h-12 px-3 bg-sheet border border-solid border-rule rounded focus:border-ink focus:ring-0 focus:outline-none font-sans text-[16px] text-ink placeholder:text-mut transition';
+const SAVE_BTN_CLS = 'w-full h-14 bg-ink text-paper rounded font-sans text-[16px] font-semibold active:bg-ink/80 transition';
+
+// Helper : champ formulaire Carnet (label 13 px mut + champ sheet filet rule)
 function makeField(label, opts = {}) {
   const { type = 'text', value = '', placeholder = '', readonly = false, inputMode = '', min, max, maxLength } = opts;
   const wrap = document.createElement('div');
   wrap.className = 'mb-5';
   const lab = document.createElement('p');
-  lab.className = 'font-sans text-[9px] uppercase tracking-[0.40em] text-a-muted mb-1.5';
+  lab.className = FIELD_LABEL_CLS;
   lab.textContent = label;
   const input = document.createElement('input');
   input.type = type;
   input.value = value ?? '';
   if (placeholder) input.placeholder = placeholder;
-  if (readonly) { input.readOnly = true; input.classList.add('opacity-50'); }
   if (inputMode) input.inputMode = inputMode;
   if (min != null) input.min = String(min);
   if (max != null) input.max = String(max);
   if (maxLength != null) input.maxLength = maxLength;
-  input.className = 'w-full bg-transparent border-b border-a-border focus:border-a-acid font-sans text-[16px] text-a-paper py-2 outline-none transition';
+  input.className = FIELD_INPUT_CLS;
+  if (readonly) { input.readOnly = true; input.classList.add('opacity-50'); }
   wrap.append(lab, input);
   return { wrap, input };
 }
 
-// Helper : segmented buttons (radio-like)
+// Helper : segmented buttons (radio-like) — selected = plein ink, others = sheet filet rule
 function makeSegment(options, selected, onChange) {
   const wrap = document.createElement('div');
   wrap.className = 'grid grid-cols-2 gap-2';
   const buttons = [];
+  const base = 'h-12 rounded border border-solid font-sans text-[15px] transition';
   const refresh = (active) => {
     buttons.forEach(b => {
       b.className = (b.dataset.val === active)
-        ? 'py-3 border border-a-acid bg-a-acid/[0.10] text-a-acid font-sans text-[11px] uppercase tracking-eyebrow font-semibold transition'
-        : 'py-3 border border-a-border text-a-paper font-sans text-[11px] uppercase tracking-eyebrow active:border-a-paper transition';
+        ? `${base} bg-ink border-ink text-paper font-semibold`
+        : `${base} bg-sheet border-rule text-ink active:border-ink`;
     });
   };
   options.forEach(({ val, label }) => {
@@ -444,50 +450,67 @@ function makeSegment(options, selected, onChange) {
   return wrap;
 }
 
-// Helper : option list (full-width buttons stacked)
+// Helper : option list as carnet lines (« Nom — détail »), selected = case cochée ink
 function makeOptionList(options, selected, onChange) {
   const wrap = document.createElement('div');
-  wrap.className = 'flex flex-col gap-2';
+  wrap.className = 'flex flex-col border-0 border-solid border-t border-rule';
   const buttons = [];
   const refresh = (active) => {
     buttons.forEach(b => {
-      b.className = (b.dataset.val === active)
-        ? 'py-3 px-4 border border-a-acid bg-a-acid/[0.10] text-a-acid font-sans text-[11px] uppercase tracking-eyebrow font-semibold text-left transition'
-        : 'py-3 px-4 border border-a-border text-a-paper font-sans text-[11px] uppercase tracking-eyebrow text-left active:border-a-paper transition';
+      const on = b.dataset.val === active;
+      b.querySelector('[data-role="check"]').className = 'w-[26px] h-[26px] shrink-0 flex items-center justify-center rounded border-[1.5px] border-solid border-ink text-[14px] '
+        + (on ? 'bg-ink text-paper' : 'text-ink');
+      b.querySelector('[data-role="check"]').textContent = on ? '✓' : '';
     });
   };
   options.forEach(({ val, label }) => {
+    const [name, detail] = label.split(' — ');
     const b = document.createElement('button');
     b.type = 'button';
-    b.textContent = label;
     b.dataset.val = val;
+    b.className = 'w-full flex items-center justify-between gap-3 py-3 text-left border-0 border-solid border-b border-rule active:bg-sheet transition';
+    const text = document.createElement('span');
+    text.className = 'min-w-0';
+    text.innerHTML = '<span class="block font-display italic font-bold text-[18px] leading-tight text-ink"></span>'
+      + '<span class="block font-sans text-[13px] text-mut mt-0.5"></span>';
+    text.children[0].textContent = name;
+    text.children[1].textContent = detail || '';
+    const check = document.createElement('span');
+    check.dataset.role = 'check';
+    check.setAttribute('aria-hidden', 'true');
+    b.append(text, check);
     b.addEventListener('click', () => { onChange(val); refresh(val); });
     buttons.push(b);
     wrap.appendChild(b);
   });
   refresh(selected);
   return wrap;
+}
+
+// Screen H1 « Ton profil. » / « Ta clé. » with an optional sub line
+function accountMasthead(lead, word, sub = '') {
+  const masthead = document.createElement('section');
+  masthead.className = 'px-5 pt-8 pb-6';
+  masthead.innerHTML = `
+    <h1 class="font-display font-medium text-[52px] leading-[0.95] tracking-[-0.02em] text-ink">${lead} <em class="text-mut">${word}</em></h1>
+    ${sub ? `<p class="font-sans text-[13px] text-mut mt-3">${sub}</p>` : ''}
+  `;
+  return masthead;
 }
 
 function renderProfil() {
   const body = document.getElementById('screen-profil-body');
   body.innerHTML = '';
-
-  // Masthead
-  const masthead = document.createElement('section');
-  masthead.className = 'px-5 pt-9 pb-9 accent-line';
-  masthead.innerHTML = `
-    <h1 class="font-display font-black h-display text-a-paper">
-      Tes<br/>
-      <span class="text-a-paper/40"><span class="text-a-acid not-italic font-black">·</span> infos.</span>
-    </h1>
-  `;
-  body.appendChild(masthead);
+  body.appendChild(accountMasthead('Ton', 'profil.'));
 
   const form = document.createElement('div');
-  form.className = 'px-5 pt-6 pb-12';
+  form.className = 'px-5 pb-6';
 
-  const { wrap: emailWrap }  = makeField('Email', { value: currentUser?.email || '', readonly: true });
+  // Email: read-only text line (wraps when long, unlike an input)
+  const emailWrap = document.createElement('div');
+  emailWrap.className = 'mb-5 pb-3 border-0 border-solid border-b border-rule';
+  emailWrap.innerHTML = `<p class="${FIELD_LABEL_CLS}">Email</p><p class="font-sans text-[16px] text-ink break-all"></p>`;
+  emailWrap.lastElementChild.textContent = currentUser?.email || '';
   const { wrap: nomWrap,    input: nomInput }    = makeField('Nom',    { placeholder: 'Nom',    maxLength: 60, value: currentProfile?.nom || '' });
   const { wrap: prenomWrap, input: prenomInput } = makeField('Prénom', { placeholder: 'Prénom', maxLength: 60, value: currentProfile?.prenom || '' });
   const { wrap: tailleWrap, input: tailleInput } = makeField('Taille (cm)', {
@@ -497,8 +520,8 @@ function renderProfil() {
 
   // Sexe (segmented)
   const sexeBlock = document.createElement('div');
-  sexeBlock.className = 'mb-5';
-  sexeBlock.innerHTML = `<p class="font-sans text-[9px] uppercase tracking-[0.40em] text-a-muted mb-1.5">Sexe</p>`;
+  sexeBlock.className = 'mb-6';
+  sexeBlock.innerHTML = `<p class="${FIELD_LABEL_CLS}">Sexe</p>`;
   let selectedSexe = currentProfile?.sexe || null;
   const sexeSeg = makeSegment(
     [{ val: 'h', label: 'Homme' }, { val: 'f', label: 'Femme' }],
@@ -510,7 +533,7 @@ function renderProfil() {
   // Niveau d'activité (option list)
   const actBlock = document.createElement('div');
   actBlock.className = 'mb-8';
-  actBlock.innerHTML = `<p class="font-sans text-[9px] uppercase tracking-[0.40em] text-a-muted mb-1.5">Niveau d'activité (hors sport)</p>`;
+  actBlock.innerHTML = `<p class="${FIELD_LABEL_CLS}">Niveau d'activité (hors sport)</p>`;
   let selectedActivite = currentProfile?.niveau_activite || null;
   const actList = makeOptionList(
     [
@@ -525,7 +548,7 @@ function renderProfil() {
   actBlock.appendChild(actList);
 
   const saveBtn = document.createElement('button');
-  saveBtn.className = 'w-full py-4 bg-a-acid text-a-ink font-display font-bold text-[14px] uppercase tracking-eyebrow active:bg-a-acid/80 transition';
+  saveBtn.className = SAVE_BTN_CLS;
   saveBtn.textContent = 'Enregistrer';
   saveBtn.addEventListener('click', async () => {
     const fields = {
@@ -551,44 +574,32 @@ function renderProfil() {
 async function renderClaudeApi() {
   const body = document.getElementById('screen-claude-api-body');
   body.innerHTML = `
-    <div class="px-5 pt-12 text-center font-display italic text-[16px] text-a-muted">Chargement…</div>
+    <p class="px-5 pt-10 font-sans text-[15px] text-mut">Chargement…</p>
   `;
 
   const existingKey = await getClaudeApiKeyDB();
 
   body.innerHTML = '';
-
-  // Masthead
-  const masthead = document.createElement('section');
-  masthead.className = 'px-5 pt-9 pb-9 accent-line';
-  masthead.innerHTML = `
-    <h1 class="font-display font-black h-display text-a-paper">
-      Clé<br/>
-      <span class="text-a-paper/40"><span class="text-a-acid not-italic font-black">·</span> Claude.</span>
-    </h1>
-    <p class="font-sans text-[10px] uppercase tracking-eyebrow text-a-muted mt-5">
-      Utilisée pour le feedback IA · chiffrée en base
-    </p>
-  `;
-  body.appendChild(masthead);
+  body.appendChild(accountMasthead('Ta', 'clé.', 'Utilisée pour le feedback IA · chiffrée en base'));
 
   const form = document.createElement('div');
-  form.className = 'px-5 pt-6 pb-12';
+  form.className = 'px-5 pb-6';
 
   const fieldWrap = document.createElement('div');
   fieldWrap.className = 'mb-6';
-  fieldWrap.innerHTML = `<p class="font-sans text-[9px] uppercase tracking-[0.40em] text-a-muted mb-1.5">Clé API</p>`;
+  fieldWrap.innerHTML = `<p class="${FIELD_LABEL_CLS}">Clé API</p>`;
   const inputRow = document.createElement('div');
-  inputRow.className = 'flex items-baseline gap-2';
+  inputRow.className = 'flex items-stretch gap-2';
   const keyInput = document.createElement('input');
   keyInput.type = 'password';
   keyInput.placeholder = 'sk-ant-…';
   keyInput.value = existingKey || '';
-  keyInput.className = 'flex-1 bg-transparent border-b border-a-border focus:border-a-acid font-sans text-[16px] text-a-paper py-2 outline-none transition';
+  keyInput.className = FIELD_INPUT_CLS.replace('w-full', 'flex-1 min-w-0').replace('font-sans', 'font-mono');
   const toggleBtn = document.createElement('button');
   toggleBtn.type = 'button';
-  toggleBtn.className = 'shrink-0 px-3 py-2 border border-a-border text-a-muted active:text-a-paper active:border-a-paper font-sans text-[12px] transition';
-  toggleBtn.textContent = '👁';
+  toggleBtn.setAttribute('aria-label', 'Afficher ou masquer la clé');
+  toggleBtn.className = 'shrink-0 w-12 h-12 flex items-center justify-center rounded border-[1.5px] border-solid border-ink text-ink active:bg-sheet transition';
+  toggleBtn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
   toggleBtn.addEventListener('click', () => {
     keyInput.type = keyInput.type === 'password' ? 'text' : 'password';
   });
@@ -597,7 +608,7 @@ async function renderClaudeApi() {
   form.appendChild(fieldWrap);
 
   const saveBtn = document.createElement('button');
-  saveBtn.className = 'w-full py-4 bg-a-acid text-a-ink font-display font-bold text-[14px] uppercase tracking-eyebrow active:bg-a-acid/80 transition';
+  saveBtn.className = SAVE_BTN_CLS;
   saveBtn.textContent = 'Enregistrer';
   saveBtn.addEventListener('click', async () => {
     const key = keyInput.value.trim();

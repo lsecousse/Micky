@@ -56,27 +56,25 @@
     </div>
 
     <!-- PROFIL -->
-    <div id="screen-profil" class="screen">
-      <header class="sticky top-0 z-10 bg-a-ink/96 backdrop-blur-sm border-b border-a-border px-5 py-4 flex items-center gap-4">
-        <button id="back-profil" class="flex items-center gap-2 font-sans text-[11px] uppercase tracking-eyebrow text-a-paper active:text-a-acid transition">
-          <span aria-hidden class="text-[18px] leading-none">←</span>
-          <span>Retour</span>
+    <div id="screen-profil" class="screen bg-paper text-ink font-sans">
+      <header class="relative flex items-center gap-3 px-5 pt-5 pb-4 border-0 border-solid border-b-[1.5px] border-ink shrink-0">
+        <button id="back-profil" class="w-10 h-10 -ml-2 flex items-center justify-center text-ink active:text-mut transition" aria-label="Retour">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
         </button>
-        <div class="font-display font-bold italic text-[15px] leading-tight text-a-paper">Profil</div>
+        <span class="font-display italic text-[20px] font-bold tracking-tight text-ink">Profil</span>
       </header>
-      <main id="screen-profil-body" class="flex-1 min-h-0 overflow-y-auto"></main>
+      <main id="screen-profil-body" class="flex-1 min-h-0 overflow-y-auto pb-10"></main>
     </div>
 
     <!-- CLÉ API CLAUDE -->
-    <div id="screen-claude-api" class="screen">
-      <header class="sticky top-0 z-10 bg-a-ink/96 backdrop-blur-sm border-b border-a-border px-5 py-4 flex items-center gap-4">
-        <button id="back-claude-api" class="flex items-center gap-2 font-sans text-[11px] uppercase tracking-eyebrow text-a-paper active:text-a-acid transition">
-          <span aria-hidden class="text-[18px] leading-none">←</span>
-          <span>Retour</span>
+    <div id="screen-claude-api" class="screen bg-paper text-ink font-sans">
+      <header class="relative flex items-center gap-3 px-5 pt-5 pb-4 border-0 border-solid border-b-[1.5px] border-ink shrink-0">
+        <button id="back-claude-api" class="w-10 h-10 -ml-2 flex items-center justify-center text-ink active:text-mut transition" aria-label="Retour">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
         </button>
-        <div class="font-display font-bold italic text-[15px] leading-tight text-a-paper">Clé API Claude</div>
+        <span class="font-display italic text-[20px] font-bold tracking-tight text-ink">Clé API Claude</span>
       </header>
-      <main id="screen-claude-api-body" class="flex-1 min-h-0 overflow-y-auto"></main>
+      <main id="screen-claude-api-body" class="flex-1 min-h-0 overflow-y-auto pb-10"></main>
     </div>
 
     <!-- COMPOSITION CORPORELLE -->
@@ -147,32 +145,32 @@
     </div>
 
     <!-- LOGIN -->
-    <div id="screen-login" class="screen">
-      <div class="flex-1 flex flex-col justify-center px-6 pt-[env(safe-area-inset-top)]">
-        <!-- Masthead -->
-        <section class="pb-9 accent-line">
-          <h1 class="font-display font-black h-display text-a-paper">
-            Mike<br/>
-            <span class="text-a-paper/40"><span class="text-a-acid not-italic font-black">·</span> Coach.</span>
-          </h1>
-        </section>
+    <div id="screen-login" class="screen bg-paper text-ink font-sans">
+      <div class="flex-1 min-h-0 overflow-y-auto flex flex-col px-6 pt-[env(safe-area-inset-top)] pb-[calc(env(safe-area-inset-bottom)+24px)]">
+        <div class="my-auto py-10">
+          <!-- Masthead -->
+          <section class="pb-10">
+            <p class="font-display font-bold leading-none tracking-[-0.03em] text-ink text-[clamp(4.5rem,24vw,6rem)]"><span class="mark">M&amp;K</span></p>
+            <h1 class="font-display italic font-medium text-[28px] leading-tight tracking-[-0.01em] text-ink mt-5">Mike Coach.</h1>
+          </section>
 
-        <!-- Form -->
-        <div id="login-form" class="mt-12 space-y-4">
-          <div>
-            <p class="font-sans text-[9px] uppercase tracking-[0.40em] text-a-muted mb-1.5">Email</p>
-            <input type="email" id="login-email" autocomplete="email" inputmode="email"
-              class="w-full bg-transparent border-b border-a-border focus:border-a-acid font-sans text-[16px] text-a-paper py-2 outline-none transition" />
+          <!-- Form -->
+          <div id="login-form" class="space-y-4">
+            <div>
+              <label for="login-email" class="block text-[13px] text-mut mb-1.5">Email</label>
+              <input type="email" id="login-email" autocomplete="email" inputmode="email"
+                class="w-full h-12 px-3 bg-sheet border border-solid border-rule rounded focus:border-ink focus:ring-0 focus:outline-none font-sans text-[16px] text-ink placeholder:text-mut transition" />
+            </div>
+            <div>
+              <label for="login-password" class="block text-[13px] text-mut mb-1.5">Mot de passe</label>
+              <input type="password" id="login-password" autocomplete="current-password"
+                class="w-full h-12 px-3 bg-sheet border border-solid border-rule rounded focus:border-ink focus:ring-0 focus:outline-none font-sans text-[16px] text-ink placeholder:text-mut transition" />
+            </div>
+            <p id="login-error" class="hidden text-[13px] leading-snug text-alert"></p>
+            <button id="btn-login" class="w-full !mt-6 h-14 bg-ink text-paper rounded font-sans text-[16px] font-semibold active:bg-ink/80 transition">
+              Se connecter →
+            </button>
           </div>
-          <div>
-            <p class="font-sans text-[9px] uppercase tracking-[0.40em] text-a-muted mb-1.5">Mot de passe</p>
-            <input type="password" id="login-password" autocomplete="current-password"
-              class="w-full bg-transparent border-b border-a-border focus:border-a-acid font-sans text-[16px] text-a-paper py-2 outline-none transition" />
-          </div>
-          <p id="login-error" class="hidden font-sans text-[11px] text-a-blood mt-2"></p>
-          <button id="btn-login" class="w-full mt-6 py-4 bg-a-acid text-a-ink font-display font-bold text-[14px] uppercase tracking-eyebrow active:bg-a-acid/80 transition">
-            Se connecter →
-          </button>
         </div>
       </div>
     </div>
