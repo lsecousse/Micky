@@ -303,6 +303,18 @@ describe('editorCardFieldsShould', () => {
     expect(editorCardFields({ name: 'A', activities: [WEIGHT], series: [{}, {}] }).sets).toBe(2);
   });
 
+  it('show zero values as empty fields so the placeholder shows', () => {
+    const [act] = editorCardFields(newEditorExercise()).activities;
+
+    expect([act.reps, act.weight, act.duration, act.rest]).toEqual(['', '', '', '']);
+  });
+
+  it('keep non-zero values', () => {
+    const [act] = editorCardFields(ex('A', { activities: [{ ...WEIGHT, weight: 0.5, rest: 90 }] })).activities;
+
+    expect([act.reps, act.weight, act.rest]).toEqual([10, 0.5, 90]);
+  });
+
   it('fall back on three series', () => {
     expect(editorCardFields({ activities: [WEIGHT] }).sets).toBe(3);
   });
