@@ -40,6 +40,20 @@ describe('boModalCardOptionsShould', () => {
     expect(options.source).toBe(exo);
   });
 
+  it('show a super set member card, whose series and rests the group sets', () => {
+    const options = boModalCardOptions(benchPress());
+
+    expect(options.member).toBe(true);
+  });
+
+  it('show a lone exercise card with its series and rests', () => {
+    const { group, ...lone } = benchPress();
+
+    const options = boModalCardOptions(lone);
+
+    expect(options.member).toBe(false);
+  });
+
   it('show the values of the first planned series', () => {
     const options = boModalCardOptions(benchPress());
 
@@ -50,7 +64,7 @@ describe('boModalCardOptionsShould', () => {
 });
 
 describe('boModalSavedExerciseShould', () => {
-  it('save an exercise validated without change exactly as it was', () => {
+  it('keep every source field when the card reads back unchanged', () => {
     const readBack = mergeEditedExercise(benchPress(), unchangedEdit());
 
     const saved = boModalSavedExercise(readBack, 'fonte');
@@ -58,7 +72,7 @@ describe('boModalSavedExerciseShould', () => {
     expect(saved).toEqual(benchPress());
   });
 
-  it('write an edited load into every series and keep the super set group', () => {
+  it('write an edited load into every series', () => {
     const edit = unchangedEdit();
     edit.rows[0].current.weight = 65;
 
@@ -67,6 +81,14 @@ describe('boModalSavedExerciseShould', () => {
     expect(saved.series.map(s => s.values[0])).toEqual([
       { reps: 10, weight: 65 }, { reps: 10, weight: 65 }, { reps: 8, weight: 65 }, { reps: 8, weight: 65 },
     ]);
+  });
+
+  it('keep the super set group when a load is edited', () => {
+    const edit = unchangedEdit();
+    edit.rows[0].current.weight = 65;
+
+    const saved = boModalSavedExercise(mergeEditedExercise(benchPress(), edit), 'fonte');
+
     expect(saved.group).toEqual({ id: 'g1', rounds: 4, transition: 15, roundRest: 90 });
   });
 

@@ -40,6 +40,7 @@ describe('browser lib scripts', () => {
   it('expose the exercise modal helpers in backoffice.html shared global scope', () => {
     const context = loadInSharedScope(libScriptsOf('backoffice.html'));
 
+    expect(typeof context.boModalCardOptions).toBe('function');
     expect(typeof context.boModalSavedExercise).toBe('function');
   });
 
