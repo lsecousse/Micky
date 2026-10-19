@@ -98,6 +98,13 @@ describe('carnetTokensShould', () => {
     expect(found).toEqual([]);
   });
 
+  it('app body is paper with ink text', () => {
+    const body = cssRules('style.css', 'html, body');
+
+    expect(body).toContain('background: var(--paper)');
+    expect(body).toContain('color: var(--ink)');
+  });
+
   it('Direction A CSS variables are only defined under the a- prefix', () => {
     const css = read('src/input.css');
 

@@ -20,8 +20,8 @@ html, body {
   width: 100%;
   max-width: 100%;
   overflow-x: hidden;
-  background: var(--bg);
-  color: var(--text);
+  background: var(--paper);
+  color: var(--ink);
   font-family: var(--font);
   font-size: 15px;
   overscroll-behavior: none;
