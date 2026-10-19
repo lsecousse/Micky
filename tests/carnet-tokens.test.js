@@ -30,10 +30,15 @@ const MIGRATED_FUNCTIONS = [
   'openGroupSheet', 'groupPickPlanText', 'groupPickRowHtml', 'groupOffRowHtml', 'groupPickListHtml', 'groupCounterHtml',
   'groupRoundsHint', 'groupKeepRowHtml', 'groupSheetBodyHtml', 'renderGroupSheet',
   'checkboxRowHtml', 'openUngroupDialog', 'renderUngroupDialog',
+  'renderHistory', 'resumeSessionFromHistory', 'openModal', 'closeModal', 'formatFeedback', 'feedbackCard',
+  'openBodyAnalysisPopupLoading', 'fillBodyAnalysisPopup',
+  'renderStats', 'statsSection', 'exoMetrics', 'buildStatsProgression', 'carnetColor',
 ];
 const MIGRATED_HTML_BLOCKS = ['DIALOG CUSTOM', 'TOAST', 'COUNTDOWN STICKY TOP BAR', 'HOME', 'À LA SALLE', 'MODAL ÉDITION ACTIVITÉ (live)',
-  'TIROIR GROUPER (live)', 'CHRONO FULLSCREEN', 'MINUTERIE FULLSCREEN', 'DIALOG DÉGROUPER'];
-const MIGRATED_CSS_SELECTORS = ['#toast', '.dialog', '#countdown', '.live-edit', '.feedback-ia', '#chrono', '#minuterie'];
+  'TIROIR GROUPER (live)', 'CHRONO FULLSCREEN', 'MINUTERIE FULLSCREEN', 'DIALOG DÉGROUPER', 'HISTORIQUE', 'MODAL DÉTAIL SÉANCE',
+  'STATS'];
+const MIGRATED_CSS_SELECTORS = ['#toast', '.dialog', '#countdown', '.live-edit', '.feedback-ia', '#chrono', '#minuterie', '.modal',
+  '.series-not-done'];
 
 // Source of a top-level function, up to its closing brace at column 0.
 function functionSource(file, name) {
@@ -166,6 +171,29 @@ describe('carnetTokensShould', () => {
     expect(html).toContain('Newsreader');
     expect(html).toContain('IBM+Plex+Sans');
     expect(html).toContain('IBM+Plex+Mono');
+  });
+
+  it('detail modal has no hard-coded colour', () => {
+    expect(functionSource('app.js', 'openModal').match(/#[0-9a-fA-F]{3,6}\b/g) ?? []).toEqual([]);
+  });
+
+  it('chart colours come from Carnet CSS variables', () => {
+    const chart = functionSource('app.js', 'buildStatsProgression');
+
+    expect(chart.match(/#[0-9a-fA-F]{3,6}\b/g) ?? []).toEqual([]);
+    expect(chart).not.toContain("'DM Sans'");
+    expect(read('app.js')).not.toMatch(/\bCHART_COLORS\b/);
+  });
+
+  it('chart series never use the alert colour', () => {
+    const chart = functionSource('app.js', 'buildStatsProgression');
+
+    expect(chart).not.toMatch(/token:\s*'alert'|carnetColor\('alert'\)/);
+  });
+
+  it('carnetColor reads a Carnet CSS variable', () => {
+    expect(functionSource('app.js', 'carnetColor'))
+      .toContain("getComputedStyle(document.documentElement).getPropertyValue('--' + name).trim()");
   });
 
   it.each(MIGRATED_FUNCTIONS)('migrated function %s has no Direction A leftover', (name) => {

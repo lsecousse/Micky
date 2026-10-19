@@ -307,55 +307,58 @@ input:focus { border-color: var(--accent); }
 #toast.toast-show { animation: toast-in  0.25s ease-out forwards; }
 #toast.toast-hide { animation: toast-out 0.35s ease-in  forwards; }
 
-/* ── Modal ────────────────────────────────────────────── */
+/* ── Modal — Carnet full-screen sheet (mock .sheet) ───── */
 .modal {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.75);
+  background: rgba(27, 28, 31, 0.55); /* ink scrim */
   display: flex;
   align-items: flex-end;
   z-index: 210; /* au-dessus de #countdown-bar (150) et chrono-overlay (200) */
-  padding-bottom: env(safe-area-inset-bottom);
 }
 
 .modal.hidden { display: none; }
 
 .modal-content {
-  background: var(--surface);
-  border-radius: 16px 16px 0 0;
+  background: var(--sheet);
+  color: var(--ink);
+  font-family: var(--f-sans);
+  border-top: 1.5px solid var(--ink);
   width: 100%;
-  max-height: 85vh;
+  height: 100%;
   overflow-y: auto;
-  padding: 20px 16px;
+  overflow-x: hidden;
+  padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
   position: relative;
 }
 
 .modal-close {
-  position: absolute;
-  top: 16px;
+  position: fixed; /* stays reachable while the full-screen sheet scrolls */
+  top: calc(env(safe-area-inset-top) + 12px);
   right: 16px;
-  background: var(--surface2);
-  border: none;
-  color: var(--text-muted);
+  z-index: 2;
+  background: var(--sheet);
+  border: 1.5px solid var(--ink);
+  color: var(--ink);
   font-size: 16px;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.modal-title { font-size: 17px; font-weight: 600; color: var(--accent); margin-bottom: 4px; }
-.modal-date  { font-size: 12px; color: var(--text-muted); margin-bottom: 16px; }
+.modal-title { font-family: var(--f-display); font-style: italic; font-size: 20px; font-weight: 700; color: var(--ink); margin-bottom: 4px; }
+.modal-date  { font-size: 13px; color: var(--mut); margin-bottom: 16px; }
 .modal-exercise { margin-bottom: 16px; }
 .modal-exercise-name { font-size: 14px; font-weight: 600; margin-bottom: 6px; }
-.modal-series-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-.modal-series-table th { color: var(--text-muted); font-weight: 400; padding: 4px 6px; text-align: center; border-bottom: 1px solid #333; }
-.modal-act-label { font-size: 10px; color: var(--text-muted); display: block; }
+.modal-series-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.modal-series-table th { color: var(--mut); font-weight: 400; padding: 4px 6px; text-align: center; border-bottom: 1px solid var(--rule); }
+.modal-act-label { font-size: 12px; color: var(--mut); display: block; }
 .modal-series-table td { padding: 5px 6px; text-align: center; }
-.series-not-done td { color: var(--text-muted); }
+.series-not-done td { color: var(--mut); }
 .modal-footer { margin-top: 20px; display: flex; justify-content: flex-end; }
 .modal-footer--two { justify-content: space-between; }
 
