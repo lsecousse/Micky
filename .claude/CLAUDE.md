@@ -91,7 +91,7 @@ Régénérer : `node generate-assets.js`, puis regarder les PNG.
 
 ## Données
 
-- Supabase (`supabase.js`, schéma `supabase-schema.sql`, dossier `supabase/`) : authentification et stockage des séances, programmes, mesures. Plus de localStorage `gym_sessions`.
+- Supabase (`supabase.js`, schéma `supabase-schema.sql`, dossier `supabase/`) : authentification et stockage des séances, programmes, mesures. Plus de localStorage `gym_sessions` ; le localStorage ne sert plus que de filet de sécurité pour la séance en cours (`app.js`, reprise après fermeture).
 
 ## Instructions Claude Code
 
