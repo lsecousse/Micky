@@ -137,7 +137,7 @@ function makeActivityRow({ type = 'weight', label = '', name = '', reps = '', we
   fieldsDiv.className = 'activity-fields flex-1 flex items-baseline gap-2';
 
   const restWrap = document.createElement('div');
-  restWrap.className = `flex items-baseline gap-2 ${_FIELD_LINE} shrink-0 w-[132px]`;
+  restWrap.className = `activity-rest-wrap flex items-baseline gap-2 ${_FIELD_LINE} shrink-0 w-[132px]`;
   restWrap.innerHTML = `
     <span class="${_UNIT}">repos</span>
     <input type="number" inputmode="numeric" min="0" placeholder="0" value="${rest}"
@@ -155,34 +155,19 @@ function makeActivityRow({ type = 'weight', label = '', name = '', reps = '', we
 /* ── Éditeur d'exercice ────────────────────────────────── */
 // `source` = programme exercise shown by the card: saving keeps what the card does not edit
 // (_shown = what the card and its rows displayed when built, to tell which fields changed).
-function makeExerciseCard({ name = '', sets = 3, activities = null, comment = '', source = null } = {}) {
+// `member` = super set member: no « Séries » line, no rest per activity (the group sets them), no ↑ ↓.
+// `onMove(dir)` / `onDelete()` replace the in-place DOM move / removal (programme editor).
+function makeExerciseCard({ name = '', sets = 3, activities = null, comment = '', source = null,
+  member = false, onMove = null, onDelete = null } = {}) {
   const card = document.createElement('div');
-  card.className = _CARD;
+  // Member: the hidden rest wraps stay in the DOM so the card still reads them back
+  card.className = member ? `${_CARD} [&_.activity-rest-wrap]:hidden` : _CARD;
 
-  // Header (mock .card .ch): name + reorder + delete
-  const header = document.createElement('div');
-  header.className = 'flex items-center gap-2';
-  header.innerHTML = `
-    <input type="text" maxlength="60" placeholder="Nom de l'exercice" value="${escapeHtml(name)}"
-      class="${_NAME_INPUT}" />
-    <button type="button" class="exercise-move-btn ${_BTN_GHOST}" data-dir="up" title="Monter" aria-label="Monter">↑</button>
-    <button type="button" class="exercise-move-btn ${_BTN_GHOST}" data-dir="down" title="Descendre" aria-label="Descendre">↓</button>
-    <button type="button" class="exercise-del-btn ${_BTN_DEL}">Suppr</button>
-  `;
-  header.querySelector('[data-dir="up"]').addEventListener('click', () => {
-    const prev = card.previousElementSibling;
-    if (prev) card.parentNode.insertBefore(card, prev);
-  });
-  header.querySelector('[data-dir="down"]').addEventListener('click', () => {
-    const next = card.nextElementSibling;
-    if (next) card.parentNode.insertBefore(next, card);
-  });
-  header.querySelector('.exercise-del-btn').addEventListener('click', () => card.remove());
-  card.appendChild(header);
+  card.appendChild(_makeExerciseHeader(card, name, { member, onMove, onDelete }));
 
-  // Nombre de séries
+  // Nombre de séries (hidden, still read back, for a member)
   const setsRow = document.createElement('div');
-  setsRow.className = 'flex items-baseline gap-3';
+  setsRow.className = member ? 'hidden' : 'flex items-baseline gap-3';
   setsRow.innerHTML = `
     <p class="text-[13px] text-mut m-0 shrink-0">Séries</p>
     <div class="w-[72px] flex items-baseline gap-2 ${_FIELD_LINE}">
@@ -224,6 +209,34 @@ function makeExerciseCard({ name = '', sets = 3, activities = null, comment = ''
 
   if (source) Object.assign(card, { _shown: _readExerciseFields(card), _source: source });
   return card;
+}
+
+// Header (mock .card .ch): name + reorder (not for a member) + delete
+function _makeExerciseHeader(card, name, { member, onMove, onDelete }) {
+  const header = document.createElement('div');
+  header.className = 'flex items-center gap-2';
+  const moves = member ? '' : `
+    <button type="button" class="exercise-move-btn ${_BTN_GHOST}" data-dir="up" title="Monter" aria-label="Monter">↑</button>
+    <button type="button" class="exercise-move-btn ${_BTN_GHOST}" data-dir="down" title="Descendre" aria-label="Descendre">↓</button>`;
+  header.innerHTML = `
+    <input type="text" maxlength="60" placeholder="Nom de l'exercice" value="${escapeHtml(name)}"
+      class="${_NAME_INPUT}" />${moves}
+    <button type="button" class="exercise-del-btn ${_BTN_DEL}">Suppr</button>
+  `;
+  header.querySelectorAll('.exercise-move-btn').forEach(btn => btn.addEventListener('click', () => {
+    const dir = btn.dataset.dir === 'up' ? -1 : 1;
+    if (onMove) onMove(dir);
+    else _moveCardInPlace(card, dir);
+  }));
+  header.querySelector('.exercise-del-btn').addEventListener('click', () => (onDelete ? onDelete() : card.remove()));
+  return header;
+}
+
+function _moveCardInPlace(card, dir) {
+  const sibling = dir < 0 ? card.previousElementSibling : card.nextElementSibling;
+  if (!sibling) return;
+  if (dir < 0) card.parentNode.insertBefore(card, sibling);
+  else card.parentNode.insertBefore(sibling, card);
 }
 
 function _makeCommentInput(comment) {

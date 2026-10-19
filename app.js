@@ -5217,13 +5217,18 @@ function openProgrammeEditor(programme = null) {
   const tab = document.getElementById('screen-params-body');
   tab.innerHTML = '';
   let category = programme?.category || 'fonte';
+  // Fonte model: the cards are drawn from `exercises`; `openMember` = member whose card is shown
+  let exercises = [];
+  let openMember = null;
 
   const saveBtn = document.createElement('button');
   saveBtn.id = 'prog-save';
   saveBtn.type = 'button';
   saveBtn.className = 'h-10 px-3.5 bg-ink text-paper rounded text-[14px] font-medium active:opacity-80 transition';
   saveBtn.textContent = 'Enregistrer';
-  saveBtn.addEventListener('click', () => saveProgrammeFromEditor(programme ? programme.id : null, category));
+  saveBtn.addEventListener('click', () => saveProgrammeFromEditor(programme ? programme.id : null, category, category === 'cardio'
+    ? Array.from(exercisesList.querySelectorAll('.exercise-card')).map(readCardioExerciseCard)
+    : programmeForSave(syncEditorFromDom(exercisesList))));
   setParamsHeader({ editing: true, title: programme?.name || 'Nouveau programme', action: saveBtn });
 
   const form = document.createElement('div');
@@ -5263,53 +5268,204 @@ function openProgrammeEditor(programme = null) {
   exercisesList.className = 'space-y-3';
   form.appendChild(exercisesList);
 
-  function fillExercises(cat, exercises) {
+  const ui = {
+    isOpen: index => index === openMember,
+    // Structure action: read the DOM back, apply a pure lib function, redraw
+    act(change) {
+      try {
+        exercises = change(syncEditorFromDom(exercisesList));
+        openMember = null;
+        render();
+      } catch (err) {
+        showToast(err.message);
+      }
+    },
+    toggleMember(index) {
+      openMember = openMember === index ? null : index;
+      exercisesList.querySelectorAll('[data-member-card]').forEach(card => {
+        const closed = Number(card.dataset.memberCard) !== openMember;
+        card.hidden = closed;
+        card.classList.toggle('hidden', closed);
+      });
+    },
+  };
+
+  function render() {
+    const scroll = tab.scrollTop;
+    renderEditorExercises(exercisesList, exercises, ui);
+    tab.scrollTop = scroll;
+  }
+
+  function fillExercises(cat, source) {
     exercisesList.innerHTML = '';
     if (cat === 'cardio') {
-      if (exercises?.length) {
-        exercises.forEach(ex => exercisesList.appendChild(makeCardioExerciseCard({
+      if (source?.length) {
+        source.forEach(ex => exercisesList.appendChild(makeCardioExerciseCard({
           name: ex.name || '', duration: ex.duration ?? '', power: ex.power ?? '', comment: ex.comment || '',
           source: ex,
         })));
       } else {
         exercisesList.appendChild(makeCardioExerciseCard());
       }
-    } else {
-      if (exercises?.length) {
-        exercises.forEach(ex => {
-          const m = migrateExercise(ex);
-          const acts = m.activities.map(act => ({
-            type: act.type, label: act.label || '', name: act.name || '',
-            reps: act.type === 'weight' ? (act.reps ?? '') : '',
-            weight: act.type === 'weight' ? (act.weight ?? '') : '',
-            duration: act.type !== 'weight' ? (act.duration ?? '') : '',
-            rest: act.rest ?? '',
-          }));
-          exercisesList.appendChild(makeExerciseCard({
-            name: ex.name || '', sets: ex.sets || m.series?.length || ex.count || 3,
-            activities: acts, comment: ex.comment || '', source: m,
-          }));
-        });
-      } else {
-        exercisesList.appendChild(makeExerciseCard());
-      }
+      return;
     }
+    exercises = source?.length ? source.map(migrateExercise) : [newEditorExercise()];
+    openMember = null;
+    render();
   }
   fillExercises(category, programme?.exercises);
 
   tab.appendChild(paramsDashedButton('+ Exercice', () => {
-    exercisesList.appendChild(category === 'cardio' ? makeCardioExerciseCard() : makeExerciseCard());
+    if (category === 'cardio') exercisesList.appendChild(makeCardioExerciseCard());
+    else ui.act(list => [...list, newEditorExercise()]);
   }, 'px-4'));
 }
 
-async function saveProgrammeFromEditor(existingId, category) {
+// Fonte editor DOM → exercises: the cards in array order, then the settings of each group card
+function syncEditorFromDom(list) {
+  let exercises = Array.from(list.querySelectorAll('.exercise-card')).map(readExerciseCard);
+  list.querySelectorAll('.gcard').forEach(card => {
+    const raw = {};
+    card.querySelectorAll('[data-group-setting]').forEach(input => { raw[input.dataset.groupSetting] = input.value; });
+    exercises = applyGroupSettingsInput(exercises, card.dataset.groupId, raw);
+  });
+  return exercises;
+}
+
+// Draws the editor blocks, with « Lier au suivant » between two linkable blocks
+function renderEditorExercises(list, exercises, ui) {
+  list.innerHTML = '';
+  editorBlocks(exercises).forEach(block => {
+    list.appendChild(block.kind === 'group'
+      ? editorGroupCard(block, exercises, ui)
+      : editorSingleCard(block.indices[0], exercises, ui));
+    const last = block.indices[block.indices.length - 1];
+    if (block.canLinkNext) list.appendChild(editorLinkRow(() => ui.act(xs => linkNextExercise(xs, last))));
+  });
+}
+
+function editorSingleCard(index, exercises, ui) {
+  return makeExerciseCard({
+    ...editorCardFields(exercises[index]), source: exercises[index],
+    onMove:   dir => ui.act(xs => moveExerciseBlock(xs, index, dir)),
+    onDelete: () => ui.act(xs => removeExerciseKeepingGroups(xs, index)),
+  });
+}
+
+// Mock .link: dashed button between two rule lines
+function editorLinkRow(onLink) {
+  const row = document.createElement('div');
+  row.className = 'link flex items-center gap-2.5';
+  row.innerHTML = `
+    <span class="flex-1 h-px bg-rule"></span>
+    <button type="button" class="h-9 px-3 border-[1.5px] border-dashed border-ink rounded text-[13px] font-medium text-ink active:bg-ink/10 transition">Lier au suivant</button>
+    <span class="flex-1 h-px bg-rule"></span>`;
+  row.querySelector('button').addEventListener('click', onLink);
+  return row;
+}
+
+// Mock .gcard: kind + block arrows, settings, one line per member (its card below it), footer
+function editorGroupCard(block, exercises, ui) {
+  const card = document.createElement('div');
+  card.className = 'gcard bg-sheet border-[1.5px] border-solid border-ink rounded';
+  card.dataset.groupId = exercises[block.indices[0]].group.id;
+  card.innerHTML = `
+    <div class="gt flex items-center justify-between gap-2 px-3.5 py-2.5 border-0 border-solid border-b border-rule">
+      <p class="m-0 font-display italic font-bold text-[19px] text-ink">${block.label}</p>
+      <div class="flex gap-2">
+        <button type="button" data-block-move="-1" class="${_BTN_GHOST}" aria-label="Monter">↑</button>
+        <button type="button" data-block-move="1" class="${_BTN_GHOST}" aria-label="Descendre">↓</button>
+      </div>
+    </div>
+    ${groupSettingsHtml(block.settings)}`;
+  const first = block.indices[0];
+  card.querySelectorAll('[data-block-move]').forEach(btn => btn.addEventListener('click',
+    () => ui.act(xs => moveExerciseBlock(xs, first, Number(btn.dataset.blockMove)))));
+  block.indices.forEach((index, pos) => {
+    card.insertAdjacentHTML('beforeend', groupMemberRowHtml(exercises[index], pos, block.indices.length, index));
+    card.appendChild(editorMemberCard(index, exercises, ui));
+  });
+  card.insertAdjacentHTML('beforeend', groupFooterHtml(block.canLinkNext));
+  card.addEventListener('click', e => onGroupCardClick(e, block, ui));
+  return card;
+}
+
+function onGroupCardClick(e, block, ui) {
+  const move = e.target.closest('[data-member-move]');
+  const row  = e.target.closest('[data-member-index]');
+  const last = block.indices[block.indices.length - 1];
+  const groupId = e.currentTarget.dataset.groupId;
+  if (move) ui.act(xs => moveWithinSuperset(xs, Number(row.dataset.memberIndex), Number(move.dataset.memberMove)));
+  else if (e.target.closest('[data-action="link-next"]')) ui.act(xs => linkNextExercise(xs, last));
+  else if (e.target.closest('[data-action="ungroup"]')) ui.act(xs => ungroupSuperset(xs, groupId));
+  else if (row && !e.target.closest('button')) ui.toggleMember(Number(row.dataset.memberIndex));
+}
+
+const GROUP_SETTING_FIELDS = [
+  { key: 'rounds',     label: 'Tours',         min: 1, unit: '' },
+  { key: 'transition', label: 'Transition',    min: 0, unit: 's' },
+  { key: 'roundRest',  label: 'Repos de tour', min: 0, unit: 's' },
+];
+
+// Mock .gs: three number fields, transition and round rest in seconds
+function groupSettingsHtml(settings) {
+  const field = f => `
+    <label class="block min-w-0">
+      <span class="block text-[12px] text-mut">${f.label}</span>
+      <span class="mt-1 flex items-baseline gap-1 border-0 border-solid border-b border-rule focus-within:border-ink transition">
+        <input type="number" inputmode="numeric" min="${f.min}" value="${settings[f.key] ?? ''}" data-group-setting="${f.key}"
+          class="w-full min-w-0 bg-transparent border-0 rounded-none p-0 font-mono font-semibold text-[22px] text-ink outline-none focus:ring-0" />
+        ${f.unit ? `<span class="text-[13px] text-mut shrink-0">${f.unit}</span>` : ''}
+      </span>
+    </label>`;
+  return `<div class="gs grid grid-cols-3 gap-2.5 px-3.5 py-2.5 border-0 border-solid border-b border-rule">${GROUP_SETTING_FIELDS.map(field).join('')}</div>`;
+}
+
+// Mock .ge: letter, name, summary without the series count, ↑ / ↓ inside the group
+function groupMemberRowHtml(ex, pos, count, index) {
+  const arrows = memberMoveDirs(pos, count).map(dir => dir < 0
+    ? `<button type="button" data-member-move="-1" class="${_BTN_GHOST}" aria-label="Monter dans le groupe">↑</button>`
+    : `<button type="button" data-member-move="1" class="${_BTN_GHOST}" aria-label="Descendre dans le groupe">↓</button>`).join('');
+  return `
+    <div class="ge flex items-center gap-2.5 ml-3.5 py-2.5 pl-3 pr-3.5 border-0 border-solid border-b border-l-2 border-rule border-l-ink cursor-pointer" data-member-index="${index}">
+      <span class="let w-4 shrink-0 font-display italic font-bold text-[18px] text-ink">${supersetMemberLetter(pos)}</span>
+      <div class="flex-1 min-w-0">
+        <p class="m-0 font-display italic font-bold text-[17px] text-ink truncate">${escapeHtml(ex.name || 'Sans nom')}</p>
+        <p class="m-0 mt-0.5 font-mono text-[12px] text-mut">${escapeHtml(memberSummary(ex))}</p>
+      </div>
+      <div class="flex gap-2 shrink-0">${arrows}</div>
+    </div>`;
+}
+
+// Mock .gf: « Lier le suivant » (only when linkable) | « Dégrouper »
+function groupFooterHtml(canLinkNext) {
+  const btn = 'h-11 text-[13px] font-medium active:bg-ink/10 transition';
+  const link = canLinkNext ? `<button type="button" data-action="link-next" class="${btn} text-ink">Lier le suivant</button>` : '';
+  const sep  = canLinkNext ? 'border-0 border-solid border-l border-rule' : '';
+  return `
+    <div class="gf grid ${canLinkNext ? 'grid-cols-2' : 'grid-cols-1'}">
+      ${link}<button type="button" data-action="ungroup" class="${btn} ${sep} text-mut">Dégrouper</button>
+    </div>`;
+}
+
+// Full card of a member, under its line; closed cards stay in the DOM (hidden) to be read back
+function editorMemberCard(index, exercises, ui) {
+  const card = makeExerciseCard({
+    ...editorCardFields(exercises[index]), source: exercises[index], member: true,
+    onDelete: () => ui.act(xs => removeExerciseKeepingGroups(xs, index)),
+  });
+  const closed = !ui.isOpen(index);
+  card.classList.add('mx-3.5', 'my-2.5');
+  card.classList.toggle('hidden', closed);
+  card.hidden = closed;
+  card.dataset.memberCard = index;
+  return card;
+}
+
+async function saveProgrammeFromEditor(existingId, category, exercises) {
   const name = document.getElementById('prog-name-input').value.trim();
   if (!name) { showAlert('Donne un nom au programme.'); return; }
-
-  const cards = document.querySelectorAll('#prog-exercises-list .exercise-card');
-  if (!cards.length) { showAlert('Ajoute au moins un exercice.'); return; }
-
-  const exercises = Array.from(cards).map(category === 'cardio' ? readCardioExerciseCard : readExerciseCard);
+  if (!exercises.length) { showAlert('Ajoute au moins un exercice.'); return; }
 
   const programmes = await loadProgrammes();
   if (existingId) {
