@@ -34,11 +34,16 @@ const MIGRATED_FUNCTIONS = [
   'renderMealPresetButtons', 'renderAlimentation', 'showFoodPhotoModal', 'openAddMealModal',
   'openMealPresetEditModal', 'openEveningAdviceModal', 'openAskQuestionModal',
   'fatCategory', 'corpsTrend', 'renderCorps', 'closeBodyAnalysisPopup', 'drawCorpsChart',
+  'setParamsHeader', 'paramsDashedButton', 'renderParams', 'programmeRow', 'openProgrammeEditor', 'saveProgrammeFromEditor',
+  'syncEditorFromDom', 'renderEditorExercises', 'editorSingleCard', 'editorLinkRow', 'editorGroupCard',
+  'groupSettingsHtml', 'groupMemberRowHtml', 'groupFooterHtml', 'editorMemberCard', 'onGroupCardClick',
   'makeField', 'makeSegment', 'makeOptionList', 'accountMasthead', 'renderProfil', 'renderClaudeApi', 'renderLogin',
 ];
+const MIGRATED_EDITOR_FUNCTIONS = ['updateActivityFields', 'makeActivityRow', 'makeExerciseCard', 'makeCardioExerciseCard',
+  '_makeExerciseHeader'];
 const MIGRATED_HTML_BLOCKS = ['DIALOG CUSTOM', 'TOAST', 'COUNTDOWN STICKY TOP BAR', 'HOME', 'À LA SALLE', 'MODAL ÉDITION ACTIVITÉ (live)',
   'TIROIR GROUPER (live)', 'CHRONO FULLSCREEN', 'MINUTERIE FULLSCREEN', 'DIALOG DÉGROUPER', 'HISTORIQUE', 'MODAL DÉTAIL SÉANCE',
-  'STATS', 'ALIMENTATION', 'MODAL AJOUTER REPAS', 'MODAL PRESET PETIT-DEJ', 'COMPOSITION CORPORELLE',
+  'STATS', 'ALIMENTATION', 'MODAL AJOUTER REPAS', 'MODAL PRESET PETIT-DEJ', 'COMPOSITION CORPORELLE', 'PARAMÈTRES',
   'PROFIL', 'CLÉ API CLAUDE', 'LOGIN', 'LOADING SCREEN'];
 const MIGRATED_CSS_SELECTORS = ['#toast', '.dialog', '#countdown', '.live-edit', '.feedback-ia', '#chrono', '#minuterie', '.modal',
   '.series-not-done', '#loading-screen'];
@@ -301,6 +306,49 @@ describe('carnetTokensShould', () => {
 
   it.each(MIGRATED_FUNCTIONS)('migrated function %s has no Direction A leftover', (name) => {
     expect(directionALeftovers(functionSource('app.js', name))).toEqual([]);
+  });
+
+  it.each(MIGRATED_EDITOR_FUNCTIONS)('migrated editor function %s has no Direction A leftover', (name) => {
+    expect(directionALeftovers(functionSource('exercise-editor.js', name))).toEqual([]);
+  });
+
+  it('exercise editor shared class constants have no Direction A leftover', () => {
+    const constants = read('exercise-editor.js').match(/^const _[A-Z_]+\s*=.*$/gm) ?? [];
+
+    expect(constants.length).toBeGreaterThan(0);
+    expect(constants.flatMap(directionALeftovers)).toEqual([]);
+  });
+
+  it('programme screens and exercise editor use no spaced uppercase', () => {
+    const units = [
+      ...['setParamsHeader', 'paramsDashedButton', 'renderParams', 'programmeRow', 'openProgrammeEditor', 'editorSingleCard',
+        'editorLinkRow', 'editorGroupCard', 'groupSettingsHtml', 'groupMemberRowHtml', 'groupFooterHtml', 'editorMemberCard'].map((name) => functionSource('app.js', name)),
+      ...MIGRATED_EDITOR_FUNCTIONS.map((name) => functionSource('exercise-editor.js', name)),
+      htmlBlock('index.html', 'PARAMÈTRES'),
+      (read('exercise-editor.js').match(/^const _[A-Z_]+\s*=.*$/gm) ?? []).join('\n'),
+    ];
+
+    expect(units.flatMap((src) => src.match(/\buppercase\b|tracking-\[/g) ?? [])).toEqual([]);
+  });
+
+  it('programme editor saves the category it holds, not one read from a class', () => {
+    expect(functionSource('app.js', 'saveProgrammeFromEditor')).toMatch(/^async function saveProgrammeFromEditor\(existingId, category, exercises\)/);
+    expect(functionSource('app.js', 'saveProgrammeFromEditor')).not.toContain('.prog-cat-btn');
+  });
+
+  it('activity rows override the back-office dark row and skip the hidden label line', () => {
+    const row = functionSource('exercise-editor.js', 'makeActivityRow');
+
+    expect(row).toMatch(/activity-row flex flex-col gap-3 bg-transparent/);
+    expect(row).not.toContain('space-y-');
+  });
+
+  it('editor title uses the mock top bar 13 px sans', () => {
+    expect(functionSource('app.js', 'setParamsHeader')).toContain('font-sans text-[13px]');
+  });
+
+  it('« + Exercice » shares the editor form gutter', () => {
+    expect(functionSource('app.js', 'openProgrammeEditor')).toMatch(/form\.className = 'px-4 [\s\S]*'px-4'\)\);/);
   });
 
   it.each(MIGRATED_HTML_BLOCKS)('migrated HTML block %s has no Direction A leftover', (marker) => {

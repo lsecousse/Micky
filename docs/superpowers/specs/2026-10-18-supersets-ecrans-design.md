@@ -118,3 +118,61 @@ la semaine prochaine sauf si tu coches) ».
 - `tests/carnet-tokens.test.js` : les nouvelles fonctions de rendu dans `MIGRATED_FUNCTIONS`.
 - Captures 390 px (Supabase simulé, harnais Playwright) : 01, 02, 02b, 03, 04, 05, et non-régression des écrans du
   lot 1 (série, repos, liste sans groupe).
+
+## Lot B — éditeur de programme mobile (écran 06) et écran Programmes en Carnet
+
+Décisions de l'orchestrateur (2026-10-19) : le lot B passe en Carnet l'éditeur mobile (`openProgrammeEditor`,
+`exercise-editor.js`) **et** la liste des programmes (`renderParams`, en-tête `#screen-params` d'`index.html`), qui
+partage son conteneur ; micky-look-carnet ne les touche pas (il passera le fond `body` en papier après ce lot). Le
+correctif de perte de données (PR #7 : la carte garde l'exercice d'origine, `mergeEditedExercise`) est déjà sur main.
+
+### Modèle de l'éditeur
+
+- L'éditeur tient un tableau `exercises` (fermeture d'`openProgrammeEditor`) et le dessine bloc par bloc
+  (`exerciseBlocks`). Toute action de structure suit le même chemin : relire le DOM dans le tableau (cartes via
+  `readExerciseCard`, réglages de groupe via leurs champs), appliquer une fonction pure de `lib/supersets.js`, redessiner.
+- Actions : ↑ / ↓ d'un bloc (`moveExerciseBlock`), ↑ / ↓ dans un groupe (`moveWithinSuperset`), « Lier au suivant » /
+  « Lier le suivant » (`linkNextExercise`), « Dégrouper » (`ungroupSuperset`), « Suppr » (`removeExerciseKeepingGroups`),
+  réglages (`setGroupSettings`), « + Exercice » (ajout en fin).
+- Enregistrer : relire, puis chaque membre d'un groupe reçoit `sets = group.rounds` (le groupe impose ses tours).
+- Catégorie cardio : pas de groupe (la lib refuse le cardio), pas de bouton de lien.
+
+### Écran 06 (maquette `designs/supersets/supersets.html`, figure 06)
+
+- Barre du haut en mode éditeur : « Annuler » (retour à la liste, rien n'est écrit), nom du programme, « Enregistrer »
+  (bouton plein `ink`). En mode liste : flèche retour et « Programmes ».
+- Carte exercice simple : nom en italique, ↑ ↓, « Suppr », séries, activités, commentaire (champs actuels, look Carnet).
+- Entre deux blocs liables (fonte, taille totale ≤ 4) : bouton texte « Lier au suivant ».
+- Carte groupe (`sheet`, contour 1,5 px `ink`) : titre « Super set » / « Tri-set » / « Circuit » (`supersetKindLabel`)
+  et ↑ ↓ du bloc ; trois réglages « Tours », « Transition », « Repos de tour » (chiffres en IBM Plex Mono, transition et
+  repos de tour saisis en secondes avec l'unité « s ») ; une ligne par membre : lettre A/B…, nom en
+  italique, résumé (`formatSeriesSummary` sans le nombre de séries : « 10 reps · 60 kg »), ↑ ou ↓ dans le groupe ; pied
+  « Lier le suivant » | « Dégrouper ».
+- Toucher la ligne d'un membre ouvre sa carte complète sous la ligne (une seule ouverte à la fois) ; dans un groupe, la
+  carte cache « Séries » et le repos de chaque activité (remplacés par tours / transition / repos de tour), garde
+  « Suppr ».
+- Réglages : Tours entier ≥ 1, Transition et Repos de tour entiers ≥ 0 (secondes) ; une saisie invalide reprend la
+  valeur précédente.
+
+### Écran Programmes (liste) en Carnet
+
+Même contenu et mêmes actions (↑ ↓ d'ordre, « Modifier », « Suppr » avec confirmation, « + Nouveau programme ») ;
+ligne du carnet : nom en italique, « Fonte · 5 exercices » en `mut` 13 px ; un programme qui contient un super set
+l'indique (« · 1 super set »).
+
+### Hors périmètre / coordination
+
+- `backoffice.js` utilise `makeExerciseCard` / `readExerciseCard` dans sa modale catalogue : la carte y prend le look
+  Carnet dès ce lot (le back-office est repeint au lot C pour l'éditeur de programme, au lot 6 de micky-look-carnet pour
+  le reste). Signalé à l'orchestrateur.
+- Pas de glisser-déposer sur mobile (↑ ↓ comme aujourd'hui).
+
+### Tests
+
+- TDD sur la logique pure (`lib/programme-editor.js`) : blocs de l'éditeur avec « liable au suivant », lecture des
+  réglages (bornes, saisie invalide), programme à enregistrer (`sets = rounds` des membres), résumé d'un membre,
+  libellé de la liste (« · 1 super set »).
+- `tests/carnet-tokens.test.js` : fonctions repeintes dans `MIGRATED_FUNCTIONS`, bloc `PARAMÈTRES` dans
+  `MIGRATED_HTML_BLOCKS`.
+- Captures 390 px (Supabase simulé) : liste des programmes, éditeur sans groupe, éditeur avec le super set, membre
+  ouvert, après « Lier au suivant », cardio ; enregistrement simulé : le programme envoyé garde le groupe.

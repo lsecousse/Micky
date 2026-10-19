@@ -209,7 +209,7 @@ document.getElementById('back-history').addEventListener('click', () => showScre
 document.getElementById('back-corps').addEventListener('click',   () => showScreen('home'));
 document.getElementById('back-stats').addEventListener('click',   () => showScreen('home'));
 document.getElementById('back-alim').addEventListener('click',    () => showScreen('home'));
-document.getElementById('back-params').addEventListener('click',  () => showScreen('home'));
+document.getElementById('back-params').addEventListener('click',  () => (paramsEditing ? renderParams() : showScreen('home')));
 document.getElementById('back-profil').addEventListener('click',     () => showScreen('home'));
 document.getElementById('back-claude-api').addEventListener('click', () => showScreen('home'));
 document.getElementById('back-seance').addEventListener('click', () => {
@@ -1174,11 +1174,14 @@ function supersetListEntry(block, isMarked) {
   return entry;
 }
 
-// Dashed button under the list (mock .dashed): opens the « Grouper » sheet
+// Dashed button (mock .dashed): « Grouper des exercices », « + Nouveau programme », « + Exercice »
+const DASHED_BTN = 'w-full h-12 border-[1.5px] border-dashed border-ink rounded text-center text-[14px] font-medium text-ink active:bg-ink/10 transition';
+
+// Dashed button under the list: opens the « Grouper » sheet
 function groupOpenButton() {
   const box = document.createElement('div');
   box.className = 'px-5 pt-[18px] pb-5';
-  box.innerHTML = `<button id="group-open" class="w-full h-12 border-[1.5px] border-dashed border-ink rounded text-center text-[14px] font-medium text-ink active:bg-ink/10 transition">Grouper des exercices</button>`;
+  box.innerHTML = `<button id="group-open" class="${DASHED_BTN}">Grouper des exercices</button>`;
   box.querySelector('#group-open').addEventListener('click', openGroupSheet);
   return box;
 }
@@ -5120,220 +5123,376 @@ function buildStatsProgression(sessions) {
 /* ═══════════════════════════════════════════════════════
    PARAMÈTRES — liste des programmes
 ═══════════════════════════════════════════════════════ */
+let paramsEditing = false; // true while the programme editor fills #screen-params-body
+
+const PARAMS_BACK_ARROW = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>';
+const PARAMS_MOVE_BTN = `${_BTN_GHOST} disabled:opacity-30 disabled:active:bg-transparent`; // _BTN_GHOST: exercise-editor.js
+
+// Header of the params screen: arrow + « Programmes » (list) or mock 06 top bar « Annuler » · title · action (editor)
+function setParamsHeader({ editing, title, action = null }) {
+  paramsEditing = editing;
+  const back = document.getElementById('back-params');
+  back.className = editing
+    ? 'h-10 shrink-0 text-[14px] font-medium text-ink active:text-mut transition'
+    : 'w-10 h-10 -ml-2 flex items-center justify-center shrink-0 text-ink active:text-mut transition';
+  back.innerHTML = editing ? 'Annuler' : PARAMS_BACK_ARROW;
+  if (editing) back.removeAttribute('aria-label');
+  else back.setAttribute('aria-label', 'Retour');
+  const titleEl = document.getElementById('params-title');
+  titleEl.textContent = title;
+  // Editor title follows mock .top b (13 px sans); list title matches the other screen headers
+  titleEl.className = editing
+    ? 'flex-1 min-w-0 truncate text-center font-sans text-[13px] font-medium text-ink'
+    : 'flex-1 min-w-0 truncate font-display italic text-[20px] font-bold tracking-tight text-ink';
+  const slot = document.getElementById('params-action');
+  slot.innerHTML = '';
+  if (action) slot.appendChild(action);
+}
+
+// gutter: px-5 on the list (header alignment), px-4 in the editor (mock .ed, aligned with the cards)
+function paramsDashedButton(label, onClick, gutter = 'px-5') {
+  const box = document.createElement('div');
+  box.className = `${gutter} pt-[18px] pb-5`;
+  box.innerHTML = `<button type="button" class="${DASHED_BTN}">${label}</button>`;
+  box.querySelector('button').addEventListener('click', onClick);
+  return box;
+}
+
 async function renderParams() {
+  setParamsHeader({ editing: false, title: 'Programmes' });
   const tab = document.getElementById('screen-params-body');
   tab.innerHTML = '';
-
-  // Masthead
-  const masthead = document.createElement('section');
-  masthead.className = 'px-5 pt-9 pb-9 accent-line';
-  masthead.innerHTML = `
-    <h1 class="font-display font-black h-display text-a-paper">
-      Tes<br/>
-      <span class="text-a-paper/40"><span class="text-a-acid not-italic font-black">·</span> programmes.</span>
-    </h1>
-  `;
-  tab.appendChild(masthead);
 
   const programmes = await loadProgrammes();
 
   if (!programmes.length) {
     const msg = document.createElement('p');
-    msg.className = 'font-display italic text-[14px] text-a-muted px-5 py-4';
+    msg.className = 'm-0 px-5 pt-6 pb-2 text-[14px] text-mut';
     msg.textContent = 'Aucun programme.';
     tab.appendChild(msg);
   } else {
     const list = document.createElement('div');
-    list.className = 'border-y border-a-border';
-
-    programmes.forEach((prog, idx) => {
-      const row = document.createElement('div');
-      const isLast = idx === programmes.length - 1;
-      row.className = `flex items-center gap-3 px-5 py-4 ${isLast ? '' : 'border-b border-a-border/70'}`;
-      row.innerHTML = `
-        <div class="flex flex-col gap-1 shrink-0">
-          <button data-dir="up" ${idx === 0 ? 'disabled' : ''} class="w-7 h-7 flex items-center justify-center border border-a-border text-a-paper text-[12px] active:border-a-acid active:text-a-acid disabled:opacity-30 disabled:active:border-a-border disabled:active:text-a-paper transition">↑</button>
-          <button data-dir="down" ${idx === programmes.length - 1 ? 'disabled' : ''} class="w-7 h-7 flex items-center justify-center border border-a-border text-a-paper text-[12px] active:border-a-acid active:text-a-acid disabled:opacity-30 disabled:active:border-a-border disabled:active:text-a-paper transition">↓</button>
-        </div>
-        <div class="flex-1 min-w-0">
-          <h4 class="font-display font-bold italic text-[17px] leading-tight text-a-paper truncate">${escapeHtml(prog.name)}</h4>
-          <p class="font-sans text-[9px] uppercase tracking-eyebrow text-a-muted mt-1">${prog.category === 'cardio' ? 'Cardio' : 'Fonte'} · ${prog.exercises.length} exo${prog.exercises.length > 1 ? 's' : ''}</p>
-        </div>
-        <div class="flex flex-col gap-1 shrink-0">
-          <button data-action="edit" class="px-3 py-1.5 border border-a-border text-a-paper font-sans text-[10px] uppercase tracking-eyebrow active:border-a-acid active:text-a-acid transition">Modifier</button>
-          <button data-action="del" class="px-3 py-1.5 border border-a-blood text-a-blood font-sans text-[10px] uppercase tracking-eyebrow active:bg-a-blood active:text-a-paper transition">Suppr</button>
-        </div>
-      `;
-      row.querySelector('[data-dir="up"]').addEventListener('click', async () => {
-        if (idx === 0) return;
-        const progs = await loadProgrammes();
-        [progs[idx - 1], progs[idx]] = [progs[idx], progs[idx - 1]];
-        await reorderProgrammesDB(progs);
-        await renderParams();
-      });
-      row.querySelector('[data-dir="down"]').addEventListener('click', async () => {
-        if (idx === programmes.length - 1) return;
-        const progs = await loadProgrammes();
-        [progs[idx], progs[idx + 1]] = [progs[idx + 1], progs[idx]];
-        await reorderProgrammesDB(progs);
-        await renderParams();
-      });
-      row.querySelector('[data-action="edit"]').addEventListener('click', () => openProgrammeEditor(prog));
-      row.querySelector('[data-action="del"]').addEventListener('click', () => {
-        showConfirm(`Supprimer "${prog.name}" ?`, async () => {
-          await deleteProgrammeDB(prog.id);
-          await renderParams();
-        });
-      });
-      list.appendChild(row);
-    });
+    programmes.forEach((prog, idx) => list.appendChild(programmeRow(prog, idx, programmes.length)));
     tab.appendChild(list);
   }
 
-  const addBtn = document.createElement('button');
-  addBtn.className = 'mx-5 mt-6 mb-12 w-[calc(100%-2.5rem)] py-3 border border-a-border text-a-paper font-sans text-[11px] uppercase tracking-eyebrow active:border-a-acid active:text-a-acid transition';
-  addBtn.textContent = '+ Nouveau programme';
-  addBtn.addEventListener('click', () => openProgrammeEditor());
-  tab.appendChild(addBtn);
+  tab.appendChild(paramsDashedButton('+ Nouveau programme', () => openProgrammeEditor()));
+}
+
+// One notebook line of the programme list: ↑ ↓ · name + meta · Modifier / Suppr
+function programmeRow(prog, idx, count) {
+  const row = document.createElement('div');
+  row.className = 'flex items-center gap-3 px-5 py-3.5 border-0 border-solid border-b border-rule';
+  row.innerHTML = `
+    <div class="flex flex-col gap-1.5 shrink-0">
+      <button type="button" data-dir="up" ${idx === 0 ? 'disabled' : ''} class="${PARAMS_MOVE_BTN}" aria-label="Monter">↑</button>
+      <button type="button" data-dir="down" ${idx === count - 1 ? 'disabled' : ''} class="${PARAMS_MOVE_BTN}" aria-label="Descendre">↓</button>
+    </div>
+    <div class="flex-1 min-w-0">
+      <p class="m-0 font-display italic font-bold text-[19px] leading-tight text-ink truncate">${escapeHtml(prog.name)}</p>
+      <p class="m-0 mt-1 text-[13px] text-mut">${escapeHtml(programmeListMeta(prog))}</p>
+    </div>
+    <div class="flex flex-col items-end gap-1.5 shrink-0">
+      <button type="button" data-action="edit" class="h-9 px-3 border-[1.5px] border-solid border-ink rounded text-[13px] font-medium text-ink active:bg-ink/10 transition">Modifier</button>
+      <button type="button" data-action="del" class="h-9 px-1 text-[13px] font-medium text-alert active:opacity-60 transition">Suppr</button>
+    </div>
+  `;
+  row.querySelector('[data-dir="up"]').addEventListener('click', async () => {
+    if (idx === 0) return;
+    const progs = await loadProgrammes();
+    [progs[idx - 1], progs[idx]] = [progs[idx], progs[idx - 1]];
+    await reorderProgrammesDB(progs);
+    await renderParams();
+  });
+  row.querySelector('[data-dir="down"]').addEventListener('click', async () => {
+    if (idx === count - 1) return;
+    const progs = await loadProgrammes();
+    [progs[idx], progs[idx + 1]] = [progs[idx + 1], progs[idx]];
+    await reorderProgrammesDB(progs);
+    await renderParams();
+  });
+  row.querySelector('[data-action="edit"]').addEventListener('click', () => openProgrammeEditor(prog));
+  row.querySelector('[data-action="del"]').addEventListener('click', () => {
+    showConfirm(`Supprimer "${prog.name}" ?`, async () => {
+      await deleteProgrammeDB(prog.id);
+      await renderParams();
+    });
+  });
+  return row;
 }
 
 /* ═══════════════════════════════════════════════════════
-   ÉDITEUR DE PROGRAMME
+   ÉDITEUR DE PROGRAMME (maquette 06)
 ═══════════════════════════════════════════════════════ */
 function openProgrammeEditor(programme = null) {
   const tab = document.getElementById('screen-params-body');
   tab.innerHTML = '';
+  let category = programme?.category || 'fonte';
+  // Fonte model: the cards are drawn from `exercises`; `openMember` = member whose card is shown
+  let exercises = [];
+  let openMember = null;
 
-  const isEdit = !!programme;
-
-  // Masthead
-  const masthead = document.createElement('section');
-  masthead.className = 'px-5 pt-9 pb-9 accent-line';
-  masthead.innerHTML = `
-    <h1 class="font-display font-black h-display text-a-paper">
-      ${isEdit ? 'Édite' : 'Crée'}<br/>
-      <span class="text-a-paper/40"><span class="text-a-acid not-italic font-black">·</span> ton programme.</span>
-    </h1>
-    <button id="prog-back" class="font-sans text-[10px] uppercase tracking-eyebrow text-a-muted active:text-a-paper transition flex items-center gap-2 mt-5">
-      <span aria-hidden>←</span><span>Retour</span>
-    </button>
-  `;
-  tab.appendChild(masthead);
-  masthead.querySelector('#prog-back').addEventListener('click', renderParams);
+  const saveBtn = document.createElement('button');
+  saveBtn.id = 'prog-save';
+  saveBtn.type = 'button';
+  saveBtn.className = 'h-10 px-3.5 bg-ink text-paper rounded text-[14px] font-medium active:opacity-80 transition';
+  saveBtn.textContent = 'Enregistrer';
+  saveBtn.addEventListener('click', () => {
+    let toSave;
+    try {
+      toSave = exercisesToSave();
+    } catch (err) {
+      showToast(err.message);
+      return;
+    }
+    saveProgrammeFromEditor(programme ? programme.id : null, category, toSave);
+  });
+  setParamsHeader({ editing: true, title: programme?.name || 'Nouveau programme', action: saveBtn });
 
   const form = document.createElement('div');
-  form.className = 'px-5 pt-6 pb-12 space-y-6';
+  form.className = 'px-4 pt-4 pb-2 space-y-5';
   tab.appendChild(form);
 
-  // Nom programme
-  const nameBlock = document.createElement('div');
-  nameBlock.innerHTML = `
-    <p class="font-sans text-[9px] uppercase tracking-[0.40em] text-a-muted mb-1.5">Nom du programme</p>
-    <input id="prog-name-input" type="text" maxlength="60" placeholder="Pectoraux & Bras" value="${escapeHtml(programme?.name)}"
-      class="w-full bg-transparent border-b border-a-border focus:border-a-acid font-display font-black italic text-[22px] text-a-paper py-2 outline-none transition" />
-  `;
-  form.appendChild(nameBlock);
+  form.insertAdjacentHTML('beforeend', `
+    <div>
+      <p class="m-0 mb-1 text-[13px] text-mut">Nom du programme</p>
+      <input id="prog-name-input" type="text" maxlength="60" placeholder="Pectoraux & Bras" value="${escapeHtml(programme?.name)}"
+        class="w-full bg-transparent border-0 border-solid border-b border-rule rounded-none focus:border-ink focus:ring-0 font-display italic font-bold text-[22px] text-ink placeholder:text-mut px-0 py-2 outline-none transition" />
+    </div>`);
 
-  // Toggle catégorie (segmented)
-  const currentCat = programme?.category || 'fonte';
-  const catBlock = document.createElement('div');
-  catBlock.innerHTML = `<p class="font-sans text-[9px] uppercase tracking-[0.40em] text-a-muted mb-1.5">Catégorie</p>`;
+  // Fonte / Cardio switch: the category lives in `category`, the active button carries data-active="1"
   const catWrap = document.createElement('div');
   catWrap.className = 'prog-category-toggle grid grid-cols-2 gap-2';
-  const renderCatBtn = (cat, isActive) => `<button type="button" data-cat="${cat}" class="prog-cat-btn py-3 border ${isActive ? 'border-a-acid bg-a-acid/[0.10] text-a-acid' : 'border-a-border text-a-paper active:border-a-paper'} font-sans text-[11px] uppercase tracking-eyebrow font-semibold transition">${cat === 'fonte' ? 'Fonte' : 'Cardio'}</button>`;
-  catWrap.innerHTML = renderCatBtn('fonte', currentCat === 'fonte') + renderCatBtn('cardio', currentCat === 'cardio');
-  catBlock.appendChild(catWrap);
-  form.appendChild(catBlock);
+  const catBtnClass = active => `prog-cat-btn h-10 rounded text-[14px] font-medium border-[1.5px] border-solid border-ink transition ${
+    active ? 'bg-ink text-paper' : 'bg-transparent text-ink active:bg-ink/10'
+  }`;
+  const renderCatBtns = () => {
+    catWrap.innerHTML = ['fonte', 'cardio'].map(cat =>
+      `<button type="button" data-cat="${cat}" ${cat === category ? 'data-active="1"' : ''} class="${catBtnClass(cat === category)}">${cat === 'fonte' ? 'Fonte' : 'Cardio'}</button>`
+    ).join('');
+  };
+  catWrap.addEventListener('click', e => {
+    const btn = e.target.closest('.prog-cat-btn');
+    if (!btn || btn.dataset.cat === category) return;
+    category = btn.dataset.cat;
+    renderCatBtns();
+    fillExercises(category, null);
+  });
+  renderCatBtns();
+  form.appendChild(catWrap);
 
-  function getActiveCat() {
-    return catWrap.querySelector('.prog-cat-btn[data-cat][data-active="1"]')?.dataset.cat
-      || (catWrap.querySelector('.prog-cat-btn.border-a-acid')?.dataset.cat)
-      || currentCat;
-  }
-
-  // Re-style les boutons cat selon le cat actif
-  function refreshCatBtns(active) {
-    catWrap.innerHTML = renderCatBtn('fonte', active === 'fonte') + renderCatBtn('cardio', active === 'cardio');
-    catWrap.querySelectorAll('.prog-cat-btn').forEach(b => {
-      b.addEventListener('click', () => {
-        const cat = b.dataset.cat;
-        if (cat === active) return;
-        refreshCatBtns(cat);
-        fillExercises(cat, null);
-      });
-    });
-  }
-  refreshCatBtns(currentCat);
-
-  // Section exercices
-  const exoSec = document.createElement('div');
-  exoSec.innerHTML = `<p class="font-sans text-[9px] uppercase tracking-[0.40em] text-a-muted mb-3">Exercices</p>`;
   const exercisesList = document.createElement('div');
   exercisesList.id = 'prog-exercises-list';
-  exercisesList.className = 'space-y-4';
-  exoSec.appendChild(exercisesList);
-  form.appendChild(exoSec);
+  exercisesList.className = 'space-y-3';
+  form.appendChild(exercisesList);
 
-  function fillExercises(cat, exercises) {
+  const ui = {
+    isOpen: index => index === openMember,
+    // Structure action: read the DOM back, apply a pure lib function, redraw
+    act(change) {
+      try {
+        exercises = change(syncEditorFromDom(exercisesList));
+        openMember = null;
+        render();
+      } catch (err) {
+        showToast(err.message);
+      }
+    },
+    toggleMember(index) {
+      openMember = openMember === index ? null : index;
+      exercisesList.querySelectorAll('[data-member-card]').forEach(card => {
+        const closed = Number(card.dataset.memberCard) !== openMember;
+        card.hidden = closed;
+        card.classList.toggle('hidden', closed);
+      });
+      exercisesList.querySelectorAll('[data-member-index]').forEach(row => row.querySelector('[data-member-toggle]')
+        .setAttribute('aria-expanded', String(Number(row.dataset.memberIndex) === openMember)));
+    },
+  };
+
+  function exercisesToSave() {
+    if (category === 'cardio') return Array.from(exercisesList.querySelectorAll('.exercise-card')).map(readCardioExerciseCard);
+    return programmeForSave(syncEditorFromDom(exercisesList));
+  }
+
+  function render() {
+    const scroll = tab.scrollTop;
+    renderEditorExercises(exercisesList, exercises, ui);
+    tab.scrollTop = scroll;
+  }
+
+  function fillExercises(cat, source) {
     exercisesList.innerHTML = '';
     if (cat === 'cardio') {
-      if (exercises?.length) {
-        exercises.forEach(ex => exercisesList.appendChild(makeCardioExerciseCard({
+      if (source?.length) {
+        source.forEach(ex => exercisesList.appendChild(makeCardioExerciseCard({
           name: ex.name || '', duration: ex.duration ?? '', power: ex.power ?? '', comment: ex.comment || '',
           source: ex,
         })));
       } else {
         exercisesList.appendChild(makeCardioExerciseCard());
       }
-    } else {
-      if (exercises?.length) {
-        exercises.forEach(ex => {
-          const m = migrateExercise(ex);
-          const acts = m.activities.map(act => ({
-            type: act.type, label: act.label || '', name: act.name || '',
-            reps: act.type === 'weight' ? (act.reps ?? '') : '',
-            weight: act.type === 'weight' ? (act.weight ?? '') : '',
-            duration: act.type !== 'weight' ? (act.duration ?? '') : '',
-            rest: act.rest ?? '',
-          }));
-          exercisesList.appendChild(makeExerciseCard({
-            name: ex.name || '', sets: ex.sets || m.series?.length || ex.count || 3,
-            activities: acts, comment: ex.comment || '', source: m,
-          }));
-        });
-      } else {
-        exercisesList.appendChild(makeExerciseCard());
-      }
+      return;
     }
+    exercises = source?.length ? source.map(migrateExercise) : [newEditorExercise()];
+    openMember = null;
+    render();
   }
-  fillExercises(currentCat, programme?.exercises);
+  fillExercises(category, programme?.exercises);
 
-  // CTAs : + Exercice / Enregistrer
-  const addExBtn = document.createElement('button');
-  addExBtn.className = 'w-full py-3 border border-a-border text-a-paper font-sans text-[11px] uppercase tracking-eyebrow active:border-a-acid active:text-a-acid transition';
-  addExBtn.textContent = '+ Exercice';
-  addExBtn.addEventListener('click', () => {
-    const cat = catWrap.querySelector('.prog-cat-btn.border-a-acid')?.dataset.cat || currentCat;
-    exercisesList.appendChild(cat === 'cardio' ? makeCardioExerciseCard() : makeExerciseCard());
-  });
-  form.appendChild(addExBtn);
-
-  const saveBtn = document.createElement('button');
-  saveBtn.className = 'w-full py-4 bg-a-acid text-a-ink font-display font-bold text-[14px] uppercase tracking-eyebrow active:bg-a-acid/80 transition';
-  saveBtn.textContent = isEdit ? 'Mettre à jour' : 'Créer le programme';
-  saveBtn.addEventListener('click', () => saveProgrammeFromEditor(programme ? programme.id : null));
-  form.appendChild(saveBtn);
+  tab.appendChild(paramsDashedButton('+ Exercice', () => {
+    if (category === 'cardio') exercisesList.appendChild(makeCardioExerciseCard());
+    else ui.act(list => [...list, newEditorExercise()]);
+  }, 'px-4'));
 }
 
-async function saveProgrammeFromEditor(existingId) {
+// Fonte editor DOM → exercises: the cards in array order, then the settings of each group card
+function syncEditorFromDom(list) {
+  let exercises = Array.from(list.querySelectorAll('.exercise-card')).map(readExerciseCard);
+  list.querySelectorAll('.gcard').forEach(card => {
+    const raw = {};
+    card.querySelectorAll('[data-group-setting]').forEach(input => { raw[input.dataset.groupSetting] = input.value; });
+    exercises = applyGroupSettingsInput(exercises, card.dataset.groupId, raw);
+  });
+  return exercises;
+}
+
+// Draws the editor blocks, with « Lier au suivant » between two linkable blocks
+function renderEditorExercises(list, exercises, ui) {
+  list.innerHTML = '';
+  editorBlocks(exercises).forEach(block => {
+    list.appendChild(block.kind === 'group'
+      ? editorGroupCard(block, exercises, ui)
+      : editorSingleCard(block.indices[0], exercises, ui));
+    const last = block.indices[block.indices.length - 1];
+    if (block.canLinkNext) list.appendChild(editorLinkRow(() => ui.act(xs => linkNextExercise(xs, last))));
+  });
+}
+
+function editorSingleCard(index, exercises, ui) {
+  return makeExerciseCard({
+    ...editorCardFields(exercises[index]), source: exercises[index],
+    onMove:   dir => ui.act(xs => moveExerciseBlock(xs, index, dir)),
+    onDelete: () => ui.act(xs => removeExerciseKeepingGroups(xs, index)),
+  });
+}
+
+// Mock .link: dashed button between two rule lines
+function editorLinkRow(onLink) {
+  const row = document.createElement('div');
+  row.className = 'link flex items-center gap-2.5';
+  row.innerHTML = `
+    <span class="flex-1 h-px bg-rule"></span>
+    <button type="button" class="h-9 px-3 border-[1.5px] border-dashed border-ink rounded text-[13px] font-medium text-ink active:bg-ink/10 transition">Lier au suivant</button>
+    <span class="flex-1 h-px bg-rule"></span>`;
+  row.querySelector('button').addEventListener('click', onLink);
+  return row;
+}
+
+// Mock .gcard: kind + block arrows, settings, one line per member (its card below it), footer
+function editorGroupCard(block, exercises, ui) {
+  const card = document.createElement('div');
+  card.className = 'gcard bg-sheet border-[1.5px] border-solid border-ink rounded';
+  card.dataset.groupId = exercises[block.indices[0]].group.id;
+  card.innerHTML = `
+    <div class="gt flex items-center justify-between gap-2 px-3.5 py-2.5 border-0 border-solid border-b border-rule">
+      <p class="m-0 font-display italic font-bold text-[19px] text-ink">${block.label}</p>
+      <div class="flex gap-2">
+        <button type="button" data-block-move="-1" class="${_BTN_GHOST}" aria-label="Monter">↑</button>
+        <button type="button" data-block-move="1" class="${_BTN_GHOST}" aria-label="Descendre">↓</button>
+      </div>
+    </div>
+    ${groupSettingsHtml(block.settings)}`;
+  const first = block.indices[0];
+  card.querySelectorAll('[data-block-move]').forEach(btn => btn.addEventListener('click',
+    () => ui.act(xs => moveExerciseBlock(xs, first, Number(btn.dataset.blockMove)))));
+  block.indices.forEach((index, pos) => {
+    card.insertAdjacentHTML('beforeend', groupMemberRowHtml(exercises[index], pos, block.indices.length, index));
+    card.appendChild(editorMemberCard(index, exercises, ui));
+  });
+  card.insertAdjacentHTML('beforeend', groupFooterHtml(block.canLinkNext));
+  card.addEventListener('click', e => onGroupCardClick(e, block, ui));
+  return card;
+}
+
+function onGroupCardClick(e, block, ui) {
+  const move = e.target.closest('[data-member-move]');
+  const row  = e.target.closest('[data-member-index]');
+  const last = block.indices[block.indices.length - 1];
+  const groupId = e.currentTarget.dataset.groupId;
+  if (move) ui.act(xs => moveWithinSuperset(xs, Number(row.dataset.memberIndex), Number(move.dataset.memberMove)));
+  else if (e.target.closest('[data-action="link-next"]')) ui.act(xs => linkNextExercise(xs, last));
+  else if (e.target.closest('[data-action="ungroup"]')) ui.act(xs => ungroupSuperset(xs, groupId));
+  else if (row && (e.target.closest('[data-member-toggle]') || !e.target.closest('button'))) {
+    ui.toggleMember(Number(row.dataset.memberIndex));
+  }
+}
+
+const GROUP_SETTING_FIELDS = [
+  { key: 'rounds',     label: 'Tours',         min: 1, unit: '' },
+  { key: 'transition', label: 'Transition',    min: 0, unit: 's' },
+  { key: 'roundRest',  label: 'Repos de tour', min: 0, unit: 's' },
+];
+
+// Mock .gs: three number fields, transition and round rest in seconds
+function groupSettingsHtml(settings) {
+  const field = f => `
+    <label class="block min-w-0">
+      <span class="block text-[12px] text-mut">${f.label}</span>
+      <span class="mt-1 flex items-baseline gap-1 border-0 border-solid border-b border-rule focus-within:border-ink transition">
+        <input type="number" inputmode="numeric" min="${f.min}" value="${settings[f.key] ?? ''}" data-group-setting="${f.key}"
+          class="w-full min-w-0 bg-transparent border-0 rounded-none p-0 font-mono font-semibold text-[22px] text-ink outline-none focus:ring-0" />
+        ${f.unit ? `<span class="text-[13px] text-mut shrink-0">${f.unit}</span>` : ''}
+      </span>
+    </label>`;
+  return `<div class="gs grid grid-cols-3 gap-2.5 px-3.5 py-2.5 border-0 border-solid border-b border-rule">${GROUP_SETTING_FIELDS.map(field).join('')}</div>`;
+}
+
+// Mock .ge: letter, name, summary without the series count, ↑ / ↓ inside the group
+function groupMemberRowHtml(ex, pos, count, index) {
+  const arrows = memberMoveDirs(pos, count).map(dir => dir < 0
+    ? `<button type="button" data-member-move="-1" class="${_BTN_GHOST}" aria-label="Monter dans le groupe">↑</button>`
+    : `<button type="button" data-member-move="1" class="${_BTN_GHOST}" aria-label="Descendre dans le groupe">↓</button>`).join('');
+  return `
+    <div class="ge flex items-center gap-2.5 ml-3.5 py-2.5 pl-3 pr-3.5 border-0 border-solid border-b border-l-2 border-rule border-l-ink cursor-pointer" data-member-index="${index}">
+      <span class="let w-4 shrink-0 font-display italic font-bold text-[18px] text-ink">${supersetMemberLetter(pos)}</span>
+      <button type="button" data-member-toggle class="flex-1 min-w-0 text-left" aria-expanded="false">
+        <span class="block font-display italic font-bold text-[17px] text-ink truncate">${escapeHtml(ex.name || 'Sans nom')}</span>
+        <span class="block mt-0.5 font-mono text-[12px] text-mut">${escapeHtml(memberSummary(ex))}</span>
+      </button>
+      <div class="flex gap-2 shrink-0">${arrows}</div>
+    </div>`;
+}
+
+// Mock .gf: « Lier le suivant » (only when linkable) | « Dégrouper »
+function groupFooterHtml(canLinkNext) {
+  const btn = 'h-11 text-[13px] font-medium active:bg-ink/10 transition';
+  const link = canLinkNext ? `<button type="button" data-action="link-next" class="${btn} text-ink">Lier le suivant</button>` : '';
+  const sep  = canLinkNext ? 'border-0 border-solid border-l border-rule' : '';
+  return `
+    <div class="gf grid ${canLinkNext ? 'grid-cols-2' : 'grid-cols-1'}">
+      ${link}<button type="button" data-action="ungroup" class="${btn} ${sep} text-mut">Dégrouper</button>
+    </div>`;
+}
+
+// Full card of a member, under its line; closed cards stay in the DOM (hidden) to be read back
+function editorMemberCard(index, exercises, ui) {
+  const card = makeExerciseCard({
+    ...editorCardFields(exercises[index]), source: exercises[index], member: true,
+    onDelete: () => ui.act(xs => removeExerciseKeepingGroups(xs, index)),
+  });
+  const closed = !ui.isOpen(index);
+  card.classList.add('mx-3.5', 'my-2.5');
+  card.classList.toggle('hidden', closed);
+  card.hidden = closed;
+  card.dataset.memberCard = index;
+  return card;
+}
+
+async function saveProgrammeFromEditor(existingId, category, exercises) {
   const name = document.getElementById('prog-name-input').value.trim();
   if (!name) { showAlert('Donne un nom au programme.'); return; }
-
-  const cards = document.querySelectorAll('#prog-exercises-list .exercise-card');
-  if (!cards.length) { showAlert('Ajoute au moins un exercice.'); return; }
-
-  const category = document.querySelector('.prog-cat-btn.border-a-acid')?.dataset.cat || 'fonte';
-  const exercises = Array.from(cards).map(category === 'cardio' ? readCardioExerciseCard : readExerciseCard);
+  if (!exercises.length) { showAlert('Ajoute au moins un exercice.'); return; }
 
   const programmes = await loadProgrammes();
   if (existingId) {
