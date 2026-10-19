@@ -714,23 +714,7 @@ async function openExoModal(entryOrExo, idx, isNew = false) {
   document.body.appendChild(overlay);
 
   const wrap = overlay.querySelector('#mx-card-wrap');
-  wrap.appendChild(makeExerciseCard({
-    name:       seed.name,
-    sets:       seed.sets,
-    activities: (seed.activities || []).map((a, i) => {
-      const v = seed.series?.[0]?.values?.[i] || {};
-      return {
-        type:     a.type,
-        label:    a.label ?? '',
-        name:     a.name  ?? '',
-        reps:     a.type === 'weight'    ? (v.reps     ?? '') : '',
-        weight:   a.type === 'weight'    ? (v.weight   ?? '') : '',
-        duration: a.type === 'countdown' ? (v.duration ?? a.duration ?? '') : '',
-        rest:     a.rest ?? '',
-      };
-    }),
-    comment:    seed.comment || '',
-  }));
+  wrap.appendChild(makeExerciseCard(boModalCardOptions(seed)));
 
   const close = () => overlay.remove();
   overlay.querySelector('#mx-close').addEventListener('click', close);
@@ -738,30 +722,7 @@ async function openExoModal(entryOrExo, idx, isNew = false) {
 
   overlay.querySelector('#mx-ok').addEventListener('click', () => {
     const card = wrap.querySelector('.exercise-card');
-    const readBack = readExerciseCard(card);
-    const exo = {
-      name:            readBack.name,
-      normalized_name: normalizeExerciseName(readBack.name),
-      category:        _progEditorState.category,
-      comment:         readBack.comment || '',
-      sets:            readBack.sets,
-      activities:      readBack.activities.map(a => ({
-        type:  a.type,
-        label: a.label,
-        name:  a.name,
-        ...(a.type === 'countdown' ? { duration: parseInt(a.duration, 10) || 0 } : {}),
-        rest:  parseInt(a.rest, 10) || 0,
-      })),
-      series:          Array.from({ length: readBack.sets }, () => ({
-        activityStates: {},
-        values: readBack.activities.map(a =>
-          a.type === 'weight'
-            ? { reps: parseInt(a.reps, 10) || 0, weight: parseFloat(a.weight) || 0 }
-            : a.type === 'countdown'
-              ? { duration: parseInt(a.duration, 10) || 0 }
-              : {}),
-      })),
-    };
+    const exo = boModalSavedExercise(readExerciseCard(card), _progEditorState.category);
 
     if (isNew) {
       _progEditorState.exercises.splice(idx, 0, exo);

@@ -37,6 +37,12 @@ describe('browser lib scripts', () => {
     expect(typeof context.escapeHtml).toBe('function');
   });
 
+  it('expose the exercise modal helpers in backoffice.html shared global scope', () => {
+    const context = loadInSharedScope(libScriptsOf('backoffice.html'));
+
+    expect(typeof context.boModalSavedExercise).toBe('function');
+  });
+
   it('estimate a programme duration in backoffice.html shared global scope', () => {
     const context   = loadInSharedScope(libScriptsOf('backoffice.html'));
     const programme = { exercises: [{ name: 'Curl', activities: [{ type: 'weight', rest: 60 }], sets: 4 }] };
