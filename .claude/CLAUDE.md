@@ -1,4 +1,4 @@
-# Gym Tracker — PWA
+# Mike Coach — PWA
 
 Application de suivi de séances de musculation, optimisée iPhone et Android.
 
@@ -6,128 +6,100 @@ Application de suivi de séances de musculation, optimisée iPhone et Android.
 - **index.html / app.js** → WebApp mobile (iPhone/Android), interactions tactiles (swipe, tap)
 - **backoffice.html / backoffice.js** → Interface coach sur PC, interactions souris/clavier (clic, flèches)
 
-## Structure cible
+## Structure
 ```
-gym-tracker/
-├── index.html
+Micky/
+├── index.html            # app mobile (écran de chargement inclus)
+├── app.js, lib/          # logique, modules testés
+├── style.css, src/input.css → dist/output.css (Tailwind CLI, committé)
 ├── manifest.json
 ├── service-worker.js
-├── app.js
-├── style.css
-├── generate-assets.js
+├── supabase.js           # client Supabase
+├── backoffice.html / backoffice.js
+├── generate-assets.js    # génère icons/ (node-canvas)
+├── fonts/                # Newsreader statique (opsz 72) + OFL.txt, pour generate-assets.js
 └── icons/
-    ├── icon-192.png
-    ├── icon-512.png
-    └── splash/
-        ├── splash-1170x2532.png
-        ├── splash-1125x2436.png
-        ├── splash-1242x2688.png
-        ├── splash-828x1792.png
-        ├── splash-750x1334.png
-        ├── splash-640x1136.png
-        ├── splash-1536x2048.png
-        └── splash-2048x2732.png
+    ├── icon-192.png, icon-512.png   # maskable
+    ├── favicon.png
+    ├── wordmark.png                 # image de l'écran de chargement
+    └── splash/                      # 15 splashs papier (non référencés par index.html)
 ```
 
 ## Fonctionnalités
 
-### Onglet "Nouvelle séance"
-- Champ nom de la séance + date (défaut : aujourd'hui)
-- Ajout dynamique d'exercices : nom de la machine, puis N séries avec répétitions / poids (kg) / temps de repos (sec)
-- Boutons pour ajouter ou supprimer une série, ajouter ou supprimer un exercice
-- Bouton "Enregistrer"
+Écrans de l'app (`showScreen` dans `app.js`) :
+- **Accueil** (`home`) : point d'entrée, menu utilisateur, accès Données corporelles et Alimentation
+- **Séance en salle** (`seance`) : choix du programme, séance en direct avec séries, repos décomptés, supersets, chrono et minuterie plein écran, retour IA en fin de séance
+- **Historique** (`history`) : séances passées, détail d'une séance
+- **Stats** (`stats`) : progression par exercice
+- **Alimentation** (`alim`) : repas et conseils
+- **Corps** (`corps`) : composition corporelle, courbe et analyse
+- **Profil** (`profil`), **Clé API Claude** (`claude-api`), **Connexion** (`login`)
+- **Programmes** (`params`) : liste et éditeur de programmes
 
-### Onglet "Historique"
-- Liste des séances triées par date décroissante
-- Résumé : nom, date, nb d'exercices, volume total (kg × reps)
-- Tap sur une séance → vue détail complète
-- Possibilité de supprimer une séance
-
-### Onglet "Données"
-- Export JSON (toutes les séances → téléchargement fichier)
-- Import JSON (merge avec l'existant)
+Back-office coach (`backoffice.html`) : liste des clients, programmes (catalogue d'exercices, éditeur, copie), séances et données de chaque client.
 
 ## PWA
 
 ### manifest.json
-- name "Gym Tracker", short_name "Gym"
+- name / short_name « Mike Coach »
 - display: standalone, orientation: portrait
-- theme_color: "#0f0f0f", background_color: "#0f0f0f"
-- icônes 192×192 et 512×512
+- theme_color et background_color : `#EEEDE8` (papier)
+- icônes 192×192 et 512×512, `purpose: "any maskable"`
 
 ### iOS — balises meta dans le <head>
 ```html
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Gym Tracker">
-<link rel="apple-touch-icon" href="icons/icon-192.png">
-
-<!-- Splashscreens -->
-<link rel="apple-touch-startup-image" href="icons/splash/splash-1170x2532.png"
-  media="(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3)">
-<link rel="apple-touch-startup-image" href="icons/splash/splash-1125x2436.png"
-  media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3)">
-<link rel="apple-touch-startup-image" href="icons/splash/splash-1242x2688.png"
-  media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 3)">
-<link rel="apple-touch-startup-image" href="icons/splash/splash-828x1792.png"
-  media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2)">
-<link rel="apple-touch-startup-image" href="icons/splash/splash-750x1334.png"
-  media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2)">
-<link rel="apple-touch-startup-image" href="icons/splash/splash-640x1136.png"
-  media="(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2)">
-<link rel="apple-touch-startup-image" href="icons/splash/splash-1536x2048.png"
-  media="(device-width: 768px) and (device-height: 1024px) and (-webkit-device-pixel-ratio: 2)">
-<link rel="apple-touch-startup-image" href="icons/splash/splash-2048x2732.png"
-  media="(device-width: 1024px) and (device-height: 1366px) and (-webkit-device-pixel-ratio: 2)">
+<meta name="theme-color" content="#EEEDE8" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="apple-mobile-web-app-title" content="Mike Coach" />
+<link rel="apple-touch-icon" href="icons/icon-192.png" />
+<link rel="icon" type="image/png" href="icons/favicon.png" />
 ```
+- Barre d'état claire (`default`) sur fond papier.
+- **Pas de splash iOS** : les liens `apple-touch-startup-image` ont été retirés volontairement (commit 3cdaed3) et remplacés par l'écran de chargement HTML `#loading-screen` (fond `bg-paper`, `icons/wordmark.png`, version en 13 px `text-mut`). Ne pas les remettre.
+- Une nouvelle icône n'apparaît sur l'écran d'accueil qu'après réinstallation de la PWA.
 
 ### Android
-- Le splashscreen Android est généré automatiquement par Chrome à partir de `background_color` + icône 512px dans le manifest
-- Pas de fichier supplémentaire nécessaire
+- Le splashscreen Android est généré par Chrome à partir de `background_color` + icône 512 px du manifest.
 
 ### service-worker.js
-- Cache shell statique au premier chargement
-- Stratégie cache-first pour tous les assets
-- CACHE_NAME versionné (incrémenter à chaque mise à jour)
+- Cache du shell (`SHELL`) à l'installation, stratégie cache-first
+- `CACHE_NAME = 'mikecoach-' + horodatage` (`date +%Y%m%d%H%M%S`) à changer à chaque livraison
 
 ## Script generate-assets.js
 
-Script Node.js utilisant le package `canvas` (npm install canvas) qui génère :
+Script Node.js (`canvas`, déjà en dépendance) qui dessine l'identité Carnet. Polices : instances statiques de Newsreader dans `fonts/` (Bold et Medium Italic, optique 72, tirées de la police variable Google Fonts avec fontTools `varLib.instancer`, licence `fonts/OFL.txt`).
 
-**Icônes (icon-192.png et icon-512.png) :**
-- Fond carré arrondi #1a1a1a
-- Haltère (barbell) dessinée en canvas, couleur #FF6B00
-- Texte "GT" en dessous, police monospace, couleur #FF6B00
+Couleurs : papier `#EEEDE8`, encre `#1B1C1F`, surligneur `#FFE45C`, rien d'autre.
 
-**Splashscreens (tous les PNG dans icons/splash/) :**
-- Fond plein #0f0f0f
-- Haltère centrée, couleur #FF6B00, taille proportionnelle à l'écran
-- Texte "Gym Tracker" en dessous, police monospace, couleur #FF6B00
-- Sous-titre "par Micky" en #888, taille plus petite
+- **Icônes** `icon-192.png`, `icon-512.png` (maskable) : fond papier plein jusqu'aux bords (l'OS arrondit), « M&K » Newsreader 700 encre, bande surligneur derrière le bas des lettres ; tout le contenu dans le cercle central de 80 %.
+- **Favicon** `favicon.png` (64 px) : même « M&K » serré.
+- **Wordmark** `wordmark.png` (1200×800) : « M&K » + « Mike Coach. » en Newsreader italique, pour l'écran de chargement.
+- **Splashs** `icons/splash/*.png` (15 tailles) : fond papier, wordmark centré.
 
-Après création du script, exécuter : `node generate-assets.js`
+Régénérer : `node generate-assets.js`, puis regarder les PNG.
 
 ## Design
 
-- Thème sombre, minimaliste, mobile-first
-- Typography: serif display + clean sans body (jamais Inter seul)
-- Couleur d'accent : HSL `14 100% 60%` (micky orange)
-- CSS via Tailwind CLI (no bundler)
+- Look **Carnet** (voir « Design system — Carnet » plus bas) : papier clair, encre, surligneur ; mobile-first
+- Typographie : Newsreader (display) + IBM Plex Sans (texte) + IBM Plex Mono (chiffres)
+- CSS via Tailwind CLI (no bundler) : `npm run css`
 - `overscroll-behavior: none` sur body (anti-bounce iOS)
 - `viewport-fit=cover` dans la balise meta viewport
 - Safe area insets pour iPhone avec encoche (`env(safe-area-inset-*)`)
 
 ## Données
 
-- localStorage, clé `gym_sessions`, tableau JSON
+- Supabase (`supabase.js`, schéma `supabase-schema.sql`, dossier `supabase/`) : authentification et stockage des séances, programmes, mesures. Plus de localStorage `gym_sessions` ; le localStorage ne sert plus que de filet de sécurité pour la séance en cours (`app.js`, reprise après fermeture).
 
 ## Instructions Claude Code
 
-1. Crée tous les fichiers de la structure cible
-2. Installe la dépendance : `npm init -y && npm install canvas`
-3. Exécute `node generate-assets.js` pour générer icônes et splashscreens
-4. Vérifie que tous les PNG sont bien générés dans `icons/`
-5. À la fin, affiche les étapes pour déployer sur Netlify (drag & drop du dossier)
+1. `npm install`
+2. `npm run css` après toute modification de classes Tailwind (`dist/output.css` est committé)
+3. `npx vitest run` avant chaque commit
+4. `node generate-assets.js` si l'identité (icônes, splashs, wordmark) change
+5. Changer `CACHE_NAME` dans `service-worker.js` à chaque livraison
 
 # Frontend (HTML vanilla)
 

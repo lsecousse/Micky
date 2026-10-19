@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mikecoach-20261019104012';
+const CACHE_NAME = 'mikecoach-20261019104131';
 const SHELL = [
   '/',
   '/index.html',
@@ -23,6 +23,8 @@ const SHELL = [
   '/manifest.json',
   '/icons/icon-192.png',
   '/icons/icon-512.png',
+  '/icons/favicon.png',
+  '/icons/wordmark.png',
   '/icons/splash/splash-1320x2868.png',
   '/icons/splash/splash-1206x2622.png',
   '/icons/splash/splash-1290x2796.png',
