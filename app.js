@@ -3197,7 +3197,7 @@ async function renderCorps() {
     if (cat) {
       const badge = document.createElement('p');
       badge.className = 'font-sans text-[13px] text-mut mt-0.5';
-      badge.textContent = `Graisse ${formatKg(grPct)}% — ${cat.label}`;
+      badge.textContent = `Graisse ${formatKg(grPct)}\u202F% — ${cat.label}`;
       card.appendChild(badge);
     }
 
@@ -3214,7 +3214,7 @@ async function renderCorps() {
     ].filter(e => e.value !== null && e.value !== undefined).forEach(({ label, value, unit }) => {
       const chip = document.createElement('span');
       chip.className = 'font-sans text-[13px] text-mut whitespace-nowrap';
-      chip.innerHTML = `${label} <span class="font-mono text-[14px] text-ink num-stat">${formatKg(value)}</span>${unit}`;
+      chip.innerHTML = `${label} <span class="font-mono text-[14px] text-ink num-stat">${formatKg(value)}</span>\u202F${unit}`;
       values.appendChild(chip);
     });
 
@@ -3224,7 +3224,6 @@ async function renderCorps() {
 }
 
 function openBodyAnalysisPopupLoading() {
-  const modal = document.getElementById('modal');
   const modalBody = document.getElementById('modal-body');
   modalBody.innerHTML = `
     <div id="body-analysis-popup" class="px-5 pt-5 pb-10 text-ink font-sans">
@@ -3236,7 +3235,7 @@ function openBodyAnalysisPopupLoading() {
       </div>
     </div>
   `;
-  modal.classList.remove('hidden');
+  showModalSheet();
 }
 
 function fillBodyAnalysisPopup(text) {
@@ -3603,6 +3602,11 @@ async function openModal(session) {
     }
   }
 
+  showModalSheet();
+}
+
+// Every opener of the shared full-screen sheet starts at the top
+function showModalSheet() {
   document.querySelector('#modal .modal-content').scrollTop = 0;
   document.getElementById('modal').classList.remove('hidden');
 }
@@ -3834,7 +3838,6 @@ async function showPostSessionFeedback(session) {
   const apiKey = await getClaudeApiKeyDB();
   if (!apiKey) return;
 
-  const modal = document.getElementById('modal');
   const body = document.getElementById('modal-body');
 
   const name = session.programmeName || session.name || 'Séance';
@@ -3858,7 +3861,7 @@ async function showPostSessionFeedback(session) {
       <p>Analyse en cours...</p>
     </div>
   `);
-  modal.classList.remove('hidden');
+  showModalSheet();
 
   try {
     const feedback = await generateAndPersistFeedback(session);
@@ -3979,7 +3982,7 @@ async function renderMealPresetButtons(container, dateIso, onChanged) {
     const editBtn = document.createElement('button');
     editBtn.className = 'shrink-0 w-12 border-[1.5px] border-solid border-ink rounded font-sans text-[18px] text-ink active:bg-sheet transition';
     editBtn.setAttribute('aria-label', 'Modifier');
-    editBtn.textContent = '⚙';
+    editBtn.textContent = '⚙\uFE0E';
     if (!preset) editBtn.classList.add('hidden');
 
     mainBtn.addEventListener('click', async () => {
@@ -4052,7 +4055,7 @@ async function renderAlimentation() {
   const dateInput = document.createElement('input');
   dateInput.type = 'date';
   dateInput.value = todayIso();
-  dateInput.className = 'flex-1 min-w-0 h-11 bg-sheet border border-solid border-rule rounded focus:border-ink focus:ring-0 focus:outline-none font-mono text-[15px] text-ink px-3';
+  dateInput.className = 'flex-1 min-w-0 h-11 bg-paper border border-solid border-rule rounded focus:border-ink focus:ring-0 focus:outline-none font-mono text-[15px] text-ink px-3';
   dateRow.appendChild(dateInput);
   body.appendChild(dateRow);
 
@@ -4252,10 +4255,9 @@ async function renderAlimentation() {
 }
 
 function showFoodPhotoModal(url) {
-  const modal = document.getElementById('modal');
   const body = document.getElementById('modal-body');
   body.innerHTML = `<div class="px-5 pt-16 pb-10"><img src="${url}" alt="" class="block w-full h-auto rounded border border-solid border-rule" /></div>`;
-  modal.classList.remove('hidden');
+  showModalSheet();
 }
 
 function openAddMealModal(dateIso, onSaved) {
@@ -4563,7 +4565,7 @@ async function openEveningAdviceModal(dateIso) {
       </div>
     </div>
   `;
-  modal.classList.remove('hidden');
+  showModalSheet();
 
   const thread = document.getElementById('advice-thread');
   const input = document.getElementById('advice-input');
@@ -4653,7 +4655,7 @@ async function openAskQuestionModal(dateIso) {
       </div>
     </div>
   `;
-  modal.classList.remove('hidden');
+  showModalSheet();
 
   const textEl = document.getElementById('ask-text');
   const responseEl = document.getElementById('ask-response');

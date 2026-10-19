@@ -269,6 +269,23 @@ describe('carnetTokensShould', () => {
     expect(functionSource('app.js', 'openEveningAdviceModal')).toContain("appendBubble('user', escapeHtml(txt))");
   });
 
+  it.each(['openModal', 'showPostSessionFeedback', 'openBodyAnalysisPopupLoading', 'showFoodPhotoModal',
+    'openEveningAdviceModal', 'openAskQuestionModal'])('%s opens the shared sheet scrolled to the top', (name) => {
+    expect(functionSource('app.js', name)).toContain('showModalSheet()');
+  });
+
+  it('showModalSheet resets the sheet scroll before showing it', () => {
+    expect(functionSource('app.js', 'showModalSheet')).toContain('scrollTop = 0');
+  });
+
+  it('measurement units keep a narrow no-break space', () => {
+    expect(functionSource('app.js', 'renderCorps')).not.toMatch(/<\/span>\$\{unit\}|\)\}% —/);
+  });
+
+  it('preset settings glyph is forced to text presentation', () => {
+    expect(functionSource('app.js', 'renderMealPresetButtons')).not.toContain("textContent = '⚙'");
+  });
+
   it('legacy .btn-* rules are gone', () => {
     const legacy = /\.btn-(primary|secondary|danger|ghost)\b/g;
 
