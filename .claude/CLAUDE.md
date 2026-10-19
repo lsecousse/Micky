@@ -27,21 +27,17 @@ Micky/
 
 ## Fonctionnalités
 
-### Onglet "Nouvelle séance"
-- Champ nom de la séance + date (défaut : aujourd'hui)
-- Ajout dynamique d'exercices : nom de la machine, puis N séries avec répétitions / poids (kg) / temps de repos (sec)
-- Boutons pour ajouter ou supprimer une série, ajouter ou supprimer un exercice
-- Bouton "Enregistrer"
+Écrans de l'app (`showScreen` dans `app.js`) :
+- **Accueil** (`home`) : point d'entrée, menu utilisateur, accès Données corporelles et Alimentation
+- **Séance en salle** (`seance`) : choix du programme, séance en direct avec séries, repos décomptés, supersets, chrono et minuterie plein écran, retour IA en fin de séance
+- **Historique** (`history`) : séances passées, détail d'une séance
+- **Stats** (`stats`) : progression par exercice
+- **Alimentation** (`alim`) : repas et conseils
+- **Corps** (`corps`) : composition corporelle, courbe et analyse
+- **Profil** (`profil`), **Clé API Claude** (`claude-api`), **Connexion** (`login`)
+- **Programmes** (`params`) : liste et éditeur de programmes
 
-### Onglet "Historique"
-- Liste des séances triées par date décroissante
-- Résumé : nom, date, nb d'exercices, volume total (kg × reps)
-- Tap sur une séance → vue détail complète
-- Possibilité de supprimer une séance
-
-### Onglet "Données"
-- Export JSON (toutes les séances → téléchargement fichier)
-- Import JSON (merge avec l'existant)
+Back-office coach (`backoffice.html`) : liste des clients, programmes (catalogue d'exercices, éditeur, copie), séances et données de chaque client.
 
 ## PWA
 

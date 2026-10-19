@@ -319,7 +319,7 @@ describe('carnetTokensShould', () => {
 
   it('CLAUDE.md no longer describes the dark orange PWA', () => {
     const doc = read('.claude/CLAUDE.md');
-    const stale = ['#FF6B00', '#0f0f0f', 'Gym Tracker', 'black-translucent', 'Thème sombre'].filter((s) => doc.includes(s));
+    const stale = ['#FF6B00', '#0f0f0f', 'Gym Tracker', 'black-translucent', 'Thème sombre', 'Onglet "Nouvelle séance"', 'Export JSON'].filter((s) => doc.includes(s));
     expect(stale).toEqual([]);
   });
 
