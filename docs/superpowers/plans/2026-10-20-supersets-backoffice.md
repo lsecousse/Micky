@@ -14,8 +14,10 @@ Une **source** de glisser-déposer : `{ blockPos }` (bloc du programme, indice d
 `{ exercise }` (nouvel exercice venu du catalogue). Une **cible** : `{ blockPos, intent }` avec
 `intent ∈ 'before' | 'after' | 'onto'`, ou `null` (liste vide ou dépôt hors bloc = en fin).
 
-1. `boDropIntent(rect, y, canJoin)` : `rect = { top, height }`, bord `edge = Math.min(14, height / 4)`.
-   `y < top + edge` → `'before'` ; `y > top + height - edge` → `'after'` ; sinon `canJoin ? 'onto' : 'after'`.
+1. `boDropIntent(rect, y, { canJoin, firstRow })` : `rect = { top, height }` de la **ligne** survolée (exercice
+   simple, titre de groupe ou membre), bord `edge = Math.min(14, height / 4)`. `y < top + edge` → `'before'` ;
+   `y > top + height - edge` → `'after'` ; sinon `canJoin ? 'onto' : 'after'`. Ligne d'un membre (`firstRow`
+   faux) : `'before'` devient `'after'` (entre deux membres = après le bloc entier).
 2. `boCanDropOnto(exercises, source, ontoBlockPos)` → booléen. Faux si : la cible est le bloc source ; la source est
    un bloc groupe ; la source ou un membre de la cible est cardio (`type === 'cardio'`) ; la taille du groupe
    obtenu (`indices.length + 1`) n'est pas `isGroupSize`. Vrai sinon.
@@ -79,7 +81,7 @@ résumé 13 px, titre de groupe 52 px, membre 48 px retrait 18 px trait 2 px, po
    `{ source }` pendant un glisser. `dragstart` sur une ligne du catalogue → `{ catalogId }` ; sur la poignée
    `[data-drag-handle]` d'un bloc → `{ blockPos }` (`setDragImage` sur l'élément du bloc ; la ligne du catalogue
    glissée prend la classe `gone`, couleur `rule`). `dragover` sur `#pz-list` (`preventDefault`) : bloc survolé
-   (`closest('[data-block]')`), `canJoin = category !== 'cardio' && boCanDropOnto(...)` (source catalogue : exercice
+   (`closest('[data-block]')`) et ligne survolée (`closest('[data-drop-row]')`, `data-first-row` sur la ligne simple et le titre de groupe), `canJoin = category !== 'cardio' && boCanDropOnto(...)` (source catalogue : exercice
    provisoire `{ name, activities }` suffisant pour le contrôle cardio / taille), intention `boDropIntent`, repère :
    classe `drop-onto` (fond `hl`, contour 1,5 px pointillé `ink`, phrase « Déposer : super set avec <nom> » 13 px
    gras ; pour un groupe : « Déposer : ajouter au super set ») ou `drop-before` / `drop-after` (filet 2 px `ink`,

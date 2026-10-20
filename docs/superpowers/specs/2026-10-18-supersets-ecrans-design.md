@@ -216,8 +216,8 @@ retiré : les deux pages chargent `lib/supersets.js`.
 
 - Sources : un exercice du catalogue (copie) ou un bloc du programme (sa poignée ; un groupe se déplace d'un bloc,
   un membre ne se glisse pas : ↑ ↓ dans le groupe, « Dégrouper » ou « Suppr »).
-- Cible calculée au survol sur le bloc survolé (`boDropIntent`) : bande haute = **avant** le bloc, bande basse =
-  **après**, milieu = **sur** quand le dépôt peut former ou agrandir un groupe (`boCanDropOnto` : la source est un
+- Cible calculée au survol sur la ligne survolée (`boDropIntent`) : bande haute = **avant** le bloc (sur une ligne
+  de membre : **après** le bloc), bande basse = **après**, milieu = **sur** quand le dépôt peut former ou agrandir un groupe (`boCanDropOnto` : la source est un
   exercice seul ou du catalogue, non cardio, la cible n'est pas le bloc source, groupe résultant ≤ 4). Le milieu d'un
   bloc qui ne peut pas recevoir (groupe plein, cardio, source = un groupe) vaut **après** : un dépôt entre deux membres
   d'un groupe s'insère après le bloc entier, le groupe reste intact (décision de l'orchestrateur).
