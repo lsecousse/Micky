@@ -199,7 +199,8 @@ retiré : les deux pages chargent `lib/supersets.js`.
 ### Zone du programme (maquette 07)
 
 - Dessinée bloc par bloc (`editorBlocks`). Exercice simple = une ligne `sheet`, contour 1,5 px `ink`, rayon 6 px :
-  poignée « ⋮⋮ », nom en italique Newsreader 18 px, résumé 13 px `mut` (« 4 × 8 · 35 kg · repos 1:45 »), puis
+  poignée « ⋮⋮ », nom en italique Newsreader 18 px, résumé 13 px `mut` (« 4 × 8 reps · 35 kg · repos 1:45 », même
+  texte que le résumé d'un membre `memberSummary`, charge nulle = « 0 kg » comme sur le téléphone), puis
   ↑ ↓ (`moveExerciseBlock`), « Modifier » (✎, modale) et « Suppr » (`removeExerciseKeepingGroups`, confirmation
   `showConfirmModal`).
 - Groupe = une carte `sheet` contour 1,5 px `ink`. Ligne de titre : poignée, libellé (`supersetKindLabel` : Super set,
@@ -222,7 +223,7 @@ retiré : les deux pages chargent `lib/supersets.js`.
   bloc qui ne peut pas recevoir (groupe plein, cardio, source = un groupe) vaut **après** : un dépôt entre deux membres
   d'un groupe s'insère après le bloc entier, le groupe reste intact (décision de l'orchestrateur).
 - Repère pendant le survol : « sur » = fond surligneur `hl`, contour 1,5 px pointillé `ink` et la phrase « Déposer :
-  super set avec <exercice> » (seule zone `hl` de l'écran) ; « avant » / « après » = filet 2 px `ink` au bord du bloc.
+  super set avec <exercice> » (sur un groupe : « Déposer : ajouter au super set ») (seule zone `hl` de l'écran) ; « avant » / « après » = filet 2 px `ink` au bord du bloc.
 - Dépôt (`boApplyDrop`, pur) : avant / après = insertion du bloc (ou du nouvel exercice) à la frontière de blocs ;
   sur = `dropExerciseOnto` (forme `[cible, source]` ou ajoute la source en fin de groupe, réglages du groupe gardés).
   Un exercice du catalogue sans historique passe d'abord par la modale « Ajouter » ; le dépôt se fait à sa
@@ -250,7 +251,9 @@ tel quel. La durée estimée compte les groupes (`computeEstimatedDuration` voit
 ### Tests
 
 - TDD sur `lib/bo-programme-editor.js` : `boDropIntent`, `boCanDropOnto`, `boApplyDrop` (avant, après, sur un simple,
-  sur un groupe, groupe plein → après, bloc groupe déplacé d'un bloc, nouvel exercice), `boRowSummary`.
+  sur un groupe, groupe plein → après, bloc groupe déplacé d'un bloc, nouvel exercice, cible périmée : bloc disparu →
+  fin, « sur » devenu impossible → après), `boRowSummary`.
+- Un exercice du catalogue déposé : l'historique du client est lu une fois avant la modale ; ✎ s'ouvre sans requête.
 - `tests/browser-scripts.test.js` : « scope partagé du back-office » : `backoffice.html` charge chaque script une fois
   et expose `dropExerciseOnto`, `editorBlocks`, `boApplyDrop` sans conflit.
 - `tests/backoffice-carnet.test.js` : fonctions du lot C sans `a-*`, sans hex, sans anciens noms de variables, sans
