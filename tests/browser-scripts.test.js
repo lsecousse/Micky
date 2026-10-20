@@ -18,9 +18,6 @@ function loadInSharedScope(scripts) {
   return context;
 }
 
-// backoffice.html does not load the super set scripts yet (lot C).
-const SUPERSET_SCRIPTS = ['lib/supersets.js', 'lib/superset-flow.js'];
-
 // Super set g1 = [A, B], 2 rounds, nothing done.
 function groupOfTwo() {
   const group  = { id: 'g1', rounds: 2, transition: 15, roundRest: 90 };
@@ -77,10 +74,17 @@ describe('browser lib scripts', () => {
     expect(typeof context.nextLiveStep).toBe('function');
   });
 
-  it('load super set scripts with backoffice.html lib scripts in one shared global scope', () => {
-    const context = loadInSharedScope([...libScriptsOf('backoffice.html'), ...SUPERSET_SCRIPTS]);
+  it('list each lib script once in backoffice.html', () => {
+    const scripts = libScriptsOf('backoffice.html');
 
-    expect(typeof context.dropExerciseOnto).toBe('function');
+    expect(new Set(scripts).size).toBe(scripts.length);
+  });
+
+  it('load the super set scripts in backoffice.html shared global scope', () => {
+    const context = loadInSharedScope(libScriptsOf('backoffice.html'));
+    const names   = ['dropExerciseOnto', 'editorBlocks', 'supersetKindLabel', 'boApplyDrop'];
+
+    expect(names.map(name => typeof context[name])).toEqual(names.map(() => 'function'));
   });
 
   it('walk a super set with the browser globals', () => {
@@ -118,8 +122,8 @@ describe('browser lib scripts', () => {
     expect(result.map(e => e.group)).toEqual([undefined, undefined]);
   });
 
-  it('estimate a super set duration with the browser globals', () => {
-    const context = loadInSharedScope([...libScriptsOf('backoffice.html'), ...SUPERSET_SCRIPTS]);
+  it('estimate a super set duration with the backoffice.html globals', () => {
+    const context = loadInSharedScope(libScriptsOf('backoffice.html'));
 
     expect(context.computeEstimatedDuration({ exercises: groupOfTwo() }, new Map())).toBe(2 * (45 + 15 + 45 + 90));
   });
