@@ -483,7 +483,6 @@ function renderCatalogList() {
   list.querySelectorAll('.cat-item').forEach(row => {
     const entry = _progEditorState.catalog.find(c => c.id === row.dataset.id);
     row.addEventListener('dragstart', e => boStartCatalogDrag(e, entry));
-    row.addEventListener('dragend', boEndDrag);
     row.querySelector('.cat-edit').addEventListener('click', e => {
       e.stopPropagation();
       openCatalogForm(entry);
@@ -587,7 +586,6 @@ function renderProgrammeZone() {
   list.addEventListener('click', boZoneClick);
   list.addEventListener('change', boZoneChange);
   list.addEventListener('dragstart', boStartBlockDrag);
-  list.addEventListener('dragend', boEndDrag);
   list.addEventListener('dragenter', e => { if (_boDrag) e.preventDefault(); });
   list.addEventListener('dragover', boDragOver);
   list.addEventListener('dragleave', boDragLeave);
@@ -694,14 +692,21 @@ function boZoneClick(e) {
   else boEditorAct(xs => BO_ZONE_ACTIONS[action](xs, index));
 }
 
-// The three fields are read together; an invalid one keeps its previous value.
+// The three fields are read together; an invalid one keeps its previous value, written back
+// in place (no redraw, so the focus stays where the coach is typing).
 function boZoneChange(e) {
   const card = e.target.closest('.pz-group');
   if (!card || !e.target.matches('[data-group-setting]')) return;
   const raw = Object.fromEntries([...card.querySelectorAll('[data-group-setting]')]
     .map(input => [input.dataset.groupSetting, input.value]));
-  const groupId = _progEditorState.exercises[Number(card.dataset.index)].group.id;
-  boEditorAct(xs => applyGroupSettingsInput(xs, groupId, raw));
+  const first = Number(card.dataset.index);
+  _progEditorState.exercises = applyGroupSettingsInput(_progEditorState.exercises, _progEditorState.exercises[first].group.id, raw);
+  boFillGroupSettings(card, _progEditorState.exercises[first].group);
+  refreshEstimateHeader();
+}
+
+function boFillGroupSettings(card, group) {
+  card.querySelectorAll('[data-group-setting]').forEach(input => { input.value = group[input.dataset.groupSetting]; });
 }
 
 function boConfirmRemove(index) {
@@ -735,15 +740,13 @@ function boProbeSource(source) {
   return { exercise: { name: entry.name, activities: entry.default_activities || [{ type: 'weight' }] } };
 }
 
-// Hovered target; between blocks (list gap) the current one is kept, below the last block it is null (end).
+// Hovered target: null (the end) on an empty list; between blocks the current one is kept
+// (undefined when none was computed yet).
 function boHoverTarget(e, list) {
   const block = e.target.closest('[data-block]');
   const row   = e.target.closest('[data-drop-row]');
-  if (!block || !row) {
-    const last = list.lastElementChild;
-    const inGap = last && last.matches('[data-block]') && e.clientY < last.getBoundingClientRect().bottom;
-    return inGap ? _boDrag.target : null;
-  }
+  if (!list.querySelector('[data-block]')) return null;
+  if (!block || !row) return _boDrag.target;
   const pos = Number(block.dataset.block);
   const canJoin = _progEditorState.category !== 'cardio'
     && boCanDropOnto(_progEditorState.exercises, boProbeSource(_boDrag.source), pos);
@@ -768,20 +771,24 @@ function boShowDropMark(target) {
     return;
   }
   const row = block.matches('[data-first-row]') ? block : block.querySelector('[data-first-row]');
-  const xs  = _progEditorState.exercises;
-  const tip = block.matches('.pz-group')
-    ? 'Déposer : ajouter au super set'
-    : `Déposer : super set avec ${escapeHtml(xs[editorBlocks(xs)[target.blockPos].indices[0]].name || 'Sans nom')}`;
   row.classList.add('drop-onto');
-  row.querySelector('.pz-name').insertAdjacentHTML('afterend', `<span class="pz-tip">${tip}</span>`);
+  row.querySelector('.pz-name').insertAdjacentHTML('afterend', `<span class="pz-tip">${boOntoTip(block, target.blockPos)}</span>`);
 }
 
+function boOntoTip(block, blockPos) {
+  if (block.matches('.pz-group')) return 'Déposer : ajouter au super set';
+  const xs = _progEditorState.exercises;
+  return `Déposer : super set avec ${escapeHtml(xs[editorBlocks(xs)[blockPos].indices[0]].name || 'Sans nom')}`;
+}
+
+// No target computed yet (entering through a gap): the drop is refused (no preventDefault).
 function boDragOver(e) {
   if (!_boDrag) return;
+  const target = boHoverTarget(e, e.currentTarget);
+  if (target === undefined) return;
   e.preventDefault();
   e.dataTransfer.dropEffect = _boDrag.source.catalogId ? 'copy' : 'move';
-  const target = boHoverTarget(e, e.currentTarget);
-  if (target === undefined || JSON.stringify(target) === JSON.stringify(_boDrag.target)) return;
+  if (JSON.stringify(target) === JSON.stringify(_boDrag.target)) return;
   _boDrag.target = target;
   boShowDropMark(target);
 }
@@ -798,6 +805,9 @@ function boEndDrag() {
   document.querySelectorAll('#cat-list .gone').forEach(el => el.classList.remove('gone'));
 }
 
+// Delegated once for both sources (catalog rows, block handles); a drop also ends the drag itself.
+document.addEventListener('dragend', boEndDrag);
+
 async function boDrop(e) {
   if (!_boDrag) return;
   e.preventDefault();
@@ -811,17 +821,22 @@ async function boDrop(e) {
   }
 }
 
+// Last execution of this exercise by the client, or null.
+async function boClientPrev(name) {
+  const normName = normalizeExerciseName(name);
+  const prevMap  = await loadLastExercisesForClientDB(selClient.id, [normName]);
+  return prevMap.get(normName) || null;
+}
+
 // A client who already did this exercise gets it directly; otherwise the « Ajouter » modal opens first.
 async function boDropCatalogEntry(entry, target) {
   if (!entry) return;
-  const normName = normalizeExerciseName(entry.name);
-  const prevMap  = await loadLastExercisesForClientDB(selClient.id, [normName]);
-  const prev     = prevMap.get(normName) || null;
+  const prev = await boClientPrev(entry.name);
   if (prev?.activities?.length && prev?.execution?.series?.length) {
     boPlaceExercise(buildProgrammeExerciseFromCatalog(entry, prev), { target });
     return;
   }
-  await openExoModal(entry, { target });
+  await openExoModal(entry, { target, prev });
 }
 
 /* ─── Exercise modal (✎ or catalog add) ─── */
@@ -835,16 +850,8 @@ function boPlaceExercise(exo, placement) {
   }
 }
 
-async function openExoModal(entryOrExo, placement) {
-  const isNew = placement.index === undefined;
-  const normName = normalizeExerciseName(entryOrExo.name);
-  const clientPrev = await loadLastExercisesForClientDB(selClient.id, [normName]);
-  const prev = clientPrev.get(normName) || null;
-  const seed = isNew ? buildProgrammeExerciseFromCatalog(entryOrExo, prev) : entryOrExo;
-
-  const overlay = document.createElement('div');
-  overlay.className = 'modal-overlay';
-  overlay.innerHTML = `
+function boExoModalHtml(seed, isNew) {
+  return `
     <div class="modal bo-exo-modal">
       <header class="flex-row">
         <h2 class="spacer">${isNew ? 'Ajouter' : 'Modifier'} : ${escapeHtml(seed.name)}</h2>
@@ -856,6 +863,18 @@ async function openExoModal(entryOrExo, placement) {
         <button id="mx-ok" class="btn-primary">${isNew ? 'Ajouter au programme' : 'Enregistrer'}</button>
       </div>
     </div>`;
+}
+
+// ✎ ({ index }) seeds the card with the exercise itself, without waiting; an add ({ target, prev? })
+// loads the client history only when the caller did not pass it.
+async function openExoModal(entryOrExo, placement) {
+  const isNew = placement.index === undefined;
+  const prev  = isNew && !('prev' in placement) ? await boClientPrev(entryOrExo.name) : placement.prev;
+  const seed  = isNew ? buildProgrammeExerciseFromCatalog(entryOrExo, prev ?? null) : entryOrExo;
+
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = boExoModalHtml(seed, isNew);
   document.body.appendChild(overlay);
 
   const wrap = overlay.querySelector('#mx-card-wrap');

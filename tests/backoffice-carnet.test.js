@@ -30,8 +30,9 @@ const LOTC_FUNCTIONS = [
   'renderCatalogList', 'boCatalogRowHtml', 'openCatalogForm', 'renderProgrammeZone', 'boProgrammeListHtml',
   'boSingleRowHtml', 'boGroupCardHtml', 'boGroupSettingsHtml', 'boMemberRowHtml', 'boArrowsHtml', 'boEditorAct',
   'boZoneClick', 'boZoneChange', 'boConfirmRemove', 'boStartCatalogDrag', 'boStartBlockDrag', 'boDragOver',
-  'boProbeSource', 'boHoverTarget', 'boClearDropMark', 'boShowDropMark', 'boDragLeave', 'boEndDrag', 'boDrop', 'boDropCatalogEntry',
-  'openExoModal', 'boPlaceExercise', 'saveProgramme',
+  'boProbeSource', 'boHoverTarget', 'boClearDropMark', 'boShowDropMark', 'boOntoTip', 'boDragLeave', 'boEndDrag',
+  'boDrop', 'boClientPrev', 'boDropCatalogEntry', 'boFillGroupSettings', 'boExoModalHtml', 'openExoModal',
+  'boPlaceExercise', 'saveProgramme',
 ];
 const LOTC_SELECTORS = ['.pz-', '.cat-', '.bo-exo-modal', '.bo-ed-'];
 const A_CLASS = /(?<!\w)a-(ink|inkAlt|paper|muted|border|todo|cyan|acid|racing|blood)\b/;

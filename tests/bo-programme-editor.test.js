@@ -156,6 +156,20 @@ describe('boApplyDropShould', () => {
     expect(result.map(e => [e.name, e.group?.id])).toEqual([['B', 'g1'], ['C', 'g1'], ['D', 'g1'], ['E', 'g1'], ['A', undefined]]);
   });
 
+  it('append at the end when the target block no longer exists', () => {
+    const result = boApplyDrop([ex('A'), ex('B')], { exercise: ex('X') }, { blockPos: 5, intent: 'before' });
+
+    expect(names(result)).toEqual(['A', 'B', 'X']);
+  });
+
+  it('insert after a group that became full instead of dropping onto it', () => {
+    const exercises = [ex('A'), member('B'), member('C'), member('D'), member('E')];
+
+    const result = boApplyDrop(exercises, { blockPos: 0 }, { blockPos: 1, intent: 'onto' });
+
+    expect(result.map(e => [e.name, e.group?.id])).toEqual([['B', 'g1'], ['C', 'g1'], ['D', 'g1'], ['E', 'g1'], ['A', undefined]]);
+  });
+
   it('leave the input list untouched', () => {
     const exercises = [ex('A'), ex('B')];
 
@@ -183,33 +197,33 @@ describe('boRowSummaryShould', () => {
   it('summarise a weight exercise with its rest', () => {
     const legacy = { name: 'X', sets: 4, activities: [{ type: 'weight', reps: 8, weight: 35, rest: 105 }] };
 
-    expect(boRowSummary(legacy)).toBe('4 × 8 · 35 kg · repos 1:45');
+    expect(boRowSummary(legacy)).toBe('4 × 8 reps · 35 kg · repos 1:45');
   });
 
   it('omit the rest when there is none', () => {
-    expect(boRowSummary(planned([[8, 35], [8, 35]]))).toBe('2 × 8 · 35 kg');
+    expect(boRowSummary(planned([[8, 35], [8, 35]]))).toBe('2 × 8 reps · 35 kg');
   });
 
   it('join variable reps with a slash', () => {
-    expect(boRowSummary(planned([[10, 60], [8, 60]]))).toBe('2 × 10/8 · 60 kg');
+    expect(boRowSummary(planned([[10, 60], [8, 60]]))).toBe('2 × 10/8 reps · 60 kg');
   });
 
   it('join variable weights with a slash', () => {
-    expect(boRowSummary(planned([[8, 60], [8, 70]]))).toBe('2 × 8 · 60/70 kg');
+    expect(boRowSummary(planned([[8, 60], [8, 70]]))).toBe('2 × 8 reps · 60/70 kg');
   });
 
   it('write a decimal weight with a comma', () => {
-    expect(boRowSummary(planned([[8, 62.5]]))).toBe('1 × 8 · 62,5 kg');
+    expect(boRowSummary(planned([[8, 62.5]]))).toBe('1 × 8 reps · 62,5 kg');
   });
 
-  it('show bodyweight when every weight is zero', () => {
-    expect(boRowSummary(planned([[12, 0], [12, 0]]))).toBe('2 × 12 · poids du corps');
+  it('show a zero load as the mobile editor does', () => {
+    expect(boRowSummary(planned([[12, 0], [12, 0]]))).toBe('2 × 12 reps · 0 kg');
   });
 
   it('count the series when sets is missing', () => {
     const { sets, ...noSets } = planned([[8, 35], [8, 35], [8, 35]]);
 
-    expect(boRowSummary(noSets)).toBe('3 × 8 · 35 kg');
+    expect(boRowSummary(noSets)).toBe('3 × 8 reps · 35 kg');
   });
 
   it('summarise a timer exercise with its rest', () => {
