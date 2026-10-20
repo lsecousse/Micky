@@ -176,3 +176,84 @@ l'indique (« · 1 super set »).
   `MIGRATED_HTML_BLOCKS`.
 - Captures 390 px (Supabase simulé) : liste des programmes, éditeur sans groupe, éditeur avec le super set, membre
   ouvert, après « Lier au suivant », cardio ; enregistrement simulé : le programme envoyé garde le groupe.
+
+## Lot C — éditeur de programme du back-office (écran 07)
+
+Exécutant : micky-supersets-bo, 2026-10-20. Part de main 754709d (lot 6 Carnet du back-office fusionné, PR #13 ;
+correctif ✎ du back-office fusionné, PR #12). Références : `designs/supersets/supersets.html` figure 07,
+`designs/supersets/NOTES.md`, `.claude/CLAUDE.md` (Carnet, règle des 12 px).
+
+Périmètre : `renderProgrammeEditor` → `saveProgramme` de `backoffice.js` (en-tête, catalogue et sa fiche, zone du
+programme, modale ✎ / ajout) et le chargement des scripts super sets dans `backoffice.html`. Le reste du back-office
+(lot 6) n'est pas touché. Aucune classe `a-*` nouvelle ; il n'en reste aucune dans ce périmètre.
+
+### Scripts
+
+`backoffice.html` charge, dans l'ordre d'`index.html` et avant `lib/duration-estimate.js` : `lib/supersets.js`,
+`lib/superset-flow.js`, `lib/live-superset.js` (`supersetKindLabel`), `lib/programme-editor.js` (`editorBlocks`,
+`memberSummary`, `memberMoveDirs`, `applyGroupSettingsInput`, `programmeForSave`), puis le nouveau
+`lib/bo-programme-editor.js`. SortableJS n'est plus chargé : le glisser-déposer passe par le glisser-déposer natif
+du navigateur (voir plus bas). Le repli « tout est simple » de `_exerciseBlocksOf` (`lib/duration-estimate.js`) est
+retiré : les deux pages chargent `lib/supersets.js`.
+
+### Zone du programme (maquette 07)
+
+- Dessinée bloc par bloc (`editorBlocks`). Exercice simple = une ligne `sheet`, contour 1,5 px `ink`, rayon 6 px :
+  poignée « ⋮⋮ », nom en italique Newsreader 18 px, résumé 13 px `mut` (« 4 × 8 · 35 kg · repos 1:45 »), puis
+  ↑ ↓ (`moveExerciseBlock`), « Modifier » (✎, modale) et « Suppr » (`removeExerciseKeepingGroups`, confirmation
+  `showConfirmModal`).
+- Groupe = une carte `sheet` contour 1,5 px `ink`. Ligne de titre : poignée, libellé (`supersetKindLabel` : Super set,
+  Tri-set, Circuit), réglages « Tours », « Transition », « Repos de tour » (champs IBM Plex Mono, transition et repos
+  en secondes avec l'unité « s », comme l'éditeur mobile ; saisie invalide = valeur précédente,
+  `applyGroupSettingsInput`), ↑ ↓ du bloc, « Dégrouper » (`ungroupSuperset`). Une ligne par membre, retrait et
+  trait gauche 2 px `ink` : lettre A/B…, nom en italique, résumé `memberSummary` (« 10 reps · 60 kg »), ↑ ↓ dans le
+  groupe (`memberMoveDirs`, `moveWithinSuperset`), « Modifier », « Suppr ».
+- Phrase d'aide sous le titre : « Glisse depuis le catalogue. Dépose **entre** deux exercices pour insérer, **sur** un
+  exercice pour former un super set. »
+- Programme vide : cadre en pointillés « Glisse un exercice du catalogue ici ».
+
+### Glisser-déposer
+
+- Sources : un exercice du catalogue (copie) ou un bloc du programme (sa poignée ; un groupe se déplace d'un bloc,
+  un membre ne se glisse pas : ↑ ↓ dans le groupe, « Dégrouper » ou « Suppr »).
+- Cible calculée au survol sur le bloc survolé (`boDropIntent`) : bande haute = **avant** le bloc, bande basse =
+  **après**, milieu = **sur** quand le dépôt peut former ou agrandir un groupe (`boCanDropOnto` : la source est un
+  exercice seul ou du catalogue, non cardio, la cible n'est pas le bloc source, groupe résultant ≤ 4). Le milieu d'un
+  bloc qui ne peut pas recevoir (groupe plein, cardio, source = un groupe) vaut **après** : un dépôt entre deux membres
+  d'un groupe s'insère après le bloc entier, le groupe reste intact (décision de l'orchestrateur).
+- Repère pendant le survol : « sur » = fond surligneur `hl`, contour 1,5 px pointillé `ink` et la phrase « Déposer :
+  super set avec <exercice> » (seule zone `hl` de l'écran) ; « avant » / « après » = filet 2 px `ink` au bord du bloc.
+- Dépôt (`boApplyDrop`, pur) : avant / après = insertion du bloc (ou du nouvel exercice) à la frontière de blocs ;
+  sur = `dropExerciseOnto` (forme `[cible, source]` ou ajoute la source en fin de groupe, réglages du groupe gardés).
+  Un exercice du catalogue sans historique passe d'abord par la modale « Ajouter » ; le dépôt se fait à sa
+  validation, « Annuler » n'ajoute rien.
+
+### Catalogue, fiche et modale
+
+- Colonne catalogue `sheet` : « Catalogue » 13 px `mut`, « + Nouvel exercice » (bouton contour), recherche contour
+  1,5 px `ink`, filtres musculaires (actif = contour `ink`, texte `ink`), liste en lignes du carnet (nom en italique
+  17 px, filet `rule`, « Modifier » en `mut`). Fiche nouvel / modifier exercice : mêmes champs, libellés 13 px `mut`.
+- Modale ✎ / ajout : `.modal-overlay` / `.modal` du lot 6 (voile, `sheet`, contour `ink`), titre Newsreader
+  « Ajouter : Presse à cuisses ». La carte (`makeExerciseCard`, déjà en Carnet depuis le lot B) n'est plus repeinte
+  par les anciennes règles du back-office : la règle des champs (`input[type=…]`) ne s'applique plus dans
+  `.exercise-card`, les règles `.exercise-card`, `.activity-*` héritées sont retirées ; ↑ ↓ et « Suppr » de la carte
+  sont masqués dans la modale (sans objet).
+- Les deux règles provisoires du lot 6 (`.bo-editor .text-a-paper`, `.bo-editor .pz-card`) et les règles mortes
+  `.exercise-block*`, `.bo-editor-title` sont supprimées.
+
+### Enregistrer
+
+`saveProgramme` envoie `programmeForSave(exercises)` : un membre isolé perd son groupe, chaque membre reçoit
+`sets = group.rounds`, un nom vide devient « Sans nom ». Le reste du programme (séries prévues, champs inconnus) part
+tel quel. La durée estimée compte les groupes (`computeEstimatedDuration` voit `exerciseBlocks`).
+
+### Tests
+
+- TDD sur `lib/bo-programme-editor.js` : `boDropIntent`, `boCanDropOnto`, `boApplyDrop` (avant, après, sur un simple,
+  sur un groupe, groupe plein → après, bloc groupe déplacé d'un bloc, nouvel exercice), `boRowSummary`.
+- `tests/browser-scripts.test.js` : « scope partagé du back-office » : `backoffice.html` charge chaque script une fois
+  et expose `dropExerciseOnto`, `editorBlocks`, `boApplyDrop` sans conflit.
+- `tests/backoffice-carnet.test.js` : fonctions du lot C sans `a-*`, sans hex, sans anciens noms de variables, sans
+  texte sous 12 px ni majuscules espacées ; règles provisoires retirées.
+- Captures 1440 × 900 (Supabase simulé, `SUPERSETS=1`) : éditeur avec le super set, survol « sur », survol « entre »,
+  modale ajout, modale ✎ d'un membre, enregistrement simulé (le groupe part tel quel).
