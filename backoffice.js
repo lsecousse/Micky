@@ -341,6 +341,7 @@ function showCopyProgrammeModal(prog) {
 let _progEditorState = null; // { existingId, name, category, exercises, estOverride, catalog, avgMap }
 let _sidebarFilters = { search: '', muscles: new Set() };
 let _editingCatalogId = null;
+let _boDrag = null; // { source, target } while dragging; target undefined = no mark shown yet
 
 const MUSCLE_OPTIONS = ['Pec', 'Dos', 'Jambes', 'Épaules', 'Bras', 'Abdos'];
 
@@ -352,8 +353,8 @@ async function renderProgrammeEditor(existingProg) {
     existingId:  existingProg?.id || null,
     name:        existingProg?.name || '',
     category,
-    // ensureSeries migre les vieux programmes (qui ne stockaient reps/weight
-    // qu'au niveau activity) vers la forme moderne avec series[].values[]
+    // ensureSeries migrates old programmes (reps/weight on the activity only)
+    // to the series[].values[] shape
     exercises:   (existingProg?.exercises || []).map(e => ensureSeries({ ...e })),
     estOverride: existingProg?.estimated_duration_seconds ?? null,
     catalog:     [],
@@ -361,24 +362,21 @@ async function renderProgrammeEditor(existingProg) {
   };
 
   body.innerHTML = `
-    <div class="bo-editor" style="display:flex;flex-direction:column;height:100%;gap:0;min-height:0">
-      <header class="bo-editor-header border-b border-a-border" style="display:flex;flex-direction:column;gap:0.5rem;padding:1rem;flex:0 0 auto">
-        <div style="display:flex;align-items:center;gap:1rem">
-          <button class="btn-ghost btn-sm" id="ed-back">← Retour</button>
-          <input type="text" id="ed-name" class="bg-transparent border-b border-a-border focus:border-a-acid text-a-paper font-display italic text-[18px] outline-none"
-                 style="flex:1 1 auto;min-width:0;padding:0.5rem 0"
-                 placeholder="Nom du programme" value="${escapeHtml(_progEditorState.name)}">
-          <div class="text-a-paper text-[12px] font-sans tracking-eyebrow uppercase" style="flex:0 0 auto;white-space:nowrap">
-            Estimé : <span id="ed-est">—</span>
-            <button id="ed-est-edit" class="btn-ghost btn-sm" style="margin-left:0.5rem">✎</button>
-          </div>
-          <button class="btn-primary" id="ed-save" style="flex:0 0 auto">Enregistrer</button>
+    <div class="bo-editor">
+      <header class="bo-ed-head">
+        <div class="bo-ed-bar">
+          <button class="btn-ghost" id="ed-back">← Retour</button>
+          <input type="text" id="ed-name" class="bo-ed-name" placeholder="Nom du programme" value="${escapeHtml(_progEditorState.name)}">
+          <span class="bo-ed-est">Estimé : <span id="ed-est">—</span></span>
+          <button id="ed-est-edit" class="btn-ghost btn-sm">Modifier</button>
+          <button class="btn-primary" id="ed-save">Enregistrer</button>
         </div>
-        <p class="error-msg hidden" id="ed-err" style="margin:0"></p>
+        <p class="bo-ed-help">Glisse depuis le catalogue. Dépose <b>entre</b> deux exercices pour insérer, <b>sur</b> un exercice pour former un super set.</p>
+        <p class="error-msg hidden" id="ed-err"></p>
       </header>
-      <div style="display:grid;grid-template-columns:35% 65%;flex:1 1 auto;min-height:0;overflow:hidden">
-        <aside id="ed-sidebar" class="border-r border-a-border" style="display:flex;flex-direction:column;min-height:0;min-width:0;overflow:hidden"></aside>
-        <section id="ed-zone" style="display:flex;flex-direction:column;min-height:0;min-width:0;overflow-y:auto"></section>
+      <div class="bo-ed-cols">
+        <aside id="ed-sidebar" class="cat-col"></aside>
+        <section id="ed-zone" class="pz-zone"></section>
       </div>
     </div>`;
 
@@ -389,7 +387,7 @@ async function renderProgrammeEditor(existingProg) {
   if (!_progEditorState.existingId) nameInput.focus();
   document.getElementById('ed-est-edit').addEventListener('click', () => promptEstOverride());
 
-  // Chargement parallèle catalogue + moyennes durée
+  // Catalog and duration averages, loaded in parallel
   const normalizedNames = _progEditorState.exercises
     .map(e => normalizeExerciseName(e.name || ''))
     .filter(n => n);
@@ -431,14 +429,14 @@ function promptEstOverride() {
 function renderCatalogSidebar() {
   const aside = document.getElementById('ed-sidebar');
   aside.innerHTML = `
-    <div class="p-3 border-b border-a-border space-y-2">
-      <button id="cat-new" class="w-full py-2 border border-a-acid text-a-acid font-sans text-[10px] uppercase tracking-eyebrow active:bg-a-acid active:text-a-ink">+ Nouvel exo</button>
-      <input id="cat-search" type="text" placeholder="Rechercher…"
-             class="w-full bg-transparent border-b border-a-border focus:border-a-acid text-a-paper py-1 text-[12px] outline-none"/>
-      <div id="cat-chips" class="flex flex-wrap gap-1"></div>
+    <div class="cat-head">
+      <p class="cat-title">Catalogue</p>
+      <button id="cat-new" class="btn-secondary btn-sm">+ Nouvel exercice</button>
     </div>
-    <div id="cat-list" class="flex-1 overflow-y-auto p-2 space-y-1"></div>
-    <div id="cat-form" class="hidden border-t border-a-border p-3"></div>`;
+    <input id="cat-search" type="text" class="cat-search" placeholder="Rechercher un exercice">
+    <div id="cat-chips" class="cat-chips"></div>
+    <div id="cat-list" class="cat-list"></div>
+    <div id="cat-form" class="cat-form hidden"></div>`;
 
   document.getElementById('cat-new').addEventListener('click', () => openCatalogForm(null));
   document.getElementById('cat-search').addEventListener('input', e => {
@@ -451,10 +449,9 @@ function renderCatalogSidebar() {
 
 function renderMuscleChips() {
   const wrap = document.getElementById('cat-chips');
-  wrap.innerHTML = MUSCLE_OPTIONS.map(m => {
-    const active = _sidebarFilters.muscles.has(m);
-    return `<button data-m="${m}" class="px-2 py-0.5 border ${active ? 'border-a-acid text-a-acid' : 'border-a-border text-a-muted'} text-[10px] uppercase tracking-eyebrow">${m}</button>`;
-  }).join('');
+  wrap.innerHTML = MUSCLE_OPTIONS.map(m =>
+    `<button type="button" data-m="${m}" class="cat-chip${_sidebarFilters.muscles.has(m) ? ' on' : ''}">${m}</button>`
+  ).join('');
   wrap.querySelectorAll('button').forEach(b => {
     b.addEventListener('click', () => {
       const m = b.dataset.m;
@@ -466,38 +463,30 @@ function renderMuscleChips() {
   });
 }
 
+function boCatalogRowHtml(entry) {
+  return `
+    <div data-id="${entry.id}" class="cat-item" draggable="true">
+      <span class="cat-name">${escapeHtml(entry.name)}</span>
+      <button type="button" class="cat-edit btn-ghost btn-sm" data-id="${entry.id}">Modifier</button>
+    </div>`;
+}
+
 function renderCatalogList() {
   const list = document.getElementById('cat-list');
   const term = normalizeExerciseName(_sidebarFilters.search);
   const muscles = _sidebarFilters.muscles;
   const filtered = _progEditorState.catalog.filter(c => {
     if (term && !c.normalized_name.includes(term)) return false;
-    if (muscles.size > 0) {
-      const has = (c.muscle_groups || []).some(m => muscles.has(m));
-      if (!has) return false;
-    }
-    return true;
+    return muscles.size === 0 || (c.muscle_groups || []).some(m => muscles.has(m));
   });
-  list.innerHTML = filtered.map(c => `
-    <div data-id="${c.id}" class="cat-item flex items-center gap-2 p-2 border border-a-border hover:border-a-acid cursor-grab"
-         draggable="true">
-      <span class="text-a-muted">≡</span>
-      <span class="flex-1 text-a-paper text-[12px]">${escapeHtml(c.name)}</span>
-      <button class="cat-edit text-a-muted hover:text-a-acid" data-id="${c.id}">✎</button>
-    </div>`).join('') || `<p class="text-a-muted text-[10px] uppercase tracking-eyebrow p-2">Catalogue vide.</p>`;
-  list.querySelectorAll('.cat-edit').forEach(b => {
-    b.addEventListener('click', e => {
+  list.innerHTML = filtered.map(boCatalogRowHtml).join('') || '<p class="cat-empty">Catalogue vide.</p>';
+  list.querySelectorAll('.cat-item').forEach(row => {
+    const entry = _progEditorState.catalog.find(c => c.id === row.dataset.id);
+    row.addEventListener('dragstart', e => boStartCatalogDrag(e, entry));
+    row.querySelector('.cat-edit').addEventListener('click', e => {
       e.stopPropagation();
-      const id = b.dataset.id;
-      const entry = _progEditorState.catalog.find(c => c.id === id);
       openCatalogForm(entry);
     });
-  });
-  if (list._sortable) list._sortable.destroy();
-  list._sortable = new Sortable(list, {
-    group: { name: 'exos', pull: 'clone', put: false },
-    sort: false,
-    animation: 150,
   });
 }
 
@@ -506,38 +495,36 @@ function openCatalogForm(existing) {
   const form = document.getElementById('cat-form');
   form.classList.remove('hidden');
   const isEdit = !!existing;
+  const actType = existing?.default_activities?.[0]?.type || 'weight';
   form.innerHTML = `
-    <p class="text-[9px] uppercase tracking-[0.4em] text-a-muted mb-2">${isEdit ? 'Modifier' : 'Nouvel'} exo</p>
-    <input id="cf-name" type="text" placeholder="Nom" value="${escapeHtml(existing?.name || '')}"
-           class="w-full bg-transparent border-b border-a-border focus:border-a-acid text-a-paper py-1 text-[13px] outline-none mb-2"/>
-    <p class="text-[9px] uppercase tracking-[0.4em] text-a-muted mb-1">Groupes musculaires</p>
-    <div id="cf-muscles" class="flex flex-wrap gap-1 mb-2">${
-      MUSCLE_OPTIONS.map(m => {
-        const active = (existing?.muscle_groups || []).includes(m);
-        return `<button data-m="${m}" type="button" class="px-2 py-0.5 border ${active ? 'border-a-acid text-a-acid' : 'border-a-border text-a-muted'} text-[10px] uppercase tracking-eyebrow">${m}</button>`;
-      }).join('')
+    <p class="cat-title">${isEdit ? 'Modifier l’exercice' : 'Nouvel exercice'}</p>
+    <label class="cat-label">Nom
+      <input id="cf-name" type="text" value="${escapeHtml(existing?.name || '')}">
+    </label>
+    <p class="cat-label">Groupes musculaires</p>
+    <div id="cf-muscles" class="cat-chips">${
+      MUSCLE_OPTIONS.map(m =>
+        `<button data-m="${m}" type="button" class="cat-chip${(existing?.muscle_groups || []).includes(m) ? ' on' : ''}">${m}</button>`
+      ).join('')
     }</div>
-    <p class="text-[9px] uppercase tracking-[0.4em] text-a-muted mb-1">Type d'activité par défaut</p>
-    <select id="cf-acttype" class="w-full bg-transparent border border-a-border text-a-paper py-1 px-2 text-[12px] mb-2">
-      <option value="weight"    ${(existing?.default_activities?.[0]?.type === 'weight'    || !existing) ? 'selected' : ''}>Poids</option>
-      <option value="countdown" ${ existing?.default_activities?.[0]?.type === 'countdown' ? 'selected' : ''}>Minuterie</option>
-      <option value="stopwatch" ${ existing?.default_activities?.[0]?.type === 'stopwatch' ? 'selected' : ''}>Chrono</option>
-    </select>
-    <textarea id="cf-notes" placeholder="Notes (consignes…)"
-              class="w-full bg-transparent border border-a-border focus:border-a-acid text-a-paper p-2 text-[12px] outline-none mb-2 h-16">${escapeHtml(existing?.notes || '')}</textarea>
-    <div class="flex gap-2">
-      <button id="cf-save" class="btn-primary btn-sm flex-1">${isEdit ? 'Mettre à jour' : 'Créer'}</button>
+    <label class="cat-label">Type d’activité par défaut
+      <select id="cf-acttype" class="cat-select">
+        <option value="weight"    ${actType === 'weight'    ? 'selected' : ''}>Poids</option>
+        <option value="countdown" ${actType === 'countdown' ? 'selected' : ''}>Minuterie</option>
+        <option value="stopwatch" ${actType === 'stopwatch' ? 'selected' : ''}>Chrono</option>
+      </select>
+    </label>
+    <label class="cat-label">Notes
+      <textarea id="cf-notes" placeholder="Consignes…">${escapeHtml(existing?.notes || '')}</textarea>
+    </label>
+    <div class="flex-row">
+      <button id="cf-save" class="btn-primary btn-sm">${isEdit ? 'Mettre à jour' : 'Créer'}</button>
       <button id="cf-cancel" class="btn-ghost btn-sm">Annuler</button>
       ${isEdit ? '<button id="cf-delete" class="btn-danger btn-sm">Suppr</button>' : ''}
     </div>`;
 
   form.querySelectorAll('#cf-muscles button').forEach(b => {
-    b.addEventListener('click', () => {
-      b.classList.toggle('border-a-acid');
-      b.classList.toggle('text-a-acid');
-      b.classList.toggle('border-a-border');
-      b.classList.toggle('text-a-muted');
-    });
+    b.addEventListener('click', () => b.classList.toggle('on'));
   });
 
   document.getElementById('cf-cancel').addEventListener('click', () => {
@@ -548,7 +535,7 @@ function openCatalogForm(existing) {
   document.getElementById('cf-save').addEventListener('click', async () => {
     const name = document.getElementById('cf-name').value.trim();
     if (!name) return alert('Nom obligatoire');
-    const muscle_groups = Array.from(form.querySelectorAll('#cf-muscles button.border-a-acid')).map(b => b.dataset.m);
+    const muscle_groups = Array.from(form.querySelectorAll('#cf-muscles button.on')).map(b => b.dataset.m);
     const acttype = document.getElementById('cf-acttype').value;
     const default_activities = [{ type: acttype }];
     const notes = document.getElementById('cf-notes').value.trim();
@@ -576,7 +563,7 @@ function openCatalogForm(existing) {
   const delBtn = document.getElementById('cf-delete');
   if (delBtn) {
     delBtn.addEventListener('click', async () => {
-      if (!confirm('Supprimer cet exo du catalogue ?')) return;
+      if (!confirm('Supprimer cet exercice du catalogue ?')) return;
       try {
         await deleteExerciseCatalogEntryDB(_editingCatalogId);
         _progEditorState.catalog = _progEditorState.catalog.filter(c => c.id !== _editingCatalogId);
@@ -590,127 +577,304 @@ function openCatalogForm(existing) {
   }
 }
 
+/* ─── Programme zone (one element per block) ─── */
+
 function renderProgrammeZone() {
   const zone = document.getElementById('ed-zone');
-  const exos = _progEditorState.exercises;
-  const isEmpty = exos.length === 0;
-  zone.innerHTML = `
-    <div id="pz-list" class="m-4 p-4 border border-dashed ${isEmpty ? 'border-a-acid' : 'border-a-border'} space-y-2 min-h-[160px]" style="min-height:160px">
-      ${isEmpty ? '<p class="text-a-acid text-[10px] uppercase tracking-eyebrow text-center py-12">↓ Glisse un exo du catalogue ici</p>' : ''}
-    </div>`;
+  zone.innerHTML = `<div id="pz-list" class="pz-list">${boProgrammeListHtml(_progEditorState.exercises)}</div>`;
   const list = document.getElementById('pz-list');
-  exos.forEach((ex, idx) => list.appendChild(makeProgrammeCard(ex, idx)));
-  if (list._sortable) list._sortable.destroy();
-  list._sortable = new Sortable(list, {
-    group: { name: 'exos', pull: false, put: true },
-    animation: 150,
-    handle: '.cursor-grab',
-    onAdd: async (evt) => {
-      const catalogId = evt.item.dataset.id;
-      evt.item.remove();
-      const entry = _progEditorState.catalog.find(c => c.id === catalogId);
-      if (!entry) return;
-      // Cap newIndex à la longueur actuelle pour ignorer le placeholder
-      // <p> qui s'affiche quand le programme est vide.
-      const insertAt = Math.min(evt.newIndex, _progEditorState.exercises.length);
-
-      // Si le client a déjà exécuté cet exo, on a tout : on ajoute direct.
-      const normName = normalizeExerciseName(entry.name);
-      const prevMap = await loadLastExercisesForClientDB(selClient.id, [normName]);
-      const prev = prevMap.get(normName) || null;
-      if (prev?.activities?.length && prev?.execution?.series?.length) {
-        const exo = buildProgrammeExerciseFromCatalog(entry, prev);
-        _progEditorState.exercises.splice(insertAt, 0, exo);
-        renderProgrammeZone();
-        refreshEstimateHeader();
-        return;
-      }
-
-      await openExoModal(entry, insertAt, true);
-    },
-    onUpdate: (evt) => {
-      const oldIdx = evt.oldIndex;
-      const newIdx = evt.newIndex;
-      const exos = _progEditorState.exercises;
-      const [moved] = exos.splice(oldIdx, 1);
-      exos.splice(newIdx, 0, moved);
-      renderProgrammeZone();
-      refreshEstimateHeader();
-    },
-  });
+  list.addEventListener('click', boZoneClick);
+  list.addEventListener('change', boZoneChange);
+  list.addEventListener('dragstart', boStartBlockDrag);
+  list.addEventListener('dragenter', e => { if (_boDrag) e.preventDefault(); });
+  list.addEventListener('dragover', boDragOver);
+  list.addEventListener('dragleave', boDragLeave);
+  list.addEventListener('drop', boDrop);
 }
 
-function makeProgrammeCard(ex, idx) {
-  const card = document.createElement('div');
-  card.className = 'pz-card flex items-center gap-3 p-3 border border-a-border bg-a-inkAlt/30';
-  card.dataset.idx = idx;
-  const firstAct = ex.activities?.[0];
-  const isWeight = firstAct?.type === 'weight';
-  const setsCount = ex.sets || (ex.series || []).length || 0;
-  const repsLabel = isWeight ? (ex.series?.[0]?.values?.[0]?.reps ?? '?') : '—';
-  const weightLabel = isWeight ? `${ex.series?.[0]?.values?.[0]?.weight ?? 0} kg` : '';
-  const restSec = firstAct?.rest ?? 0;
-  const restLabel = restSec > 0 ? ` · repos ${restSec}s` : '';
-  card.innerHTML = `
-    <span class="cursor-grab text-a-muted">≡</span>
-    <div class="flex-1">
-      <p class="text-a-paper text-[13px]">${String(idx + 1).padStart(2, '0')}. ${escapeHtml(ex.name || '—')}</p>
-      <p class="text-a-muted text-[10px] uppercase tracking-eyebrow">${setsCount} × ${repsLabel} ${weightLabel}${restLabel}</p>
-    </div>
-    <button class="pz-up btn-ghost btn-sm" title="Monter">↑</button>
-    <button class="pz-down btn-ghost btn-sm" title="Descendre">↓</button>
-    <button class="pz-edit btn-ghost btn-sm" title="Éditer">✎</button>
-    <button class="pz-del btn-danger btn-sm" title="Supprimer">🗑</button>`;
-  card.querySelector('.pz-up').addEventListener('click', () => moveExo(idx, -1));
-  card.querySelector('.pz-down').addEventListener('click', () => moveExo(idx, +1));
-  card.querySelector('.pz-edit').addEventListener('click', () => openExoModal(_progEditorState.exercises[idx], idx, false));
-  card.querySelector('.pz-del').addEventListener('click', () => deleteExoFromProgramme(idx));
-  return card;
+function boProgrammeListHtml(exercises) {
+  if (!exercises.length) return '<p class="pz-empty">Glisse un exercice du catalogue ici</p>';
+  return editorBlocks(exercises).map((block, pos) => block.kind === 'group'
+    ? boGroupCardHtml(block, pos, exercises)
+    : boSingleRowHtml(exercises[block.indices[0]], block.indices[0], pos)).join('');
 }
 
-function moveExo(idx, delta) {
-  const exos = _progEditorState.exercises;
-  const target = idx + delta;
-  if (target < 0 || target >= exos.length) return;
-  const tmp = exos[idx];
-  exos[idx] = exos[target];
-  exos[target] = tmp;
+// ↑ / ↓ buttons; `dirs` are -1 and / or 1, `kind` is "block" or "member".
+function boArrowsHtml(kind, dirs, index) {
+  return dirs.map(dir => dir < 0
+    ? `<button type="button" class="btn-ghost btn-sm" data-action="${kind}-up" data-index="${index}" aria-label="Monter">↑</button>`
+    : `<button type="button" class="btn-ghost btn-sm" data-action="${kind}-down" data-index="${index}" aria-label="Descendre">↓</button>`
+  ).join('');
+}
+
+function boSingleRowHtml(ex, index, pos) {
+  return `
+    <div class="pz-row" data-block="${pos}" data-drop-row data-first-row>
+      <span class="pz-handle" data-drag-handle draggable="true" aria-label="Déplacer">⋮⋮</span>
+      <span class="pz-name">${escapeHtml(ex.name || 'Sans nom')}</span>
+      <span class="pz-sum">${escapeHtml(boRowSummary(ex))}</span>
+      <span class="pz-acts">
+        ${boArrowsHtml('block', [-1, 1], index)}
+        <button type="button" class="btn-ghost btn-sm" data-action="edit" data-index="${index}">Modifier</button>
+        <button type="button" class="btn-danger btn-sm" data-action="delete" data-index="${index}">Suppr</button>
+      </span>
+    </div>`;
+}
+
+function boGroupCardHtml(block, pos, exercises) {
+  const first = block.indices[0];
+  const count = block.indices.length;
+  const members = block.indices.map((index, at) => boMemberRowHtml(exercises[index], at, count, index)).join('');
+  return `
+    <div class="pz-group" data-block="${pos}" data-index="${first}">
+      <div class="pz-head" data-drop-row data-first-row>
+        <span class="pz-handle" data-drag-handle draggable="true" aria-label="Déplacer">⋮⋮</span>
+        <span class="pz-name">${escapeHtml(block.label)}</span>
+        ${boGroupSettingsHtml(block.settings)}
+        <span class="pz-acts">
+          ${boArrowsHtml('block', [-1, 1], first)}
+          <button type="button" class="btn-ghost btn-sm" data-action="ungroup" data-index="${first}">Dégrouper</button>
+        </span>
+      </div>
+      ${members}
+    </div>`;
+}
+
+const BO_GROUP_SETTING_FIELDS = [
+  { key: 'rounds',     label: 'Tours',         min: 1, unit: '' },
+  { key: 'transition', label: 'Transition',    min: 0, unit: 's' },
+  { key: 'roundRest',  label: 'Repos de tour', min: 0, unit: 's' },
+];
+
+function boGroupSettingsHtml(settings) {
+  return BO_GROUP_SETTING_FIELDS.map(f => `
+    <label class="pz-setting">${f.label}
+      <input type="number" inputmode="numeric" min="${f.min}" class="pz-set" data-group-setting="${f.key}" value="${settings[f.key] ?? ''}">${f.unit ? `<span class="pz-unit">${f.unit}</span>` : ''}
+    </label>`).join('');
+}
+
+function boMemberRowHtml(ex, posInGroup, count, index) {
+  return `
+    <div class="pz-member" data-drop-row data-member-index="${index}">
+      <span class="pz-letter">${supersetMemberLetter(posInGroup)}</span>
+      <span class="pz-name">${escapeHtml(ex.name || 'Sans nom')}</span>
+      <span class="pz-sum">${escapeHtml(memberSummary(ex))}</span>
+      <span class="pz-acts">
+        ${boArrowsHtml('member', memberMoveDirs(posInGroup, count), index)}
+        <button type="button" class="btn-ghost btn-sm" data-action="edit" data-index="${index}">Modifier</button>
+        <button type="button" class="btn-danger btn-sm" data-action="delete" data-index="${index}">Suppr</button>
+      </span>
+    </div>`;
+}
+
+// Applies a pure change to the exercise list, then redraws.
+function boEditorAct(fn) {
+  _progEditorState.exercises = fn(_progEditorState.exercises);
   renderProgrammeZone();
   refreshEstimateHeader();
 }
 
-function deleteExoFromProgramme(idx) {
-  if (!confirm('Retirer cet exo du programme ?')) return;
-  _progEditorState.exercises.splice(idx, 1);
-  renderProgrammeZone();
+const BO_ZONE_ACTIONS = {
+  'block-up':    (xs, i) => moveExerciseBlock(xs, i, -1),
+  'block-down':  (xs, i) => moveExerciseBlock(xs, i, 1),
+  'member-up':   (xs, i) => moveWithinSuperset(xs, i, -1),
+  'member-down': (xs, i) => moveWithinSuperset(xs, i, 1),
+  'ungroup':     (xs, i) => ungroupSuperset(xs, xs[i].group.id),
+};
+
+function boZoneClick(e) {
+  const btn = e.target.closest('[data-action]');
+  if (!btn) return;
+  const { action } = btn.dataset;
+  const index = Number(btn.dataset.index);
+  if (action === 'edit') openExoModal(_progEditorState.exercises[index], { index });
+  else if (action === 'delete') boConfirmRemove(index);
+  else boEditorAct(xs => BO_ZONE_ACTIONS[action](xs, index));
+}
+
+// The three fields are read together; an invalid one keeps its previous value, written back
+// in place (no redraw, so the focus stays where the coach is typing).
+function boZoneChange(e) {
+  const card = e.target.closest('.pz-group');
+  if (!card || !e.target.matches('[data-group-setting]')) return;
+  const raw = Object.fromEntries([...card.querySelectorAll('[data-group-setting]')]
+    .map(input => [input.dataset.groupSetting, input.value]));
+  const first = Number(card.dataset.index);
+  _progEditorState.exercises = applyGroupSettingsInput(_progEditorState.exercises, _progEditorState.exercises[first].group.id, raw);
+  boFillGroupSettings(card, _progEditorState.exercises[first].group);
   refreshEstimateHeader();
 }
 
-async function openExoModal(entryOrExo, idx, isNew = false) {
-  const clientPrev = await loadLastExercisesForClientDB(
-    selClient.id,
-    [normalizeExerciseName(entryOrExo.name)]
-  );
-  const prev = clientPrev.get(normalizeExerciseName(entryOrExo.name)) || null;
+function boFillGroupSettings(card, group) {
+  card.querySelectorAll('[data-group-setting]').forEach(input => { input.value = group[input.dataset.groupSetting]; });
+}
 
-  const seed = isNew
-    ? buildProgrammeExerciseFromCatalog(entryOrExo, prev)
-    : entryOrExo;
+function boConfirmRemove(index) {
+  showConfirmModal('Retirer cet exercice du programme ?',
+    () => boEditorAct(xs => removeExerciseKeepingGroups(xs, index)));
+}
 
-  const overlay = document.createElement('div');
-  overlay.className = 'fixed inset-0 bg-black/70 flex items-center justify-center z-50';
-  overlay.innerHTML = `
-    <div class="bg-a-inkAlt p-5 max-w-lg w-full max-h-[90vh] overflow-y-auto border border-a-border space-y-4">
-      <header class="flex items-center justify-between">
-        <h3 class="text-a-paper font-display italic text-[18px]">${isNew ? 'Ajouter' : 'Modifier'} : ${escapeHtml(seed.name)}</h3>
-        <button id="mx-close" class="btn-ghost btn-sm">✕</button>
+/* ─── Native drag and drop ─── */
+
+function boStartCatalogDrag(e, entry) {
+  _boDrag = { source: { catalogId: entry.id } };
+  e.dataTransfer.effectAllowed = 'copy';
+  e.dataTransfer.setData('text/plain', entry.name);
+  e.currentTarget.classList.add('gone');
+}
+
+function boStartBlockDrag(e) {
+  const handle = e.target.closest('[data-drag-handle]');
+  if (!handle) return;
+  const block = handle.closest('[data-block]');
+  _boDrag = { source: { blockPos: Number(block.dataset.block) } };
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('text/plain', '');
+  e.dataTransfer.setDragImage(block, 24, 24);
+}
+
+// Source as boCanDropOnto sees it: a catalog entry is a provisional exercise.
+function boProbeSource(source) {
+  if (!source.catalogId) return source;
+  const entry = _progEditorState.catalog.find(c => c.id === source.catalogId);
+  return { exercise: { name: entry.name, activities: entry.default_activities || [{ type: 'weight' }] } };
+}
+
+// Hovered target: null (the end) on an empty list; between blocks the current one is kept
+// (undefined when none was computed yet).
+function boHoverTarget(e, list) {
+  const block = e.target.closest('[data-block]');
+  const row   = e.target.closest('[data-drop-row]');
+  if (!list.querySelector('[data-block]')) return null;
+  if (!block || !row) return _boDrag.target;
+  const pos = Number(block.dataset.block);
+  const canJoin = _progEditorState.category !== 'cardio'
+    && boCanDropOnto(_progEditorState.exercises, boProbeSource(_boDrag.source), pos);
+  const intent = boDropIntent(row.getBoundingClientRect(), e.clientY, { canJoin, firstRow: row.hasAttribute('data-first-row') });
+  return { blockPos: pos, intent };
+}
+
+function boClearDropMark() {
+  document.querySelectorAll('#pz-list .drop-onto, #pz-list .drop-before, #pz-list .drop-after')
+    .forEach(el => el.classList.remove('drop-onto', 'drop-before', 'drop-after'));
+  document.querySelectorAll('#pz-list .pz-tip').forEach(el => el.remove());
+}
+
+// One mark at a time: the highlighted "onto" row, or a 2 px rule at a block edge.
+function boShowDropMark(target) {
+  boClearDropMark();
+  const list  = document.getElementById('pz-list');
+  const block = target ? list.querySelector(`[data-block="${target.blockPos}"]`) : list.lastElementChild;
+  if (!block) return;
+  if (!target || target.intent !== 'onto') {
+    block.classList.add(target && target.intent === 'before' ? 'drop-before' : 'drop-after');
+    return;
+  }
+  const row = block.matches('[data-first-row]') ? block : block.querySelector('[data-first-row]');
+  row.classList.add('drop-onto');
+  row.querySelector('.pz-name').insertAdjacentHTML('afterend', `<span class="pz-tip">${boOntoTip(block, target.blockPos)}</span>`);
+}
+
+function boOntoTip(block, blockPos) {
+  if (block.matches('.pz-group')) return 'Déposer : ajouter au super set';
+  const xs = _progEditorState.exercises;
+  return `Déposer : super set avec ${escapeHtml(xs[editorBlocks(xs)[blockPos].indices[0]].name || 'Sans nom')}`;
+}
+
+// No target computed yet (entering through a gap): the drop is refused (no preventDefault).
+function boDragOver(e) {
+  if (!_boDrag) return;
+  const target = boHoverTarget(e, e.currentTarget);
+  if (target === undefined) return;
+  e.preventDefault();
+  e.dataTransfer.dropEffect = _boDrag.source.catalogId ? 'copy' : 'move';
+  if (JSON.stringify(target) === JSON.stringify(_boDrag.target)) return;
+  _boDrag.target = target;
+  boShowDropMark(target);
+}
+
+function boDragLeave(e) {
+  if (!_boDrag || e.currentTarget.contains(e.relatedTarget)) return;
+  _boDrag.target = undefined;
+  boClearDropMark();
+}
+
+function boEndDrag() {
+  _boDrag = null;
+  boClearDropMark();
+  document.querySelectorAll('#cat-list .gone').forEach(el => el.classList.remove('gone'));
+}
+
+// Delegated once for both sources (catalog rows, block handles); a drop also ends the drag itself.
+document.addEventListener('dragend', boEndDrag);
+
+async function boDrop(e) {
+  if (!_boDrag) return;
+  e.preventDefault();
+  const source = _boDrag.source;
+  const target = _boDrag.target ?? null;
+  boEndDrag();
+  if (source.catalogId) {
+    await boDropCatalogEntry(_progEditorState.catalog.find(c => c.id === source.catalogId), target);
+  } else {
+    boEditorAct(xs => boApplyDrop(xs, source, target));
+  }
+}
+
+// Last execution of this exercise by the client, or null.
+async function boClientPrev(name) {
+  const normName = normalizeExerciseName(name);
+  const prevMap  = await loadLastExercisesForClientDB(selClient.id, [normName]);
+  return prevMap.get(normName) || null;
+}
+
+// A client who already did this exercise gets it directly; otherwise the « Ajouter » modal opens first.
+async function boDropCatalogEntry(entry, target) {
+  if (!entry) return;
+  const prev = await boClientPrev(entry.name);
+  if (prev?.activities?.length && prev?.execution?.series?.length) {
+    boPlaceExercise(buildProgrammeExerciseFromCatalog(entry, prev), { target });
+    return;
+  }
+  await openExoModal(entry, { target, prev });
+}
+
+/* ─── Exercise modal (✎ or catalog add) ─── */
+
+// `placement`: { index } replaces that exercise, { target } adds a new one at that drop target.
+function boPlaceExercise(exo, placement) {
+  if (placement.index !== undefined) {
+    boEditorAct(xs => xs.map((ex, i) => i === placement.index ? exo : ex));
+  } else {
+    boEditorAct(xs => boApplyDrop(xs, { exercise: exo }, placement.target ?? null));
+  }
+}
+
+function boExoModalHtml(seed, isNew) {
+  return `
+    <div class="modal bo-exo-modal">
+      <header class="flex-row">
+        <h2 class="spacer">${isNew ? 'Ajouter' : 'Modifier'} : ${escapeHtml(seed.name)}</h2>
+        <button id="mx-close" class="btn-ghost btn-sm">Fermer</button>
       </header>
       <div id="mx-card-wrap"></div>
-      <div class="flex gap-2 justify-end">
+      <div class="flex-row" style="justify-content:flex-end">
         <button id="mx-cancel" class="btn-ghost">Annuler</button>
         <button id="mx-ok" class="btn-primary">${isNew ? 'Ajouter au programme' : 'Enregistrer'}</button>
       </div>
     </div>`;
+}
+
+// ✎ ({ index }) seeds the card with the exercise itself, without waiting; an add ({ target, prev? })
+// loads the client history only when the caller did not pass it.
+async function openExoModal(entryOrExo, placement) {
+  const isNew = placement.index === undefined;
+  const prev  = isNew && !('prev' in placement) ? await boClientPrev(entryOrExo.name) : placement.prev;
+  const seed  = isNew ? buildProgrammeExerciseFromCatalog(entryOrExo, prev ?? null) : entryOrExo;
+
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = boExoModalHtml(seed, isNew);
   document.body.appendChild(overlay);
 
   const wrap = overlay.querySelector('#mx-card-wrap');
@@ -719,18 +883,9 @@ async function openExoModal(entryOrExo, idx, isNew = false) {
   const close = () => overlay.remove();
   overlay.querySelector('#mx-close').addEventListener('click', close);
   overlay.querySelector('#mx-cancel').addEventListener('click', close);
-
   overlay.querySelector('#mx-ok').addEventListener('click', () => {
     const card = wrap.querySelector('.exercise-card');
-    const exo = boModalSavedExercise(readExerciseCard(card), _progEditorState.category);
-
-    if (isNew) {
-      _progEditorState.exercises.splice(idx, 0, exo);
-    } else {
-      _progEditorState.exercises[idx] = exo;
-    }
-    renderProgrammeZone();
-    refreshEstimateHeader();
+    boPlaceExercise(boModalSavedExercise(readExerciseCard(card), _progEditorState.category), placement);
     close();
   });
 }
@@ -744,13 +899,13 @@ async function saveProgramme() {
   if (!name) {
     errEl.textContent = 'Donne un nom au programme.';
     errEl.classList.remove('hidden');
-    if (nameEl) { nameEl.style.borderColor = '#DC2626'; nameEl.focus(); }
+    if (nameEl) { nameEl.style.borderColor = 'var(--alert)'; nameEl.focus(); }
     return;
   }
 
   const payload = {
     name,
-    exercises:                  _progEditorState.exercises,
+    exercises:                  programmeForSave(_progEditorState.exercises),
     category:                   _progEditorState.category,
     client_id:                  selClient.id,
     coach_id:                   coachId,
